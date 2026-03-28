@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Global Infrastructure — CS 55D Week 1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 32px 16px; }
+  .page { max-width: 860px; margin: 0 auto; }
+  .breadcrumb { font-size: 12px; color: #888780; margin-bottom: 16px; }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb span { margin: 0 6px; }
+  h1 { font-size: 26px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
+  .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 24px; line-height: 1.6; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 17px; font-weight: 600; color: #1a1a18; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 0.5px solid #f0efe8; }
+  .card p { font-size: 13px; color: #5f5e5a; line-height: 1.7; margin-bottom: 10px; }
+  .card p:last-child { margin-bottom: 0; }
+  .card ul { font-size: 13px; color: #5f5e5a; line-height: 1.7; padding-left: 18px; margin-bottom: 10px; }
+  .card ul li { margin-bottom: 4px; }
+  .objectives { background: #E6F1FB; border-radius: 12px; border: 0.5px solid #B5D4F4; padding: 20px 24px; margin-bottom: 20px; }
+  .objectives h2 { font-size: 13px; font-weight: 600; color: #0C447C; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .objectives ul { list-style: none; padding: 0; }
+  .objectives ul li { font-size: 13px; color: #185FA5; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .objectives ul li::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #378ADD; margin-top: 6px; flex-shrink: 0; }
+  .diagram-card { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 24px; margin-bottom: 20px; }
+  .diagram-card h2 { font-size: 17px; font-weight: 600; color: #1a1a18; margin-bottom: 6px; }
+  .diagram-card .diagram-sub { font-size: 12px; color: #888780; margin-bottom: 16px; }
+  .info-panel { background: #f9f9f7; border-radius: 8px; border: 0.5px solid #e8e7e0; padding: 16px 18px; margin-top: 16px; min-height: 72px; }
+  .info-panel h3 { font-size: 14px; font-weight: 600; color: #1a1a18; margin-bottom: 6px; }
+  .info-panel p { font-size: 13px; color: #5f5e5a; line-height: 1.65; margin-bottom: 6px; }
+  .info-panel ul { font-size: 13px; color: #5f5e5a; line-height: 1.7; padding-left: 18px; margin-top: 6px; }
+  .info-panel .placeholder { font-size: 13px; color: #B4B2A9; font-style: italic; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; margin-bottom: 8px; }
+  .tag-blue   { background: #E6F1FB; color: #0C447C; }
+  .tag-coral  { background: #FAECE7; color: #712B13; }
+  .tag-amber  { background: #FAEEDA; color: #633806; }
+  .clickable { cursor: pointer; transition: opacity 0.15s; }
+  .clickable:hover { opacity: 0.82; }
+  .callout { border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; font-size: 13px; line-height: 1.65; }
+  .callout-info    { background: #E6F1FB; color: #0C447C; border-left: 3px solid #185FA5; }
+  .callout-warning { background: #FAEEDA; color: #633806; border-left: 3px solid #854F0B; }
+  .callout-success { background: #EAF3DE; color: #27500A; border-left: 3px solid #3B6D11; }
+  .callout strong  { font-weight: 600; }
+  .key-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .key-table thead th { font-size: 11px; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 12px; border-bottom: 0.5px solid #e8e7e0; text-align: left; }
+  .key-table tbody td { padding: 8px 12px; border-bottom: 0.5px solid #f0efe8; color: #5f5e5a; vertical-align: top; line-height: 1.5; }
+  .key-table tbody tr:last-child td { border-bottom: none; }
+  .key-table tbody td:first-child { font-weight: 600; color: #1a1a18; white-space: nowrap; }
+  .billing-box { background: #FAEEDA; border-radius: 10px; border: 0.5px solid #EF9F27; padding: 18px 20px; margin-top: 16px; }
+  .billing-box h3 { font-size: 14px; font-weight: 600; color: #633806; margin-bottom: 10px; }
+  .billing-box p  { font-size: 13px; color: #854F0B; line-height: 1.65; margin-bottom: 8px; }
+  .billing-box p:last-child { margin-bottom: 0; }
+  .billing-box ul { font-size: 13px; color: #854F0B; line-height: 1.7; padding-left: 18px; }
+  .external-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 8px; border: 0.5px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; margin-top: 8px; }
+  .external-link:hover { background: #B5D4F4; }
+  .nav-links { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .nav-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 16px; border-radius: 8px; border: 0.5px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .nav-link:hover { background: #B5D4F4; }
+  .nav-link.home { background: #1F4E79; color: #fff; border-color: #1F4E79; }
+  .nav-link.home:hover { background: #0C447C; }
+  footer { text-align: center; font-size: 12px; color: #888780; margin-top: 32px; padding-bottom: 16px; }
+  footer a { color: #888780; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="breadcrumb">
+    <a href="../index.html">CS 55D Home</a><span>›</span>Week 1<span>›</span>AWS Global Infrastructure
+  </div>
+
+  <h1>AWS Global Infrastructure</h1>
+  <p class="subtitle">Understanding regions, availability zones, and how your AWS account relates to the physical infrastructure underneath it.</p>
+
+  <div class="objectives">
+    <h2>Learning objectives</h2>
+    <ul>
+      <li>Explain the difference between AWS regions and availability zones</li>
+      <li>Describe what an AWS account is — and what it is not</li>
+      <li>Identify which AWS services are regional vs. global</li>
+      <li>Explain why CloudWatch billing alarms are only available in us-east-1</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Two things that are easy to confuse</h2>
+    <p>AWS infrastructure and your AWS account are completely separate concepts that are easy to conflate early on. Understanding the difference is foundational — it explains a number of AWS behaviors that otherwise seem arbitrary.</p>
+    <p><strong>AWS infrastructure</strong> is physical. It is data centers, fiber cables, networking equipment, and power systems that Amazon owns and operates around the world. You have no control over it and never touch it directly. It is organized into regions and availability zones.</p>
+    <p><strong>Your AWS account</strong> is a logical construct — a billing and identity boundary that exists in AWS's management systems. It is not a physical thing and has no location. It spans whichever regions you choose to deploy services in, and you receive one bill aggregating usage across all of them.</p>
+    <div class="callout callout-info">
+      <strong>The key insight:</strong> When you launch an EC2 instance in us-west-2, that instance runs on physical hardware in Oregon. But your <em>account</em> — the entity that owns the instance and gets billed for it — has no physical location. It is a record in AWS's systems that happens to have a resource in Oregon.
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <h2>AWS infrastructure model</h2>
+    <div class="diagram-sub">Click any element to learn more.</div>
+    <svg width="100%" viewBox="0 0 780 460" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <rect x="10" y="10" width="760" height="270" rx="16" fill="#F1EFE8" stroke="#888780" stroke-width="0.5" stroke-dasharray="6 3"/>
+      <text x="30" y="36" font-size="12" font-weight="600" fill="#444441">AWS physical infrastructure — Amazon owns and operates this</text>
+      <text x="30" y="52" font-size="10" fill="#888780">34 regions · 108 availability zones · worldwide</text>
+
+      <g class="clickable" onclick="showInfo('region')">
+        <rect x="28" y="62" width="230" height="196" rx="12" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="48" y="84" font-size="13" font-weight="600" fill="#0C447C">us-east-1  ·  N. Virginia</text>
+        <text x="48" y="100" font-size="10" fill="#185FA5">6 availability zones</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="44" y="110" width="58" height="128" rx="6" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="73" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#042C53">AZ 1a</text>
+        <rect x="48" y="140" width="50" height="16" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="73" y="152" text-anchor="middle" font-size="9" fill="#185FA5">Data center</text>
+        <rect x="48" y="162" width="50" height="16" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="73" y="174" text-anchor="middle" font-size="9" fill="#185FA5">Data center</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="112" y="110" width="58" height="128" rx="6" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="141" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#042C53">AZ 1b</text>
+        <rect x="116" y="140" width="50" height="16" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="141" y="152" text-anchor="middle" font-size="9" fill="#185FA5">Data center</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="180" y="110" width="58" height="128" rx="6" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="209" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#042C53">AZ 1c</text>
+        <rect x="184" y="140" width="50" height="16" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="209" y="152" text-anchor="middle" font-size="9" fill="#185FA5">Data center</text>
+      </g>
+      <line x1="102" y1="170" x2="112" y2="170" stroke="#378ADD" stroke-width="0.5" stroke-dasharray="2 1"/>
+      <line x1="170" y1="170" x2="180" y2="170" stroke="#378ADD" stroke-width="0.5" stroke-dasharray="2 1"/>
+      <text x="143" y="252" text-anchor="middle" font-size="9" fill="#185FA5">Low-latency private links</text>
+
+      <g class="clickable" onclick="showInfo('region')">
+        <rect x="278" y="62" width="190" height="196" rx="12" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="298" y="84" font-size="13" font-weight="600" fill="#085041">us-west-2  ·  Oregon</text>
+        <text x="298" y="100" font-size="10" fill="#0F6E56">4 availability zones</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="294" y="110" width="58" height="128" rx="6" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="323" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#04342C">AZ 2a</text>
+        <rect x="298" y="140" width="50" height="16" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="323" y="152" text-anchor="middle" font-size="9" fill="#0F6E56">Data center</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="362" y="110" width="58" height="128" rx="6" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="391" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#04342C">AZ 2b</text>
+        <rect x="366" y="140" width="50" height="16" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="391" y="152" text-anchor="middle" font-size="9" fill="#0F6E56">Data center</text>
+      </g>
+
+      <g class="clickable" onclick="showInfo('region')">
+        <rect x="488" y="62" width="280" height="196" rx="12" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="508" y="84" font-size="13" font-weight="600" fill="#3C3489">eu-west-1  ·  Ireland</text>
+        <text x="508" y="100" font-size="10" fill="#534AB7">3 availability zones</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="504" y="110" width="58" height="128" rx="6" fill="#AFA9EC" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="533" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#26215C">AZ 3a</text>
+        <rect x="508" y="140" width="50" height="16" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="533" y="152" text-anchor="middle" font-size="9" fill="#534AB7">Data center</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="572" y="110" width="58" height="128" rx="6" fill="#AFA9EC" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="601" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#26215C">AZ 3b</text>
+        <rect x="576" y="140" width="50" height="16" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="601" y="152" text-anchor="middle" font-size="9" fill="#534AB7">Data center</text>
+      </g>
+      <g class="clickable" onclick="showInfo('az')">
+        <rect x="640" y="110" width="58" height="128" rx="6" fill="#AFA9EC" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="669" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#26215C">AZ 3c</text>
+        <rect x="644" y="140" width="50" height="16" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="669" y="152" text-anchor="middle" font-size="9" fill="#534AB7">Data center</text>
+      </g>
+
+      <g class="clickable" onclick="showInfo('account')">
+        <rect x="10" y="298" width="760" height="150" rx="12" fill="#FAECE7" stroke="#993C1D" stroke-width="1" stroke-dasharray="5 3"/>
+        <text x="30" y="322" font-size="13" font-weight="600" fill="#712B13">Your AWS account — logical construct, not a physical location</text>
+        <text x="30" y="340" font-size="10" fill="#993C1D">One account · one monthly bill · spans all regions you use</text>
+      </g>
+
+      <g class="clickable" onclick="showInfo('regional')">
+        <rect x="26" y="350" width="155" height="72" rx="8" fill="#F5C4B3" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="103" y="372" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">Resources in</text>
+        <text x="103" y="390" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">us-east-1</text>
+        <text x="103" y="408" text-anchor="middle" font-size="10" fill="#712B13">EC2 · S3 · Lambda...</text>
+      </g>
+
+      <g class="clickable" onclick="showInfo('regional')">
+        <rect x="195" y="350" width="155" height="72" rx="8" fill="#F5C4B3" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="272" y="372" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">Resources in</text>
+        <text x="272" y="390" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">us-west-2</text>
+        <text x="272" y="408" text-anchor="middle" font-size="10" fill="#712B13">EC2 · RDS · Lambda...</text>
+      </g>
+
+      <g class="clickable" onclick="showInfo('regional')">
+        <rect x="364" y="350" width="155" height="72" rx="8" fill="#F5C4B3" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="441" y="372" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">Resources in</text>
+        <text x="441" y="390" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">eu-west-1</text>
+        <text x="441" y="408" text-anchor="middle" font-size="10" fill="#712B13">EC2 · S3 · Lambda...</text>
+      </g>
+
+      <g class="clickable" onclick="showInfo('global')">
+        <rect x="533" y="350" width="225" height="72" rx="8" fill="#F0997B" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="645" y="368" text-anchor="middle" font-size="12" font-weight="600" fill="#4A1B0C">Global services</text>
+        <text x="645" y="386" text-anchor="middle" font-size="10" fill="#712B13">IAM · Route 53 · CloudFront</text>
+        <text x="645" y="402" text-anchor="middle" font-size="10" fill="#712B13">Billing · Organizations</text>
+      </g>
+
+      <line x1="103" y1="350" x2="143" y2="258" stroke="#993C1D" stroke-width="0.5" stroke-dasharray="3 2" marker-end="url(#arrow)" fill="none"/>
+      <line x1="272" y1="350" x2="370" y2="258" stroke="#993C1D" stroke-width="0.5" stroke-dasharray="3 2" marker-end="url(#arrow)" fill="none"/>
+      <line x1="441" y1="350" x2="600" y2="258" stroke="#993C1D" stroke-width="0.5" stroke-dasharray="3 2" marker-end="url(#arrow)" fill="none"/>
+    </svg>
+
+    <div class="info-panel" id="info-panel">
+      <p class="placeholder">Click any element in the diagram to learn more.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Key concepts at a glance</h2>
+    <table class="key-table">
+      <thead><tr><th>Concept</th><th>What it is</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Region</td>
+          <td>A geographically distinct cluster of AWS data centers. Each region is fully independent — a failure in one does not affect others.</td>
+          <td>us-east-1 (N. Virginia), eu-west-1 (Ireland)</td>
+        </tr>
+        <tr>
+          <td>Availability Zone</td>
+          <td>One or more physically separate data centers within a region, connected by low-latency private links. A failure in one AZ does not affect another.</td>
+          <td>us-east-1a, us-east-1b, us-east-1c</td>
+        </tr>
+        <tr>
+          <td>AWS Account</td>
+          <td>A logical billing and identity boundary. Not a physical location. One account can have resources in many regions and receives one monthly bill.</td>
+          <td>Your 12-digit account ID — top-right console menu</td>
+        </tr>
+        <tr>
+          <td>Regional service</td>
+          <td>A service where each resource exists in a specific region and is isolated from the same service in other regions.</td>
+          <td>EC2, S3, Lambda, VPC, RDS, DynamoDB</td>
+        </tr>
+        <tr>
+          <td>Global service</td>
+          <td>A service that operates across all regions from a single control plane. No region selector is needed.</td>
+          <td>IAM, Route 53, CloudFront, Billing, AWS Organizations</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Why CloudWatch billing alarms only work in us-east-1</h2>
+    <p>Your AWS bill is account-level — it aggregates usage across every region into a single monthly total. There is no separate bill per region. Because billing is account-level rather than region-level, AWS treats it as a global concept.</p>
+    <p>However, CloudWatch — the monitoring service where you create alarms — is a regional service. Each region has its own CloudWatch instance. AWS made a design decision to publish billing metrics to only one CloudWatch region: <strong>us-east-1</strong>. The billing metric namespace simply does not exist in any other region's CloudWatch.</p>
+
+    <div class="billing-box">
+      <h3>What this means in practice</h3>
+      <p>It does not matter which region you normally work in. Even if all your application resources are in us-west-2, you must switch your console to us-east-1 to create a CloudWatch billing alarm. There is no workaround — the metric does not exist in other regions.</p>
+      <p>The steps are:</p>
+      <ul>
+        <li>First enable billing alerts in Billing Preferences — a one-time account-level setting</li>
+        <li>Switch the console region selector to <strong>US East (N. Virginia) — us-east-1</strong></li>
+        <li>Create the CloudWatch alarm in us-east-1</li>
+        <li>Switch back to your working region when done</li>
+      </ul>
+    </div>
+
+    <div class="callout callout-warning" style="margin-top:16px">
+      <strong>Common mistake:</strong> Searching for the billing metric in your working region and seeing nothing. This is not a permissions problem — the metric genuinely does not exist outside us-east-1. Always check the region selector first when a CloudWatch metric seems to be missing.
+    </div>
+
+    <div class="callout callout-success" style="margin-top:12px">
+      <strong>Why us-east-1?</strong> It is the oldest AWS region and historically where AWS anchors account-level features. This is an AWS architectural convention worth knowing rather than reasoning about. You will encounter a few other features with the same behavior later in this course.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Resilience tiers — AZ tolerance vs regional tolerance</h2>
+    <p>AWS does not automatically make your application resilient. Resilience is a spectrum with three tiers, and every tier is entirely the customer's responsibility to architect and enable. AWS guarantees the infrastructure within each region — it does not guarantee your application survives a regional failure.</p>
+    <p>The Photo Viewer application in this course runs as Tier 1 — single AZ — because it is a learning environment. This is a deliberate simplification. In a production environment handling real user data, Tier 2 at minimum would be expected.</p>
+
+    <div style="overflow-x:auto; margin-top:16px;">
+    <svg width="100%" viewBox="0 0 680 520" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+
+    <rect x="20" y="20" width="196" height="44" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+    <text x="118" y="37" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#2C2C2A" font-family="system-ui,sans-serif">Tier 1 — single AZ</text>
+    <text x="118" y="55" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A" font-family="system-ui,sans-serif">Dev / learning environments</text>
+
+    <rect x="242" y="20" width="196" height="44" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="340" y="37" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#412402" font-family="system-ui,sans-serif">Tier 2 — multi-AZ</text>
+    <text x="340" y="55" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#854F0B" font-family="system-ui,sans-serif">Standard production</text>
+
+    <rect x="464" y="20" width="196" height="44" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="562" y="37" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#04342C" font-family="system-ui,sans-serif">Tier 3 — multi-region</text>
+    <text x="562" y="55" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56" font-family="system-ui,sans-serif">Critical workloads</text>
+
+    <line x1="216" y1="42" x2="240" y2="42" stroke="#888780" stroke-width="1" marker-end="url(#arr2)" fill="none"/>
+    <line x1="438" y1="42" x2="462" y2="42" stroke="#888780" stroke-width="1" marker-end="url(#arr2)" fill="none"/>
+
+    <text x="118" y="84" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">ARCHITECTURE</text>
+    <text x="340" y="84" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">ARCHITECTURE</text>
+    <text x="562" y="84" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">ARCHITECTURE</text>
+
+    <rect x="20" y="92" width="196" height="132" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+    <text x="40" y="114" font-size="11" fill="#444441" font-family="system-ui,sans-serif">EC2 in one AZ</text>
+    <text x="40" y="132" font-size="11" fill="#444441" font-family="system-ui,sans-serif">RDS — single instance</text>
+    <text x="40" y="150" font-size="11" fill="#444441" font-family="system-ui,sans-serif">Lambda — auto multi-AZ</text>
+    <text x="40" y="168" font-size="11" fill="#444441" font-family="system-ui,sans-serif">S3 — auto multi-AZ</text>
+    <text x="40" y="186" font-size="11" fill="#444441" font-family="system-ui,sans-serif">No load balancer needed</text>
+    <text x="40" y="208" font-size="11" font-weight="600" fill="#993C1D" font-family="system-ui,sans-serif">← This course (Photo Viewer)</text>
+
+    <rect x="242" y="92" width="196" height="132" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="262" y="114" font-size="11" fill="#633806" font-family="system-ui,sans-serif">EC2 across AZs + ALB</text>
+    <text x="262" y="132" font-size="11" fill="#633806" font-family="system-ui,sans-serif">RDS Multi-AZ — must enable</text>
+    <text x="262" y="150" font-size="11" fill="#633806" font-family="system-ui,sans-serif">Lambda — auto multi-AZ</text>
+    <text x="262" y="168" font-size="11" fill="#633806" font-family="system-ui,sans-serif">S3 — auto multi-AZ</text>
+    <text x="262" y="186" font-size="11" fill="#633806" font-family="system-ui,sans-serif">ALB distributes traffic</text>
+    <text x="262" y="208" font-size="11" fill="#633806" font-family="system-ui,sans-serif">~2x cost for RDS</text>
+
+    <rect x="464" y="92" width="196" height="132" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="484" y="114" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Full stack in 2+ regions</text>
+    <text x="484" y="132" font-size="11" fill="#085041" font-family="system-ui,sans-serif">RDS cross-region replica</text>
+    <text x="484" y="150" font-size="11" fill="#085041" font-family="system-ui,sans-serif">S3 cross-region replication</text>
+    <text x="484" y="168" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Route 53 health checks</text>
+    <text x="484" y="186" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Global Accelerator or CDN</text>
+    <text x="484" y="208" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Significantly higher cost</text>
+
+    <text x="118" y="244" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">SURVIVES</text>
+    <text x="340" y="244" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">SURVIVES</text>
+    <text x="562" y="244" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">SURVIVES</text>
+
+    <rect x="20" y="252" width="196" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+    <text x="118" y="272" text-anchor="middle" font-size="11" fill="#444441" font-family="system-ui,sans-serif">Hardware failure in</text>
+    <text x="118" y="292" text-anchor="middle" font-size="11" fill="#444441" font-family="system-ui,sans-serif">that one AZ only</text>
+
+    <rect x="242" y="252" width="196" height="56" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="340" y="272" text-anchor="middle" font-size="11" fill="#633806" font-family="system-ui,sans-serif">Complete AZ outage</text>
+    <text x="340" y="292" text-anchor="middle" font-size="11" fill="#633806" font-family="system-ui,sans-serif">(fire, flood, power failure)</text>
+
+    <rect x="464" y="252" width="196" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="562" y="268" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Complete region outage</text>
+    <text x="562" y="286" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">(Middle East example)</text>
+    <text x="562" y="304" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Route 53 redirects traffic</text>
+
+    <text x="118" y="330" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">FAILS ON</text>
+    <text x="340" y="330" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">FAILS ON</text>
+    <text x="562" y="330" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">FAILS ON</text>
+
+    <rect x="20" y="338" width="196" height="56" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+    <text x="118" y="358" text-anchor="middle" font-size="11" fill="#791F1F" font-family="system-ui,sans-serif">AZ outage or</text>
+    <text x="118" y="378" text-anchor="middle" font-size="11" fill="#791F1F" font-family="system-ui,sans-serif">region outage</text>
+
+    <rect x="242" y="338" width="196" height="56" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+    <text x="340" y="358" text-anchor="middle" font-size="11" fill="#791F1F" font-family="system-ui,sans-serif">Region outage only</text>
+    <text x="340" y="378" text-anchor="middle" font-size="11" fill="#791F1F" font-family="system-ui,sans-serif">(all AZs go together)</text>
+
+    <rect x="464" y="338" width="196" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+    <text x="562" y="358" text-anchor="middle" font-size="11" fill="#444441" font-family="system-ui,sans-serif">Multi-region catastrophe</text>
+    <text x="562" y="378" text-anchor="middle" font-size="11" fill="#888780" font-family="system-ui,sans-serif">(extremely rare)</text>
+
+    <text x="118" y="416" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">WHO SETS THIS UP</text>
+    <text x="340" y="416" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">WHO SETS THIS UP</text>
+    <text x="562" y="416" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">WHO SETS THIS UP</text>
+
+    <rect x="20" y="424" width="196" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+    <text x="118" y="444" text-anchor="middle" font-size="11" fill="#444441" font-family="system-ui,sans-serif">You — default state,</text>
+    <text x="118" y="464" text-anchor="middle" font-size="11" fill="#444441" font-family="system-ui,sans-serif">no extra steps needed</text>
+
+    <rect x="242" y="424" width="196" height="56" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="340" y="444" text-anchor="middle" font-size="11" fill="#633806" font-family="system-ui,sans-serif">You — must explicitly</text>
+    <text x="340" y="464" text-anchor="middle" font-size="11" fill="#633806" font-family="system-ui,sans-serif">enable RDS Multi-AZ + ALB</text>
+
+    <rect x="464" y="424" width="196" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="562" y="444" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">You — entirely your</text>
+    <text x="562" y="464" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">architecture decision</text>
+
+    <rect x="20" y="492" width="640" height="24" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+    <text x="340" y="504" text-anchor="middle" font-size="11" font-weight="600" fill="#712B13" font-family="system-ui,sans-serif">AWS guarantees infrastructure within each region — not your application's survival across regions</text>
+    </svg>
+    </div>
+
+    <div class="callout callout-warning" style="margin-top:16px">
+      <strong>The Middle East outage lesson:</strong> Customers who had only deployed in that region were simply down until AWS restored service. Customers with Tier 3 architecture failed over automatically. AWS was not at fault — they restored the region. Customers with no multi-region architecture had no recourse except to wait.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Official AWS reference</h2>
+    <p>AWS maintains a live overview of all global infrastructure including regions, availability zones, and edge locations. Worth bookmarking as a reference throughout the course.</p>
+    <a class="external-link" href="https://aws.amazon.com/about-aws/global-infrastructure/" target="_blank" rel="noopener">↗ AWS Global Infrastructure — official overview</a>
+    <div class="callout callout-success" style="margin-top:16px">
+      <strong>SCS-C03 exam note:</strong> The exam tests the Shared Responsibility Model in the context of global infrastructure. AWS is responsible for the physical security of data centers and the resilience of availability zones. You are responsible for choosing regions, designing for multi-AZ resilience, and ensuring data residency compliance for your workloads. Exam scenario questions that mention "natural disaster" or "99.99% availability" always point toward multi-region Tier 3 architecture.
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a class="nav-link home" href="../index.html">← Course home</a>
+    <a class="nav-link" href="week1-account-model.html">Next: AWS Account Authority Model →</a>
+  </div>
+
+  <footer>
+    CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+    <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+  </footer>
+</div>
+
+<script>
+const info = {
+  region: {
+    tag: 'tag-blue', label: 'AWS Region',
+    title: 'What is an AWS Region?',
+    body: 'A region is a geographically distinct cluster of AWS data centers. Each region is completely independent — it has its own power, cooling, networking, and physical security. A major outage in us-east-1 does not affect us-west-2.',
+    bullets: [
+      'AWS currently has 34 regions worldwide',
+      'Each region has a code name (us-east-1) and a friendly name (N. Virginia)',
+      'When you create a resource like an EC2 instance, you choose which region it lives in',
+      'Most AWS services are regional — your Lambda function in us-east-1 is separate from one in us-west-2',
+      'Data does not automatically replicate between regions — you control this explicitly',
+      'Pricing varies between regions — us-east-1 is typically the cheapest'
+    ]
+  },
+  az: {
+    tag: 'tag-blue', label: 'Availability Zone',
+    title: 'What is an Availability Zone?',
+    body: 'An availability zone is one or more physically separate data centers within a region. AZs are connected by low-latency private fiber links but are far enough apart that a fire, flood, or power failure in one AZ does not affect another.',
+    bullets: [
+      'Each region has between 2 and 6 AZs',
+      'AZs are identified by a letter suffix: us-east-1a, us-east-1b, us-east-1c',
+      'Distributing your application across multiple AZs protects against single data center failures',
+      'AWS maps AZ names differently per account — your us-east-1a may be a different physical facility than another account\'s us-east-1a',
+      'Services like Elastic Load Balancing and RDS Multi-AZ automatically spread across AZs'
+    ]
+  },
+  account: {
+    tag: 'tag-coral', label: 'AWS Account',
+    title: 'What is an AWS Account?',
+    body: 'An AWS account is a logical construct — a billing and identity boundary in AWS\'s management systems. It is not tied to any physical location. Your account can have resources in many different regions, and they all appear on one monthly bill.',
+    bullets: [
+      'Identified by a 12-digit account ID visible in the top-right console menu',
+      'All IAM users, roles, and policies belong to one account',
+      'Resources in the same account can interact with each other, subject to IAM policies',
+      'Resources in different accounts are isolated by default — cross-account access requires explicit configuration',
+      'One organization can own multiple accounts — AWS Organizations manages this at scale'
+    ]
+  },
+  regional: {
+    tag: 'tag-coral', label: 'Regional resources',
+    title: 'Resources tied to a specific region',
+    body: 'Most AWS resources exist in a specific region. If you switch regions in the console, those resources appear to disappear — they are still there, just not visible from the other region\'s console view.',
+    bullets: [
+      'EC2 instances run in a specific region and availability zone',
+      'Lambda functions are deployed per region',
+      'VPCs, subnets, and security groups are regional constructs',
+      'S3 bucket names are globally unique but buckets exist in a specific region',
+      'CloudWatch metrics, alarms, and logs are regional — except billing metrics, which only exist in us-east-1'
+    ]
+  },
+  global: {
+    tag: 'tag-amber', label: 'Global services',
+    title: 'Global services — no region selector needed',
+    body: 'A small set of AWS services operate globally from a single control plane. IAM users and roles apply account-wide across all regions. Billing aggregates all regional usage into one account-level total.',
+    bullets: [
+      'IAM — users, roles, and policies apply across all regions in the account',
+      'Route 53 — DNS is inherently global',
+      'CloudFront — content delivery with 400+ edge locations worldwide',
+      'AWS Organizations — manages multiple accounts globally',
+      'Billing — one bill for all regions; CloudWatch billing metrics are published to us-east-1 only'
+    ]
+  }
+};
+
+function showInfo(key) {
+  const d = info[key];
+  if (!d) return;
+  const panel = document.getElementById('info-panel');
+  const bulletHTML = d.bullets ? '<ul>' + d.bullets.map(b => `<li>${b}</li>`).join('') + '</ul>' : '';
+  panel.innerHTML = `<span class="tag ${d.tag}">${d.label}</span><h3>${d.title}</h3><p>${d.body}</p>${bulletHTML}`;
+}
+</script>
+</body>
+</html>
