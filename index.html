@@ -189,6 +189,35 @@
     margin-top: 40px;
     padding-bottom: 16px;
   }
+
+  .scope-pill { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .scope-global   { background: #EEEDFE; color: #3C3489; }
+  .scope-regional { background: #E6F1FB; color: #0C447C; }
+  .scope-az       { background: #E1F5EE; color: #085041; }
+  .special-pill { display: inline-block; font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 20px; white-space: nowrap; margin-left: 4px; }
+  .root-only { background: #FAECE7; color: #712B13; }
+  .free-tier { background: #EAF3DE; color: #27500A; }
+  .paid-only { background: #FCEBEB; color: #791F1F; }
+  .svc-legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 20px; background: #fafaf8; border-bottom: 0.5px solid #f0efe8; }
+  .svc-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5f5e5a; }
+  .filter-bar { display: flex; gap: 8px; padding: 10px 20px; border-bottom: 0.5px solid #f0efe8; flex-wrap: wrap; }
+  .filter-btn { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 20px; border: 0.5px solid #D3D1C7; background: #fff; color: #5f5e5a; cursor: pointer; transition: all 0.15s; }
+  .filter-btn:hover { border-color: #888780; }
+  .filter-btn.active { background: #1F4E79; color: #fff; border-color: #1F4E79; }
+  .svc-table { width: 100%; border-collapse: collapse; }
+  .svc-table thead th { font-size: 11px; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 14px; border-bottom: 0.5px solid #f0efe8; text-align: left; background: #fafaf8; }
+  .svc-table tbody td { padding: 10px 14px; border-bottom: 0.5px solid #f5f5f3; vertical-align: top; font-size: 12px; color: #5f5e5a; line-height: 1.5; }
+  .svc-table tbody tr:last-child td { border-bottom: none; }
+  .svc-table tbody tr:hover td { background: #fafaf8; }
+  .svc-table tbody tr.future td { opacity: 0.35; }
+  .svc-name { font-weight: 600; color: #1a1a18; font-size: 12px; }
+  .svc-name a { color: #1F4E79; text-decoration: none; }
+  .svc-name a:hover { text-decoration: underline; }
+  .svc-abbr { font-size: 11px; color: #888780; margin-top: 1px; }
+  .week-tag { display: inline-block; font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 4px; margin-top: 3px; }
+  .week-tag-done { background: #EAF3DE; color: #27500A; }
+  .week-tag-future { background: #F1EFE8; color: #888780; }
+  .course-use { font-size: 11px; color: #888780; margin-top: 3px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -443,6 +472,241 @@
     </div>
   </div>
 
+  <div class="week-card" style="margin-top:40px;">
+    <div class="week-header" onclick="toggleSvc()">
+      <span class="week-num" style="background:#444441;min-width:72px;">Services</span>
+      <span class="week-title">AWS Services Reference</span>
+      <span class="week-domain">All 12 weeks — revealed weekly</span>
+      <span class="week-chevron" id="svc-chev">▶</span>
+    </div>
+    <div class="week-body" id="svc-body">
+      <p style="font-size:13px;color:#5f5e5a;padding:12px 20px 4px;line-height:1.6;">New services revealed each week. Greyed-out rows are coming in future weeks. Filter by scope below.</p>
+  <div style="overflow:hidden;">
+
+    <div class="svc-legend">
+      <span style="font-size:11px;font-weight:600;color:#5f5e5a;">Scope:</span>
+      <div class="svc-legend-item"><span class="scope-pill scope-global">Global</span> Applies account-wide, no region selector</div>
+      <div class="svc-legend-item"><span class="scope-pill scope-regional">Regional</span> One instance per region</div>
+      <div class="svc-legend-item"><span class="scope-pill scope-az">AZ-specific</span> Bound to one availability zone</div>
+      <div class="svc-legend-item"><span class="special-pill root-only">root gate</span> Root must activate IAM access</div>
+      <div class="svc-legend-item"><span class="special-pill free-tier">free tier</span> Free tier available</div>
+      <div class="svc-legend-item"><span class="special-pill paid-only">paid</span> Costs begin after trial</div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterSvc('all',this)">All</button>
+      <button class="filter-btn" onclick="filterSvc('global',this)">Global</button>
+      <button class="filter-btn" onclick="filterSvc('regional',this)">Regional</button>
+      <button class="filter-btn" onclick="filterSvc('az',this)">AZ-specific</button>
+    </div>
+
+    <table class="svc-table">
+      <thead>
+        <tr>
+          <th style="width:180px">Service</th>
+          <th style="width:90px">Scope</th>
+          <th>Purpose</th>
+          <th>Used for in this course</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr data-scope="global" data-week="1">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/iam/" target="_blank">IAM</a></div><div class="svc-abbr">Identity &amp; Access Management</div><span class="week-tag week-tag-done">Week 1</span></td>
+          <td><span class="scope-pill scope-global">Global</span></td>
+          <td>Controls who can do what in your AWS account. Manages users, roles, groups, and policies. Applies across all regions.</td>
+          <td>Creating the IAM admin user. Week 8: implementing all 6 Photo Viewer roles.
+            <div class="course-use">Global — configured once, affects all regions.</div>
+          </td>
+        </tr>
+
+        <tr data-scope="global" data-week="1">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/aws-cost-management/aws-billing/" target="_blank">Billing</a></div><div class="svc-abbr">Billing and Cost Management</div><span class="special-pill root-only">root gate</span><br><span class="week-tag week-tag-done">Week 1</span></td>
+          <td><span class="scope-pill scope-global">Global</span></td>
+          <td>Aggregates all AWS usage charges across every region into one monthly bill. CloudWatch billing metrics published to us-east-1 only.</td>
+          <td>$10 CloudWatch billing alarm + $10 AWS Budget.
+            <div class="course-use">IAM users cannot access billing until root activates it in Account settings.</div>
+          </td>
+        </tr>
+
+        <tr data-scope="regional" data-week="1">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/cloudtrail/" target="_blank">CloudTrail</a></div><div class="svc-abbr">AWS CloudTrail</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-done">Week 1</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Records every API call in your account — who did what, when, from where. Your account's audit log.</td>
+          <td>photoviewer-trail configured all-regions from day one. Week 9: analyzing 8 weeks of real logs.
+            <div class="course-use">Regional service configured to collect globally into one S3 bucket.</div>
+          </td>
+        </tr>
+
+        <tr data-scope="regional" data-week="1">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/cloudwatch/" target="_blank">CloudWatch</a></div><div class="svc-abbr">Amazon CloudWatch</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-done">Week 1</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Monitors AWS resources. Collects metrics, creates alarms, and triggers automated responses.</td>
+          <td>Billing alarm in us-east-1 (Week 1). Lambda error alarms, structured log analysis (Week 6+).
+            <div class="course-use">Billing metrics only exist in us-east-1 — must switch regions to create billing alarm.</div>
+          </td>
+        </tr>
+
+        <tr data-scope="regional" data-week="2" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/s3/" target="_blank">S3</a></div><div class="svc-abbr">Simple Storage Service</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 2</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Object storage for files of any type. AWS automatically stores data across multiple AZs — no AZ selection needed.</td>
+          <td>Static Photo Viewer hosting. Photo storage in /assets and /uploads. CloudTrail log bucket.</td>
+        </tr>
+
+        <tr data-scope="global" data-week="3" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/cloudfront/" target="_blank">CloudFront</a></div><div class="svc-abbr">Amazon CloudFront</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><span class="scope-pill scope-global">Global</span></td>
+          <td>Content delivery network with 400+ edge locations. Caches content close to users globally.</td>
+          <td>Serving Photo Viewer content. Privatizing S3 via Origin Access Control (OAC).</td>
+        </tr>
+
+        <tr data-scope="az" data-week="3" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/ec2/" target="_blank">EC2</a></div><div class="svc-abbr">Elastic Compute Cloud</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><span class="scope-pill scope-az">AZ-specific</span></td>
+          <td>Virtual servers. Each instance runs in exactly one AZ determined by its subnet. You manage the OS.</td>
+          <td>Hosting the Photo Viewer frontend web server. Inspector scan target.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="3" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/vpc/" target="_blank">VPC</a></div><div class="svc-abbr">Virtual Private Cloud</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Software-defined private network. VPC spans the whole region. Subnets within a VPC are each pinned to one AZ.</td>
+          <td>Network boundary for EC2. Public subnet for web server.</td>
+        </tr>
+
+        <tr data-scope="global" data-week="3" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/route53/" target="_blank">Route 53</a></div><div class="svc-abbr">Amazon Route 53</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><span class="scope-pill scope-global">Global</span></td>
+          <td>DNS service. Routes internet traffic to your application. Health checks enable automatic failover.</td>
+          <td>Custom domain for Photo Viewer pointing to CloudFront.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="3" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/systems-manager/" target="_blank">Systems Manager</a></div><div class="svc-abbr">AWS Systems Manager</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Manages EC2 instances without SSH. Session Manager, patch baselines, run commands remotely.</td>
+          <td>Replacing SSH on EC2. Automated OS patching. Inspector integration.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="4" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/lambda/" target="_blank">Lambda</a></div><div class="svc-abbr">AWS Lambda</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Run code without managing servers. AWS runs functions across AZs automatically. PaaS — you manage code only.</td>
+          <td>Backend API: image listing, uploads, session validation, Rekognition integration.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="4" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/api-gateway/" target="_blank">API Gateway</a></div><div class="svc-abbr">Amazon API Gateway</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Creates and secures REST APIs. Handles throttling, JWT authentication, and usage plans.</td>
+          <td>REST endpoints for Photo Viewer. JWT Authorizer for token validation. Rate limiting.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="4" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><div class="svc-abbr">Amazon Inspector</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Automated CVE scanning for EC2 instances. References NIST NVD. Requires SSM Agent.</td>
+          <td>Scanning EC2 web server for CVEs. Verifying patch compliance after SSM patching.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="5" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><div class="svc-abbr">AWS Web Application Firewall</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 5</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Filters web traffic. Blocks SQLi, XSS, and rate-based attacks. Must be us-east-1 for CloudFront.</td>
+          <td>Rate-limiting /login. SQLi and XSS rules on CloudFront (Week 12).</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="6" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/dynamodb/" target="_blank">DynamoDB</a></div><div class="svc-abbr">Amazon DynamoDB</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 6</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Fully managed NoSQL database. AWS distributes across AZs automatically. TTL expires old records.</td>
+          <td>Server-side sessions with idle timeout. User accounts table with tier field.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="7" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/cognito/" target="_blank">Cognito</a></div><div class="svc-abbr">Amazon Cognito</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 7</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>User authentication. Supports Google, Apple, Facebook via Authorization Code + PKCE flow.</td>
+          <td>End-user login. Free vs premium tier. Social login via Google, Apple, Facebook.</td>
+        </tr>
+
+        <tr data-scope="global" data-week="8" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><div class="svc-abbr">AWS SSO</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 8</span></td>
+          <td><span class="scope-pill scope-global">Global</span></td>
+          <td>Single sign-on for employee access. Centralizes identity for multiple roles and accounts.</td>
+          <td>Employee login for 4 internal roles: infra admin, web dev, content employee, auditor.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="9" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/guardduty/" target="_blank">GuardDuty</a></div><div class="svc-abbr">Amazon GuardDuty</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 9</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Threat detection. Analyzes CloudTrail, VPC Flow Logs, and DNS logs for malicious activity.</td>
+          <td>Detecting credential exfiltration and suspicious API calls. Sample findings for lab.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="9" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/security-hub/" target="_blank">Security Hub</a></div><div class="svc-abbr">AWS Security Hub</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 9</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Unified security dashboard. Aggregates findings from GuardDuty, Inspector, Config, and Macie.</td>
+          <td>Unified findings view. Posture score comparison — Week 1 vs Week 12.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="9" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/secrets-manager/" target="_blank">Secrets Manager</a></div><div class="svc-abbr">AWS Secrets Manager</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 9</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Stores and rotates credentials and API keys. Replaces hardcoded values in application code.</td>
+          <td>Replacing hardcoded Lambda env vars with runtime secret retrieval.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="10" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/config/" target="_blank">AWS Config</a></div><div class="svc-abbr">AWS Config</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 10</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Continuously monitors resource configurations. Alerts when they drift from your security baseline.</td>
+          <td>Rules: S3 not public, EC2 managed by SSM, CloudTrail enabled.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="10" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/trustedadvisor/" target="_blank">Trusted Advisor</a></div><div class="svc-abbr">AWS Trusted Advisor</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 10</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Inspects your account for security, cost, and performance improvements.</td>
+          <td>Full account security review — flagging open ports, public buckets, IAM issues.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="11" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/kms/" target="_blank">KMS</a></div><div class="svc-abbr">Key Management Service</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 11</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Creates and manages encryption keys for S3, DynamoDB, EBS, and other services.</td>
+          <td>Encrypting S3 uploads bucket and DynamoDB users table with customer-managed keys.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="11" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><div class="svc-abbr">Amazon Macie</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 11</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>Machine learning discovery of PII and sensitive data in S3 buckets.</td>
+          <td>Scanning uploads bucket for PII in photo metadata and tags.</td>
+        </tr>
+
+        <tr data-scope="regional" data-week="11" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/rekognition/" target="_blank">Rekognition</a></div><div class="svc-abbr">Amazon Rekognition</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 11</span></td>
+          <td><span class="scope-pill scope-regional">Regional</span></td>
+          <td>AI image analysis. Detects unsafe content in photos. Runs in a separate account governed by SCP.</td>
+          <td>Auto-scanning uploaded photos. Auto-deleting unsafe images.</td>
+        </tr>
+
+        <tr data-scope="global" data-week="11" class="future">
+          <td><div class="svc-name"><a href="https://aws.amazon.com/organizations/" target="_blank">AWS Organizations</a></div><div class="svc-abbr">AWS Organizations</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 11</span></td>
+          <td><span class="scope-pill scope-global">Global</span></td>
+          <td>Manages multiple AWS accounts centrally. Service Control Policies restrict what accounts can do.</td>
+          <td>Creating second account for Rekognition. SCP denying all except Rekognition.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+    </div>
+  </div>
+
   <footer>
     CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
     <a href="https://github.com/chalasanisree-courses/aws-security-course"
@@ -457,6 +721,30 @@ function toggle(id) {
   const open = body.classList.contains('open');
   body.classList.toggle('open', !open);
   chev.textContent = open ? '▶' : '▼';
+}
+
+const currentWeek = 1;
+document.querySelectorAll('.svc-table tbody tr').forEach(row => {
+  const week = parseInt(row.getAttribute('data-week') || '0');
+  if (week <= currentWeek) { row.classList.remove('future'); }
+  else { row.classList.add('future'); }
+});
+
+function toggleSvc() {
+  const body = document.getElementById('svc-body');
+  const chev = document.getElementById('svc-chev');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  chev.textContent = open ? '▶' : '▼';
+}
+
+function filterSvc(scope, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.svc-table tbody tr').forEach(row => {
+    const rowScope = row.getAttribute('data-scope');
+    row.style.display = (scope !== 'all' && rowScope !== scope) ? 'none' : '';
+  });
 }
 </script>
 </body>
