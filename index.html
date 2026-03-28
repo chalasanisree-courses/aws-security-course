@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS 55D — Security in Amazon Web Services</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f5f5f3;
+    color: #1a1a18;
+    min-height: 100vh;
+    padding: 40px 16px;
+  }
+
+  .page { max-width: 860px; margin: 0 auto; }
+
+  .hero {
+    background: #1F4E79;
+    border-radius: 14px;
+    padding: 36px 40px;
+    margin-bottom: 32px;
+    color: #fff;
+  }
+
+  .hero .eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #85B7EB;
+    margin-bottom: 10px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+
+  .hero p {
+    font-size: 14px;
+    color: #B5D4F4;
+    line-height: 1.6;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888780;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 12px;
+    margin-top: 28px;
+  }
+
+  .week-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 0.5px solid rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .week-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .week-header:hover { background: #f9f9f7; }
+
+  .week-num {
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: #1F4E79;
+    border-radius: 6px;
+    padding: 3px 9px;
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .week-num.phase2 { background: #3B6D11; }
+
+  .week-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a18;
+  }
+
+  .week-domain {
+    font-size: 11px;
+    color: #888780;
+    white-space: nowrap;
+  }
+
+  .week-chevron {
+    font-size: 12px;
+    color: #888780;
+    transition: transform 0.2s;
+  }
+
+  .week-body {
+    display: none;
+    padding: 0 20px 16px 20px;
+    border-top: 0.5px solid #f0efe8;
+  }
+
+  .week-body.open { display: block; }
+
+  .week-desc {
+    font-size: 13px;
+    color: #5f5e5a;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    padding-top: 12px;
+  }
+
+  .resource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .resource-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #1F4E79;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 0.5px solid #B5D4F4;
+    background: #E6F1FB;
+    width: fit-content;
+    transition: background 0.15s;
+  }
+
+  .resource-link:hover { background: #B5D4F4; }
+
+  .resource-link .icon {
+    font-size: 14px;
+  }
+
+  .coming-soon {
+    font-size: 12px;
+    color: #B4B2A9;
+    font-style: italic;
+    padding: 4px 0;
+  }
+
+  .phase-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 12px;
+  }
+
+  .phase-divider span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5f5e5a;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .phase-divider hr {
+    flex: 1;
+    border: none;
+    border-top: 0.5px solid #D3D1C7;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: #888780;
+    margin-top: 40px;
+    padding-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">Foothill College &nbsp;·&nbsp; Computer Science</div>
+    <h1>CS 55D: Security in Amazon Web Services</h1>
+    <p>Building and securing a real AWS application from scratch — week by week.<br>
+       Each week adds a new capability and a new attack scenario.</p>
+  </div>
+
+  <div class="section-label">Course materials by week</div>
+
+  <div class="phase-divider">
+    <span>Phase 1 — User-visible security</span><hr>
+  </div>
+
+  <!-- Week 1 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w1')">
+      <span class="week-num">Week 1</span>
+      <span class="week-title">Course foundations + AWS account baseline</span>
+      <span class="week-domain">SCS-C03: D6</span>
+      <span class="week-chevron" id="w1-chev">▶</span>
+    </div>
+    <div class="week-body" id="w1">
+      <p class="week-desc">Well-Architected Framework, Shared Responsibility Model, CIA triad, AAA framework,
+         compliance frameworks overview. Account setup: MFA on root, billing alarm, CloudTrail.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week1-account-model.html">
+          <span class="icon">◈</span> AWS Account Authority Model — interactive diagram
+        </a>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 1 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 2 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w2')">
+      <span class="week-num">Week 2</span>
+      <span class="week-title">Stage 1 — Static S3 site + bucket security</span>
+      <span class="week-domain">SCS-C03: D5, D6</span>
+      <span class="week-chevron" id="w2-chev">▶</span>
+    </div>
+    <div class="week-body" id="w2">
+      <p class="week-desc">S3 security model, bucket policies, Block Public Access, ACLs, S3 encryption basics.
+         Deploy the first version of the Photo Viewer as a static site.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 2 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 3 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w3')">
+      <span class="week-num">Week 3</span>
+      <span class="week-title">Stage 2 — CloudFront + EC2 + VPC</span>
+      <span class="week-domain">SCS-C03: D3</span>
+      <span class="week-chevron" id="w3-chev">▶</span>
+    </div>
+    <div class="week-body" id="w3">
+      <p class="week-desc">CloudFront with OAC, EC2 hosting, VPC design, security groups, Systems Manager,
+         VPC Flow Logs, Route 53. IaaS vs PaaS security responsibilities.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 3 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 4 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w4')">
+      <span class="week-num">Week 4</span>
+      <span class="week-title">Stage 3 — Lambda + API Gateway</span>
+      <span class="week-domain">SCS-C03: D4, D3</span>
+      <span class="week-chevron" id="w4-chev">▶</span>
+    </div>
+    <div class="week-body" id="w4">
+      <p class="week-desc">Serverless backend, Lambda execution roles, least privilege S3 access,
+         API Gateway throttling. Inspector CVE scanning on EC2.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 4 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 5 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w5')">
+      <span class="week-num">Week 5</span>
+      <span class="week-title">Stages 4A/4B/5 — Authentication progression</span>
+      <span class="week-domain">SCS-C03: D4, D3</span>
+      <span class="week-chevron" id="w5-chev">▶</span>
+    </div>
+    <div class="week-body" id="w5">
+      <p class="week-desc">Google login, weak JWT validation, full cryptographic signature verification
+         via API Gateway JWT Authorizer. Token forgery attack demonstrated.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 5 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 6 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w6')">
+      <span class="week-num">Week 6</span>
+      <span class="week-title">Stage 6 — Session management + CloudWatch</span>
+      <span class="week-domain">SCS-C03: D4, D1</span>
+      <span class="week-chevron" id="w6-chev">▶</span>
+    </div>
+    <div class="week-body" id="w6">
+      <p class="week-desc">Server-side sessions in DynamoDB, HttpOnly/Secure/SameSite cookies,
+         idle and absolute timeout. Structured Lambda logging, CloudWatch alarms.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 6 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 7 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w7')">
+      <span class="week-num">Week 7</span>
+      <span class="week-title">Stages 7–8 — Cognito + app-level authorization</span>
+      <span class="week-domain">SCS-C03: D4, D3</span>
+      <span class="week-chevron" id="w7-chev">▶</span>
+    </div>
+    <div class="week-body" id="w7">
+      <p class="week-desc">Cognito User Pool, Authorization Code + PKCE, social logins,
+         free vs premium tiers enforced server-side. Client-side-only auth as attack vector.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 7 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-divider">
+    <span>Phase 2 — Infra &amp; admin-visible security</span><hr>
+  </div>
+
+  <!-- Week 8 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w8')">
+      <span class="week-num phase2">Week 8</span>
+      <span class="week-title">IAM role model — all 6 roles</span>
+      <span class="week-domain">SCS-C03: D4, D6</span>
+      <span class="week-chevron" id="w8-chev">▶</span>
+    </div>
+    <div class="week-body" id="w8">
+      <p class="week-desc">Move off root. Infra admin, web developer, content employee, compliance auditor,
+         app service role. IAM Identity Center SSO. MFA enforcement. Least privilege per role.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 8 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 9 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w9')">
+      <span class="week-num phase2">Week 9</span>
+      <span class="week-title">Observability — CloudTrail, GuardDuty, Security Hub, Secrets Manager</span>
+      <span class="week-domain">SCS-C03: D1, D2</span>
+      <span class="week-chevron" id="w9-chev">▶</span>
+    </div>
+    <div class="week-body" id="w9">
+      <p class="week-desc">Query 8 weeks of real CloudTrail logs. GuardDuty threat detection and sample findings.
+         Security Hub unified dashboard. Secrets Manager replaces hardcoded Lambda env vars.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 9 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 10 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w10')">
+      <span class="week-num phase2">Week 10</span>
+      <span class="week-title">Config + Systems Manager + vulnerability assessment</span>
+      <span class="week-domain">SCS-C03: D1, D6</span>
+      <span class="week-chevron" id="w10-chev">▶</span>
+    </div>
+    <div class="week-body" id="w10">
+      <p class="week-desc">AWS Config rules for continuous compliance. SSM patch management on EC2.
+         Inspector CVE findings before and after patching. Trusted Advisor full account review.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 10 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 11 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w11')">
+      <span class="week-num phase2">Week 11</span>
+      <span class="week-title">KMS encryption + Macie + WAF + content moderation</span>
+      <span class="week-domain">SCS-C03: D5, D3</span>
+      <span class="week-chevron" id="w11-chev">▶</span>
+    </div>
+    <div class="week-body" id="w11">
+      <p class="week-desc">Customer-managed KMS keys, S3 and DynamoDB encryption. Macie PII detection.
+         Rekognition cross-account with SCP. WAF managed rules and rate limiting on CloudFront.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ Diagrams — coming soon</span>
+        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <span class="coming-soon">▸ Week 11 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 12 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w12')">
+      <span class="week-num phase2">Week 12</span>
+      <span class="week-title">Incident response synthesis + final posture review</span>
+      <span class="week-domain">SCS-C03: D2, D1, D6</span>
+      <span class="week-chevron" id="w12-chev">▶</span>
+    </div>
+    <div class="week-body" id="w12">
+      <p class="week-desc">No new services. Students select two prior attack scenarios and write a formal
+         IR report using ASFF structure. Full Security Hub posture review — Week 12 vs Week 1. Final exam.</p>
+      <div class="resource-list">
+        <span class="coming-soon">▸ IR report template — coming soon</span>
+        <span class="coming-soon">▸ Week 12 Lab — Canvas (see course LMS)</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+    <a href="https://github.com/chalasanisree-courses/aws-security-course"
+       style="color:#888780;">GitHub repository</a>
+  </footer>
+
+</div>
+<script>
+function toggle(id) {
+  const body = document.getElementById(id);
+  const chev = document.getElementById(id + '-chev');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  chev.textContent = open ? '▶' : '▼';
+}
+</script>
+</body>
+</html>
