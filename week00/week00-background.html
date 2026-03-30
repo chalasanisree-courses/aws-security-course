@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Foundations — CS 55D Background</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 32px 16px; }
+  .page { max-width: 860px; margin: 0 auto; }
+  .breadcrumb { font-size: 12px; color: #888780; margin-bottom: 16px; }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb span { margin: 0 6px; }
+  h1 { font-size: 26px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
+  .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 24px; line-height: 1.6; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 17px; font-weight: 600; color: #1a1a18; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 0.5px solid #f0efe8; }
+  .card p { font-size: 13px; color: #5f5e5a; line-height: 1.7; margin-bottom: 10px; }
+  .card p:last-child { margin-bottom: 0; }
+  .card ul { font-size: 13px; color: #5f5e5a; line-height: 1.7; padding-left: 18px; margin-bottom: 10px; }
+  .card ul li { margin-bottom: 4px; }
+  .objectives { background: #E6F1FB; border-radius: 12px; border: 0.5px solid #B5D4F4; padding: 20px 24px; margin-bottom: 20px; }
+  .objectives h2 { font-size: 13px; font-weight: 600; color: #0C447C; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .objectives ul { list-style: none; padding: 0; }
+  .objectives ul li { font-size: 13px; color: #185FA5; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .objectives ul li::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #378ADD; margin-top: 6px; flex-shrink: 0; }
+  .diagram-card { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 24px; margin-bottom: 20px; }
+  .diagram-card h2 { font-size: 17px; font-weight: 600; color: #1a1a18; margin-bottom: 6px; }
+  .diagram-card .diagram-sub { font-size: 12px; color: #888780; margin-bottom: 16px; }
+  .info-panel { background: #f9f9f7; border-radius: 8px; border: 0.5px solid #e8e7e0; padding: 16px 18px; margin-top: 16px; min-height: 80px; }
+  .info-panel h3 { font-size: 14px; font-weight: 600; color: #1a1a18; margin-bottom: 6px; }
+  .info-panel p { font-size: 13px; color: #5f5e5a; line-height: 1.65; margin-bottom: 8px; }
+  .info-panel ul { font-size: 13px; color: #5f5e5a; line-height: 1.7; padding-left: 18px; margin-top: 4px; }
+  .info-panel .placeholder { font-size: 13px; color: #B4B2A9; font-style: italic; }
+  .info-panel .aws-tag { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: #EAF3DE; color: #27500A; margin: 4px 4px 0 0; }
+  .clickable-box { cursor: pointer; border-radius: 10px; padding: 20px; transition: opacity 0.15s, transform 0.1s; border: 0.5px solid transparent; }
+  .clickable-box:hover { opacity: 0.88; transform: translateY(-1px); }
+  .clickable-box.active { border-color: currentColor; }
+  .box-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 4px; }
+  .box-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 4px; }
+  .box-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 4px; }
+  .box-label { font-size: 13px; font-weight: 600; margin-top: 8px; }
+  .box-sub { font-size: 11px; margin-top: 4px; line-height: 1.4; }
+  .callout { border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; font-size: 13px; line-height: 1.65; }
+  .callout-info    { background: #E6F1FB; color: #0C447C; border-left: 3px solid #185FA5; }
+  .callout-warning { background: #FAEEDA; color: #633806; border-left: 3px solid #854F0B; }
+  .callout-success { background: #EAF3DE; color: #27500A; border-left: 3px solid #3B6D11; }
+  .callout strong  { font-weight: 600; }
+  .srm-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  .srm-table th { font-size: 11px; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 0.5px solid #e8e7e0; text-align: left; }
+  .srm-table td { padding: 8px 12px; border-bottom: 0.5px solid #f0efe8; vertical-align: top; line-height: 1.5; }
+  .srm-table tr:last-child td { border-bottom: none; }
+  .srm-table td:first-child { font-weight: 600; color: #1a1a18; white-space: nowrap; }
+  .aws-cell { background: #EAF3DE; color: #27500A; }
+  .cust-cell { background: #FAECE7; color: #712B13; }
+  .shared-cell { background: #FAEEDA; color: #633806; }
+  .compliance-card { border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: opacity 0.15s; margin-bottom: 10px; }
+  .compliance-card:hover { opacity: 0.88; }
+  .compliance-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .compliance-card .compliance-body { font-size: 13px; line-height: 1.6; margin-top: 10px; display: none; }
+  .compliance-card.open .compliance-body { display: block; }
+  .compliance-chevron { float: right; font-size: 12px; }
+  .pillar-card { border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: opacity 0.15s; margin-bottom: 10px; }
+  .pillar-card:hover { opacity: 0.88; }
+  .pillar-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .pillar-card .pillar-sub { font-size: 11px; margin-bottom: 0; }
+  .pillar-card .pillar-body { font-size: 13px; line-height: 1.6; margin-top: 10px; display: none; }
+  .pillar-card.open .pillar-body { display: block; }
+  .pillar-chevron { float: right; font-size: 12px; }
+  .nav-links { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .nav-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 16px; border-radius: 8px; border: 0.5px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .nav-link:hover { background: #B5D4F4; }
+  .nav-link.home { background: #1F4E79; color: #fff; border-color: #1F4E79; }
+  .nav-link.home:hover { background: #0C447C; }
+  footer { text-align: center; font-size: 12px; color: #888780; margin-top: 32px; padding-bottom: 16px; }
+  footer a { color: #888780; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="breadcrumb">
+    <a href="../index.html">CS 55D Home</a><span>›</span>Background — Security Foundations
+  </div>
+
+  <h1>Security Foundations</h1>
+  <p class="subtitle">Core concepts that underpin everything in this course. These frameworks apply to every AWS service you will use — return to this page whenever you want a refresher.</p>
+
+  <div class="objectives">
+    <h2>What this page covers</h2>
+    <ul>
+      <li>CIA triad — the three goals every security control is designed to protect</li>
+      <li>AAA framework — how identity, access, and accountability work together</li>
+      <li>AWS Shared Responsibility Model — who is responsible for what</li>
+      <li>Compliance frameworks — HIPAA, PCI DSS, ISO 27001, GDPR</li>
+      <li>AWS Well-Architected Framework — the five pillars of cloud architecture</li>
+    </ul>
+  </div>
+
+  <!-- ── CIA TRIAD ──────────────────────────────────────────────── -->
+  <div class="diagram-card">
+    <h2>1. The CIA Triad</h2>
+    <div class="diagram-sub">Every security control exists to protect one or more of these three properties. Click each one to see what it means and how it applies to the Photo Viewer.</div>
+
+    <div class="box-grid-3">
+      <div class="clickable-box" id="cia-c" onclick="showCIA('c')"
+           style="background:#E6F1FB; color:#0C447C;">
+        <div style="font-size:28px;">🔒</div>
+        <div class="box-label">Confidentiality</div>
+        <div class="box-sub">Data is accessible only to those authorized to see it</div>
+      </div>
+      <div class="clickable-box" id="cia-i" onclick="showCIA('i')"
+           style="background:#EAF3DE; color:#27500A;">
+        <div style="font-size:28px;">✅</div>
+        <div class="box-label">Integrity</div>
+        <div class="box-sub">Data is accurate and has not been tampered with</div>
+      </div>
+      <div class="clickable-box" id="cia-a" onclick="showCIA('a')"
+           style="background:#FAEEDA; color:#633806;">
+        <div style="font-size:28px;">⚡</div>
+        <div class="box-label">Availability</div>
+        <div class="box-sub">Data and services are accessible when needed</div>
+      </div>
+    </div>
+
+    <div class="info-panel" id="cia-panel">
+      <p class="placeholder">Click a property above to learn more.</p>
+    </div>
+  </div>
+
+  <!-- ── AAA FRAMEWORK ─────────────────────────────────────────── -->
+  <div class="diagram-card">
+    <h2>2. The AAA Framework</h2>
+    <div class="diagram-sub">Authentication, Authorization, and Accounting work together to control and track access. Click each one.</div>
+
+    <div class="box-grid-3">
+      <div class="clickable-box" id="aaa-authn" onclick="showAAA('authn')"
+           style="background:#EEEDFE; color:#3C3489;">
+        <div style="font-size:28px;">🪪</div>
+        <div class="box-label">Authentication</div>
+        <div class="box-sub">Who are you? Prove it.</div>
+      </div>
+      <div class="clickable-box" id="aaa-authz" onclick="showAAA('authz')"
+           style="background:#E1F5EE; color:#085041;">
+        <div style="font-size:28px;">🚦</div>
+        <div class="box-label">Authorization</div>
+        <div class="box-sub">What are you allowed to do?</div>
+      </div>
+      <div class="clickable-box" id="aaa-acct" onclick="showAAA('acct')"
+           style="background:#FAECE7; color:#712B13;">
+        <div style="font-size:28px;">📋</div>
+        <div class="box-label">Accounting</div>
+        <div class="box-sub">What did you do, and when?</div>
+      </div>
+    </div>
+
+    <div class="info-panel" id="aaa-panel">
+      <p class="placeholder">Click a component above to learn more.</p>
+    </div>
+  </div>
+
+  <!-- ── SHARED RESPONSIBILITY MODEL ──────────────────────────── -->
+  <div class="diagram-card">
+    <h2>3. AWS Shared Responsibility Model</h2>
+    <div class="diagram-sub">AWS is responsible for security <em>of</em> the cloud. You are responsible for security <em>in</em> the cloud. The boundary shifts depending on the service type — click a row to understand what that means in practice.</div>
+
+    <table class="srm-table" id="srm-table">
+      <thead>
+        <tr>
+          <th style="width:120px">Service type</th>
+          <th style="width:80px">Example</th>
+          <th>AWS is responsible for</th>
+          <th>You are responsible for</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="clickable" onclick="showSRM('iaas')" style="cursor:pointer;">
+          <td>IaaS</td>
+          <td>EC2</td>
+          <td class="aws-cell">Physical hardware, hypervisor, network infrastructure, host OS</td>
+          <td class="cust-cell">Guest OS patching, application security, firewall rules, IAM, data encryption</td>
+        </tr>
+        <tr class="clickable" onclick="showSRM('paas')" style="cursor:pointer;">
+          <td>PaaS</td>
+          <td>Lambda, RDS</td>
+          <td class="aws-cell">Hardware, OS, runtime patching, scaling, high availability</td>
+          <td class="cust-cell">Application code, IAM roles, data encryption, network controls</td>
+        </tr>
+        <tr class="clickable" onclick="showSRM('saas')" style="cursor:pointer;">
+          <td>SaaS / Managed</td>
+          <td>S3, DynamoDB, Cognito</td>
+          <td class="aws-cell">Infrastructure, durability, availability, service-level security</td>
+          <td class="cust-cell">Access control (bucket policies, IAM), encryption configuration, data classification</td>
+        </tr>
+        <tr class="clickable" onclick="showSRM('global')" style="cursor:pointer;">
+          <td>Global services</td>
+          <td>IAM, CloudFront</td>
+          <td class="aws-cell">Global infrastructure, service availability</td>
+          <td class="cust-cell">Policy design, least privilege, MFA enforcement, all configuration</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-panel" id="srm-panel">
+      <p class="placeholder">Click a row above to understand the responsibility boundary for that service type.</p>
+    </div>
+
+    <div class="callout callout-info" style="margin-top:16px;">
+      <strong>The key insight:</strong> As you move from IaaS to PaaS to managed services, AWS takes on more infrastructure responsibility — but you always retain responsibility for identity, access control, and data protection. No AWS service manages your IAM policies or encryption keys for you.
+    </div>
+  </div>
+
+  <!-- ── COMPLIANCE FRAMEWORKS ─────────────────────────────────── -->
+  <div class="card">
+    <h2>4. Compliance Frameworks</h2>
+    <p>Compliance is not the same as security. Security is about reducing risk. Compliance is about demonstrating to a third party that you meet a defined standard. A system can be compliant but insecure, and secure but non-compliant. In practice, compliance frameworks provide a useful baseline of controls — but the goal is always genuine security, not just a checkbox.</p>
+    <p>Click a framework to expand it.</p>
+
+    <div class="compliance-card" id="cf-hipaa" onclick="toggleCompliance('hipaa')"
+         style="background:#EBF3FB; color:#0C447C;">
+      <span class="compliance-chevron" id="chev-hipaa">▶</span>
+      <h3>HIPAA — Health Insurance Portability and Accountability Act</h3>
+      <div class="compliance-body" id="body-hipaa">
+        <p><strong>Who it applies to:</strong> Any organization handling Protected Health Information (PHI) — medical records, health data, insurance claims. Healthcare providers, insurers, and their business associates.</p>
+        <p><strong>Key requirements:</strong> Access controls on PHI, audit logging of who accessed what, encryption of PHI at rest and in transit, breach notification within 72 hours.</p>
+        <p><strong>Relevant AWS services:</strong></p>
+        <span class="aws-tag">CloudTrail</span><span class="aws-tag">KMS</span><span class="aws-tag">IAM</span><span class="aws-tag">CloudWatch</span><span class="aws-tag">Macie</span>
+        <p style="margin-top:10px;"><strong>In the Photo Viewer context:</strong> If photos contained medical imagery or patient data, HIPAA would require encryption at rest (KMS), audit logging of every access (CloudTrail data events), and strict access controls (IAM + Cognito).</p>
+      </div>
+    </div>
+
+    <div class="compliance-card" id="cf-pci" onclick="toggleCompliance('pci')"
+         style="background:#EAF3DE; color:#27500A;">
+      <span class="compliance-chevron" id="chev-pci">▶</span>
+      <h3>PCI DSS — Payment Card Industry Data Security Standard</h3>
+      <div class="compliance-body" id="body-pci">
+        <p><strong>Who it applies to:</strong> Any organization that stores, processes, or transmits cardholder data — payment processors, e-commerce sites, retailers.</p>
+        <p><strong>Key requirements:</strong> Network segmentation to isolate cardholder data, no storage of full card numbers, encryption in transit (TLS 1.2+), quarterly vulnerability scans, annual penetration testing, MFA for all administrative access.</p>
+        <p><strong>Relevant AWS services:</strong></p>
+        <span class="aws-tag">VPC</span><span class="aws-tag">WAF</span><span class="aws-tag">CloudTrail</span><span class="aws-tag">Inspector</span><span class="aws-tag">KMS</span><span class="aws-tag">Security Hub</span>
+        <p style="margin-top:10px;"><strong>In the Photo Viewer context:</strong> If the app processed payments for premium upgrades, PCI DSS would require the payment processing to be network-isolated in a private VPC subnet, TLS enforced via CloudFront, and quarterly scans via Inspector.</p>
+      </div>
+    </div>
+
+    <div class="compliance-card" id="cf-iso" onclick="toggleCompliance('iso')"
+         style="background:#FAEEDA; color:#633806;">
+      <span class="compliance-chevron" id="chev-iso">▶</span>
+      <h3>ISO 27001 — Information Security Management System</h3>
+      <div class="compliance-body" id="body-iso">
+        <p><strong>Who it applies to:</strong> Any organization seeking to demonstrate a systematic approach to information security management. Commonly required in enterprise procurement and government contracts.</p>
+        <p><strong>Key requirements:</strong> Risk assessment and treatment, security policies and procedures, access control policy, incident response plan, business continuity planning, regular internal audits.</p>
+        <p><strong>Relevant AWS services:</strong></p>
+        <span class="aws-tag">AWS Config</span><span class="aws-tag">Security Hub</span><span class="aws-tag">CloudTrail</span><span class="aws-tag">IAM</span><span class="aws-tag">Organizations</span>
+        <p style="margin-top:10px;"><strong>In the Photo Viewer context:</strong> ISO 27001 would require formal access control policies (covered by IAM role model), continuous monitoring (Config + Security Hub), and documented incident response procedures (ASFF + IR report from Week 12).</p>
+      </div>
+    </div>
+
+    <div class="compliance-card" id="cf-gdpr" onclick="toggleCompliance('gdpr')"
+         style="background:#FCEBEB; color:#791F1F;">
+      <span class="compliance-chevron" id="chev-gdpr">▶</span>
+      <h3>GDPR — General Data Protection Regulation</h3>
+      <div class="compliance-body" id="body-gdpr">
+        <p><strong>Who it applies to:</strong> Any organization processing personal data of EU residents, regardless of where the organization is based.</p>
+        <p><strong>Key requirements:</strong> Lawful basis for processing personal data, right to access/erasure/portability, data minimization, privacy by design, breach notification within 72 hours, Data Protection Impact Assessment for high-risk processing.</p>
+        <p><strong>Relevant AWS services:</strong></p>
+        <span class="aws-tag">Macie</span><span class="aws-tag">KMS</span><span class="aws-tag">CloudTrail</span><span class="aws-tag">S3</span><span class="aws-tag">Cognito</span>
+        <p style="margin-top:10px;"><strong>In the Photo Viewer context:</strong> Photos may contain faces — personal data under GDPR. Macie would detect PII in metadata. S3 bucket region selection matters for data residency. Cognito handles right-to-erasure for user accounts. CloudTrail provides the audit trail required for breach notification.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-warning" style="margin-top:8px;">
+      <strong>Compliance vs security:</strong> AWS can be compliant with all of these frameworks — and AWS holds certifications for many of them. But certification applies to AWS's infrastructure, not to your application. You inherit AWS's compliance posture for the infrastructure layer, but you must implement the controls for your application layer yourself.
+    </div>
+  </div>
+
+  <!-- ── WELL-ARCHITECTED FRAMEWORK ────────────────────────────── -->
+  <div class="card">
+    <h2>5. AWS Well-Architected Framework</h2>
+    <p>The Well-Architected Framework is AWS's set of design principles for building cloud systems. It has five pillars. Security is one of them — but good security also depends on the others. Click a pillar to expand it. The Security pillar is the focus of this course.</p>
+
+    <div class="pillar-card" id="pillar-sec" onclick="togglePillar('sec')"
+         style="background:#FCEBEB; color:#791F1F;">
+      <span class="pillar-chevron" id="chev-sec">▶</span>
+      <h3>🔐 Security — course focus</h3>
+      <div class="pillar-sub">Protect information, systems, and assets</div>
+      <div class="pillar-body" id="body-sec">
+        <p>The security pillar covers how to protect data, systems, and assets while delivering business value through risk assessment and mitigation strategies.</p>
+        <p><strong>Design principles:</strong></p>
+        <ul>
+          <li>Implement a strong identity foundation — least privilege, no long-term credentials</li>
+          <li>Enable traceability — audit logs for all actions and changes</li>
+          <li>Apply security at every layer — edge, VPC, compute, application, data</li>
+          <li>Automate security best practices — use policy as code</li>
+          <li>Protect data in transit and at rest</li>
+          <li>Keep people away from data — reduce direct access, use automation</li>
+          <li>Prepare for security events — incident response plans and simulations</li>
+        </ul>
+        <p style="margin-top:8px;"><strong>This course covers every one of these principles</strong> through the Photo Viewer application build.</p>
+      </div>
+    </div>
+
+    <div class="pillar-card" id="pillar-ops" onclick="togglePillar('ops')"
+         style="background:#E6F1FB; color:#0C447C;">
+      <span class="pillar-chevron" id="chev-ops">▶</span>
+      <h3>⚙️ Operational Excellence</h3>
+      <div class="pillar-sub">Run and monitor systems to deliver business value</div>
+      <div class="pillar-body" id="body-ops">
+        <p>Operational excellence focuses on running workloads effectively, gaining insights into operations, and continuously improving processes. Key practices include infrastructure as code, runbooks, and automated responses to operational events.</p>
+        <p><strong>Relevant to this course:</strong> CloudTrail event logging, CloudWatch alarms and automated responses, Systems Manager for patch automation.</p>
+      </div>
+    </div>
+
+    <div class="pillar-card" id="pillar-rel" onclick="togglePillar('rel')"
+         style="background:#EAF3DE; color:#27500A;">
+      <span class="pillar-chevron" id="chev-rel">▶</span>
+      <h3>🔄 Reliability</h3>
+      <div class="pillar-sub">Recover from failures and meet demand</div>
+      <div class="pillar-body" id="body-rel">
+        <p>Reliability covers the ability of a workload to perform its intended function correctly and consistently, including the ability to recover from failures. Availability zones and multi-region deployments are the primary mechanisms.</p>
+        <p><strong>Relevant to this course:</strong> S3 is automatically multi-AZ within a region. DynamoDB replicates across AZs. Understanding AZ vs regional vs global resilience — covered in Week 1.</p>
+      </div>
+    </div>
+
+    <div class="pillar-card" id="pillar-perf" onclick="togglePillar('perf')"
+         style="background:#FAEEDA; color:#633806;">
+      <span class="pillar-chevron" id="chev-perf">▶</span>
+      <h3>⚡ Performance Efficiency</h3>
+      <div class="pillar-sub">Use resources efficiently at any scale</div>
+      <div class="pillar-body" id="body-perf">
+        <p>Performance efficiency focuses on using computing resources efficiently to meet system requirements, and maintaining that efficiency as demand changes and technologies evolve.</p>
+        <p><strong>Relevant to this course:</strong> CloudFront edge caching reduces latency for users worldwide — one of the three problems with Stage 1 that CloudFront fixes in Week 3.</p>
+      </div>
+    </div>
+
+    <div class="pillar-card" id="pillar-cost" onclick="togglePillar('cost')"
+         style="background:#EEEDFE; color:#3C3489;">
+      <span class="pillar-chevron" id="chev-cost">▶</span>
+      <h3>💰 Cost Optimization</h3>
+      <div class="pillar-sub">Avoid unnecessary costs</div>
+      <div class="pillar-body" id="body-cost">
+        <p>Cost optimization focuses on avoiding unnecessary costs by understanding spending over time and controlling fund allocation, selecting the right resource types and quantities, and scaling to meet business needs without overspending.</p>
+        <p><strong>Relevant to this course:</strong> CloudWatch billing alarm and AWS Budgets — set up in Week 1 before any resources are created. Disabling CloudTrail data events after demos to avoid ongoing charges.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-success" style="margin-top:8px;">
+      <strong>AWS added a sixth pillar in 2022:</strong> Sustainability — minimizing the environmental impact of cloud workloads. It covers selecting efficient regions, right-sizing resources, and preferring managed services over self-managed infrastructure.
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a class="nav-link home" href="../index.html">← Course home</a>
+    <a class="nav-link" href="week1-global-infrastructure.html">Next: AWS Global Infrastructure →</a>
+  </div>
+
+  <footer>
+    CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+    <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+  </footer>
+
+</div>
+<script>
+
+// ── CIA Triad ────────────────────────────────────────────────────
+const ciaData = {
+  c: {
+    title: 'Confidentiality — keeping data private',
+    body: 'Confidentiality means data is accessible only to those authorized to see it. It is violated when unauthorized parties can read, view, or exfiltrate data.',
+    examples: [
+      'A public S3 bucket exposes confidential.txt to anyone on the internet — a confidentiality violation.',
+      'An IAM policy that is too permissive allows one user to read another user\'s photos.',
+      'An unencrypted database means anyone who gains physical access to the storage can read the data.'
+    ],
+    aws: ['IAM', 'S3 Block Public Access', 'KMS encryption', 'Cognito', 'VPC private subnets'],
+    photoviewer: 'In the Photo Viewer: premium photos should only be visible to premium users. A public S3 bucket with no access control is a confidentiality failure — anyone can see everything.'
+  },
+  i: {
+    title: 'Integrity — ensuring data is accurate and unmodified',
+    body: 'Integrity means data has not been tampered with — accidentally or maliciously. It covers both the data itself and the audit trail recording what happened to it.',
+    examples: [
+      'An attacker modifies a photo after it is uploaded — the stored version no longer matches the original.',
+      'A CloudTrail log file is deleted or modified to cover up an attack.',
+      'A JWT token is forged to impersonate another user — the authentication data lacks integrity.'
+    ],
+    aws: ['CloudTrail log file validation', 'S3 Object Lock', 'KMS (ensures encrypted data detects tampering)', 'JWT signature verification'],
+    photoviewer: 'In the Photo Viewer: CloudTrail log file validation ensures the audit trail cannot be modified. JWT signature verification ensures authentication tokens cannot be forged.'
+  },
+  a: {
+    title: 'Availability — services are accessible when needed',
+    body: 'Availability means systems and data are accessible when legitimate users need them. It is violated by outages, DDoS attacks, ransomware, or misconfiguration that locks out authorized users.',
+    examples: [
+      'A DDoS attack floods the CloudFront distribution and makes the Photo Viewer inaccessible.',
+      'An S3 bucket policy is misconfigured to deny all access — authorized users are locked out.',
+      'A single-AZ EC2 instance goes down when the AZ experiences an outage.'
+    ],
+    aws: ['CloudFront (DDoS mitigation via AWS Shield)', 'WAF rate limiting', 'Multi-AZ architecture', 'S3 (automatic multi-AZ)', 'Route 53 health checks'],
+    photoviewer: 'In the Photo Viewer: CloudFront with AWS Shield protects against DDoS. S3 is automatically available across multiple AZs — a single data center failure does not affect availability.'
+  }
+};
+
+function showCIA(key) {
+  const d = ciaData[key];
+  document.getElementById('cia-panel').innerHTML = `
+    <h3>${d.title}</h3>
+    <p>${d.body}</p>
+    <p style="margin-top:8px;font-weight:600;font-size:12px;color:#888780;">EXAMPLES OF VIOLATIONS</p>
+    <ul>${d.examples.map(e => `<li>${e}</li>`).join('')}</ul>
+    <p style="margin-top:10px;font-weight:600;font-size:12px;color:#888780;">AWS CONTROLS</p>
+    <div style="margin-top:4px;">${d.aws.map(s => `<span class="aws-tag">${s}</span>`).join('')}</div>
+    <p style="margin-top:10px;font-size:12px;color:#5f5e5a;font-style:italic;">${d.photoviewer}</p>
+  `;
+}
+
+// ── AAA Framework ────────────────────────────────────────────────
+const aaaData = {
+  authn: {
+    title: 'Authentication — proving identity',
+    body: 'Authentication is the process of verifying that someone is who they claim to be. It answers the question: "Who are you?" The most common factor is a password, but strong authentication requires multiple factors.',
+    points: [
+      'Something you know — password, PIN',
+      'Something you have — MFA token, hardware key, authenticator app',
+      'Something you are — biometric (fingerprint, face)'
+    ],
+    aws: ['IAM (username + password + MFA)', 'Cognito (social login, PKCE)', 'IAM Identity Center (SSO)', 'AWS STS (temporary credentials)'],
+    photoviewer: 'Root account uses MFA (something you know + something you have). End users authenticate via Cognito with Google login. Employees authenticate via IAM Identity Center SSO.'
+  },
+  authz: {
+    title: 'Authorization — controlling what is permitted',
+    body: 'Authorization happens after authentication. Once a system knows who you are, it determines what you are allowed to do. Authorization answers: "What can you do?" The principle of least privilege says you should only be authorized to do exactly what your role requires.',
+    points: [
+      'A premium user can upload photos — a free user cannot',
+      'The web developer role can deploy to S3 /webfiles — not to /assets',
+      'The compliance auditor can read all objects — but not write or delete'
+    ],
+    aws: ['IAM policies (identity-based)', 'S3 bucket policies (resource-based)', 'Cognito app client settings', 'API Gateway authorizers'],
+    photoviewer: 'The 6-role IAM model is entirely an authorization design. Each role has exactly the permissions needed for its function — no more.'
+  },
+  acct: {
+    title: 'Accounting — recording what happened',
+    body: 'Accounting (also called auditing) is the record of who did what and when. It is the evidence layer — used for forensics, compliance, and detecting anomalies. Without accounting, you cannot investigate an incident or prove compliance.',
+    points: [
+      'CloudTrail records every API call — who made it, from where, and when',
+      'CloudWatch logs application events and metrics over time',
+      'GuardDuty analyzes logs to detect suspicious patterns',
+      'Security Hub aggregates findings from all log sources'
+    ],
+    aws: ['CloudTrail (API-level accounting)', 'CloudWatch Logs (application-level)', 'VPC Flow Logs (network-level)', 'GuardDuty (behavioral analysis)', 'Security Hub'],
+    photoviewer: 'CloudTrail is enabled from day one — before any application code is written. By Week 11, students query weeks of real accounting data to reconstruct an attack timeline.'
+  }
+};
+
+function showAAA(key) {
+  const d = aaaData[key];
+  document.getElementById('aaa-panel').innerHTML = `
+    <h3>${d.title}</h3>
+    <p>${d.body}</p>
+    <p style="margin-top:8px;font-weight:600;font-size:12px;color:#888780;">IN THE PHOTO VIEWER</p>
+    <ul>${d.points.map(p => `<li>${p}</li>`).join('')}</ul>
+    <p style="margin-top:10px;font-weight:600;font-size:12px;color:#888780;">AWS SERVICES</p>
+    <div style="margin-top:4px;">${d.aws.map(s => `<span class="aws-tag">${s}</span>`).join('')}</div>
+    <p style="margin-top:10px;font-size:12px;color:#5f5e5a;font-style:italic;">${d.photoviewer}</p>
+  `;
+}
+
+// ── Shared Responsibility Model ──────────────────────────────────
+const srmData = {
+  iaas: {
+    title: 'IaaS — Infrastructure as a Service (e.g. EC2)',
+    body: 'With IaaS you rent virtual hardware. AWS manages the physical servers, the hypervisor, and the network infrastructure. You manage everything above the hypervisor — the operating system, your applications, your data, and all security configuration.',
+    aws: 'Physical data centers and hardware, Nitro Hypervisor, network fabric, AZ isolation',
+    customer: 'Guest OS patching and hardening, application security, security groups and NACLs, IAM policies, encryption of data at rest and in transit, monitoring and logging',
+    insight: 'EC2 is the highest customer responsibility service. You own the OS — which means you own OS-level vulnerabilities, misconfigurations, and patching. AWS Inspector helps you find those vulnerabilities, but fixing them is your job.'
+  },
+  paas: {
+    title: 'PaaS — Platform as a Service (e.g. Lambda, RDS)',
+    body: 'With PaaS, AWS manages the operating system and runtime. For Lambda, AWS patches the execution environment. For RDS, AWS manages the database engine. You focus on your code and data.',
+    aws: 'Hardware, OS, runtime environment, patching, scaling, high availability infrastructure',
+    customer: 'Application code security, IAM execution roles and permissions, data encryption configuration, network controls (VPC placement, security groups), input validation',
+    insight: 'Lambda shifts OS patching responsibility to AWS — but you still own the code running inside it. A vulnerable NPM package in your Lambda function is your responsibility, not AWS\'s.'
+  },
+  saas: {
+    title: 'Managed Services (e.g. S3, DynamoDB, Cognito)',
+    body: 'Fully managed services abstract the most infrastructure. AWS handles durability, availability, and service-level security. You configure how the service behaves.',
+    aws: 'All infrastructure, data durability (S3: 11 nines), automatic multi-AZ replication, service-level security patches',
+    customer: 'Access control (bucket policies, IAM, resource policies), encryption configuration (SSE-S3 vs SSE-KMS), data classification and sensitivity, compliance controls',
+    insight: 'S3 encrypts data at rest by default — AWS\'s responsibility. But whether that bucket is publicly accessible is entirely your configuration decision. The biggest S3 breaches in history were not AWS failures; they were misconfigured bucket policies.'
+  },
+  global: {
+    title: 'Global Services (e.g. IAM, CloudFront)',
+    body: 'Global services have no region selector. They operate across your entire account. AWS ensures the service is globally available — you design every policy, permission, and configuration within it.',
+    aws: 'Global service availability, infrastructure redundancy, service-level security',
+    customer: 'Every policy, permission, and configuration — IAM policies, permission boundaries, MFA enforcement, CloudFront behaviors, WAF rules',
+    insight: 'IAM is entirely your responsibility to design correctly. AWS provides the service and enforces the policies you write — but writing those policies correctly, following least privilege, and enforcing MFA are all your decisions.'
+  }
+};
+
+function showSRM(key) {
+  const d = srmData[key];
+  document.getElementById('srm-panel').innerHTML = `
+    <h3>${d.title}</h3>
+    <p>${d.body}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+      <div style="background:#EAF3DE;border-radius:6px;padding:10px 12px;">
+        <p style="font-size:11px;font-weight:600;color:#27500A;margin-bottom:6px;">AWS RESPONSIBLE FOR</p>
+        <p style="font-size:12px;color:#3B6D11;">${d.aws}</p>
+      </div>
+      <div style="background:#FAECE7;border-radius:6px;padding:10px 12px;">
+        <p style="font-size:11px;font-weight:600;color:#712B13;margin-bottom:6px;">YOU ARE RESPONSIBLE FOR</p>
+        <p style="font-size:12px;color:#993C1D;">${d.customer}</p>
+      </div>
+    </div>
+    <p style="margin-top:10px;font-size:12px;color:#5f5e5a;font-style:italic;">${d.insight}</p>
+  `;
+}
+
+// ── Compliance frameworks ────────────────────────────────────────
+function toggleCompliance(key) {
+  const card = document.getElementById('cf-' + key);
+  const body = document.getElementById('body-' + key);
+  const chev = document.getElementById('chev-' + key);
+  const isOpen = card.classList.contains('open');
+  // close all
+  ['hipaa','pci','iso','gdpr'].forEach(k => {
+    document.getElementById('cf-' + k).classList.remove('open');
+    document.getElementById('body-' + k).style.display = 'none';
+    document.getElementById('chev-' + k).textContent = '▶';
+  });
+  if (!isOpen) {
+    card.classList.add('open');
+    body.style.display = 'block';
+    chev.textContent = '▼';
+  }
+}
+
+// ── Well-Architected pillars ─────────────────────────────────────
+function togglePillar(key) {
+  const card = document.getElementById('pillar-' + key);
+  const body = document.getElementById('body-' + key);
+  const chev = document.getElementById('chev-' + key);
+  const isOpen = card.classList.contains('open');
+  ['sec','ops','rel','perf','cost'].forEach(k => {
+    document.getElementById('pillar-' + k).classList.remove('open');
+    document.getElementById('body-' + k).style.display = 'none';
+    document.getElementById('chev-' + k).textContent = '▶';
+  });
+  if (!isOpen) {
+    card.classList.add('open');
+    body.style.display = 'block';
+    chev.textContent = '▼';
+  }
+}
+</script>
+</body>
+</html>
