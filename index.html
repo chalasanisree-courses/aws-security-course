@@ -272,8 +272,12 @@
       <p class="week-desc">S3 security model, bucket policies, Block Public Access, ACLs, S3 encryption basics.
          Deploy the first version of the Photo Viewer as a static site.</p>
       <div class="resource-list">
-        <span class="coming-soon">▸ Diagrams — coming soon</span>
-        <span class="coming-soon">▸ Demo video — coming soon</span>
+        <a class="resource-link" href="week02/week2-s3-security.html">
+          <span class="icon">◈</span> S3 Object Storage and Security — concept notes
+        </a>
+        <span class="coming-soon">▸ Concept video — coming soon</span>
+        <span class="coming-soon">▸ Setup demo video — coming soon</span>
+        <span class="coming-soon">▸ Attack demo video — coming soon</span>
         <span class="coming-soon">▸ Week 2 Lab — Canvas (see course LMS)</span>
       </div>
     </div>
@@ -723,7 +727,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 1;
+const currentWeek = 2;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }
