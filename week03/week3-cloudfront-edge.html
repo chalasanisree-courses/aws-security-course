@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudFront and Edge Security — CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+  .breadcrumb a { color: #0066cc; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb span { margin: 0 0.4rem; color: #999; }
+
+  /* Page header */
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    color: #111;
+  }
+  .subtitle {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid #e8e8e8;
+    padding-bottom: 1.5rem;
+  }
+
+  /* Section headings */
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+    color: #111;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #e8e8e8;
+  }
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.8rem 0 0.6rem;
+    color: #222;
+  }
+
+  /* Learning objectives */
+  .objectives {
+    background: #f8f9fa;
+    border-left: 4px solid #0066cc;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 0 6px 6px 0;
+  }
+  .objectives ul {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+  .objectives li {
+    margin-bottom: 0.4rem;
+    color: #333;
+  }
+
+  /* Body text */
+  p { margin-bottom: 1rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: #f0f0f0;
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: #c7254e;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2rem 0 1.5rem;
+    font-size: 0.95rem;
+  }
+  th {
+    background: #f0f4f8;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #d0d8e0;
+  }
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e8e8e8;
+    vertical-align: top;
+    color: #444;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  /* Callout boxes */
+  .callout {
+    border-left: 4px solid #e8a000;
+    background: #fffbf0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .callout.info {
+    border-color: #0066cc;
+    background: #f0f6ff;
+  }
+  .callout.success {
+    border-color: #28a745;
+    background: #f0fff4;
+  }
+  .callout.danger {
+    border-color: #dc3545;
+    background: #fff5f5;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ── Interactive: clickable issue cards ── */
+  .issue-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .issue-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    background: #fafafa;
+    user-select: none;
+  }
+  .issue-card:hover { border-color: #0066cc; background: #f0f6ff; }
+  .issue-card.active { border-color: #0066cc; background: #e8f0fc; }
+  .issue-card .icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .issue-card .issue-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
+    margin-bottom: 0.3rem;
+  }
+  .issue-card .issue-title { font-weight: 600; font-size: 0.95rem; color: #222; }
+  .issue-card .issue-sub { font-size: 0.82rem; color: #666; margin-top: 0.3rem; }
+  .issue-panel {
+    display: none;
+    background: #f8faff;
+    border: 1px solid #c8d8f0;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 0.5rem;
+  }
+  .issue-panel.active { display: block; }
+  .issue-panel h4 { margin-bottom: 0.5rem; color: #0055aa; }
+
+  /* ── Interactive: request flow diagram ── */
+  .flow-diagram {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    justify-content: center;
+    flex-wrap: nowrap;
+    min-width: 600px;
+  }
+  .flow-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .flow-node:hover { transform: translateY(-2px); }
+  .flow-node .node-box {
+    width: 100px;
+    padding: 0.6rem 0.4rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .flow-node.browser .node-box { background: #e8f4f8; border-color: #5bc0de; color: #1a6a80; }
+  .flow-node.cf .node-box { background: #fff3cd; border-color: #f0ad4e; color: #7a5000; }
+  .flow-node.s3 .node-box { background: #d4edda; border-color: #5cb85c; color: #1a5c2a; }
+  .flow-node .node-label { font-size: 0.72rem; color: #888; margin-top: 0.3rem; }
+  .flow-arrow {
+    font-size: 1.4rem;
+    color: #aaa;
+    margin: 0 0.3rem;
+    flex-shrink: 0;
+    padding-bottom: 1.2rem;
+  }
+  .flow-info {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    min-height: 2rem;
+  }
+  .flow-step-num {
+    display: inline-block;
+    background: #0066cc;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    margin-bottom: 0.3rem;
+  }
+
+  /* ── Interactive: expandable policy sections ── */
+  .policy-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    overflow: hidden;
+  }
+  .policy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.2rem;
+    cursor: pointer;
+    background: #fafafa;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .policy-header:hover { background: #f0f4f8; }
+  .policy-header.active { background: #e8f0fc; }
+  .policy-header-left { display: flex; align-items: center; gap: 0.8rem; }
+  .policy-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2em 0.6em;
+    border-radius: 4px;
+    background: #e0e8f0;
+    color: #335577;
+  }
+  .policy-name { font-weight: 600; font-size: 0.95rem; color: #222; }
+  .policy-desc { font-size: 0.85rem; color: #777; margin-left: auto; margin-right: 1rem; }
+  .policy-chevron { color: #aaa; font-size: 0.9rem; transition: transform 0.2s; }
+  .policy-header.active .policy-chevron { transform: rotate(180deg); }
+  .policy-body {
+    display: none;
+    padding: 1rem 1.2rem 1.2rem;
+    border-top: 1px solid #e8e8e8;
+    background: #fff;
+  }
+  .policy-body.active { display: block; }
+  .policy-body p:last-child { margin-bottom: 0; }
+
+  /* ── OAC two-part diagram ── */
+  .oac-diagram {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.2rem 0;
+  }
+  .oac-box {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    background: #fafafa;
+  }
+  .oac-box h4 { font-size: 0.9rem; color: #0055aa; margin-bottom: 0.5rem; }
+  .oac-box p { font-size: 0.88rem; color: #444; margin-bottom: 0; }
+
+  /* Before/After table */
+  .comparison-table th:nth-child(2) { background: #fff5f5; color: #8b0000; }
+  .comparison-table th:nth-child(3) { background: #f0fff4; color: #155724; }
+  .comparison-table td:nth-child(2) { background: #fffafa; color: #666; }
+  .comparison-table td:nth-child(3) { background: #fafffe; color: #333; font-weight: 500; }
+
+  /* Code block */
+  pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1.2rem 1.4rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    overflow-x: auto;
+    margin: 1rem 0 1.5rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw { color: #569cd6; }
+  .str { color: #ce9178; }
+  .cm { color: #6a9955; }
+  .num { color: #b5cea8; }
+
+  /* Footer nav */
+  .page-nav {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.9rem;
+  }
+  .page-nav a { color: #0066cc; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+
+  /* Footer */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.82rem;
+    color: #999;
+    text-align: center;
+  }
+  footer a { color: #0066cc; text-decoration: none; }
+
+  /* Hint text */
+  .hint { font-size: 0.82rem; color: #999; font-style: italic; margin-bottom: 1rem; }
+
+  @media (max-width: 600px) {
+    .issue-grid { grid-template-columns: 1fr; }
+    .oac-diagram { grid-template-columns: 1fr; }
+    .flow-steps { min-width: 500px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="breadcrumb">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
+  <span>›</span>
+  Week 3
+  <span>›</span>
+  CloudFront and Edge Security
+</div>
+
+<h1>CloudFront and Edge Security</h1>
+<p class="subtitle">How Amazon CloudFront fixes the three Stage 1 vulnerabilities — and the additional controls that make the edge a real security boundary.</p>
+
+<div class="objectives">
+  <strong>Learning objectives</strong>
+  <ul>
+    <li>Explain what a CDN is and how CloudFront caches content at the edge</li>
+    <li>Describe what Origin Access Control does and why it's needed</li>
+    <li>Explain the difference between the S3 REST endpoint and the S3 website endpoint</li>
+    <li>Describe why bucket enumeration is structurally impossible through CloudFront</li>
+    <li>Explain how CloudFront Functions enforce an allowlist at the viewer request stage</li>
+    <li>Describe what CloudFront policies control and where each one sits in the request flow</li>
+    <li>Identify what Strict-Transport-Security does and when it matters</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. The three Stage 1 problems</h2>
+
+<p>Stage 1 hosted the Photo Viewer directly from S3 static website hosting. That introduced three problems. Click each one to understand the impact.</p>
+
+<p class="hint">Click each card to expand</p>
+
+<div class="issue-grid">
+  <div class="issue-card" onclick="toggleIssue(1)">
+    <div class="icon">🔓</div>
+    <div class="issue-num">Issue 1</div>
+    <div class="issue-title">HTTP only</div>
+    <div class="issue-sub">No TLS encryption in transit</div>
+  </div>
+  <div class="issue-card" onclick="toggleIssue(2)">
+    <div class="icon">🪣</div>
+    <div class="issue-num">Issue 2</div>
+    <div class="issue-title">Public bucket</div>
+    <div class="issue-sub">Non-web files exposed</div>
+  </div>
+  <div class="issue-card" onclick="toggleIssue(3)">
+    <div class="icon">🌍</div>
+    <div class="issue-num">Issue 3</div>
+    <div class="issue-title">No caching</div>
+    <div class="issue-sub">Every request hits us-east-1</div>
+  </div>
+</div>
+
+<div class="issue-panel" id="issue-1">
+  <h4>Issue 1 — HTTP only</h4>
+  <p>The S3 static website endpoint (<code>http://bucket.s3-website-us-east-1.amazonaws.com</code>) is HTTP only. There is no TLS support at this endpoint — you cannot enable HTTPS on it. All content is served in plaintext, which means anyone on the same network can read the data in transit. This is called a man-in-the-middle attack. For a purely public photo gallery it may seem low-risk, but the same pattern carries forward into later stages where users will submit credentials and upload private photos.</p>
+</div>
+<div class="issue-panel" id="issue-2">
+  <h4>Issue 2 — Public bucket</h4>
+  <p>For S3 static website hosting to work, Block Public Access must be disabled and a bucket policy must grant <code>s3:GetObject</code> and <code>s3:ListBucket</code> to <code>Principal: *</code>. That means every file in the bucket — not just the web files — is publicly accessible. In Stage 1 we deliberately placed <code>confidential.txt</code> in the bucket to demonstrate this. Anyone who knows the path can read it. And because <code>s3:ListBucket</code> was granted, anyone can enumerate the bucket with <code>aws s3 ls --no-sign-request</code> to discover files they didn't know existed.</p>
+</div>
+<div class="issue-panel" id="issue-3">
+  <h4>Issue 3 — No caching</h4>
+  <p>The S3 bucket lives in <code>us-east-1</code> (Northern Virginia). Every request — from every user, from every location — travels all the way to us-east-1 and back. For a small static site with tiny image files this is tolerable. But for any real application serving users globally, this round-trip latency is unacceptable. There is no edge caching, no regional serving, no way to bring content closer to users.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. What CloudFront is</h2>
+
+<p>CloudFront is Amazon's content delivery network — a globally distributed cache with over 400 edge locations worldwide. When you put CloudFront in front of an origin (in our case, S3), requests are served from the edge location nearest to the user rather than always hitting the origin.</p>
+
+<h3>The request flow</h3>
+<p class="hint">Click each node to see what happens at that step</p>
+
+<div class="flow-diagram">
+  <div class="flow-steps">
+    <div class="flow-node browser" onclick="showFlow(1)">
+      <div class="flow-step-num">1</div>
+      <div class="node-box">Browser</div>
+      <div class="node-label">User's device</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node cf" onclick="showFlow(2)">
+      <div class="flow-step-num">2</div>
+      <div class="node-box">CloudFront edge</div>
+      <div class="node-label">Nearest POP</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node cf" onclick="showFlow(3)">
+      <div class="flow-step-num">3</div>
+      <div class="node-box">Cache check</div>
+      <div class="node-label">Hit or miss?</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node s3" onclick="showFlow(4)">
+      <div class="flow-step-num">4</div>
+      <div class="node-box">S3 origin</div>
+      <div class="node-label">REST endpoint</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-node cf" onclick="showFlow(5)">
+      <div class="flow-step-num">5</div>
+      <div class="node-box">Cache + serve</div>
+      <div class="node-label">Store &amp; return</div>
+    </div>
+  </div>
+  <div class="flow-info" id="flow-info">Click any node to see what happens at that step.</div>
+</div>
+
+<h3>REST endpoint vs website endpoint</h3>
+
+<p>CloudFront talks to S3 using the <strong>REST endpoint</strong>, not the static website endpoint used in Stage 1.</p>
+
+<table>
+  <tr>
+    <th>Endpoint type</th>
+    <th>Format</th>
+    <th>TLS support</th>
+    <th>Used for</th>
+  </tr>
+  <tr>
+    <td><strong>Website endpoint</strong></td>
+    <td><code>bucket.s3-website-region.amazonaws.com</code></td>
+    <td>No — HTTP only</td>
+    <td>Stage 1 static hosting. Requires public access.</td>
+  </tr>
+  <tr>
+    <td><strong>REST endpoint</strong></td>
+    <td><code>bucket.s3.region.amazonaws.com</code></td>
+    <td>Yes — TLS always</td>
+    <td>CloudFront + OAC. Works with private buckets.</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  <p><strong>Why this matters for OAC:</strong> Origin Access Control signs requests using AWS Signature Version 4. SigV4 only works against the REST API — the website endpoint does not support authenticated requests. This is why when you create a CloudFront distribution with S3, the console shows two entries for your bucket and you must pick the REST endpoint, not the website URL.</p>
+</div>
+
+<h3>Bucket enumeration is structurally impossible through CloudFront</h3>
+
+<p>Users accessing the Photo Viewer through CloudFront can never enumerate the S3 bucket — not because of a policy restriction, but because of how CloudFront works. CloudFront only issues <code>GetObject</code> requests for specific keys. There is no HTTP operation that translates to <code>s3:ListBucket</code>. The S3 API operation that lists bucket contents cannot be triggered through an HTTP request to CloudFront — it simply doesn't exist at that layer.</p>
+
+<p>This means <code>aws s3 ls --no-sign-request</code> — which worked in Stage 1 — fails in Stage 2 regardless of bucket policy, because that tool talks directly to the S3 API, which is now locked by OAC.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. Origin Access Control (OAC)</h2>
+
+<p>Adding CloudFront in front of S3 does not automatically make S3 private. If the bucket is still public, users can bypass CloudFront entirely and hit the S3 REST endpoint directly. OAC solves this.</p>
+
+<p><strong>OAC — Origin Access Control</strong> — is a CloudFront feature that does two things simultaneously:</p>
+
+<div class="oac-diagram">
+  <div class="oac-box">
+    <h4>Part 1 — Request signing</h4>
+    <p>CloudFront signs every request it sends to S3 using AWS Signature Version 4. S3 can verify the signature proves the request is genuinely from your specific CloudFront distribution — not someone else faking it.</p>
+  </div>
+  <div class="oac-box">
+    <h4>Part 2 — Bucket policy update</h4>
+    <p>The S3 bucket policy is updated to only allow <code>s3:GetObject</code> requests where the signature matches your specific CloudFront distribution ARN. Every other request — direct S3 URL, CLI, any other tool — gets 403.</p>
+  </div>
+</div>
+
+<p>Neither part works without the other. Signing without the restrictive bucket policy means S3 still accepts unsigned requests. A restrictive bucket policy without signing means CloudFront can't read anything. Both must be configured together.</p>
+
+<div class="callout success">
+  <p><strong>In the new AWS console:</strong> When you check "Allow private S3 bucket access to CloudFront — Recommended" during distribution creation, AWS creates the OAC and writes the bucket policy automatically. In the old console, these were separate manual steps.</p>
+</div>
+
+<h3>The OAC bucket policy</h3>
+<p>The policy CloudFront generates looks like this. The key line is the <code>Condition</code> — it restricts access to one specific CloudFront distribution by ARN, not just any CloudFront distribution.</p>
+
+<pre><code>{
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+    <span class="str">"Principal"</span>: {
+      <span class="str">"Service"</span>: <span class="str">"cloudfront.amazonaws.com"</span>
+    },
+    <span class="str">"Action"</span>: <span class="str">"s3:GetObject"</span>,
+    <span class="str">"Resource"</span>: <span class="str">"arn:aws:s3:::your-bucket/*"</span>,
+    <span class="str">"Condition"</span>: {
+      <span class="str">"StringEquals"</span>: {
+        <span class="str">"AWS:SourceArn"</span>: <span class="str">"arn:aws:cloudfront::ACCOUNT_ID:distribution/DIST_ID"</span>
+      }
+    }
+  }]
+}</code></pre>
+
+<h3>What OAC does not fix</h3>
+
+<p>OAC controls <em>who</em> can talk to S3 — it does not control <em>what CloudFront will serve</em>. If a user knows the path <code>/confidential.txt</code> and requests it through CloudFront, CloudFront will fetch it from S3 and serve it. OAC fixed the direct S3 access attack. It did not fix the path-based access attack through CloudFront. That requires a CloudFront Function.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. CloudFront Functions</h2>
+
+<p>A CloudFront Function is a small piece of JavaScript that runs at the edge at the <strong>viewer request</strong> stage — before CloudFront checks its cache or contacts the origin. It can inspect the incoming request and return a response immediately, without the request ever reaching S3.</p>
+
+<h3>The allowlist function</h3>
+
+<p>For the Photo Viewer we write an allowlist function — it defines exactly which file types are permitted. Anything not on the list returns 403 at the edge.</p>
+
+<pre><code><span class="kw">function</span> handler(event) {
+    <span class="kw">var</span> uri = event.request.uri;
+
+    <span class="cm">// Allow the root path — CloudFront serves index.html via default root object</span>
+    <span class="cm">// Allow only .html, .js, .css, and .jpg files — regardless of folder depth</span>
+    <span class="kw">var</span> allowed = <span class="str">/\.(html|js|css|jpg)$/i</span>;
+
+    <span class="kw">if</span> (uri === <span class="str">'/'</span> || allowed.test(uri)) {
+        <span class="kw">return</span> event.request;
+    }
+
+    <span class="cm">// Everything else — .txt, .env, .zip, any unknown extension — is blocked</span>
+    <span class="kw">return</span> {
+        statusCode: <span class="num">403</span>,
+        statusDescription: <span class="str">'Forbidden'</span>
+    };
+}</code></pre>
+
+<p><strong>Allowlist vs blocklist:</strong> An allowlist defines exactly what is permitted and blocks everything else. A blocklist defines what is blocked and permits everything else. Allowlists are more secure because they don't require you to anticipate every possible attack. If you forget to block one file type, a blocklist fails open — an allowlist fails closed.</p>
+
+<div class="callout">
+  <p><strong>Where it runs:</strong> The function is attached to the distribution behavior as a <strong>Viewer Request</strong> function. This means it runs at the edge, before cache lookup. A request for <code>confidential.txt</code> is blocked at the nearest CloudFront POP — it never reaches the cache, never reaches S3.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. CloudFront policies</h2>
+
+<p>CloudFront has three types of policies that attach to different parts of the request-response flow. Understanding where each one sits explains what it can and cannot control.</p>
+
+<p class="hint">Click each policy to expand</p>
+
+<div id="policies">
+
+  <div class="policy-item">
+    <div class="policy-header" onclick="togglePolicy(1)">
+      <div class="policy-header-left">
+        <span class="policy-tag">Viewer</span>
+        <span class="policy-name">Viewer Protocol Policy</span>
+      </div>
+      <span class="policy-desc">Controls browser ↔ CloudFront connection</span>
+      <span class="policy-chevron">▼</span>
+    </div>
+    <div class="policy-body" id="policy-1">
+      <p>Tells CloudFront how to handle the connection between the browser and the edge. Three options: allow both HTTP and HTTPS, redirect HTTP to HTTPS automatically, or require HTTPS only and reject HTTP entirely.</p>
+      <p>For the Photo Viewer we use <strong>Redirect HTTP to HTTPS</strong>. If a user types <code>http://</code>, CloudFront catches the request at the edge and returns a 301 redirect to the HTTPS version. The browser then re-requests over HTTPS. The redirect itself is unencrypted — that brief window is addressed by Strict-Transport-Security (see Response Headers Policy below).</p>
+      <p>This is a native CloudFront setting, not a function or WAF rule — it requires no code.</p>
+    </div>
+  </div>
+
+  <div class="policy-item">
+    <div class="policy-header" onclick="togglePolicy(2)">
+      <div class="policy-header-left">
+        <span class="policy-tag">Cache</span>
+        <span class="policy-name">Cache Policy</span>
+      </div>
+      <span class="policy-desc">Controls what CloudFront stores and for how long</span>
+      <span class="policy-chevron">▼</span>
+    </div>
+    <div class="policy-body" id="policy-2">
+      <p>Controls what CloudFront stores at the edge and for how long — reducing origin requests and improving performance. The key setting is TTL (Time To Live) — how long a cached object is considered fresh before CloudFront goes back to S3 for a new copy.</p>
+      <p><strong>Security relevance:</strong> TTL affects how quickly a security fix propagates. If you patch a vulnerability in a file and the TTL is 24 hours, the old cached version is still being served globally for up to 24 hours. Use invalidations (<code>/*</code>) to force immediate cache clearing after security-relevant changes.</p>
+      <p>For the Photo Viewer we use the AWS managed <strong>CachingOptimized</strong> policy, which is the recommended default for S3 origins.</p>
+    </div>
+  </div>
+
+  <div class="policy-item">
+    <div class="policy-header" onclick="togglePolicy(3)">
+      <div class="policy-header-left">
+        <span class="policy-tag">Origin</span>
+        <span class="policy-name">Origin Request Policy</span>
+      </div>
+      <span class="policy-desc">Controls what CloudFront forwards to S3</span>
+      <span class="policy-chevron">▼</span>
+    </div>
+    <div class="policy-body" id="policy-3">
+      <p>When CloudFront has a cache miss and needs to fetch content from S3, it constructs an origin request. The Origin Request Policy controls exactly which headers, cookies, and query strings from the user's request are included in that origin request.</p>
+      <p><strong>Security relevance:</strong> Query strings and headers can carry malicious payloads. An attacker can craft a URL with injected code in the query string, hoping it reaches a vulnerable backend. By forwarding only what the origin actually needs — and stripping everything else — you reduce the attack surface. This is the least-privilege principle applied to HTTP request forwarding.</p>
+      <p><strong>For Stage 2:</strong> S3 ignores query strings, so the security benefit is limited right now. This becomes important in Week 4 when API Gateway and Lambda become the origin — those services do process query strings and headers.</p>
+    </div>
+  </div>
+
+  <div class="policy-item">
+    <div class="policy-header" onclick="togglePolicy(4)">
+      <div class="policy-header-left">
+        <span class="policy-tag">Response</span>
+        <span class="policy-name">Response Headers Policy</span>
+      </div>
+      <span class="policy-desc">Adds security headers to every browser response</span>
+      <span class="policy-chevron">▼</span>
+    </div>
+    <div class="policy-body" id="policy-4">
+      <p>Adds HTTP security headers to every response CloudFront sends to the browser — improving security posture without touching application code. AWS provides a managed <strong>SecurityHeadersPolicy</strong> that includes the most important headers.</p>
+
+      <table>
+        <tr>
+          <th>Header</th>
+          <th>What it does</th>
+          <th>Defends against</th>
+        </tr>
+        <tr>
+          <td><code>Strict-Transport-Security</code></td>
+          <td>After first visit, browser always upgrades to HTTPS internally — never sends an HTTP request</td>
+          <td>Man-in-the-middle on the HTTP→HTTPS redirect window</td>
+        </tr>
+        <tr>
+          <td><code>X-Frame-Options</code></td>
+          <td>Prevents the page from being embedded in an <code>&lt;iframe&gt;</code> on another domain</td>
+          <td>Clickjacking — tricking users into clicking invisible UI elements</td>
+        </tr>
+        <tr>
+          <td><code>X-Content-Type-Options</code></td>
+          <td>Tells the browser not to guess the file type — trust the Content-Type header exactly</td>
+          <td>MIME sniffing — browser executing a <code>.jpg</code> that contains JavaScript</td>
+        </tr>
+      </table>
+
+      <div class="callout info" style="margin-top:1rem">
+        <p><strong>Strict-Transport-Security and login pages:</strong> For a purely static site, HSTS has limited practical impact — there are no credentials to steal. But in Week 5 when we add a login page, HSTS becomes critical. A user on a coffee-shop WiFi who types <code>http://</code> could have their username and password intercepted in that brief HTTP window before CloudFront redirects them. HSTS eliminates that window by making the browser skip HTTP entirely after the first visit. We add it now as infrastructure baseline.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>6. Where each control sits in the request flow</h2>
+
+<p>The diagram below shows which CloudFront control applies at each stage of a request. Understanding this prevents a common confusion — students often assume OAC and the CF function do the same thing.</p>
+
+<div class="flow-diagram">
+  <table style="width:100%; font-size:0.88rem; border-collapse:collapse;">
+    <tr>
+      <th style="width:20%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">Stage</th>
+      <th style="width:30%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">What runs here</th>
+      <th style="width:50%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">What it controls</th>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; border:1px solid #dde; font-weight:600;">Viewer Request</td>
+      <td style="padding:0.6rem; border:1px solid #dde;"><strong>CF Function</strong> (allowlist)</td>
+      <td style="padding:0.6rem; border:1px solid #dde;">Blocks non-web file types before cache or origin. <code>confidential.txt</code> → 403 here.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; border:1px solid #dde; font-weight:600;">Protocol</td>
+      <td style="padding:0.6rem; border:1px solid #dde;"><strong>Viewer Protocol Policy</strong></td>
+      <td style="padding:0.6rem; border:1px solid #dde;">HTTP → HTTPS redirect. Happens before any content is served.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; border:1px solid #dde; font-weight:600;">Cache</td>
+      <td style="padding:0.6rem; border:1px solid #dde;"><strong>Cache Policy</strong></td>
+      <td style="padding:0.6rem; border:1px solid #dde;">TTL, cache key. Cache hit → serve immediately, no origin request.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; border:1px solid #dde; font-weight:600;">Origin Request</td>
+      <td style="padding:0.6rem; border:1px solid #dde;"><strong>OAC</strong> + Origin Request Policy</td>
+      <td style="padding:0.6rem; border:1px solid #dde;">OAC signs request with CloudFront identity. Origin Request Policy strips unnecessary headers/cookies.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; border:1px solid #dde; font-weight:600;">S3 bucket</td>
+      <td style="padding:0.6rem; border:1px solid #dde;"><strong>OAC bucket policy</strong></td>
+      <td style="padding:0.6rem; border:1px solid #dde;">Only allows requests signed by your specific CloudFront distribution. All other callers → 403.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; border:1px solid #dde; font-weight:600;">Viewer Response</td>
+      <td style="padding:0.6rem; border:1px solid #dde;"><strong>Response Headers Policy</strong></td>
+      <td style="padding:0.6rem; border:1px solid #dde;">Adds HSTS, X-Frame-Options, X-Content-Type-Options to every response.</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>7. Stage 1 vs Stage 2 — what changed</h2>
+
+<table class="comparison-table">
+  <tr>
+    <th></th>
+    <th>Stage 1</th>
+    <th>Stage 2</th>
+  </tr>
+  <tr>
+    <td><strong>Protocol</strong></td>
+    <td>HTTP only — S3 website endpoint has no TLS</td>
+    <td>HTTPS enforced — CloudFront redirects HTTP automatically</td>
+  </tr>
+  <tr>
+    <td><strong>Bucket access</strong></td>
+    <td>Public — Block Public Access disabled, <code>Principal: *</code> policy</td>
+    <td>Private — OAC bucket policy, only CloudFront distribution can read</td>
+  </tr>
+  <tr>
+    <td><strong>Bucket enumeration</strong></td>
+    <td>Possible — <code>aws s3 ls --no-sign-request</code> works</td>
+    <td>Blocked — structurally impossible through CloudFront, and bucket is private</td>
+  </tr>
+  <tr>
+    <td><strong>Non-web files</strong></td>
+    <td>Accessible if path known — <code>confidential.txt</code> readable</td>
+    <td>Blocked — CF function allowlist returns 403 at the edge</td>
+  </tr>
+  <tr>
+    <td><strong>Performance</strong></td>
+    <td>Every request travels to us-east-1</td>
+    <td>Cached at 400+ edge locations globally</td>
+  </tr>
+  <tr>
+    <td><strong>Security headers</strong></td>
+    <td>None</td>
+    <td>HSTS, X-Frame-Options, X-Content-Type-Options on every response</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>8. Geo-restriction</h2>
+
+<p>CloudFront has a built-in geo-restriction feature that blocks or allows requests based on the geographic location of the user's IP address. This is a native CloudFront setting — no WAF, no function, no extra cost.</p>
+
+<p>Two modes: <strong>allowlist</strong> (only listed countries can access) and <strong>blocklist</strong> (listed countries are blocked, everyone else can access). Blocked requests receive a 403 response at the nearest edge location — they never reach your origin.</p>
+
+<p>The control sits in the distribution's Security tab → CloudFront geographic restrictions. It applies to the entire distribution — you cannot restrict one path differently from another using this feature alone. For path-level geo-restriction, a CloudFront Function is needed.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>9. Cache invalidation</h2>
+
+<p>When you update content in S3 — new photos, updated CSS, patched JavaScript — CloudFront edge caches may still serve the old version until the TTL expires. To force immediate refresh, you create an <strong>invalidation</strong>.</p>
+
+<p>An invalidation tells CloudFront to purge matching objects from all edge caches globally. Use <code>/*</code> to invalidate everything, or specify individual paths like <code>/app.js</code> for targeted invalidation.</p>
+
+<div class="callout">
+  <p><strong>Always invalidate after security changes.</strong> If you update a CloudFront Function, attach a new policy, or patch a file in S3, create a <code>/*</code> invalidation immediately. Otherwise stale cached content continues to be served — including any previously cached responses that don't include your new security headers or function behavior.</p>
+</div>
+
+<div class="page-nav">
+  <div>
+    <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
+  </div>
+  <div>
+    <a href="https://chalasanisree-courses.github.io/aws-security-course/week02/week2-s3-security.html">← Week 2: S3 Security</a>
+  </div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+<script>
+// Issue cards
+function toggleIssue(n) {
+  const panel = document.getElementById('issue-' + n);
+  const cards = document.querySelectorAll('.issue-card');
+  const panels = document.querySelectorAll('.issue-panel');
+  const card = cards[n - 1];
+  const isActive = panel.classList.contains('active');
+
+  panels.forEach(p => p.classList.remove('active'));
+  cards.forEach(c => c.classList.remove('active'));
+
+  if (!isActive) {
+    panel.classList.add('active');
+    card.classList.add('active');
+  }
+}
+
+// Flow diagram
+const flowText = {
+  1: 'The browser sends an HTTPS request to the nearest CloudFront edge location — not to S3 directly.',
+  2: 'CloudFront receives the request at the nearest of its 400+ global edge locations. The CF Function runs here at the Viewer Request stage — checking the allowlist before anything else.',
+  3: 'CloudFront checks its local cache for the requested object. Cache hit → served immediately, no origin request. Cache miss → proceed to origin.',
+  4: 'CloudFront sends a signed request to S3 via the REST endpoint. OAC adds the SigV4 signature. S3 verifies it matches the allowed CloudFront distribution ARN and returns the object.',
+  5: 'CloudFront stores the object in its edge cache (per the Cache Policy TTL), adds the Response Headers Policy headers (HSTS, X-Frame-Options etc.), and returns the response to the browser.'
+};
+
+function showFlow(n) {
+  document.getElementById('flow-info').textContent = flowText[n];
+}
+
+// Policies
+function togglePolicy(n) {
+  const body = document.getElementById('policy-' + n);
+  const header = body.previousElementSibling;
+  const isActive = body.classList.contains('active');
+
+  // close all
+  document.querySelectorAll('.policy-body').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.policy-header').forEach(h => h.classList.remove('active'));
+
+  if (!isActive) {
+    body.classList.add('active');
+    header.classList.add('active');
+  }
+}
+</script>
+
+</body>
+</html>
