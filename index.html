@@ -305,13 +305,16 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w3')">
       <span class="week-num">Week 3</span>
-      <span class="week-title">Stage 2 — CloudFront + VPC + Systems Manager</span>
-      <span class="week-domain">SCS-C03: D3</span>
+      <span class="week-title">Stage 2 — Securing the Photo Viewer with CloudFront</span>
+      <span class="week-domain">SCS-C03: D3, D5</span>
       <span class="week-chevron" id="w3-chev">▶</span>
     </div>
     <div class="week-body" id="w3">
-      <p class="week-desc">CloudFront with OAC — privatise S3, enforce HTTPS, add edge caching. CloudFront Response Headers Policy: HSTS, X-Frame-Options, CSP. VPC design, subnets, security groups, VPC Flow Logs. Systems Manager Session Manager — remote access without SSH. EC2 patch baselines.</p>
-            <div class="resource-list">
+      <p class="week-desc">CloudFront with OAC — privatize S3, enforce HTTPS, add global edge caching. CloudFront Functions — allowlist to block non-web file access at the edge. Response Headers Policy: HSTS, X-Frame-Options, X-Content-Type-Options. CloudFront policies: viewer protocol, cache, origin request. Geo-restriction.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week03/week3-cloudfront-edge.html">
+          <span class="icon">◈</span> CloudFront and Edge Security — concept notes
+        </a>
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
     </div>
@@ -724,7 +727,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 2;
+const currentWeek = 3;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }
