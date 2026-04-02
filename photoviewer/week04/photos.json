@@ -1,0 +1,7 @@
+[
+  { "photo_id": "photo-001", "s3_key": "photos/photo1.jpg" },
+  { "photo_id": "photo-002", "s3_key": "photos/photo2.jpg" },
+  { "photo_id": "photo-003", "s3_key": "photos/photo3.jpg" },
+  { "photo_id": "photo-004", "s3_key": "photos/photo4.jpg" },
+  { "photo_id": "photo-005", "s3_key": "photos/photo5.jpg" }
+]
