@@ -237,15 +237,15 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('pv')">
       <span class="week-num" style="background:#3B6D11;">Project</span>
-      <span class="week-title">Photo Viewer — application design and stage history</span>
+      <span class="week-title">Photo Viewer — application design and weekly builds</span>
       <span class="week-domain">All weeks</span>
       <span class="week-chevron" id="pv-chev">▶</span>
     </div>
     <div class="week-body" id="pv">
-      <p class="week-desc">The Photo Viewer is a cloud-native web application built and secured from scratch across all 12 weeks. Each stage adds new functionality and introduces new security challenges. This page tracks the design decisions, architecture, and vulnerabilities at each stage.</p>
+      <p class="week-desc">The Photo Viewer is a cloud-native web application built and secured from scratch across all 12 weeks. Each week adds new AWS services, new functionality, and new security challenges. This page tracks the architecture, security decisions, and vulnerabilities at each weekly build.</p>
       <div class="resource-list">
         <a class="resource-link" href="PhotoViewer.html">
-          <span class="icon">◈</span> Photo Viewer — application design and stage history
+          <span class="icon">◈</span> Photo Viewer — application design and weekly builds
         </a>
       </div>
     </div>
@@ -305,12 +305,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w2')">
       <span class="week-num">Week 2</span>
-      <span class="week-title">Stage 1 — Static S3 site + bucket security</span>
+      <span class="week-title">Static S3 Hosting + Bucket Security</span>
       <span class="week-domain">SCS-C03: D5, D6</span>
       <span class="week-chevron" id="w2-chev">▶</span>
     </div>
     <div class="week-body" id="w2">
-      <p class="week-desc">Object storage vs block vs file storage. S3 buckets, three-layer access control, encryption at rest and in transit. Deploy app v1 as a static website. Demonstrate public bucket vulnerability: enumeration, confidential file exposure, CloudTrail evidence.</p>
+      <p class="week-desc">Object storage vs block vs file storage. S3 buckets, three-layer access control, encryption at rest and in transit. Deploy Photo Viewer v1 as a static S3 website. Demonstrate public bucket vulnerabilities: enumeration, confidential file exposure, HTTP only. CloudTrail evidence of anonymous access.</p>
       <div class="resource-list">
         <a class="resource-link" href="week02/week2-s3-security.html">
           <span class="icon">◈</span> S3 Object Storage and Security — concept notes
@@ -324,7 +324,7 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w3')">
       <span class="week-num">Week 3</span>
-      <span class="week-title">Stage 2 — CloudFront + Edge Security</span>
+      <span class="week-title">CloudFront + Edge Security</span>
       <span class="week-domain">SCS-C03: D3, D5</span>
       <span class="week-chevron" id="w3-chev">▶</span>
     </div>
@@ -343,13 +343,16 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w4')">
       <span class="week-num">Week 4</span>
-      <span class="week-title">Stage 3 — Serverless backend + Secrets Manager</span>
-      <span class="week-domain">SCS-C03: D4, D3</span>
+      <span class="week-title">EC2 Backend in VPC + DynamoDB</span>
+      <span class="week-domain">SCS-C03: D2, D3</span>
       <span class="week-chevron" id="w4-chev">▶</span>
     </div>
     <div class="week-body" id="w4">
-      <p class="week-desc">Lambda execution roles and least privilege. API Gateway routes, throttling, presigned URLs. DynamoDB basics. Demonstrate overprivileged role attack. Secrets Manager — move secrets out of code into runtime retrieval.</p>
-            <div class="resource-list">
+      <p class="week-desc">3-tier application architecture — presentation, application, data tiers. VPC design: public and private subnets, security groups, route tables. ALB in public subnet, EC2 Flask in private subnet, DynamoDB as data tier. VPC endpoints for DynamoDB, S3, and SSM. SSM Session Manager — no SSH, no port 22. NAT Gateway for bootstrap then deleted. Deliberate vulnerabilities: ALB internet-facing, no rate limiting, overprivileged role supply chain attack demo.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week04/week4-vpc-ec2.html">
+          <span class="icon">◈</span> VPC, EC2, and Application Tier Security — concept notes
+        </a>
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
     </div>
@@ -746,7 +749,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 3;
+const currentWeek = 4;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }

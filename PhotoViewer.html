@@ -15,7 +15,7 @@
     padding: 40px 16px;
   }
 
-  .page { max-width: 860px; margin: 0 auto; }
+  .page { max-width: 900px; margin: 0 auto; }
 
   .breadcrumb {
     font-size: 12px;
@@ -54,27 +54,27 @@
     margin-top: 32px;
   }
 
-  /* Stage cards */
-  .stage-grid {
+  /* Week cards */
+  .week-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 16px;
     margin-bottom: 32px;
   }
 
-  .stage-card {
+  .week-card {
     background: #fff;
     border-radius: 12px;
     border: 0.5px solid rgba(0,0,0,0.1);
     overflow: hidden;
   }
 
-  .stage-header {
+  .week-header {
     padding: 16px 20px 12px;
     border-bottom: 0.5px solid #f0efe8;
   }
 
-  .stage-tag {
+  .week-tag {
     display: inline-block;
     font-size: 10px;
     font-weight: 700;
@@ -84,26 +84,25 @@
     border-radius: 4px;
     margin-bottom: 8px;
   }
-  .tag-1 { background: #FAECE7; color: #712B13; }
-  .tag-2 { background: #E1F5EE; color: #085041; }
-  .tag-3 { background: #E6F1FB; color: #0C447C; }
-  .tag-4 { background: #EEEDFE; color: #3C3489; }
+  .tag-2 { background: #FAECE7; color: #712B13; }
+  .tag-3 { background: #E1F5EE; color: #085041; }
+  .tag-4 { background: #E6F1FB; color: #0C447C; }
 
-  .stage-title {
-    font-size: 15px;
+  .week-title {
+    font-size: 14px;
     font-weight: 700;
     color: #1a1a18;
     margin-bottom: 2px;
   }
-  .stage-week {
+  .week-subtitle {
     font-size: 11px;
     color: #888780;
   }
 
-  .stage-body { padding: 16px 20px; }
+  .week-body { padding: 16px 20px; }
 
-  .stage-desc {
-    font-size: 13px;
+  .week-desc {
+    font-size: 12px;
     color: #5f5e5a;
     line-height: 1.6;
     margin-bottom: 14px;
@@ -137,12 +136,12 @@
   }
   .arch-arrow { color: #ccc; font-size: 10px; }
 
-  .issues-list {
+  .issues-list, .fixes-list {
     margin-top: 14px;
     border-top: 0.5px solid #f0efe8;
     padding-top: 12px;
   }
-  .issues-label {
+  .issues-label, .fixes-label {
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
@@ -154,7 +153,7 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    font-size: 12px;
+    font-size: 11px;
     color: #5f5e5a;
     margin-bottom: 6px;
     line-height: 1.5;
@@ -163,39 +162,37 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    margin-top: 5px;
+    margin-top: 4px;
     flex-shrink: 0;
   }
   .dot-red { background: #E24B4A; }
   .dot-green { background: #639922; }
+  .dot-orange { background: #E8A000; }
 
-  .fixes-list {
-    margin-top: 14px;
-    border-top: 0.5px solid #f0efe8;
-    padding-top: 12px;
+  /* Code links */
+  .code-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #1F4E79;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #B5D4F4;
+    background: #E6F1FB;
+    margin-top: 12px;
+    transition: background 0.15s;
   }
-  .fixes-label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #B4B2A9;
-    margin-bottom: 8px;
-  }
+  .code-link:hover { background: #B5D4F4; }
 
-  /* Evolution timeline */
+  /* Timeline */
   .timeline {
     background: #fff;
     border-radius: 12px;
     border: 0.5px solid rgba(0,0,0,0.1);
     padding: 20px 24px;
     margin-bottom: 32px;
-  }
-  .timeline-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #1a1a18;
-    margin-bottom: 16px;
   }
   .timeline-row {
     display: flex;
@@ -219,7 +216,7 @@
   }
   .tl-week.future { background: #D3D1C7; color: #888780; }
   .tl-content { flex: 1; }
-  .tl-stage { font-size: 12px; font-weight: 600; color: #1a1a18; margin-bottom: 2px; }
+  .tl-title { font-size: 12px; font-weight: 600; color: #1a1a18; margin-bottom: 2px; }
   .tl-desc { font-size: 11px; color: #888780; line-height: 1.5; }
   .tl-new {
     font-size: 10px;
@@ -232,7 +229,6 @@
     vertical-align: middle;
   }
 
-  /* Footer */
   footer {
     text-align: center;
     font-size: 12px;
@@ -242,8 +238,8 @@
   }
   footer a { color: #1F4E79; text-decoration: none; }
 
-  @media (max-width: 600px) {
-    .stage-grid { grid-template-columns: 1fr; }
+  @media (max-width: 700px) {
+    .week-grid { grid-template-columns: 1fr; }
     .hero { padding: 24px 20px; }
   }
 </style>
@@ -261,69 +257,61 @@
     <div class="eyebrow">CS 55D — Course Project</div>
     <h1>Photo Viewer</h1>
     <p>A cloud-native web application built and secured from scratch — week by week.<br>
-    Each stage adds new functionality and introduces new security challenges to solve.</p>
+    Each week adds new AWS services, new functionality, and new security challenges to solve.</p>
   </div>
 
-  <div class="section-label">Application stages</div>
+  <div class="section-label">Weekly application builds</div>
 
-  <div class="stage-grid">
+  <div class="week-grid">
 
-    <!-- Stage 1 -->
-    <div class="stage-card">
-      <div class="stage-header">
-        <div class="stage-tag tag-1">Stage 1</div>
-        <div class="stage-title">Static S3 site</div>
-        <div class="stage-week">Week 2 — Lab complete</div>
+    <!-- Week 2 -->
+    <div class="week-card">
+      <div class="week-header">
+        <div class="week-tag tag-2">Week 2</div>
+        <div class="week-title">Static S3 Hosting</div>
+        <div class="week-subtitle">Lab complete</div>
       </div>
-      <div class="stage-body">
-        <p class="stage-desc">A static HTML/CSS/JavaScript photo viewer hosted directly from an S3 bucket with static website hosting enabled. Five photos served from a hardcoded list in a JSON file. No backend, no database, no authentication.</p>
+      <div class="week-body">
+        <p class="week-desc">A static HTML/CSS/JavaScript photo viewer hosted directly from a public S3 bucket. The photo list is stored in a static <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">photos.json</code> file. No backend, no database, no HTTPS.</p>
 
         <div class="arch-row">
           <span class="arch-label">Traffic</span>
           <span class="arch-pill">Browser</span>
           <span class="arch-arrow">→</span>
-          <span class="arch-pill">S3 website endpoint</span>
+          <span class="arch-pill">S3 (HTTP)</span>
         </div>
         <div class="arch-row">
-          <span class="arch-label">Storage</span>
-          <span class="arch-pill">S3 (public bucket)</span>
+          <span class="arch-label">Photo list</span>
+          <span class="arch-pill">photos.json (static)</span>
         </div>
         <div class="arch-row">
           <span class="arch-label">Photos</span>
-          <span class="arch-pill">photos.json (static)</span>
+          <span class="arch-pill">S3 (public bucket)</span>
         </div>
 
         <div class="issues-list">
           <div class="issues-label">Deliberate vulnerabilities</div>
-          <div class="issue-item">
-            <div class="issue-dot dot-red"></div>
-            <span>HTTP only — no TLS, content interceptable in transit</span>
-          </div>
-          <div class="issue-item">
-            <div class="issue-dot dot-red"></div>
-            <span>Public bucket — <code style="font-size:11px;background:#f0efe8;padding:1px 4px;border-radius:3px;">confidential.txt</code> accessible to anyone</span>
-          </div>
-          <div class="issue-item">
-            <div class="issue-dot dot-red"></div>
-            <span>Bucket enumerable — <code style="font-size:11px;background:#f0efe8;padding:1px 4px;border-radius:3px;">--no-sign-request</code> lists all files</span>
-          </div>
-          <div class="issue-item">
-            <div class="issue-dot dot-red"></div>
-            <span>No caching — every request travels to us-east-1</span>
-          </div>
+          <div class="issue-item"><div class="issue-dot dot-red"></div><span>HTTP only — no TLS, content interceptable in transit</span></div>
+          <div class="issue-item"><div class="issue-dot dot-red"></div><span>Public bucket — <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">confidential.txt</code> readable by anyone</span></div>
+          <div class="issue-item"><div class="issue-dot dot-red"></div><span>Bucket enumerable — <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">--no-sign-request</code> lists all files</span></div>
+          <div class="issue-item"><div class="issue-dot dot-red"></div><span>No caching — every request goes to us-east-1</span></div>
         </div>
+
+        <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week02" target="_blank">
+          ⌥ View code on GitHub
+        </a>
       </div>
     </div>
 
-    <!-- Stage 2 -->
-    <div class="stage-card">
-      <div class="stage-header">
-        <div class="stage-tag tag-2">Stage 2</div>
-        <div class="stage-title">CloudFront + Edge Security</div>
-        <div class="stage-week">Week 3 — Lab complete</div>
+    <!-- Week 3 -->
+    <div class="week-card">
+      <div class="week-header">
+        <div class="week-tag tag-3">Week 3</div>
+        <div class="week-title">CloudFront + Edge Security</div>
+        <div class="week-subtitle">Lab complete</div>
       </div>
-      <div class="stage-body">
-        <p class="stage-desc">CloudFront placed in front of S3 with Origin Access Control. S3 bucket made fully private — only CloudFront can read it. HTTPS enforced. A CloudFront Function blocks non-web file types at the edge. Security response headers added.</p>
+      <div class="week-body">
+        <p class="week-desc">CloudFront placed in front of S3 with Origin Access Control. S3 bucket made fully private. HTTPS enforced at the edge. A CloudFront Function allowlist blocks non-web file types. Security response headers added.</p>
 
         <div class="arch-row">
           <span class="arch-label">Traffic</span>
@@ -334,8 +322,8 @@
           <span class="arch-pill">S3 (OAC)</span>
         </div>
         <div class="arch-row">
-          <span class="arch-label">Storage</span>
-          <span class="arch-pill">S3 (private bucket)</span>
+          <span class="arch-label">Photo list</span>
+          <span class="arch-pill">photos.json (static)</span>
         </div>
         <div class="arch-row">
           <span class="arch-label">Edge</span>
@@ -343,72 +331,111 @@
         </div>
 
         <div class="fixes-list">
-          <div class="fixes-label">What was fixed</div>
-          <div class="issue-item">
-            <div class="issue-dot dot-green"></div>
-            <span>HTTPS enforced — HTTP redirected automatically</span>
-          </div>
-          <div class="issue-item">
-            <div class="issue-dot dot-green"></div>
-            <span>S3 bucket private — OAC restricts access to CloudFront only</span>
-          </div>
-          <div class="issue-item">
-            <div class="issue-dot dot-green"></div>
-            <span>Non-web files blocked — CF Function allowlist returns 403</span>
-          </div>
-          <div class="issue-item">
-            <div class="issue-dot dot-green"></div>
-            <span>Global edge caching — 400+ CloudFront POPs worldwide</span>
-          </div>
+          <div class="fixes-label">Fixed from Week 2</div>
+          <div class="issue-item"><div class="issue-dot dot-green"></div><span>HTTPS enforced — HTTP redirected automatically</span></div>
+          <div class="issue-item"><div class="issue-dot dot-green"></div><span>S3 private — OAC restricts access to CloudFront only</span></div>
+          <div class="issue-item"><div class="issue-dot dot-green"></div><span>Non-web files blocked at edge — returns 403</span></div>
+          <div class="issue-item"><div class="issue-dot dot-green"></div><span>Global edge caching — 400+ CloudFront POPs</span></div>
         </div>
+
+        <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week03" target="_blank">
+          ⌥ View code on GitHub
+        </a>
+      </div>
+    </div>
+
+    <!-- Week 4 -->
+    <div class="week-card">
+      <div class="week-header">
+        <div class="week-tag tag-4">Week 4</div>
+        <div class="week-title">EC2 Backend in VPC</div>
+        <div class="week-subtitle">Lab complete</div>
+      </div>
+      <div class="week-body">
+        <p class="week-desc">Photo metadata moved from a static JSON file to DynamoDB. A Flask API server on EC2 in a private VPC subnet serves the photo list dynamically. CloudFront routes <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">/photos</code> API requests to an ALB which forwards to EC2.</p>
+
+        <div class="arch-row">
+          <span class="arch-label">Traffic</span>
+          <span class="arch-pill">Browser</span>
+          <span class="arch-arrow">→</span>
+          <span class="arch-pill">CloudFront</span>
+          <span class="arch-arrow">→</span>
+          <span class="arch-pill">ALB → EC2</span>
+        </div>
+        <div class="arch-row">
+          <span class="arch-label">Photo list</span>
+          <span class="arch-pill">DynamoDB (dynamic)</span>
+        </div>
+        <div class="arch-row">
+          <span class="arch-label">Access</span>
+          <span class="arch-pill">SSM — no SSH</span>
+        </div>
+
+        <div class="issues-list">
+          <div class="issues-label">Remaining vulnerabilities</div>
+          <div class="issue-item"><div class="issue-dot dot-orange"></div><span>ALB internet-facing — CloudFront bypassable via ALB DNS</span></div>
+          <div class="issue-item"><div class="issue-dot dot-orange"></div><span>No rate limiting on <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">/photos</code> API — DDoS risk</span></div>
+          <div class="issue-item"><div class="issue-dot dot-orange"></div><span>No authentication — photo list publicly accessible</span></div>
+        </div>
+
+        <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week04" target="_blank">
+          ⌥ View code on GitHub
+        </a>
       </div>
     </div>
 
   </div>
 
-  <!-- Evolution timeline -->
+  <!-- Roadmap timeline -->
   <div class="section-label">Full application roadmap</div>
   <div class="timeline">
     <div class="timeline-row">
       <span class="tl-week">Week 2</span>
       <div class="tl-content">
-        <div class="tl-stage">Stage 1 — Static S3 site</div>
-        <div class="tl-desc">Static HTML/CSS/JS hosted on S3. Five photos from a static JSON list. Deliberately insecure — HTTP only, public bucket, no caching.</div>
+        <div class="tl-title">Static S3 Hosting</div>
+        <div class="tl-desc">Static HTML/CSS/JS hosted on S3. Photo list stored in a static JSON file. Deliberately insecure — HTTP only, public bucket, no caching.</div>
       </div>
     </div>
     <div class="timeline-row">
       <span class="tl-week">Week 3</span>
       <div class="tl-content">
-        <div class="tl-stage">Stage 2 — CloudFront + Edge Security</div>
-        <div class="tl-desc">CloudFront with OAC privatizes S3. HTTPS enforced. CF Function blocks non-web files. Response headers policy adds HSTS, X-Frame-Options, X-Content-Type-Options.</div>
+        <div class="tl-title">CloudFront + Edge Security</div>
+        <div class="tl-desc">CloudFront with OAC privatizes S3. HTTPS enforced. CF Function blocks non-web files at the edge. Response headers policy adds HSTS, X-Frame-Options, X-Content-Type-Options.</div>
       </div>
     </div>
     <div class="timeline-row">
-      <span class="tl-week future">Week 4</span>
+      <span class="tl-week">Week 4</span>
       <div class="tl-content">
-        <div class="tl-stage">Stage 3 — EC2 backend in VPC <span class="tl-new">coming</span></div>
-        <div class="tl-desc">EC2 Flask server in a private subnet serves the photo list dynamically from DynamoDB. ALB in public subnet. CloudFront routes /photos API calls to ALB. VPC, security groups, SSM, Inspector, CloudWatch.</div>
+        <div class="tl-title">EC2 Backend in VPC</div>
+        <div class="tl-desc">Flask API on EC2 in a private subnet serves photo list from DynamoDB. ALB in public subnet. VPC endpoints for DynamoDB, S3, and SSM. No SSH — SSM Session Manager only.</div>
       </div>
     </div>
     <div class="timeline-row">
       <span class="tl-week future">Week 5</span>
       <div class="tl-content">
-        <div class="tl-stage">Stage 4 — Serverless migration</div>
-        <div class="tl-desc">EC2 backend replaced with Lambda + API Gateway. Same DynamoDB table, same API response. Demonstrate why serverless eliminates entire EC2 attack surface.</div>
+        <div class="tl-title">Serverless Migration <span class="tl-new">coming</span></div>
+        <div class="tl-desc">EC2 replaced with Lambda + API Gateway. Same DynamoDB table, same API response. Eliminates the entire EC2 attack surface — no patching, no SSM, no VPC endpoints needed.</div>
       </div>
     </div>
     <div class="timeline-row">
       <span class="tl-week future">Week 6</span>
       <div class="tl-content">
-        <div class="tl-stage">Stage 5 — Authentication</div>
-        <div class="tl-desc">OIDC login via Cognito. Free vs premium user tiers. Server-side sessions in DynamoDB. HttpOnly/Secure/SameSite cookies.</div>
+        <div class="tl-title">Authentication</div>
+        <div class="tl-desc">OIDC login via Cognito. Free vs premium user tiers. Private photos visible only to their owner. HttpOnly/Secure/SameSite cookies.</div>
       </div>
     </div>
     <div class="timeline-row">
-      <span class="tl-week future">Week 7+</span>
+      <span class="tl-week future">Week 7</span>
       <div class="tl-content">
-        <div class="tl-stage">Stages 6–8 — Hardening</div>
-        <div class="tl-desc">IAM Identity Center, WAF, KMS encryption, Macie PII detection, Rekognition content safety, GuardDuty threat detection, Security Hub posture dashboard.</div>
+        <div class="tl-title">IAM Identity Center</div>
+        <div class="tl-desc">Centralized access management for the application team. Role-based access — developers, admins, auditors. Replaces individual IAM users.</div>
+      </div>
+    </div>
+    <div class="timeline-row">
+      <span class="tl-week future">Week 8+</span>
+      <div class="tl-content">
+        <div class="tl-title">Hardening — WAF, KMS, Macie, GuardDuty</div>
+        <div class="tl-desc">WAF rate limiting and SQLi/XSS rules. KMS encryption for DynamoDB and S3. Macie PII detection on uploaded photos. GuardDuty threat detection. Security Hub posture dashboard.</div>
       </div>
     </div>
   </div>
