@@ -1,0 +1,25 @@
+CONFIDENTIAL — Internal Use Only
+=====================================
+
+Employee Directory — Q1 2026
+Photo Viewer Application — Internal Asset List
+
+Employee ID | Name              | Department        | Photo File
+-----------|-------------------|-------------------|------------------
+EMP-001    | Sarah Johnson     | Engineering       | photo1.jpg
+EMP-002    | Michael Chen      | Product           | photo2.jpg
+EMP-003    | Priya Patel       | Security          | photo3.jpg
+EMP-004    | James Williams    | Marketing         | photo4.jpg
+EMP-005    | Lisa Rodriguez    | Engineering       | photo5.jpg
+
+AWS Infrastructure Notes:
+- S3 Bucket: photoviewer-assets
+- Region: us-east-1
+- CloudFront: not yet configured
+- Encryption: not yet enabled
+
+SECURITY NOTICE: This file should NOT be publicly accessible.
+If you can read this file without logging in, the S3 bucket
+access controls are misconfigured and must be fixed immediately.
+
+Contact: security@photoviewer-internal.com
