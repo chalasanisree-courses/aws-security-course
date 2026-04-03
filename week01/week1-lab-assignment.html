@@ -18,6 +18,18 @@
   .meta { color: #666; font-size: 0.88rem; margin-bottom: 1.5rem; }
   .objective { background: #f0f6ff; border-left: 4px solid #0066cc; padding: 1rem 1.2rem; border-radius: 0 6px 6px 0; margin-bottom: 1.5rem; }
   .objective p { margin-bottom: 0; }
+  .role-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin: 1.5rem 0 0.8rem;
+  }
+  .role-root { background: #FAECE7; color: #712B13; border: 1px solid #993C1D; }
+  .role-iam  { background: #E6F1FB; color: #0C447C; border: 1px solid #185FA5; }
   .part { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
   .part-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
   .part-num { background: #1F4E79; color: white; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 5px; white-space: nowrap; }
@@ -36,131 +48,133 @@
 <body>
 
 <h1>Week 1 Lab — AWS Account Setup</h1>
-<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 25 pts &nbsp;·&nbsp; Due Apr 9</p>
+<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 25 pts</p>
 
 <div class="objective">
-  <p><strong>Objective:</strong> Set up your AWS account with the security baseline required for this course — MFA on root, a dedicated IAM admin user, CloudTrail logging across all regions, and a billing alarm. These controls stay in place for the entire course.</p>
+  <p><strong>Objective:</strong> Set up your AWS account security baseline. You will complete some steps as root, then create an IAM admin user and switch to that user for the rest of the course. Root is used only where required — never for day-to-day work.</p>
 </div>
 
-<div class="note">
-  <strong>Important:</strong> Use your own personal AWS account for this course — not a shared or employer account. All labs involve creating and deleting resources, and you need full admin access. AWS Free Tier is sufficient for most of this course.
-</div>
+<div class="note"><strong>Important:</strong> Use your own personal AWS account — not a shared or employer account. You need full admin access and will be creating and deleting resources throughout this course. AWS Free Tier is sufficient.</div>
 
-<h2>Part 1 — Secure the root account</h2>
+<!-- ── ROOT SECTION ── -->
+<div class="role-banner role-root">🔴 Do the following steps as ROOT</div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Enable MFA on root</span></div>
-  <p>The root account has unrestricted access to everything in your AWS account. It must be protected with MFA and then not used for day-to-day work.</p>
-  <p>Sign in to the AWS Console with your root account (the email address you used to create the account). Go to the top-right menu → <strong>Security credentials:</strong></p>
+  <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Create your AWS account</span></div>
+  <p>Go to <a href="https://aws.amazon.com/free" target="_blank">aws.amazon.com/free</a> and sign up for a free account. Use an email address only you have access to — this becomes your root account email.</p>
+  <p>If you already have an AWS account, sign in as root (your account email address).</p>
+  <div class="info">Make a note of your 12-digit account ID — visible in the top-right corner of the console. You will need it throughout this course.</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Enable MFA on root</span></div>
+  <p>Go to the top-right menu → <strong>Security credentials:</strong></p>
   <ul>
-    <li>Scroll to <strong>Multi-factor authentication (MFA)</strong> → click <strong>Assign MFA device</strong></li>
+    <li>Scroll to <strong>Multi-factor authentication (MFA)</strong> → <strong>Assign MFA device</strong></li>
     <li>Device name: <code>root-mfa</code></li>
     <li>MFA device type: <strong>Authenticator app</strong> (Google Authenticator, Authy, or similar)</li>
-    <li>Scan the QR code with your authenticator app → enter two consecutive codes → <strong>Add MFA</strong></li>
+    <li>Scan the QR code → enter two consecutive codes → <strong>Add MFA</strong></li>
   </ul>
   <div class="deliverable"><strong>Screenshot:</strong> Security credentials page showing MFA device assigned to root</div>
 </div>
 
-<h2>Part 2 — Create an IAM admin user</h2>
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Enable CloudWatch billing alerts</span></div>
+  <p>Go to <strong>Billing and Cost Management → Billing preferences:</strong></p>
+  <ul>
+    <li>Check <strong>Receive CloudWatch billing alerts</strong> → <strong>Save preferences</strong></li>
+  </ul>
+  <div class="info">This allows CloudWatch to receive billing events so you can create alarms. It must be enabled by root — an IAM user cannot do this.</div>
+</div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Create the admin user</span></div>
-  <p>You should never use the root account for daily work. Create a dedicated IAM admin user for everything in this course.</p>
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create a budget alarm</span></div>
+  <p>Go to <strong>Billing and Cost Management → Budgets → Create budget:</strong></p>
+  <ul>
+    <li>Budget type: <strong>Cost budget</strong></li>
+    <li>Budget amount: <code>$10</code> per month</li>
+    <li>Alert threshold: 100% of budgeted amount</li>
+    <li>Email recipients: your email address</li>
+    <li>Click <strong>Create budget</strong></li>
+  </ul>
+  <div class="deliverable"><strong>Screenshot:</strong> Budgets page showing your $10 budget created</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Create an IAM admin user</span></div>
   <p>Go to <strong>IAM → Users → Create user:</strong></p>
   <ul>
     <li>User name: <code>admin</code></li>
     <li>Check <strong>Provide user access to the AWS Management Console</strong></li>
     <li>Select <strong>I want to create an IAM user</strong></li>
-    <li>Console password: set a strong password</li>
-    <li>Uncheck <strong>Users must create a new password at next sign-in</strong></li>
+    <li>Set a strong password — uncheck <strong>Users must create a new password at next sign-in</strong></li>
     <li>Click <strong>Next</strong></li>
   </ul>
   <p>On the permissions page:</p>
   <ul>
     <li>Select <strong>Attach policies directly</strong></li>
-    <li>Search for and select <code>AdministratorAccess</code></li>
+    <li>Search for and attach <code>AdministratorAccess</code></li>
     <li>Click <strong>Next → Create user</strong></li>
   </ul>
-  <div class="info">Copy the sign-in URL shown after creation — it will look like <code>https://[account-id].signin.aws.amazon.com/console</code>. Bookmark it.</div>
+  <div class="info">Also enable MFA on this user — go to the user → Security credentials → Assign MFA device. Because this is an admin account, protect it the same way as root.</div>
   <div class="deliverable"><strong>Screenshot:</strong> IAM user created with AdministratorAccess policy attached</div>
 </div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Sign in as the IAM admin user</span></div>
-  <p>Sign out of the root account. Sign in using the IAM user sign-in URL you just copied, using your <code>admin</code> username and password.</p>
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Sign out of root and sign in as IAM admin</span></div>
+  <p>Sign out of the root account. Sign in using your account ID and the <code>admin</code> username:</p>
+  <ul>
+    <li>Go to: <code>https://[your-account-id].signin.aws.amazon.com/console</code></li>
+    <li>Username: <code>admin</code> — Password: the password you just set</li>
+  </ul>
   <p>Confirm you are logged in as the IAM user — the top-right menu should show <strong>admin @ [account-id]</strong>, not your email address.</p>
-  <div class="note">From this point forward, always sign in as your IAM admin user — never as root. Root should only be used for account-level tasks that specifically require it.</div>
-  <div class="deliverable"><strong>Screenshot:</strong> AWS Console showing you are signed in as the IAM admin user (top-right corner)</div>
+  <div class="note">From this point forward, always sign in as your IAM admin user. Never use root for day-to-day work.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Console showing you are signed in as the IAM admin user (top-right corner)</div>
 </div>
 
-<h2>Part 3 — Enable CloudTrail</h2>
+<!-- ── IAM ADMIN SECTION ── -->
+<div class="role-banner role-iam">🔵 Do the following steps as IAM ADMIN</div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create an all-regions trail</span></div>
-  <p>CloudTrail logs every API call made in your account. This is your audit trail — essential for security investigation and compliance.</p>
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Create a CloudTrail trail</span></div>
   <p>Go to <strong>CloudTrail → Trails → Create trail:</strong></p>
   <ul>
     <li>Trail name: <code>photoviewer-trail</code></li>
     <li>Storage location: <strong>Create new S3 bucket</strong> — accept the auto-generated name</li>
-    <li>Log file SSE-KMS encryption: leave unchecked (not required for this course)</li>
-    <li>CloudWatch Logs: leave unchecked</li>
-    <li>Click <strong>Next</strong></li>
+    <li>Leave all other settings as default → <strong>Next → Next → Create trail</strong></li>
   </ul>
-  <p>On the Events page:</p>
-  <ul>
-    <li>Event type: <strong>Management events</strong> (default)</li>
-    <li>API activity: Read and Write</li>
-    <li>Click <strong>Next → Create trail</strong></li>
-  </ul>
-  <div class="info">By default, a trail created in the console applies to all regions automatically. This is what you want — API calls in any region are logged.</div>
+  <div class="info">CloudTrail logs every API call in your account — including calls made through the console UI. This is your audit trail for the entire course. It applies to all regions automatically.</div>
   <div class="deliverable"><strong>Screenshot:</strong> CloudTrail showing photoviewer-trail with status Logging</div>
 </div>
 
-<h2>Part 4 — Create a billing alarm</h2>
-
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Enable billing alerts</span></div>
-  <p>First, enable billing alerts so CloudWatch can access billing data.</p>
-  <p>Go to <strong>Billing and Cost Management → Billing preferences:</strong></p>
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Create a CloudWatch billing alarm</span></div>
+  <div class="note"><strong>Make sure your region is set to US East (N. Virginia) — us-east-1.</strong> Billing metrics only exist in this region. If you are in any other region, you will not see the billing metric.</div>
+  <p>Go to <strong>CloudWatch → Alarms → Create alarm → Select metric → Billing → Total Estimated Charge:</strong></p>
   <ul>
-    <li>Check <strong>Receive CloudWatch billing alerts</strong></li>
-    <li>Click <strong>Save preferences</strong></li>
-  </ul>
-</div>
-
-<div class="part">
-  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Create the alarm</span></div>
-  <div class="note">Billing metrics are only available in <strong>us-east-1</strong>. Make sure your region is set to US East (N. Virginia) before proceeding.</div>
-  <p>Go to <strong>CloudWatch → Alarms → Create alarm:</strong></p>
-  <ul>
-    <li>Click <strong>Select metric → Billing → Total Estimated Charge</strong></li>
-    <li>Select <strong>EstimatedCharges</strong> with Currency: USD → click <strong>Select metric</strong></li>
-    <li>Threshold type: <strong>Static</strong></li>
-    <li>Condition: <strong>Greater than</strong> → threshold value: <code>10</code></li>
+    <li>Select <strong>EstimatedCharges</strong> with Currency: USD → <strong>Select metric</strong></li>
+    <li>Threshold: Greater than <code>10</code></li>
     <li>Click <strong>Next</strong></li>
   </ul>
-  <p>On the notification page:</p>
+  <p>Notification:</p>
   <ul>
     <li>Alarm state trigger: <strong>In alarm</strong></li>
-    <li>Select <strong>Create new topic</strong></li>
-    <li>Topic name: <code>billing-alerts</code></li>
-    <li>Email endpoint: enter your email address</li>
-    <li>Click <strong>Create topic</strong> → check your email and confirm the subscription</li>
-    <li>Click <strong>Next</strong></li>
+    <li>Create new SNS topic: <code>billing-alerts</code></li>
+    <li>Email endpoint: your email address → <strong>Create topic</strong></li>
+    <li>Check your email and confirm the subscription</li>
   </ul>
-  <p>Alarm name: <code>billing-alarm-$10</code> → <strong>Next → Create alarm</strong></p>
-  <div class="deliverable"><strong>Screenshot:</strong> CloudWatch alarm showing billing-alarm-$10 with $10 threshold</div>
+  <p>Alarm name: <code>billing-alarm-10</code> → <strong>Create alarm</strong></p>
+  <div class="info">You now have two billing alerts: the Budget alarm (sent to root) and this CloudWatch alarm (sent to your IAM admin email). Both alert you at $10.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudWatch alarm showing billing-alarm-10 with $10 threshold</div>
 </div>
 
-<h2>Part 5 — Verify with CloudShell</h2>
-
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Open CloudShell and verify your setup</span></div>
-  <p>Click the <strong>&gt;_</strong> icon in the top navigation bar of the AWS Console to open CloudShell. Run each command and confirm the expected output.</p>
+  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Verify with CloudShell</span></div>
+  <p>Click the <strong>&gt;_</strong> icon in the top navigation bar to open CloudShell. Run each command and confirm the expected output.</p>
 
   <h3>Confirm you are logged in as IAM admin (not root)</h3>
   <pre>aws sts get-caller-identity</pre>
-  <p>The <code>Arn</code> field should show your IAM admin user — not <code>root</code>:</p>
+  <p>The <code>Arn</code> field should show your IAM user — not <code>root</code>:</p>
   <pre>{"Arn": "arn:aws:iam::123456789012:user/admin", ...}</pre>
 
   <h3>Confirm CloudTrail is enabled</h3>
@@ -175,18 +189,18 @@
   --region us-east-1 \
   --query 'MetricAlarms[].[AlarmName,StateValue,Threshold]' \
   --output table</pre>
-  <p>You should see <code>billing-alarm-$10</code> with a threshold of 10.</p>
+  <p>You should see <code>billing-alarm-10</code> with a threshold of 10.</p>
 
   <div class="deliverable"><strong>Screenshot:</strong> CloudShell showing output of all three commands</div>
 </div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Clone the course repo</span></div>
-  <p>Clone the course GitHub repository into CloudShell. You only need to do this once — CloudShell persists your home directory between sessions.</p>
+  <div class="part-header"><span class="part-num">Step 10</span><span class="part-title">Clone the course repo</span></div>
+  <p>Clone the course GitHub repository into CloudShell. You only need to do this once.</p>
   <pre>git clone https://github.com/chalasanisree-courses/aws-security-course.git</pre>
-  <p>Then run the resource audit script to confirm it works:</p>
+  <p>Run the resource audit script to confirm it works:</p>
   <pre>bash aws-security-course/photoviewer/audit-aws-resources.sh</pre>
-  <p>At this point you should have no expensive resources running — the output should show nothing billable.</p>
+  <p>At this point you should have no expensive resources running.</p>
   <div class="deliverable"><strong>Screenshot:</strong> CloudShell showing successful git clone and audit script output</div>
 </div>
 
@@ -202,14 +216,15 @@
 <h2>Grading rubric</h2>
 <table class="rubric">
   <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
-  <tr><td>MFA on root account</td><td>4</td><td>Screenshot shows MFA device assigned to root</td></tr>
+  <tr><td>MFA on root account</td><td>3</td><td>Screenshot shows MFA device assigned to root</td></tr>
+  <tr><td>Budget alarm created ($10)</td><td>3</td><td>Screenshot shows $10 budget in Budgets console</td></tr>
   <tr><td>IAM admin user created</td><td>4</td><td>Screenshot shows admin user with AdministratorAccess</td></tr>
-  <tr><td>Signed in as IAM user (not root)</td><td>2</td><td>Console screenshot shows IAM user in top-right</td></tr>
+  <tr><td>Signed in as IAM admin (not root)</td><td>2</td><td>Console screenshot shows IAM user in top-right</td></tr>
   <tr><td>CloudTrail enabled</td><td>5</td><td>Screenshot shows photoviewer-trail with Logging status</td></tr>
-  <tr><td>Billing alarm created</td><td>4</td><td>Screenshot shows billing alarm with $10 threshold</td></tr>
+  <tr><td>CloudWatch billing alarm ($10)</td><td>3</td><td>Screenshot shows billing-alarm-10 with $10 threshold</td></tr>
   <tr><td>CloudShell verification</td><td>3</td><td>Screenshot shows all three CLI commands with correct output</td></tr>
-  <tr><td>Reflection Q1</td><td>1.5</td><td>Correctly identifies blast radius / credential compromise risk</td></tr>
-  <tr><td>Reflection Q2</td><td>1.5</td><td>Correctly explains audit trail value and what attacker activity looks like</td></tr>
+  <tr><td>Reflection Q1</td><td>1</td><td>Correctly identifies blast radius / credential compromise risk</td></tr>
+  <tr><td>Reflection Q2</td><td>1</td><td>Correctly explains audit trail value and attacker activity</td></tr>
   <tr><td><strong>Total</strong></td><td><strong>25</strong></td><td></td></tr>
 </table>
 

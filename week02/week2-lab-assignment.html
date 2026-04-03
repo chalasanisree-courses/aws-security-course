@@ -6,15 +6,7 @@
 <title>Week 2 Lab — Static S3 Hosting</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 15px;
-    line-height: 1.7;
-    color: #1a1a1a;
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 1.5rem;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; max-width: 780px; margin: 0 auto; padding: 1.5rem; }
   h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; color: #111; }
   h2 { font-size: 1.15rem; font-weight: 700; margin: 2rem 0 0.5rem; color: #111; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.4rem; }
   h3 { font-size: 0.97rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #222; }
@@ -44,7 +36,7 @@
 <body>
 
 <h1>Week 2 Lab — Static S3 Hosting</h1>
-<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 25 pts &nbsp;·&nbsp; Due Apr 16</p>
+<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 25 pts</p>
 
 <div class="objective">
   <p><strong>Objective:</strong> Deploy the Photo Viewer as a static website directly from an S3 bucket. This is the deliberately insecure starting point — every vulnerability introduced here has a specific fix in Week 3.</p>
@@ -59,20 +51,40 @@
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Create the bucket</span></div>
+  <p>Make sure you are signed in as your <strong>IAM admin user</strong> and your region is set to <strong>us-east-1</strong>.</p>
   <p>Go to <strong>S3 → Buckets → Create bucket:</strong></p>
   <ul>
-    <li>Bucket name: <code>photoviewer-[your-account-id]</code> — use your 12-digit AWS account ID to make it globally unique. Find your account ID in the top-right corner of the console.</li>
+    <li>Bucket name: <code>photoviewer-[your-account-id]</code> — use your 12-digit AWS account ID to make it globally unique. Find it in the top-right corner of the console.</li>
     <li>AWS Region: <strong>us-east-1</strong></li>
-    <li>Leave all other settings as default</li>
-    <li>Click <strong>Create bucket</strong></li>
+    <li>Block Public Access: <strong>uncheck "Block all public access"</strong> — and acknowledge the warning that appears</li>
+    <li>Leave all other settings as default → <strong>Create bucket</strong></li>
   </ul>
+  <div class="note">You are intentionally making this bucket public to host a website. This is not how production buckets should be configured — we fix this in Week 3.</div>
   <div class="deliverable"><strong>Screenshot:</strong> S3 bucket created and showing in the bucket list</div>
 </div>
 
-<h2>Part 2 — Enable static website hosting</h2>
+<h2>Part 2 — Upload all files</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Enable website hosting</span></div>
+  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Upload all website files and photos</span></div>
+  <p>Go to your bucket → click <strong>Upload</strong> → add all of the following files from the GitHub repo:</p>
+  <ul>
+    <li><code>index.html</code></li>
+    <li><code>style.css</code></li>
+    <li><code>app.js</code></li>
+    <li><code>photos.json</code></li>
+    <li><code>confidential.txt</code></li>
+    <li>All 5 photos (<code>photo1.jpg</code> through <code>photo5.jpg</code>) — upload these into a folder called <code>photos/</code></li>
+  </ul>
+  <div class="info">Upload the photos into a <code>photos/</code> folder: click <strong>Add folder</strong> during upload and name it <code>photos</code>, then add your photo files inside it. The <code>app.js</code> file references them at the path <code>photos/photo1.jpg</code> etc.</div>
+  <div class="note"><code>confidential.txt</code> must be at the bucket root alongside <code>index.html</code> — this is the file that demonstrates the public bucket vulnerability.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket showing all files uploaded including the photos/ folder</div>
+</div>
+
+<h2>Part 3 — Enable static website hosting</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Enable website hosting</span></div>
   <p>Go to your bucket → <strong>Properties tab</strong> → scroll to <strong>Static website hosting</strong> → click <strong>Edit:</strong></p>
   <ul>
     <li>Static website hosting: <strong>Enable</strong></li>
@@ -82,22 +94,11 @@
   </ul>
 </div>
 
-<h2>Part 3 — Make the bucket public (deliberately insecure)</h2>
-
-<div class="note"><strong>Note:</strong> You are intentionally making this bucket public to demonstrate the vulnerability. This is not how production buckets should be configured — we fix this in Week 3.</div>
+<h2>Part 4 — Add bucket policy</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Disable Block Public Access</span></div>
-  <p>Go to your bucket → <strong>Permissions tab</strong> → <strong>Block public access</strong> → click <strong>Edit:</strong></p>
-  <ul>
-    <li>Uncheck all four boxes</li>
-    <li>Click <strong>Save changes</strong> → type <code>confirm</code> → <strong>Confirm</strong></li>
-  </ul>
-</div>
-
-<div class="part">
-  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create bucket policy</span></div>
-  <p>Still on the <strong>Permissions tab</strong> → <strong>Bucket policy</strong> → click <strong>Edit</strong> → paste the following, replacing <code>[your-account-id]</code>:</p>
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create bucket policy to allow public access</span></div>
+  <p>Go to your bucket → <strong>Permissions tab</strong> → <strong>Bucket policy</strong> → click <strong>Edit</strong> → paste the following, replacing <code>[your-account-id]</code>:</p>
   <pre>{
   "Version": "2012-10-17",
   "Statement": [{
@@ -112,71 +113,71 @@
   }]
 }</pre>
   <p>Click <strong>Save changes.</strong></p>
-  <div class="info"><code>s3:ListBucket</code> is included intentionally — this allows bucket enumeration, which is one of the vulnerabilities demonstrated at the end of this lab.</div>
-  <div class="deliverable"><strong>Screenshot:</strong> Permissions tab showing Block Public Access is OFF and bucket policy saved</div>
-</div>
-
-<h2>Part 4 — Upload files</h2>
-
-<div class="part">
-  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Add your photos</span></div>
-  <p>Go to your bucket → click <strong>Create folder</strong> → name it <code>photos</code> → <strong>Create folder.</strong></p>
-  <p>Open the <code>photos</code> folder → click <strong>Upload</strong> → add 5 photo files named <code>photo1.jpg</code> through <code>photo5.jpg</code> → <strong>Upload.</strong></p>
-  <div class="info">If you use different filenames, update <code>photos.json</code> to match — the <code>s3_key</code> field must match the actual filename in S3.</div>
-</div>
-
-<div class="part">
-  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Upload website files</span></div>
-  <p>Go to your bucket <strong>root</strong> (not inside the photos folder) → click <strong>Upload</strong> → add all of these files from the GitHub repo:</p>
-  <ul>
-    <li><code>index.html</code></li>
-    <li><code>style.css</code></li>
-    <li><code>app.js</code></li>
-    <li><code>photos.json</code></li>
-    <li><code>confidential.txt</code></li>
-  </ul>
-  <p>Click <strong>Upload.</strong></p>
-  <div class="note"><code>confidential.txt</code> must be at the bucket root alongside <code>index.html</code> — this is the file that demonstrates the vulnerability.</div>
-  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket root showing all 5 files uploaded</div>
+  <div class="info"><code>s3:ListBucket</code> is included intentionally — this allows bucket enumeration, which is one of the vulnerabilities you will demonstrate below.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Permissions tab showing bucket policy saved</div>
 </div>
 
 <h2>Part 5 — Verify and demonstrate vulnerabilities</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Access the site</span></div>
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Access the website</span></div>
   <p>Go to your bucket → <strong>Properties tab</strong> → scroll to <strong>Static website hosting</strong> → copy the <strong>Bucket website endpoint.</strong> It will look like:</p>
   <pre>http://photoviewer-[your-account-id].s3-website-us-east-1.amazonaws.com</pre>
   <p>Open it in your browser — the Photo Viewer should load and display your photos.</p>
-  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading in browser showing HTTP in address bar (no padlock)</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading in browser showing http:// in address bar (no padlock)</div>
 </div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Demonstrate the vulnerabilities</span></div>
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Demonstrate the vulnerabilities</span></div>
 
   <h3>Vulnerability 1 — Access confidential.txt directly</h3>
   <p>Navigate to:</p>
   <pre>http://photoviewer-[your-account-id].s3-website-us-east-1.amazonaws.com/confidential.txt</pre>
   <p>The file contents are readable without any authentication.</p>
 
-  <h3>Vulnerability 2 — Enumerate the bucket</h3>
+  <h3>Vulnerability 2 — Enumerate the bucket without credentials</h3>
   <p>In CloudShell, run:</p>
   <pre>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</pre>
   <p>This lists all files in the bucket without logging in — including files you never intended to expose.</p>
 
-  <h3>Vulnerability 3 — Confirm HTTP only</h3>
-  <p>Look at the URL in the browser — it starts with <code>http://</code>. Try changing it to <code>https://</code> — it will fail. The S3 website endpoint has no TLS support.</p>
+  <h3>Vulnerability 3 — HTTP only, no HTTPS</h3>
+  <p>The URL starts with <code>http://</code>. Try changing it to <code>https://</code> — it will fail. The S3 website endpoint has no TLS support.</p>
 
-  <div class="deliverable"><strong>Screenshot:</strong> Terminal showing bucket enumeration output from <code>--no-sign-request</code></div>
+  <div class="deliverable"><strong>Screenshot:</strong> confidential.txt readable in browser</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudShell showing bucket enumeration output from --no-sign-request</div>
 </div>
 
-<h2>Part 6 — Clean up</h2>
+<h2>Part 6 — CloudTrail investigation</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Run the audit script</span></div>
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Check what CloudTrail logged</span></div>
+  <p>Go to <strong>CloudTrail → Event history.</strong> Filter by resource name — paste your bucket name.</p>
+  <p>You should see management events: bucket creation, bucket policy, static website configuration. But you will <strong>not</strong> see the <code>GetObject</code> call that retrieved <code>confidential.txt</code>.</p>
+  <div class="info">CloudTrail logs <strong>management events</strong> by default — API calls that create, modify, or delete resources. It does not log <strong>data events</strong> (GetObject, PutObject) unless you explicitly enable them. This means an attacker reading your confidential file leaves no trace in the default setup.</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Enable data events, test, then disable</span></div>
+  <div class="note"><strong>Data events cost money</strong> — enable them only for this test, then disable them immediately after.</div>
+  <p>Go to <strong>CloudTrail → Trails → photoviewer-trail → Edit:</strong></p>
+  <ul>
+    <li>Under <strong>Data events</strong> → click <strong>Add data event type → S3</strong></li>
+    <li>Specify your bucket: browse and select <code>photoviewer-[your-account-id]</code></li>
+    <li>Log both Read and Write events → <strong>Save changes</strong></li>
+  </ul>
+  <p>Now access <code>confidential.txt</code> again in your browser. Wait ~2 minutes, then go back to <strong>CloudTrail → Event history</strong> and filter by your bucket name. You should now see a <code>GetObject</code> event for <code>confidential.txt</code>.</p>
+  <p><strong>After verifying, disable data events immediately:</strong> CloudTrail → Trails → photoviewer-trail → Edit → remove the S3 data event → Save changes.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudTrail event history showing GetObject event for confidential.txt</div>
+</div>
+
+<h2>Part 7 — Run the audit script</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Check your running resources</span></div>
   <p>In CloudShell:</p>
   <pre>cd ~/aws-security-course && git pull
 bash photoviewer/audit-aws-resources.sh</pre>
-  <p>S3 buckets are included in the output. Note: S3 storage is essentially free at this scale — no cleanup needed for the bucket itself. We will reuse it in Week 3.</p>
+  <p>S3 is essentially free at this scale — no cleanup needed. You will reuse this bucket in Week 3.</p>
 </div>
 
 <div class="reflection">
@@ -191,12 +192,14 @@ bash photoviewer/audit-aws-resources.sh</pre>
 <h2>Grading rubric</h2>
 <table class="rubric">
   <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
-  <tr><td>S3 bucket created in us-east-1</td><td>5</td><td>Screenshot shows bucket with correct name format</td></tr>
-  <tr><td>Static hosting enabled + files uploaded</td><td>5</td><td>Screenshot shows Photo Viewer loading in browser</td></tr>
-  <tr><td>Vulnerability demo — confidential.txt accessible</td><td>5</td><td>Screenshot shows file contents readable in browser</td></tr>
-  <tr><td>Vulnerability demo — bucket enumeration</td><td>5</td><td>Screenshot shows --no-sign-request listing all files</td></tr>
-  <tr><td>Reflection Q1</td><td>2.5</td><td>Correctly identifies Block Public Access off + bucket policy Principal: *</td></tr>
-  <tr><td>Reflection Q2</td><td>2.5</td><td>Identifies credential interception risk for future login/upload features</td></tr>
+  <tr><td>S3 bucket created in us-east-1 with public access unblocked</td><td>4</td><td>Screenshot shows bucket with correct name format</td></tr>
+  <tr><td>Files uploaded including photos/ folder</td><td>4</td><td>Screenshot shows bucket contents with photos/ folder and all files</td></tr>
+  <tr><td>Photo Viewer loads in browser over HTTP</td><td>4</td><td>Screenshot shows Photo Viewer loading with http:// in address bar</td></tr>
+  <tr><td>Vulnerability demo — confidential.txt accessible</td><td>3</td><td>Screenshot shows file contents readable in browser</td></tr>
+  <tr><td>Vulnerability demo — bucket enumeration</td><td>3</td><td>Screenshot shows --no-sign-request listing all files</td></tr>
+  <tr><td>CloudTrail data events — GetObject logged</td><td>5</td><td>Screenshot shows GetObject event for confidential.txt in CloudTrail</td></tr>
+  <tr><td>Reflection Q1</td><td>1</td><td>Correctly identifies Block Public Access off + bucket policy Principal: *</td></tr>
+  <tr><td>Reflection Q2</td><td>1</td><td>Identifies credential interception risk for future login/upload features</td></tr>
   <tr><td><strong>Total</strong></td><td><strong>25</strong></td><td></td></tr>
 </table>
 
