@@ -371,7 +371,7 @@
 </div>
 
 <h1>CloudFront and Edge Security</h1>
-<p class="subtitle">How Amazon CloudFront fixes the three Stage 1 vulnerabilities — and the additional controls that make the edge a real security boundary.</p>
+<p class="subtitle">How Amazon CloudFront fixes the three Week 2 vulnerabilities — and the additional controls that make the edge a real security boundary.</p>
 
 <div class="objectives">
   <strong>Learning objectives</strong>
@@ -387,9 +387,9 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>1. The three Stage 1 problems</h2>
+<h2>1. The three Week 2 problems</h2>
 
-<p>Stage 1 hosted the Photo Viewer directly from S3 static website hosting. That introduced three problems. Click each one to understand the impact.</p>
+<p>Week 2 hosted the Photo Viewer directly from S3 static website hosting. That introduced three problems. Click each one to understand the impact.</p>
 
 <p class="hint">Click each card to expand</p>
 
@@ -420,7 +420,7 @@
 </div>
 <div class="issue-panel" id="issue-2">
   <h4>Issue 2 — Public bucket</h4>
-  <p>For S3 static website hosting to work, Block Public Access must be disabled and a bucket policy must grant <code>s3:GetObject</code> and <code>s3:ListBucket</code> to <code>Principal: *</code>. That means every file in the bucket — not just the web files — is publicly accessible. In Stage 1 we deliberately placed <code>confidential.txt</code> in the bucket to demonstrate this. Anyone who knows the path can read it. And because <code>s3:ListBucket</code> was granted, anyone can enumerate the bucket with <code>aws s3 ls --no-sign-request</code> to discover files they didn't know existed.</p>
+  <p>For S3 static website hosting to work, Block Public Access must be disabled and a bucket policy must grant <code>s3:GetObject</code> and <code>s3:ListBucket</code> to <code>Principal: *</code>. That means every file in the bucket — not just the web files — is publicly accessible. In Week 2 we deliberately placed <code>confidential.txt</code> in the bucket to demonstrate this. Anyone who knows the path can read it. And because <code>s3:ListBucket</code> was granted, anyone can enumerate the bucket with <code>aws s3 ls --no-sign-request</code> to discover files they didn't know existed.</p>
 </div>
 <div class="issue-panel" id="issue-3">
   <h4>Issue 3 — No caching</h4>
@@ -472,7 +472,7 @@
 
 <h3>REST endpoint vs website endpoint</h3>
 
-<p>CloudFront talks to S3 using the <strong>REST endpoint</strong>, not the static website endpoint used in Stage 1.</p>
+<p>CloudFront talks to S3 using the <strong>REST endpoint</strong>, not the static website endpoint used in Week 2.</p>
 
 <table>
   <tr>
@@ -485,7 +485,7 @@
     <td><strong>Website endpoint</strong></td>
     <td><code>bucket.s3-website-region.amazonaws.com</code></td>
     <td>No — HTTP only</td>
-    <td>Stage 1 static hosting. Requires public access.</td>
+    <td>Week 2 static hosting. Requires public access.</td>
   </tr>
   <tr>
     <td><strong>REST endpoint</strong></td>
@@ -503,7 +503,7 @@
 
 <p>Users accessing the Photo Viewer through CloudFront can never enumerate the S3 bucket — not because of a policy restriction, but because of how CloudFront works. CloudFront only issues <code>GetObject</code> requests for specific keys. There is no HTTP operation that translates to <code>s3:ListBucket</code>. The S3 API operation that lists bucket contents cannot be triggered through an HTTP request to CloudFront — it simply doesn't exist at that layer.</p>
 
-<p>This means <code>aws s3 ls --no-sign-request</code> — which worked in Stage 1 — fails in Stage 2 regardless of bucket policy, because that tool talks directly to the S3 API, which is now locked by OAC.</p>
+<p>This means <code>aws s3 ls --no-sign-request</code> — which worked in Week 2 — fails in Week 3 regardless of bucket policy, because that tool talks directly to the S3 API, which is now locked by OAC.</p>
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>3. Origin Access Control (OAC)</h2>
@@ -638,7 +638,7 @@
     <div class="policy-body" id="policy-3">
       <p>When CloudFront has a cache miss and needs to fetch content from S3, it constructs an origin request. The Origin Request Policy controls exactly which headers, cookies, and query strings from the user's request are included in that origin request.</p>
       <p><strong>Security relevance:</strong> Query strings and headers can carry malicious payloads. An attacker can craft a URL with injected code in the query string, hoping it reaches a vulnerable backend. By forwarding only what the origin actually needs — and stripping everything else — you reduce the attack surface. This is the least-privilege principle applied to HTTP request forwarding.</p>
-      <p><strong>For Stage 2:</strong> S3 ignores query strings, so the security benefit is limited right now. This becomes important in Week 4 when API Gateway and Lambda become the origin — those services do process query strings and headers.</p>
+      <p><strong>For Week 3:</strong> S3 ignores query strings, so the security benefit is limited right now. This becomes important in Week 5 when Lambda becomes the origin — those services do process query strings and headers.</p>
     </div>
   </div>
 
@@ -693,7 +693,7 @@
 <div class="flow-diagram">
   <table style="width:100%; font-size:0.88rem; border-collapse:collapse;">
     <tr>
-      <th style="width:20%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">Stage</th>
+      <th style="width:20%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">Layer</th>
       <th style="width:30%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">What runs here</th>
       <th style="width:50%; padding:0.6rem; background:#f0f4f8; border:1px solid #dde;">What it controls</th>
     </tr>
@@ -731,13 +731,13 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>7. Stage 1 vs Stage 2 — what changed</h2>
+<h2>7. Week 2 vs Week 3 — what changed</h2>
 
 <table class="comparison-table">
   <tr>
     <th></th>
-    <th>Stage 1</th>
-    <th>Stage 2</th>
+    <th>Week 2</th>
+    <th>Week 3</th>
   </tr>
   <tr>
     <td><strong>Protocol</strong></td>
@@ -789,6 +789,19 @@
 
 <div class="callout">
   <p><strong>Always invalidate after security changes.</strong> If you update a CloudFront Function, attach a new policy, or patch a file in S3, create a <code>/*</code> invalidation immediately. Otherwise stale cached content continues to be served — including any previously cached responses that don't include your new security headers or function behavior.</p>
+</div>
+
+<!-- Downloads -->
+<h2>Lab files</h2>
+<p>Download the Week 3 files for this week's lab. Upload all contents to your S3 bucket, update your CloudFront function with the new allowlist code, and create a <code>/*</code> invalidation.</p>
+
+<div style="display:flex; gap:1rem; flex-wrap:wrap; margin:1rem 0;">
+  <a href="photoviewer-stage2.zip" download style="display:inline-flex; align-items:center; gap:8px; font-size:13px; color:#1F4E79; text-decoration:none; padding:8px 14px; border-radius:6px; border:1px solid #B5D4F4; background:#E6F1FB;">
+    ⬇ photoviewer-stage2.zip
+  </a>
+  <a href="photoviewer-allowlist.js" download style="display:inline-flex; align-items:center; gap:8px; font-size:13px; color:#1F4E79; text-decoration:none; padding:8px 14px; border-radius:6px; border:1px solid #B5D4F4; background:#E6F1FB;">
+    ⬇ photoviewer-allowlist.js
+  </a>
 </div>
 
 <div class="page-nav">
