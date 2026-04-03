@@ -26,6 +26,7 @@
   .deliverable strong { color: #333; }
   .note { background: #fff5f5; border-left: 3px solid #dc3545; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
   .info { background: #f0f6ff; border-left: 3px solid #0066cc; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .think { background: #f5f0ff; border-left: 3px solid #7c3aed; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #4c1d95; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
   .reflection { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
   .rubric { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 1rem; }
   .rubric th { background: #f0f4f8; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
@@ -70,19 +71,28 @@
     <li>Check all four boxes → <strong>Save changes</strong> → type <code>confirm</code> → <strong>Confirm</strong></li>
   </ul>
   <p>Still on Permissions tab → <strong>Bucket policy → Edit</strong> → delete all content → <strong>Save changes.</strong></p>
-  <div class="deliverable"><strong>Screenshot:</strong> Permissions tab showing Block Public Access ON and empty bucket policy</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Permissions tab showing Block Public Access fully ON and empty bucket policy</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Confirm the old S3 website is now blocked</span></div>
+  <p>Try to access your old S3 website endpoint in the browser — it should now return <strong>403 Forbidden</strong> or be completely inaccessible.</p>
+  <p>The URL looks like: <code>http://photoviewer-[your-account-id].s3-website-us-east-1.amazonaws.com</code></p>
+  <div class="deliverable"><strong>Screenshot:</strong> Browser showing 403 or access denied on the old S3 website URL — make sure the URL is visible in the screenshot</div>
 </div>
 
 <h2>Part 2 — Create CloudFront distribution</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create the distribution with OAC</span></div>
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Create the distribution with OAC</span></div>
   <p>Go to <strong>CloudFront → Distributions → Create distribution:</strong></p>
+
   <h3>Origin settings</h3>
   <ul>
-    <li>Origin domain: select your S3 bucket from the dropdown</li>
+    <li>Origin domain: select your S3 bucket from the dropdown — use the <strong>REST endpoint</strong> (e.g. <code>photoviewer-xxx.s3.amazonaws.com</code>), not the website endpoint</li>
     <li>When prompted <em>"Allow private S3 bucket access to CloudFront?"</em> → click <strong>Yes, update the bucket policy</strong> — this creates OAC and updates the bucket policy automatically</li>
   </ul>
+
   <h3>Default cache behavior</h3>
   <ul>
     <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
@@ -90,83 +100,108 @@
     <li>Response headers policy: select <strong>SecurityHeadersPolicy</strong> (AWS managed)</li>
   </ul>
   <div class="info">If you don't see the Response headers policy option during creation, don't worry — you can set it afterward by going to <strong>Behaviors tab → Edit default behavior → Response headers policy.</strong></div>
+
   <h3>Settings</h3>
   <ul>
     <li>Default root object: <code>index.html</code> — <strong>don't skip this</strong> or your CloudFront URL will return an error instead of the Photo Viewer</li>
     <li>WAF: leave disabled</li>
   </ul>
   <p>Click <strong>Create distribution</strong> — wait for Status: <strong>Enabled</strong> (~2 minutes).</p>
-  <div class="deliverable"><strong>Screenshot:</strong> CloudFront distribution showing Enabled status and domain name</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudFront distribution Details page showing Enabled status and your CloudFront domain name — URL must be visible</div>
+  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket Permissions tab showing the OAC bucket policy that CloudFront automatically created</div>
 </div>
 
-<h2>Part 3 — CloudFront Function allowlist</h2>
+<h2>Part 3 — Verify basics</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Create the allowlist function</span></div>
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Verify HTTPS and HTTP redirect</span></div>
+
+  <h3>✅ Photo Viewer loads over HTTPS</h3>
+  <p>Open your CloudFront domain in the browser. The Photo Viewer should load with a padlock visible.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading at the CloudFront URL over HTTPS — padlock and URL must be visible</div>
+
+  <h3>✅ HTTP redirects to HTTPS</h3>
+  <p>Type <code>http://</code> before your CloudFront domain and press Enter. Confirm it automatically redirects to HTTPS.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Browser showing the redirect from HTTP to HTTPS — URL must be visible</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Verify bucket enumeration is blocked</span></div>
+  <p>In CloudShell, run:</p>
+  <pre>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</pre>
+  <p>Should return <strong>Access Denied</strong> — the bucket is now private.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudShell showing Access Denied on --no-sign-request</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Check confidential.txt — before the CF Function</span></div>
+  <p>Navigate to <code>https://[your-cf-domain]/confidential.txt</code> in your browser.</p>
+  <div class="think"><strong>Think:</strong> Is it accessible or blocked? OAC ensures only CloudFront can access S3 — but does that mean CloudFront blocks specific files? In one sentence, explain what you see and why.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Browser response for /confidential.txt through CloudFront — URL must be visible. Include your one-sentence explanation in your submission.</div>
+</div>
+
+<h2>Part 4 — CloudFront Function</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Create the allowlist function</span></div>
   <p>Go to <strong>CloudFront → Functions → Create function:</strong></p>
   <ul>
     <li>Name: <code>photoviewer-allowlist</code></li>
     <li>Runtime: cloudfront-js-2.0</li>
     <li>Paste the code from <code>photoviewer-allowlist.js</code> in the GitHub repo</li>
-    <li>Click <strong>Save changes</strong> → <strong>Publish</strong></li>
+    <li>Click <strong>Save changes</strong> → <strong>Publish</strong> — publishing is required before you can attach the function</li>
   </ul>
+  <div class="note"><strong>Important:</strong> You must click Publish after saving. An unpublished function cannot be attached to a distribution.</div>
 </div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Attach the function to the distribution</span></div>
+  <div class="part-header"><span class="part-num">Step 10</span><span class="part-title">Attach the function and invalidate</span></div>
   <p>Go to your distribution → <strong>Behaviors tab</strong> → select the default behavior → <strong>Edit:</strong></p>
   <ul>
     <li>Function associations → Viewer request → select <code>photoviewer-allowlist</code></li>
     <li>Click <strong>Save changes</strong></li>
   </ul>
+  <p>Go to <strong>Invalidations tab → Create invalidation</strong> → path: <code>/*</code> → <strong>Create invalidation.</strong> Wait for status: Completed.</p>
   <div class="deliverable"><strong>Screenshot:</strong> Default behavior showing photoviewer-allowlist attached at Viewer Request</div>
 </div>
 
-<h2>Part 4 — Invalidate and verify</h2>
-
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Create cache invalidation</span></div>
-  <p>Go to your distribution → <strong>Invalidations tab → Create invalidation:</strong></p>
-  <ul>
-    <li>Object paths: <code>/*</code> → <strong>Create invalidation</strong></li>
-    <li>Wait for status: Completed</li>
-  </ul>
+  <div class="part-header"><span class="part-num">Step 11</span><span class="part-title">Verify the function works correctly</span></div>
+
+  <h3>✅ Non-web files blocked</h3>
+  <p>Navigate to <code>https://[your-cf-domain]/confidential.txt</code> again — should now return <strong>403 Forbidden.</strong></p>
+  <div class="deliverable"><strong>Screenshot:</strong> 403 response on /confidential.txt through CloudFront — URL must be visible</div>
+
+  <h3>✅ Legitimate content still loads</h3>
+  <p>Reload the Photo Viewer at your CloudFront URL — photos should still display correctly. The allowlist must not be blocking legitimate content.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading photos correctly after the CF Function is attached</div>
 </div>
 
+<h2>Part 5 — Security headers</h2>
+
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Verify all four fixes</span></div>
-  <p>Copy your CloudFront domain name from the distribution details page. Open it in your browser and confirm each of the following:</p>
+  <div class="part-header"><span class="part-num">Step 12</span><span class="part-title">Verify SecurityHeadersPolicy is attached and review its contents</span></div>
+  <p>If you attached SecurityHeadersPolicy during distribution creation, it is already active. If not, go to <strong>Behaviors tab → Edit default behavior → Response headers policy → SecurityHeadersPolicy → Save changes.</strong></p>
 
-  <h3>✅ HTTPS enforced</h3>
-  <p>Navigate to <code>http://[your-cf-domain]</code> — should redirect automatically to HTTPS. Padlock visible in browser.</p>
+  <h3>View the policy details</h3>
+  <p>Go to <strong>CloudFront → Policies → Response headers</strong> → find <strong>SecurityHeadersPolicy</strong> → click to view details.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> SecurityHeadersPolicy details page showing the security headers it configures</div>
 
-  <h3>✅ Non-web files blocked at edge</h3>
-  <p>Navigate to <code>https://[your-cf-domain]/confidential.txt</code> — should return <strong>403 Forbidden.</strong></p>
-
-  <h3>✅ Security headers present</h3>
-  <p>Open DevTools → Network tab → click any request → Response Headers. Confirm all three:</p>
+  <h3>Verify headers in browser</h3>
+  <p>Open DevTools → Network tab → click any request → Response Headers. Confirm all three are present:</p>
   <ul>
     <li><code>Strict-Transport-Security</code></li>
     <li><code>X-Frame-Options</code></li>
     <li><code>X-Content-Type-Options</code></li>
   </ul>
-
-  <h3>✅ Bucket enumeration blocked</h3>
-  <p>In CloudShell:</p>
-  <pre>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</pre>
-  <p>Should return <strong>Access Denied</strong> — the bucket is now private.</p>
-
-  <div class="deliverable"><strong>Screenshot:</strong> Browser showing HTTPS padlock + Photo Viewer loading</div>
-  <div class="deliverable"><strong>Screenshot:</strong> 403 response on /confidential.txt through CloudFront</div>
   <div class="deliverable"><strong>Screenshot:</strong> DevTools Response Headers showing all three security headers</div>
-  <div class="deliverable"><strong>Screenshot:</strong> CloudShell showing Access Denied on --no-sign-request</div>
 </div>
 
 <div class="reflection">
   <h2>Reflection</h2>
   <p>Answer both questions in 2–3 sentences each.</p>
   <h3>Question 1</h3>
-  <p>Origin Access Control (OAC) has two parts — request signing and a bucket policy condition. Explain why both parts are necessary. What happens if you have signing without the restrictive bucket policy, or the restrictive bucket policy without signing?</p>
+  <p>Origin Access Control (OAC) ensures only CloudFront can access your S3 bucket — yet in Step 8 you saw that <code>confidential.txt</code> was still accessible through CloudFront before the CF Function was added. Explain why OAC alone is not enough to block specific files, and what problem OAC actually solves.</p>
   <h3>Question 2</h3>
   <p>The CloudFront Function uses an allowlist rather than a blocklist to control which file types are served. Explain the difference and why an allowlist is more secure. What would happen if you forgot to add a file type to a blocklist vs an allowlist?</p>
 </div>
@@ -174,14 +209,16 @@
 <h2>Grading rubric</h2>
 <table class="rubric">
   <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
-  <tr><td>S3 bucket locked down</td><td>15</td><td>Screenshot shows Block Public Access ON and empty bucket policy</td></tr>
-  <tr><td>CloudFront distribution with OAC</td><td>20</td><td>Distribution Enabled, OAC created, bucket policy updated</td></tr>
-  <tr><td>HTTPS enforced</td><td>10</td><td>HTTP redirects to HTTPS — padlock in browser screenshot</td></tr>
-  <tr><td>CF Function — non-web files blocked</td><td>20</td><td>403 on /confidential.txt through CloudFront</td></tr>
-  <tr><td>Security headers present</td><td>10</td><td>DevTools showing HSTS, X-Frame-Options, X-Content-Type-Options</td></tr>
-  <tr><td>Bucket enumeration blocked</td><td>10</td><td>CloudShell showing Access Denied on --no-sign-request</td></tr>
-  <tr><td>Reflection Q1</td><td>7.5</td><td>Correctly explains both OAC parts and why each is necessary</td></tr>
-  <tr><td>Reflection Q2</td><td>7.5</td><td>Correctly explains allowlist vs blocklist and fail-closed behavior</td></tr>
+  <tr><td>S3 bucket locked down — Block Public Access ON, policy removed</td><td>10</td><td>Screenshot shows all four BPA settings enabled and empty bucket policy</td></tr>
+  <tr><td>Old S3 website returns 403</td><td>5</td><td>Screenshot shows 403 on the old S3 website URL</td></tr>
+  <tr><td>CloudFront distribution with OAC</td><td>10</td><td>Distribution Enabled, OAC bucket policy screenshot showing CloudFront-only access</td></tr>
+  <tr><td>HTTPS enforced + HTTP redirect</td><td>10</td><td>Screenshots show padlock + HTTP redirecting to HTTPS</td></tr>
+  <tr><td>Bucket enumeration blocked</td><td>5</td><td>CloudShell showing Access Denied on --no-sign-request</td></tr>
+  <tr><td>confidential.txt before CF Function — explanation</td><td>10</td><td>Screenshot + correct one-sentence explanation of why OAC doesn't block it</td></tr>
+  <tr><td>CF Function blocking non-web files</td><td>15</td><td>403 on /confidential.txt + Photo Viewer still loading correctly</td></tr>
+  <tr><td>SecurityHeadersPolicy — details page + DevTools</td><td>10</td><td>Policy details page screenshot + DevTools showing all three headers</td></tr>
+  <tr><td>Reflection Q1</td><td>12.5</td><td>Correctly explains OAC's actual purpose vs file-type filtering</td></tr>
+  <tr><td>Reflection Q2</td><td>12.5</td><td>Correctly explains allowlist vs blocklist and fail-closed behavior</td></tr>
   <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
 </table>
 
