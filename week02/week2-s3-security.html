@@ -238,6 +238,21 @@
   }
   footer a { color: #0066cc; text-decoration: none; }
 
+  /* Accordion */
+  .accordion { border:1px solid #e0e0e0; border-radius:10px; overflow:hidden; margin:1rem 0 1.5rem; }
+  .ac-item { display:flex; align-items:center; justify-content:space-between; padding:0.75rem 1rem; cursor:pointer; border-bottom:1px solid #e8e8e8; background:#fafafa; user-select:none; transition:background 0.15s; }
+  .ac-item:last-of-type { border-bottom:none; }
+  .ac-item:hover { background:#f0f6ff; }
+  .ac-item.open { background:#e8f0fc; border-bottom:1px solid #B5D4F4; }
+  .ac-left { display:flex; align-items:center; gap:0.7rem; flex:1; min-width:0; }
+  .ac-icon { font-size:1.1rem; flex-shrink:0; }
+  .ac-name { font-weight:600; font-size:0.95rem; color:#1a1a1a; white-space:nowrap; }
+  .ac-sub { font-size:0.8rem; color:#888; margin-left:0.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ac-chevron { font-size:1.2rem; color:#999; flex-shrink:0; transition:transform 0.2s; line-height:1; }
+  .ac-chevron.open { transform:rotate(90deg); color:#0066cc; }
+  .ac-body { display:none; padding:1rem 1.2rem; border-bottom:1px solid #e8e8e8; background:#fff; font-size:0.9rem; }
+  .ac-body p { margin-bottom:0.7rem; }
+  .ac-body.open { display:block; }
   @media (max-width: 600px) {
     .expand-grid { grid-template-columns: 1fr; }
     .issue-grid { grid-template-columns: 1fr; }
@@ -252,237 +267,238 @@
 </div>
 
 <h1>S3 Object Storage and Security</h1>
-<p class="subtitle">How AWS S3 works, how access is controlled, how data is protected, and how S3 is used as a web server — and why that creates security challenges.</p>
+<p class="subtitle">Hosting the Photo Viewer on AWS for the first time — using S3 static website hosting — and understanding the security tradeoffs that come with it.</p>
+
+<div class="breadcrumb">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
+  <span>›</span>Week 2<span>›</span>S3 Object Storage and Security
+</div>
+
+<h1>S3 Object Storage and Security</h1>
+<p class="subtitle">Hosting the Photo Viewer on AWS for the first time — using S3 static website hosting — and understanding the security tradeoffs that come with it.</p>
 
 <div class="objectives">
   <strong>Learning objectives</strong>
   <ul>
-    <li>Explain what object storage is and how it differs from block storage</li>
-    <li>Describe what an S3 bucket is and how objects are stored and accessed</li>
+    <li>Explain what object storage is and how S3 differs from block and file storage</li>
+    <li>Describe how S3 static website hosting works and what it cannot do</li>
     <li>Explain the three layers of S3 access control and how they are evaluated</li>
-    <li>Describe data in motion vs data at rest and how each is encrypted in S3</li>
-    <li>Explain how S3 static website hosting works and what it cannot do</li>
-    <li>Identify the security problems introduced by hosting a public website directly from S3</li>
+    <li>Describe how data is encrypted in transit and at rest in S3</li>
+    <li>Identify the security problems introduced by this approach and what fixes them</li>
   </ul>
 </div>
 
-<h2>1. What is object storage?</h2>
+<!-- ═══════════════════════════════════════════════ -->
+<h2>1. Starting point</h2>
 
-<p>There are three ways applications store data in the cloud. Understanding the differences explains why S3 exists and when to use it.</p>
+<p>In Week 1 we set up our AWS account, created an IAM admin user, enabled CloudTrail, and configured billing alarms. We have an AWS account — but no application yet.</p>
 
-<table>
-  <tr>
-    <th>Storage type</th>
-    <th>How it works</th>
-    <th>AWS service</th>
-    <th>Best for</th>
-  </tr>
-  <tr>
-    <td><strong>Block storage</strong></td>
-    <td>Data stored as fixed-size blocks on a disk. The OS has a file system that locates blocks and assembles them into files for the application.</td>
-    <td>EBS — Elastic Block Store</td>
-    <td>OS disks, databases, anything that needs low-latency random read/write</td>
-  </tr>
-  <tr>
-    <td><strong>File storage</strong></td>
-    <td>A network file system that multiple servers can mount simultaneously. The file system lives on the network rather than on each server.</td>
-    <td>EFS — Elastic File System</td>
-    <td>Shared content that multiple EC2 instances need to access simultaneously</td>
-  </tr>
-  <tr>
-    <td><strong>Object storage</strong></td>
-    <td>Data stored as discrete objects. The application makes a direct API call to retrieve an object — no OS file system involved, no concept of blocks.</td>
-    <td>S3 — Simple Storage Service</td>
-    <td>Photos, videos, documents, backups, static website files — anything accessed via HTTP</td>
-  </tr>
-</table>
-
-<p><strong>The key difference with object storage:</strong> The application talks directly to S3 via an API call. There is no operating system file system in between. S3 returns the object — a photo, a document, a JavaScript file — directly to whoever requested it.</p>
-
-<h2>2. S3 — buckets and objects</h2>
-
-<h3>Buckets</h3>
-<p>A bucket is a container for objects. Every object in S3 lives inside a bucket. Key facts about buckets:</p>
-<ul style="padding-left:1.4rem; margin-bottom:1rem;">
-  <li style="margin-bottom:0.4rem;">Bucket names are <strong>globally unique</strong> across all AWS accounts worldwide</li>
-  <li style="margin-bottom:0.4rem;">Each bucket lives in a specific AWS region — you choose the region when you create it</li>
-  <li style="margin-bottom:0.4rem;">AWS automatically stores your data across multiple availability zones within that region</li>
-  <li style="margin-bottom:0.4rem;">You don't choose how many servers store your data — S3 handles all of that invisibly</li>
-</ul>
-
-<h3>Objects</h3>
-<p>An object is any file stored in S3 — a photo, a PDF, a JavaScript file, a video, a database backup. There is no practical limit on file type or size (up to 5TB per object). Objects are accessed via a URL:</p>
-<code>https://bucket-name.s3.region.amazonaws.com/path/to/object.jpg</code>
-
-<h3>S3 is not inside your VPC</h3>
-<p>S3 is an AWS managed service that exists outside your Virtual Private Cloud. You access it via API calls over the internet or via a VPC endpoint. AWS manages all the underlying infrastructure — servers, disks, networking, replication. You manage the bucket, what's in it, and who can access it.</p>
+<p>The Photo Viewer is a web application that displays photos. The first version is intentionally simple: five photos served from a hardcoded list, HTML and JavaScript running entirely in the browser, no backend. We need somewhere to store and serve HTML, CSS, JavaScript, and image files. S3 static website hosting does exactly this — zero servers, zero configuration overhead.</p>
 
 <div class="callout info">
-  <p><strong>Regional scope, automatic resilience:</strong> Your S3 bucket is a regional resource — it lives in the region you chose. But unlike EC2 which is AZ-specific, S3 is automatically resilient within the region. AWS guarantees your data is accessible even if one or more AZs within that region go down.</p>
+  <p><strong>Week 2 is deliberately insecure.</strong> We build the simplest possible version first so we can see exactly what's wrong with it. Every vulnerability introduced this week has a specific fix in a later week.</p>
 </div>
 
-<h2>3. Security in S3</h2>
+<!-- ═══════════════════════════════════════════════ -->
+<h2>2. The solution — S3 static website hosting</h2>
 
-<p>S3 security has two dimensions. Click either to explore.</p>
-<p class="hint">Click each card to expand</p>
+<p>S3 is AWS's object storage service — a managed file store where you put objects (files) into buckets (containers) and access them via URLs. Enabling static website hosting tells S3 to behave like a basic web server: serve <code>index.html</code> on root requests, respond to GET requests with the matching file.</p>
 
-<div class="expand-grid">
-  <div class="expand-card" onclick="toggleExpand('access')">
-    <div class="icon">🔐</div>
-    <div class="card-title">Access Control</div>
-    <div class="card-sub">Who is allowed to access objects — Block Public Access, bucket policies, object ACLs</div>
-  </div>
-  <div class="expand-card" onclick="toggleExpand('encrypt')">
-    <div class="icon">🔒</div>
-    <div class="card-title">Encryption</div>
-    <div class="card-sub">How data is protected — data in motion (TLS) and data at rest (SSE)</div>
-  </div>
+<p>No servers to launch. No OS to patch. No capacity to plan. All files — <code>index.html</code>, <code>style.css</code>, <code>app.js</code>, <code>photos.json</code>, and the photos — live in the bucket. The browser fetches <code>photos.json</code> to get the photo list, then requests each image. S3 serves everything. All logic runs in the browser — there is no backend.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>3. Architecture</h2>
+
+<p>Week 2 is the simplest possible architecture — a single S3 bucket serving a public website directly to browsers over HTTP.</p>
+
+<div style="margin:1.5rem 0;">
+<svg viewBox="0 0 520 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:0 auto;">
+  <defs>
+    <marker id="arr-org" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#F57C00"/></marker>
+    <marker id="arr-org-sm" markerWidth="6" markerHeight="6" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L6,2.5 z" fill="#F57C00"/></marker>
+  </defs>
+  <!-- Browser -->
+  <rect x="20" y="35" width="84" height="90" rx="8" fill="#FFF8E1" stroke="#F57C00" stroke-width="2"/>
+  <text x="62" y="72" text-anchor="middle" font-size="30" font-family="system-ui">💻</text>
+  <text x="62" y="112" text-anchor="middle" font-size="11" font-weight="600" fill="#555" font-family="system-ui">Browser</text>
+  <!-- Arrows -->
+  <line x1="104" y1="75" x2="196" y2="75" stroke="#F57C00" stroke-width="2.5" marker-end="url(#arr-org)"/>
+  <text x="150" y="65" text-anchor="middle" font-size="10" fill="#F57C00" font-family="system-ui" font-weight="600">HTTP only ⚠</text>
+  <line x1="196" y1="90" x2="104" y2="90" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr-org-sm)"/>
+  <text x="150" y="108" text-anchor="middle" font-size="9" fill="#999" font-family="system-ui">html · js · css · photos</text>
+  <!-- S3 -->
+  <rect x="196" y="25" width="120" height="110" rx="8" fill="#FFEBEE" stroke="#C62828" stroke-width="2"/>
+  <text x="256" y="65" text-anchor="middle" font-size="30" font-family="system-ui">🪣</text>
+  <text x="256" y="90" text-anchor="middle" font-size="11" font-weight="600" fill="#333" font-family="system-ui">S3 bucket</text>
+  <text x="256" y="107" text-anchor="middle" font-size="9" fill="#C62828" font-family="system-ui">public · Block Public</text>
+  <text x="256" y="120" text-anchor="middle" font-size="9" fill="#C62828" font-family="system-ui">Access OFF ⚠</text>
+  <!-- File list -->
+  <rect x="340" y="35" width="165" height="90" rx="6" fill="#f8f9fa" stroke="#ddd" stroke-width="1.5"/>
+  <text x="350" y="57" font-size="9" fill="#555" font-family="'SF Mono',monospace">📄 index.html</text>
+  <text x="350" y="72" font-size="9" fill="#555" font-family="'SF Mono',monospace">📄 app.js · style.css</text>
+  <text x="350" y="87" font-size="9" fill="#555" font-family="'SF Mono',monospace">📄 photos.json</text>
+  <text x="350" y="102" font-size="9" fill="#C62828" font-family="'SF Mono',monospace">⚠ confidential.txt</text>
+  <line x1="316" y1="80" x2="340" y2="80" stroke="#ccc" stroke-width="1.5"/>
+</svg>
 </div>
 
-<div class="expand-panel" id="access">
-  <h3>Access control — three layers</h3>
-  <p>Every request to S3 passes through three layers. All layers must allow for access to succeed.</p>
-  <div class="layer-row">
-    <span class="layer-num">Layer 1</span>
-    <div class="layer-content">
-      <div class="layer-name">Block Public Access</div>
-      <div class="layer-desc">Account or bucket level. Specifically prevents access from <code>Principal: *</code> — anonymous internet users. Has no effect on authenticated IAM users. New buckets have this enabled by default.</div>
-    </div>
+<!-- ═══════════════════════════════════════════════ -->
+<h2>4. How it works — request walkthrough</h2>
+
+<div style="margin:1.2rem 0;">
+
+  <div style="display:flex;gap:1rem;margin-bottom:1rem;align-items:flex-start;">
+    <div style="background:#1F4E79;color:#fff;font-size:0.78rem;font-weight:700;padding:4px 10px;border-radius:5px;white-space:nowrap;flex-shrink:0;margin-top:2px;">Step 1</div>
+    <div><strong>User opens the Photo Viewer URL</strong>
+    <p style="margin:0.3rem 0 0;color:#555;font-size:0.93rem;">Browser sends an HTTP GET to the S3 website endpoint. S3 returns <code>index.html</code>, the browser begins rendering, then requests <code>style.css</code> and <code>app.js</code>.</p></div>
   </div>
-  <div class="layer-row">
-    <span class="layer-num">Layer 2</span>
-    <div class="layer-content">
-      <div class="layer-name">Bucket Policy</div>
-      <div class="layer-desc">Resource policy on the bucket. Explicit deny → blocked regardless of anything else. Explicit allow → access granted. No mention → check object ACL. Think of it as a guard with a clipboard — blacklist, whitelist, or step aside.</div>
-    </div>
+
+  <div style="display:flex;gap:1rem;margin-bottom:1rem;align-items:flex-start;">
+    <div style="background:#1F4E79;color:#fff;font-size:0.78rem;font-weight:700;padding:4px 10px;border-radius:5px;white-space:nowrap;flex-shrink:0;margin-top:2px;">Step 2</div>
+    <div><strong>JavaScript fetches the photo list</strong>
+    <p style="margin:0.3rem 0 0;color:#555;font-size:0.93rem;"><code>app.js</code> runs and calls <code>fetch('/photos.json')</code>. S3 returns the static JSON file — <code>[{"photo_id":"photo-001","s3_key":"photos/photo1.jpg"}, ...]</code>. This is a file, not a database query. The list is fixed at deploy time.</p></div>
   </div>
-  <div class="layer-row">
-    <span class="layer-num">Layer 3</span>
-    <div class="layer-content">
-      <div class="layer-name">Object ACL</div>
-      <div class="layer-desc">Per-object granular control. Last resort check. Legacy — AWS recommends bucket policies instead. ACLs require per-object configuration which is unmanageable at scale.</div>
-    </div>
+
+  <div style="display:flex;gap:1rem;margin-bottom:1rem;align-items:flex-start;">
+    <div style="background:#1F4E79;color:#fff;font-size:0.78rem;font-weight:700;padding:4px 10px;border-radius:5px;white-space:nowrap;flex-shrink:0;margin-top:2px;">Step 3</div>
+    <div><strong>Browser requests each photo</strong>
+    <p style="margin:0.3rem 0 0;color:#555;font-size:0.93rem;"><code>app.js</code> loops through the list and requests each photo by its <code>s3_key</code>. S3 serves each image directly. The entire interaction is browser ↔ S3 — no backend server at any point.</p></div>
   </div>
+
 </div>
 
-<div class="expand-panel" id="encrypt">
-  <h3>Encryption — data in motion and data at rest</h3>
-  <p><strong>Data in motion:</strong> When a browser or application requests an object from S3, the data travels over the internet encrypted using TLS — Transport Layer Security — the foundation of HTTPS.</p>
-  <p><strong>Data at rest:</strong> S3 automatically encrypts all data at rest using server-side encryption (SSE). You don't configure this — it happens for every object by default.</p>
-  <table>
-    <tr>
-      <th>Encryption type</th>
-      <th>Who manages the key</th>
-      <th>When to use</th>
-    </tr>
-    <tr>
-      <td><strong>SSE-S3</strong></td>
-      <td>AWS manages the key automatically</td>
-      <td>Default — most use cases</td>
-    </tr>
-    <tr>
-      <td><strong>SSE-KMS</strong></td>
-      <td>You create and manage the key in AWS KMS</td>
-      <td>Compliance requirements, audit logs of key usage</td>
-    </tr>
-    <tr>
-      <td><strong>Client-side</strong></td>
-      <td>You manage the key entirely outside AWS</td>
-      <td>Data must never reach AWS unencrypted</td>
-    </tr>
-  </table>
-</div>
+<!-- ═══════════════════════════════════════════════ -->
+<h2>5. Details</h2>
 
-<h2>4. S3 as a static web server</h2>
+<p class="hint">Click any row to expand</p>
 
-<p>S3 has a feature called static website hosting that allows it to serve web content directly to browsers.</p>
+<div class="accordion">
 
-<h3>What S3 does as a web server</h3>
-<ul style="padding-left:1.4rem; margin-bottom:1rem;">
-  <li style="margin-bottom:0.4rem;">Serves <code>index.html</code> automatically when a user requests the root URL</li>
-  <li style="margin-bottom:0.4rem;">Serves a custom error page when a file is not found</li>
-  <li style="margin-bottom:0.4rem;">Responds to HTTP GET requests by returning the requested file</li>
-</ul>
+  <div class="ac-item" onclick="toggleAc('ac-objstorage')">
+    <div class="ac-left"><span class="ac-icon">📦</span><span class="ac-name">Object storage</span><span class="ac-sub">What S3 is and how it differs from block and file storage</span></div>
+    <span class="ac-chevron" id="ac-objstorage-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-objstorage">
+    <p>There are three ways to store data in the cloud:</p>
+    <table style="font-size:0.88rem;margin-top:0.5rem;">
+      <tr><th>Type</th><th>How it works</th><th>AWS service</th><th>Best for</th></tr>
+      <tr><td><strong>Block</strong></td><td>Fixed-size blocks on a disk, assembled by the OS file system</td><td>EBS</td><td>OS disks, databases</td></tr>
+      <tr><td><strong>File</strong></td><td>Network file system multiple servers can mount simultaneously</td><td>EFS</td><td>Shared content across EC2 instances</td></tr>
+      <tr><td><strong>Object</strong></td><td>Discrete objects retrieved via direct API call — no OS file system</td><td>S3</td><td>Photos, video, backups, static web files</td></tr>
+    </table>
+    <p style="margin-top:0.6rem;">The application talks directly to S3 via API. S3 returns the object to whoever requested it — no file system in between.</p>
+  </div>
 
-<h3>What S3 does NOT do as a web server</h3>
-<ul style="padding-left:1.4rem; margin-bottom:1rem;">
-  <li style="margin-bottom:0.4rem;">No server-side code execution — no PHP, Python, Node.js, or any server-side logic</li>
-  <li style="margin-bottom:0.4rem;">No SSL/TLS at the website endpoint — the S3 website URL is <strong>HTTP only</strong></li>
-  <li style="margin-bottom:0.4rem;">No sessions, no server-side cookies, no database connections</li>
-</ul>
+  <div class="ac-item" onclick="toggleAc('ac-bucket')">
+    <div class="ac-left"><span class="ac-icon">🪣</span><span class="ac-name">S3 bucket</span><span class="ac-sub">photoviewer-9876543210 · us-east-1 · globally unique name</span></div>
+    <span class="ac-chevron" id="ac-bucket-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-bucket">
+    <p>A bucket is a container for objects. Key properties: bucket names are <strong>globally unique</strong> across all AWS accounts (that's why ours includes the account ID); each bucket lives in a specific region; S3 automatically replicates across multiple AZs; S3 exists <strong>outside your VPC</strong>.</p>
+    <p>Objects are accessed via URL: <code>https://bucket-name.s3.us-east-1.amazonaws.com/path/to/object.jpg</code></p>
+  </div>
 
-<div class="callout">
-  <p><strong>The right mental model:</strong> S3 is a smart file server. It maps HTTP GET requests to objects in the bucket and returns them. All the intelligence in a static web application lives in the JavaScript running in the browser — not on S3. S3 just delivers the files.</p>
-</div>
+  <div class="ac-item" onclick="toggleAc('ac-statichosting')">
+    <div class="ac-left"><span class="ac-icon">🌐</span><span class="ac-name">Static website hosting</span><span class="ac-sub">Serves index.html on root · HTTP only · no server-side logic</span></div>
+    <span class="ac-chevron" id="ac-statichosting-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-statichosting">
+    <p>Enabling static website hosting gives the bucket a web endpoint: <code>http://bucket.s3-website-us-east-1.amazonaws.com</code>.</p>
+    <p><strong>What it does:</strong> Serves <code>index.html</code> on root requests, returns matching files for any path, returns a 404 error page when a file isn't found.</p>
+    <p><strong>What it does NOT do:</strong> No server-side code (no PHP, Python, Node.js). No SSL/TLS — HTTP only. No sessions, cookies, or database connections.</p>
+    <p><strong>Mental model:</strong> S3 is a smart file server. All logic lives in the browser JavaScript. S3 just delivers files when asked.</p>
+  </div>
 
-<h3>How the Photo Viewer uses S3</h3>
-<p>The Photo Viewer is a static application. S3 stores and serves all the files — <code>index.html</code>, <code>style.css</code>, <code>app.js</code>, <code>photos.json</code>, and the photos themselves. When <code>app.js</code> loads in the browser it fetches <code>/photos.json</code> to get the photo list, then requests each photo by its <code>s3_key</code>. S3 has no knowledge of the application logic — it just responds to file requests.</p>
+  <div class="ac-item" onclick="toggleAc('ac-access')">
+    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">Access control</span><span class="ac-sub">3 layers: Block Public Access · bucket policy · object ACL</span></div>
+    <span class="ac-chevron" id="ac-access-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-access">
+    <p>Every S3 request passes through three layers in order. All must allow for access to succeed.</p>
+    <table style="font-size:0.88rem;margin:0.5rem 0;">
+      <tr><th>Layer</th><th>What it controls</th><th>Week 2 setting</th></tr>
+      <tr><td><strong>Block Public Access</strong></td><td>Prevents access from <code>Principal: *</code> (anonymous internet). On by default on new buckets.</td><td>Disabled — required for static hosting</td></tr>
+      <tr><td><strong>Bucket policy</strong></td><td>Explicit deny overrides all. Explicit allow grants. No mention → check ACL.</td><td><code>s3:GetObject</code> + <code>s3:ListBucket</code> to <code>Principal: *</code></td></tr>
+      <tr><td><strong>Object ACL</strong></td><td>Per-object control. Legacy — use bucket policies instead.</td><td>Default</td></tr>
+    </table>
+    <p><strong>The consequence:</strong> granting <code>Principal: *</code> exposes every file — not just web files. This is one of the Week 2 vulnerabilities.</p>
+  </div>
 
-<h2>5. Problems with this approach</h2>
+  <div class="ac-item" onclick="toggleAc('ac-encryption')">
+    <div class="ac-left"><span class="ac-icon">🔒</span><span class="ac-name">Encryption</span><span class="ac-sub">At rest: SSE-S3 automatic · In transit: HTTP only (no TLS)</span></div>
+    <span class="ac-chevron" id="ac-encryption-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-encryption">
+    <p><strong>Data at rest:</strong> S3 encrypts all objects automatically using SSE-S3 — AWS manages the key. Happens by default, no configuration needed.</p>
+    <table style="font-size:0.88rem;margin:0.5rem 0;">
+      <tr><th>Type</th><th>Who manages key</th><th>When to use</th></tr>
+      <tr><td>SSE-S3</td><td>AWS — automatic</td><td>Default — most use cases</td></tr>
+      <tr><td>SSE-KMS</td><td>You — via AWS KMS</td><td>Compliance, key usage audit logs</td></tr>
+      <tr><td>Client-side</td><td>You — outside AWS</td><td>Data must never reach AWS unencrypted</td></tr>
+    </table>
+    <p><strong>Data in transit:</strong> The S3 website endpoint is HTTP only — no TLS. Content travels unencrypted. Fixed in Week 3 by CloudFront.</p>
+  </div>
 
-<p class="hint">Click each card to understand the impact</p>
+  <div class="ac-item" onclick="toggleAc('ac-cloudtrail')">
+    <div class="ac-left"><span class="ac-icon">📋</span><span class="ac-name">CloudTrail logging</span><span class="ac-sub">Management events logged · data events optional · anonymous access leaves a trace</span></div>
+    <span class="ac-chevron" id="ac-cloudtrail-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-cloudtrail">
+    <p>Even with a public bucket, access isn't invisible. CloudTrail can log S3 data events including anonymous <code>GetObject</code> and <code>ListBucket</code> calls — the <code>userIdentity</code> field shows <strong>Anonymous</strong>, which is a signal worth alerting on.</p>
+    <p><strong>Important:</strong> S3 data events are not logged by default — only management events (creating buckets, changing policies) are. Without explicit data event logging enabled, file-level access leaves no trace.</p>
+    <p>Try it: <code>aws s3 ls s3://photoviewer-9876543210 --no-sign-request</code> lists every file in the bucket. Then <code>aws s3 cp s3://photoviewer-9876543210/confidential.txt .</code> downloads it — no credentials needed. This is what "public bucket" means in practice.</p>
+  </div>
+
+</div><!-- end accordion -->
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>6. Problems with this solution</h2>
+
+<p class="hint">Click each issue to see the impact and the fix</p>
 
 <div class="issue-grid">
   <div class="issue-card" onclick="toggleIssue(1)">
-    <div class="icon">🔓</div>
-    <div class="issue-num">Issue 1</div>
+    <div class="icon">🔓</div><div class="issue-num">Issue 1</div>
     <div class="issue-title">HTTP only</div>
     <div class="issue-sub">No TLS encryption in transit</div>
   </div>
   <div class="issue-card" onclick="toggleIssue(2)">
-    <div class="icon">🪣</div>
-    <div class="issue-num">Issue 2</div>
+    <div class="icon">🪣</div><div class="issue-num">Issue 2</div>
     <div class="issue-title">Public bucket</div>
-    <div class="issue-sub">Everything exposed — not just the website</div>
+    <div class="issue-sub">Every file exposed — not just the website</div>
   </div>
   <div class="issue-card" onclick="toggleIssue(3)">
-    <div class="icon">🌍</div>
-    <div class="issue-num">Issue 3</div>
+    <div class="icon">🌍</div><div class="issue-num">Issue 3</div>
     <div class="issue-title">No caching</div>
-    <div class="issue-sub">Every request goes to us-east-1</div>
+    <div class="issue-sub">Every request travels to us-east-1</div>
   </div>
 </div>
 
 <div class="issue-panel" id="issue-1">
   <h4>Issue 1 — HTTP only</h4>
-  <p>The S3 static website endpoint (<code>http://bucket.s3-website-us-east-1.amazonaws.com</code>) is HTTP only — there is no TLS support at this endpoint. All content is served in plaintext, vulnerable to man-in-the-middle attacks. Anyone on the same network can read the data in transit. This will be fixed in Week 3 by adding CloudFront.</p>
+  <p>The S3 website endpoint is HTTP only. Content travels in plaintext — anyone on the same network can read or modify it in transit. <strong>Fixed in Week 3</strong> by CloudFront, which enforces HTTPS and redirects HTTP automatically.</p>
 </div>
 <div class="issue-panel" id="issue-2">
   <h4>Issue 2 — Public bucket</h4>
-  <p>For S3 static website hosting to work, Block Public Access must be disabled and the bucket policy must grant <code>s3:GetObject</code> to <code>Principal: *</code>. Every file in the bucket is publicly accessible — not just the web files. The <code>confidential.txt</code> file is readable by anyone who knows or discovers the path. And with list permissions open, anyone can enumerate the bucket with <code>aws s3 ls --no-sign-request</code> to discover all files.</p>
+  <p>Static website hosting requires Block Public Access to be disabled and <code>Principal: *</code> on the bucket policy. Every file is publicly accessible — including <code>confidential.txt</code>. Anyone can enumerate all files with <code>aws s3 ls --no-sign-request</code>. <strong>Fixed in Week 3</strong> by Origin Access Control — bucket goes fully private, only CloudFront can read it.</p>
 </div>
 <div class="issue-panel" id="issue-3">
   <h4>Issue 3 — No caching</h4>
-  <p>The S3 bucket lives in <code>us-east-1</code> (Northern Virginia). Every request from every user travels all the way to us-east-1 and back. For small files this is tolerable. For any real application serving users globally — especially large media files — this round-trip latency is unacceptable. This will be fixed in Week 3 by CloudFront's global edge caching.</p>
+  <p>The bucket is in <code>us-east-1</code>. Every request from every user worldwide travels to Northern Virginia and back. For a real application serving global users, this latency and cost per request are unacceptable. <strong>Fixed in Week 3</strong> by CloudFront — content cached at 400+ edge locations globally.</p>
 </div>
 
-<h2>6. CloudTrail still records everything</h2>
-
-<p>Even though this bucket is publicly accessible and anyone can read files without credentials, those accesses are not invisible. CloudTrail can be configured to log S3 data events — including anonymous <code>GetObject</code> and <code>ListBucket</code> calls from unauthenticated requesters.</p>
-
-<p>This means an attacker who accesses <code>confidential.txt</code> directly, or enumerates the bucket with <code>--no-sign-request</code>, leaves a trace in your logs. The <code>userIdentity</code> field in the CloudTrail event will show <strong>Anonymous</strong> — which itself is a signal worth alerting on.</p>
-
-<div class="callout">
-  <p><strong>Important:</strong> S3 data events are not logged by default. CloudTrail only logs management events (creating buckets, changing policies) unless you explicitly enable data event logging on your trail. This is an extra cost — but without it, file-level access leaves no trace.</p>
-</div>
-
+<!-- ═══════════════════════════════════════════════ -->
 <h2>Lab files</h2>
-<p>Download the Week 2 files for this week's lab. Upload all contents to your S3 bucket following the README instructions inside the zip.</p>
+<p>All lab files for this week are in the course GitHub repository. Follow the README instructions in the folder.</p>
 
-<div style="display:flex; gap:1rem; flex-wrap:wrap; margin:1rem 0;">
-  <a class="download-btn" href="photoviewer-stage1.zip" download>⬇ photoviewer-stage1.zip</a>
+<div style="margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week02" target="_blank">⌥ View Week 2 files on GitHub</a>
 </div>
 
 <div class="page-nav">
-  <div>
-    <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
-  </div>
-  <div>
-    <a href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-global-infrastructure.html">← Week 1: Infrastructure</a>
-  </div>
-  <div>
-    <a href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-account-model.html">← Week 1: Account model</a>
-  </div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-global-infrastructure.html">← Week 1: Infrastructure</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week03/week3-cloudfront-edge.html">Week 3: CloudFront + Edge Security →</a></div>
 </div>
 
 <footer>
@@ -491,17 +507,14 @@
 </footer>
 
 <script>
-function toggleExpand(id) {
-  const panel = document.getElementById(id);
-  const cards = document.querySelectorAll('.expand-card');
-  const panels = document.querySelectorAll('.expand-panel');
-  const isActive = panel.classList.contains('active');
-  panels.forEach(p => p.classList.remove('active'));
-  cards.forEach(c => c.classList.remove('active'));
-  if (!isActive) {
-    panel.classList.add('active');
-    event.currentTarget.classList.add('active');
-  }
+function toggleAc(id) {
+  const body = document.getElementById(id);
+  const chev = document.getElementById(id + '-chev');
+  const item = chev ? chev.closest('.ac-item') : null;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chev) chev.classList.toggle('open', !isOpen);
+  if (item) item.classList.toggle('open', !isOpen);
 }
 
 function toggleIssue(n) {
@@ -512,12 +525,8 @@ function toggleIssue(n) {
   const isActive = panel.classList.contains('active');
   panels.forEach(p => p.classList.remove('active'));
   cards.forEach(c => c.classList.remove('active'));
-  if (!isActive) {
-    panel.classList.add('active');
-    card.classList.add('active');
-  }
+  if (!isActive) { panel.classList.add('active'); card.classList.add('active'); }
 }
 </script>
-
 </body>
 </html>

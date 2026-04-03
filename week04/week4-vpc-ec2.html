@@ -346,9 +346,21 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>2. 3-tier application architecture</h2>
+<h2>2. The solution — 3-tier application architecture</h2>
 
-<p>The Photo Viewer follows the classic 3-tier pattern. Click any component to learn what it does.</p>
+<p>We introduce a real backend: an EC2 application server in a private VPC subnet, backed by DynamoDB. The photo list is now constructed dynamically at request time — add a row to DynamoDB and it appears to all users immediately.</p>
+
+<table>
+  <tr><th></th><th>Week 3</th><th>Week 4</th></tr>
+  <tr><td><strong>Photo list source</strong></td><td>Static <code>photos.json</code> in S3</td><td>DynamoDB — dynamic, updatable at runtime</td></tr>
+  <tr><td><strong>Backend</strong></td><td>None — S3 only</td><td>EC2 app server in private VPC subnet</td></tr>
+  <tr><td><strong>Network</strong></td><td>No VPC</td><td>VPC with public/private subnets, security groups, route tables</td></tr>
+  <tr><td><strong>Remote access</strong></td><td>N/A</td><td>SSM Session Manager — no SSH, no port 22</td></tr>
+  <tr><td><strong>CloudFront origins</strong></td><td>One — S3</td><td>Two — S3 (static) and ALB (<code>/photos</code> API)</td></tr>
+  <tr><td><strong>app.js change</strong></td><td><code>fetch('/photos.json')</code></td><td><code>fetch('/photos')</code> — one line</td></tr>
+</table>
+
+<p>The classic 3-tier pattern separates concerns into three isolated layers. Click any component to learn what it does.</p>
 <p class="hint">Click any box to explore</p>
 
 <!-- 3-tier interactive diagram -->
@@ -432,78 +444,9 @@
 <p><strong>Security principle:</strong> Each tier only communicates with the tier immediately adjacent to it. The browser never talks to DynamoDB directly. The app server never talks to the browser directly. This containment limits the blast radius if any one component is compromised.</p>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. What happens when the page loads</h2>
+<h2>3. Architecture</h2>
 
-<p>This is the full request walkthrough — from the moment a user opens the Photo Viewer to the moment photos appear on screen. Every component in the architecture plays a role.</p>
-
-<div style="counter-reset: step-counter; margin: 1.5rem 0;">
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 1</div>
-    <div>
-      <strong>Browser requests the page</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">User opens the Photo Viewer URL. The browser hits CloudFront, which forwards the request to S3 via OAC. CloudFront returns <code>index.html</code>, <code>style.css</code>, and <code>app.js</code>. These are served from CloudFront's cache — the request may never reach S3.</p>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 2</div>
-    <div>
-      <strong>JavaScript runs and requests the photo list</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> executes in the browser and immediately makes a <code>fetch('/photos')</code> call. This hits CloudFront, which has a cache behavior for the <code>/photos</code> path — it routes this request to the ALB origin, not S3.</p>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 3</div>
-    <div>
-      <strong>CloudFront forwards to the ALB</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">CloudFront connects directly to the ALB's public DNS name over AWS's internal network. The ALB is internet-facing — it sits in the public subnet and accepts HTTP on port 80. CloudFront does not go through the IGW; it reaches the ALB's public endpoint directly.</p>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 4</div>
-    <div>
-      <strong>ALB forwards to the app server</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">The ALB routes the request to <code>photoviewer-ec2</code> on port 8000 using the EC2 instance's private IP. The security group on EC2 only allows inbound port 8000 from <code>photoviewer-alb-sg</code> — the ALB's security group — so no other source can reach it.</p>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 5</div>
-    <div>
-      <strong>App server queries DynamoDB</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.py</code> receives the <code>GET /photos</code> request and runs a DynamoDB Scan filtering for <code>is_public = true</code>. The request travels through the DynamoDB Gateway endpoint — a free private route that keeps traffic inside AWS's network, no internet needed.</p>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 6</div>
-    <div>
-      <strong>App server returns JSON</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">DynamoDB returns the matching items. The app server constructs a JSON array — <code>[{"photo_id": "photo-001", "s3_key": "photos/photo1.jpg"}, ...]</code> — and returns it to the ALB, which returns it to CloudFront, which returns it to the browser.</p>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
-    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 7</div>
-    <div>
-      <strong>Browser fetches and displays photos</strong>
-      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> receives the JSON, loops through the photo list, and for each photo requests <code>/photos/photo1.jpg</code> etc. from CloudFront. These are served from S3 via OAC — the same path as Week 3. Photos appear on screen.</p>
-    </div>
-  </div>
-
-</div>
-
-<div class="callout info">
-  <p><strong>Verify this in DevTools:</strong> Open the browser Network tab and click the <code>/photos</code> request. In Response Headers you should see <code>Server: Werkzeug/x.x Python/x.x</code> (proves it came from the app server on EC2) and <code>Via: CloudFront</code> (proves CloudFront forwarded it).</p>
-</div>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>4. Architectural components</h2>
-
-<p>Click any component to understand what it does, why it is placed where it is, and how it connects to the others.</p>
+<p>Click any component in the diagram to learn what it does and why it's placed where it is.</p>
 <p class="hint">Click any component to explore</p>
 
 <!-- VPC diagram -->
@@ -811,21 +754,67 @@
 </div><!-- end security controls accordion -->
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. What changed from Week 3</h2>
+<h2>4. How it works — request walkthrough</h2>
 
-<table>
-  <tr><th></th><th>Week 3</th><th>Week 4</th></tr>
-  <tr><td><strong>Photo list source</strong></td><td>Static <code>photos.json</code> in S3</td><td>DynamoDB — dynamic, updatable at runtime</td></tr>
-  <tr><td><strong>Backend</strong></td><td>None — S3 only</td><td>EC2 app server in private VPC subnet</td></tr>
-  <tr><td><strong>Network</strong></td><td>No VPC</td><td>VPC with public/private subnets, security groups, route tables</td></tr>
-  <tr><td><strong>Remote access</strong></td><td>N/A</td><td>SSM Session Manager — no SSH, no port 22</td></tr>
-  <tr><td><strong>CloudFront origins</strong></td><td>One — S3</td><td>Two — S3 (static) and ALB (<code>/photos</code> API)</td></tr>
-  <tr><td><strong>app.js change</strong></td><td><code>fetch('/photos.json')</code></td><td><code>fetch('/photos')</code> — one line</td></tr>
-  <tr><td><strong>New vulnerabilities</strong></td><td>—</td><td>ALB bypassable, no rate limiting, supply chain risk</td></tr>
-</table>
+<p>From the moment a user opens the Photo Viewer to the moment photos appear on screen — every component plays a role.</p>
+
+<div style="counter-reset: step-counter; margin: 1.5rem 0;">
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 1</div>
+    <div><strong>Browser requests the page</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">User opens the Photo Viewer URL. The browser hits CloudFront, which forwards to S3 via OAC. CloudFront returns <code>index.html</code>, <code>style.css</code>, and <code>app.js</code> — served from cache if available.</p></div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 2</div>
+    <div><strong>JavaScript requests the photo list</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> makes a <code>fetch('/photos')</code> call. CloudFront has a cache behavior for this path — it routes the request to the ALB origin, not S3.</p></div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 3</div>
+    <div><strong>CloudFront forwards to the ALB</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">CloudFront connects directly to the ALB's public DNS over AWS's backbone — not through the IGW. The ALB sits in the public subnet and accepts HTTP on port 80.</p></div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 4</div>
+    <div><strong>ALB forwards to the app server</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">The ALB routes to EC2 on port 8000 via private IP. The EC2 security group only allows inbound :8000 from <code>photoviewer-alb-sg</code> — no other source can reach it.</p></div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 5</div>
+    <div><strong>App server queries DynamoDB</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.py</code> runs a DynamoDB Scan filtering for <code>is_public = true</code>. Traffic goes through the Gateway endpoint — stays inside AWS's network, no internet needed.</p></div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 6</div>
+    <div><strong>App server returns JSON</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">The app server constructs <code>[{"photo_id":"photo-001","s3_key":"photos/photo1.jpg"}, ...]</code> and returns it up the chain: EC2 → ALB → CloudFront → browser.</p></div>
+  </div>
+
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 7</div>
+    <div><strong>Browser fetches and displays photos</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> loops through the JSON and requests each photo from CloudFront → S3 via OAC. Same path as Week 3. Photos appear on screen.</p></div>
+  </div>
+
+</div>
+
+<div class="callout info">
+  <p><strong>Verify in DevTools:</strong> Click the <code>/photos</code> request → Response Headers. You should see <code>Server: Werkzeug/x.x Python/x.x</code> (proves it came from EC2) and <code>Via: CloudFront</code>.</p>
+</div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>6. Security vulnerabilities in Week 4</h2>
+<h2>5. Details</h2>
+
+<p>Click any row to explore the components and security controls in depth.</p>
+<p class="hint">Click any row to expand</p>
+
+<h2>6. Problems with this solution</h2>
 
 <p class="hint">Click each vulnerability to see the attack scenario and fix</p>
 
@@ -869,20 +858,16 @@
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>Lab files</h2>
-<p>Download the Week 4 application files. Upload <code>app.py</code> to your S3 bucket at <code>app/app.py</code> before launching EC2. Upload the updated <code>app.js</code> to your S3 bucket root replacing the Week 3 version.</p>
+<p>All lab files for this week are in the course GitHub repository. Follow the README instructions in the folder.</p>
 
-<div style="margin: 1rem 0;">
-  <a class="download-btn" href="photoviewer-week4.zip" download>⬇ photoviewer-week4.zip</a>
-</div>
-
-<p>Or view the individual files on GitHub:</p>
-<div style="margin: 0.5rem 0;">
-  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week04" target="_blank">⌥ View Week 4 code on GitHub</a>
+<div style="margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week04" target="_blank">⌥ View Week 4 files on GitHub</a>
 </div>
 
 <div class="page-nav">
   <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
   <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week03/week3-cloudfront-edge.html">← Week 3: CloudFront + Edge Security</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-ec2-hardening.html">Week 5: EC2 Hardening →</a></div>
 </div>
 
 <footer>
