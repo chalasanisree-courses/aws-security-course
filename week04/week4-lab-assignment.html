@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 4 Lab — EC2 Backend in VPC</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; max-width: 780px; margin: 0 auto; padding: 1.5rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; color: #111; }
+  h2 { font-size: 1.15rem; font-weight: 700; margin: 2rem 0 0.5rem; color: #111; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.4rem; }
+  h3 { font-size: 0.97rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #222; }
+  p { margin-bottom: 0.8rem; color: #333; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+  li { margin-bottom: 0.4rem; color: #333; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem 1.2rem; border-radius: 8px; font-size: 0.83rem; overflow-x: auto; margin: 0.8rem 0 1rem; line-height: 1.6; }
+  .meta { color: #666; font-size: 0.88rem; margin-bottom: 1.5rem; }
+  .objective { background: #f0f6ff; border-left: 4px solid #0066cc; padding: 1rem 1.2rem; border-radius: 0 6px 6px 0; margin-bottom: 1.5rem; }
+  .objective p { margin-bottom: 0; }
+  .arch { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem 1.2rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; margin: 0.8rem 0; color: #333; }
+  .part { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+  .part-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
+  .part-num { background: #1F4E79; color: white; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 5px; white-space: nowrap; }
+  .part-title { font-weight: 700; font-size: 1rem; color: #111; }
+  .deliverable { background: #fff8e6; border-left: 3px solid #f0a500; padding: 0.5rem 0.8rem; margin-top: 0.8rem; border-radius: 0 4px 4px 0; font-size: 0.88rem; color: #555; }
+  .deliverable strong { color: #333; }
+  .note { background: #fff5f5; border-left: 3px solid #dc3545; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .info { background: #f0f6ff; border-left: 3px solid #0066cc; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .reflection { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
+  .rubric { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 1rem; }
+  .rubric th { background: #f0f4f8; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  .rubric td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #eee; color: #444; vertical-align: top; }
+  .rubric tr:last-child td { border-bottom: none; font-weight: 700; background: #f8f8f8; }
+</style>
+</head>
+<body>
+
+<h1>Week 4 Lab — EC2 Backend in VPC</h1>
+<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 100 pts</p>
+
+<div class="objective">
+  <p><strong>Objective:</strong> Add a dynamic backend to the Photo Viewer. Replace the static <code>photos.json</code> file with a Flask API server running on EC2 in a private VPC subnet, serving the photo list from DynamoDB. By the end of this lab, photo metadata will be stored in a database and served dynamically through a 3-tier architecture: CloudFront → ALB → EC2 → DynamoDB.</p>
+</div>
+
+<div class="arch">
+Browser → CloudFront → ALB (public subnet) → EC2 Flask (private subnet) → DynamoDB
+                    ↘ S3 (static files via OAC — unchanged from Week 3)
+</div>
+
+<div class="note"><strong>Before you start:</strong> Your Week 3 CloudFront distribution must be working. You need your CloudFront domain name and your S3 bucket name ready.</div>
+
+<div class="info">
+  <strong>Files for this lab:</strong> Get all files from the course GitHub repository →
+  <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week04" target="_blank">photoviewer/week04</a>
+</div>
+
+<h2>Part 1 — DynamoDB table</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Create the table</span></div>
+  <p>Go to <strong>DynamoDB → Tables → Create table:</strong></p>
+  <ul>
+    <li>Table name: <code>photoviewer-photos</code></li>
+    <li>Partition key: <code>photo_id</code> (String)</li>
+    <li>Leave everything else as default → <strong>Create table</strong></li>
+    <li>Wait for status: Active</li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Seed the photo catalog</span></div>
+  <p>Go to <strong>Tables → photoviewer-photos → Explore table items → Create item.</strong></p>
+  <p>Switch to <strong>JSON view</strong> and make sure the <strong>"View DynamoDB JSON"</strong> toggle is <strong>OFF.</strong></p>
+  <p>Create one item at a time — repeat for all 5 photos:</p>
+  <pre>{"photo_id": "photo-001", "s3_key": "photos/photo1.jpg", "is_public": true, "owner": "anonymous", "uploaded_at": "2024-01-01T00:00:00Z"}
+{"photo_id": "photo-002", "s3_key": "photos/photo2.jpg", "is_public": true, "owner": "anonymous", "uploaded_at": "2024-01-01T00:00:00Z"}
+{"photo_id": "photo-003", "s3_key": "photos/photo3.jpg", "is_public": true, "owner": "anonymous", "uploaded_at": "2024-01-01T00:00:00Z"}
+{"photo_id": "photo-004", "s3_key": "photos/photo4.jpg", "is_public": true, "owner": "anonymous", "uploaded_at": "2024-01-01T00:00:00Z"}
+{"photo_id": "photo-005", "s3_key": "photos/photo5.jpg", "is_public": true, "owner": "anonymous", "uploaded_at": "2024-01-01T00:00:00Z"}</pre>
+  <div class="deliverable"><strong>Screenshot:</strong> DynamoDB table showing all 5 items</div>
+</div>
+
+<h2>Part 2 — Upload app.py to S3</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Upload the Flask application</span></div>
+  <p>Go to your S3 bucket → <strong>Create folder</strong> → name it <code>app</code> → <strong>Create folder.</strong></p>
+  <p>Open the <code>app</code> folder → <strong>Upload</strong> → select <code>app.py</code> from the Week 4 GitHub folder → <strong>Upload.</strong></p>
+  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket showing app/app.py uploaded</div>
+</div>
+
+<h2>Part 3 — IAM Role</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create the EC2 IAM role</span></div>
+  <p>Go to <strong>IAM → Roles → Create role → AWS service → EC2 → Next:</strong></p>
+  <ul>
+    <li>Search and attach: <code>AmazonSSMManagedInstanceCore</code> → Next</li>
+    <li>Role name: <code>photoviewer-ec2-role</code> → <strong>Create role</strong></li>
+  </ul>
+
+  <h3>Add inline policy 1 — DynamoDB read</h3>
+  <p>Click into <code>photoviewer-ec2-role</code> → <strong>Add permissions → Create inline policy → JSON tab:</strong></p>
+  <pre>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["dynamodb:Scan"],
+    "Resource": "arn:aws:dynamodb:us-east-1:[your-account-id]:table/photoviewer-photos"
+  }]
+}</pre>
+  <p>Policy name: <code>photoviewer-dynamodb-read</code> → <strong>Create policy</strong></p>
+
+  <h3>Add inline policy 2 — S3 app read</h3>
+  <p><strong>Add permissions → Create inline policy → JSON tab:</strong></p>
+  <pre>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:GetObject"],
+    "Resource": "arn:aws:s3:::photoviewer-[your-account-id]/app/*"
+  }]
+}</pre>
+  <p>Policy name: <code>photoviewer-s3-app-read</code> → <strong>Create policy</strong></p>
+  <div class="deliverable"><strong>Screenshot:</strong> IAM role showing all 3 policies attached</div>
+</div>
+
+<h2>Part 4 — VPC</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Create VPC with wizard</span></div>
+  <p>Go to <strong>VPC → Create VPC → select "VPC and more":</strong></p>
+  <ul>
+    <li>Name tag: <code>photoviewer</code></li>
+    <li>IPv4 CIDR: <code>10.0.0.0/16</code></li>
+    <li>Number of AZs: <strong>2</strong></li>
+    <li>Number of public subnets: <strong>2</strong></li>
+    <li>Number of private subnets: <strong>2</strong></li>
+    <li>NAT gateways: <strong>In 1 AZ</strong></li>
+    <li>VPC endpoints: <strong>None</strong></li>
+  </ul>
+  <p>Review the resource map — confirm 2 public subnets, 2 private subnets, 1 IGW, 1 NAT GW → <strong>Create VPC.</strong> Wait ~2 minutes for all resources to become available.</p>
+  <div class="info">The wizard creates the VPC, all 4 subnets, the Internet Gateway, route tables, and the NAT Gateway in one shot. The NAT Gateway is temporary — you will delete it in Step 11 after EC2 finishes bootstrapping.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> VPC resource map showing subnets, route tables, IGW, and NAT GW all created</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Create security groups</span></div>
+  <p>Create 3 security groups in <code>photoviewer-vpc</code>. Create them in this order — SG 2 references SG 1, SG 3 references SG 2.</p>
+
+  <h3>SG 1 — <code>photoviewer-alb-sg</code></h3>
+  <ul>
+    <li>Inbound: HTTP port 80 from <code>0.0.0.0/0</code></li>
+    <li>Outbound: delete the default allow-all rule. Add: Custom TCP port 8000, destination: <code>photoviewer-alb-sg</code></li>
+  </ul>
+
+  <h3>SG 2 — <code>photoviewer-ec2-sg</code></h3>
+  <ul>
+    <li>Inbound: Custom TCP port 8000 from <code>photoviewer-alb-sg</code></li>
+    <li>Outbound: leave default allow-all</li>
+    <li>No port 22 — SSM Session Manager handles all remote access</li>
+  </ul>
+
+  <h3>SG 3 — <code>photoviewer-endpoint-sg</code></h3>
+  <ul>
+    <li>Inbound: HTTPS port 443 from <code>photoviewer-ec2-sg</code></li>
+    <li>Outbound: leave default allow-all</li>
+  </ul>
+  <div class="deliverable"><strong>Screenshot:</strong> Each security group showing correct inbound rules</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Create VPC endpoints</span></div>
+  <p>Go to <strong>VPC → Endpoints → Create endpoint.</strong> Create all 5:</p>
+
+  <h3>Gateway endpoints (free)</h3>
+  <ul>
+    <li>Name: <code>photoviewer-ep-dynamodb</code> — Service: <code>com.amazonaws.us-east-1.dynamodb</code> — Gateway — associate with private route table</li>
+    <li>Name: <code>photoviewer-ep-s3</code> — Service: <code>com.amazonaws.us-east-1.s3</code> — Gateway — associate with private route table</li>
+  </ul>
+
+  <h3>Interface endpoints (SSM — required for Session Manager)</h3>
+  <p>For each: select private subnet in us-east-1a, enable Private DNS, security group: <code>photoviewer-endpoint-sg</code></p>
+  <ul>
+    <li>Name: <code>photoviewer-ep-ssm</code> — Service: <code>com.amazonaws.us-east-1.ssm</code></li>
+    <li>Name: <code>photoviewer-ep-ssmmessages</code> — Service: <code>com.amazonaws.us-east-1.ssmmessages</code></li>
+    <li>Name: <code>photoviewer-ep-ec2messages</code> — Service: <code>com.amazonaws.us-east-1.ec2messages</code></li>
+  </ul>
+  <p>Wait for all 5 endpoints to show status <strong>Available.</strong></p>
+  <div class="deliverable"><strong>Screenshot:</strong> Endpoints list showing all 5 Available</div>
+</div>
+
+<h2>Part 5 — EC2 instance</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Launch EC2 with user data</span></div>
+  <p>Go to <strong>EC2 → Launch instance:</strong></p>
+  <ul>
+    <li>Name: <code>photoviewer-ec2</code> — AMI: Amazon Linux 2023 — Instance type: t3.micro</li>
+    <li>Key pair: <strong>Proceed without key pair</strong></li>
+    <li>VPC: <code>photoviewer-vpc</code> — Subnet: private subnet in us-east-1a</li>
+    <li>Auto-assign public IP: <strong>Disable</strong></li>
+    <li>Security group: <code>photoviewer-ec2-sg</code></li>
+    <li>IAM instance profile: <code>photoviewer-ec2-role</code></li>
+  </ul>
+  <p>Under <strong>Advanced details → User data</strong>, paste the following — replace <code>[your-account-id]</code> with your AWS account ID:</p>
+<pre>#!/bin/bash
+dnf update -y
+dnf install -y python3-pip
+pip3 install flask boto3
+mkdir -p /home/ec2-user/photoviewer
+aws s3 cp s3://photoviewer-[your-account-id]/app/app.py /home/ec2-user/photoviewer/app.py
+chown -R ec2-user:ec2-user /home/ec2-user/photoviewer
+cat > /etc/systemd/system/photoviewer.service << 'SVCEOF'
+[Unit]
+Description=Photo Viewer App Server
+After=network.target
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/photoviewer
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+RestartSec=5
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+systemctl daemon-reload
+systemctl enable photoviewer
+systemctl start photoviewer</pre>
+  <p>Click <strong>Launch instance.</strong> Wait for <strong>2/2 status checks</strong> to pass (~3–5 minutes).</p>
+  <div class="deliverable"><strong>Screenshot:</strong> EC2 instance running with 2/2 status checks passed</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Verify via SSM Session Manager</span></div>
+  <p>Go to <strong>EC2 → Instances → select photoviewer-ec2 → Connect → Session Manager tab → Connect.</strong></p>
+  <p>In the terminal:</p>
+  <pre>systemctl status photoviewer
+curl http://localhost:8000/health
+curl http://localhost:8000/photos</pre>
+  <p>You should see <code>{"status": "ok"}</code> from health and a JSON array of 5 photos from /photos.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> SSM terminal showing systemctl status active and curl /photos returning JSON</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 10</span><span class="part-title">Register EC2 with target group</span></div>
+  <p>Go to <strong>EC2 → Target Groups → Create target group:</strong></p>
+  <ul>
+    <li>Target type: Instances — Name: <code>photoviewer-tg</code></li>
+    <li>Protocol: HTTP — Port: <strong>8000</strong> — VPC: <code>photoviewer-vpc</code></li>
+    <li>Health check path: <code>/health</code> → Next</li>
+    <li>Select <code>photoviewer-ec2</code> → port 8000 → <strong>Include as pending</strong> → <strong>Create target group</strong></li>
+  </ul>
+  <p>Wait for health status to show <strong>Healthy</strong> (~1 minute).</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Target group showing EC2 as Healthy</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 11</span><span class="part-title">Delete NAT Gateway</span></div>
+  <div class="note"><strong>Do this immediately after Step 10.</strong> The NAT Gateway costs ~$32/month. EC2 only needs DynamoDB and SSM at runtime — both go through private endpoints, not the internet.</div>
+  <ol>
+    <li>VPC → NAT Gateways → select the photoviewer NAT gateway → Actions → <strong>Delete NAT gateway</strong></li>
+    <li>VPC → Route tables → select the <strong>private</strong> route table → Routes → Edit routes → delete the <code>0.0.0.0/0 → nat-xxxxx</code> entry → Save</li>
+    <li>Wait ~1 min for NAT GW to show Deleted</li>
+    <li>EC2 → Elastic IPs → select the unassociated IP → Actions → <strong>Release Elastic IP address</strong></li>
+  </ol>
+  <div class="deliverable"><strong>Screenshot:</strong> Private route table showing no NAT Gateway route</div>
+</div>
+
+<h2>Part 6 — Application Load Balancer</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 12</span><span class="part-title">Create the ALB</span></div>
+  <p>Go to <strong>EC2 → Load Balancers → Create load balancer → Application Load Balancer:</strong></p>
+  <ul>
+    <li>Name: <code>photoviewer-alb</code> — Scheme: <strong>Internet-facing</strong></li>
+    <li>VPC: <code>photoviewer-vpc</code></li>
+    <li>Subnets: select <strong>both public subnets</strong> (us-east-1a and us-east-1b)</li>
+    <li>Security groups: remove default, add <code>photoviewer-alb-sg</code></li>
+    <li>Listener: HTTP port 80 → forward to <code>photoviewer-tg</code></li>
+    <li>Click <strong>Create load balancer</strong></li>
+  </ul>
+  <p>Wait for ALB state: <strong>Active.</strong> Then verify in Target Groups that EC2 still shows <strong>Healthy.</strong></p>
+  <div class="deliverable"><strong>Screenshot:</strong> ALB showing Active status and DNS name</div>
+</div>
+
+<h2>Part 7 — Wire CloudFront to ALB</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 13</span><span class="part-title">Add ALB as a second CloudFront origin</span></div>
+  <p>Go to <strong>CloudFront → your distribution → Origins tab → Create origin:</strong></p>
+  <ul>
+    <li>Origin domain: paste the ALB DNS name</li>
+    <li>Protocol: <strong>HTTP only</strong></li>
+    <li>Name: <code>photoviewer-alb-origin</code></li>
+    <li>Click <strong>Create origin</strong></li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 14</span><span class="part-title">Add cache behavior for /photos</span></div>
+  <p>Go to <strong>Behaviors tab → Create behavior:</strong></p>
+  <ul>
+    <li>Path pattern: <code>/photos</code></li>
+    <li>Origin: <code>photoviewer-alb-origin</code></li>
+    <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+    <li>Cache policy: <strong>CachingDisabled</strong></li>
+    <li>Click <strong>Create behavior</strong></li>
+  </ul>
+  <p>Go to <strong>Invalidations tab → Create invalidation</strong> → path: <code>/*</code> → <strong>Create invalidation.</strong></p>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 15</span><span class="part-title">Upload updated app.js</span></div>
+  <p>Upload the Week 4 <code>app.js</code> from the GitHub repo to your S3 bucket root, replacing the Week 3 version. Then create another <code>/*</code> CloudFront invalidation.</p>
+  <div class="info">The only change from Week 3: <code>fetch('/photos.json')</code> becomes <code>fetch('/photos')</code>. The browser now calls the API endpoint on EC2 instead of fetching a static file from S3.</div>
+</div>
+
+<h2>Part 8 — Verify end to end</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 16</span><span class="part-title">Test in browser</span></div>
+  <p>Open your CloudFront URL. The Photo Viewer should load photos dynamically from DynamoDB.</p>
+  <p>Open browser <strong>DevTools → Network tab → click the /photos request → Response Headers.</strong> Confirm:</p>
+  <ul>
+    <li><code>Server: Werkzeug/x.x.x Python/x.x.x</code> — proves response came from Flask on EC2</li>
+    <li><code>Via: ... (CloudFront)</code> — proves CloudFront forwarded the request</li>
+    <li><code>X-Cache: Miss from cloudfront</code> — confirms caching is disabled for API responses</li>
+  </ul>
+  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading + DevTools showing Server: Werkzeug header</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 17</span><span class="part-title">Run the audit script</span></div>
+  <p>In CloudShell:</p>
+  <pre>cd ~/aws-security-course && git pull
+bash photoviewer/audit-aws-resources.sh</pre>
+  <p>Review the output — note which resources are running and what they cost. Delete everything except the VPC, S3, DynamoDB, CloudFront, and IAM role after your assignment is graded.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Audit script output showing running resources</div>
+</div>
+
+<div class="reflection">
+  <h2>Reflection</h2>
+  <p>Answer both questions in 2–3 sentences each.</p>
+  <h3>Question 1</h3>
+  <p>In Week 2 and 3 the photo list was stored in a static <code>photos.json</code> file. What are the limitations of that approach compared to the DynamoDB-backed API? Give a specific example of something you can now do in Week 4 that was impossible before.</p>
+  <h3>Question 2</h3>
+  <p>The EC2 instance is in a private subnet with no public IP, no key pair, and no open port 22. Explain how SSM Session Manager is able to connect to it. What VPC resources make this possible, and why is this more secure than SSH?</p>
+</div>
+
+<h2>Grading rubric</h2>
+<table class="rubric">
+  <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
+  <tr><td>DynamoDB table + 5 items seeded</td><td>10</td><td>Screenshot shows all 5 items with correct schema</td></tr>
+  <tr><td>IAM role with 3 policies</td><td>10</td><td>All 3 policies visible: SSMManagedInstanceCore, dynamodb-read, s3-app-read</td></tr>
+  <tr><td>VPC + subnets + security groups</td><td>10</td><td>VPC resource map showing all components, 3 SGs with correct inbound rules</td></tr>
+  <tr><td>VPC endpoints — all 5 Available</td><td>10</td><td>Endpoints list showing all 5 Available</td></tr>
+  <tr><td>EC2 running Flask via SSM</td><td>15</td><td>SSM terminal screenshot showing systemctl active and curl /photos returning JSON</td></tr>
+  <tr><td>Target group Healthy</td><td>10</td><td>Target group screenshot showing EC2 as Healthy on port 8000</td></tr>
+  <tr><td>NAT Gateway deleted</td><td>5</td><td>Private route table showing no NAT Gateway route</td></tr>
+  <tr><td>End-to-end verification</td><td>15</td><td>Photo Viewer loading + DevTools showing Werkzeug server header</td></tr>
+  <tr><td>Reflection Q1</td><td>7.5</td><td>Correctly identifies dynamic vs static limitations with concrete example</td></tr>
+  <tr><td>Reflection Q2</td><td>7.5</td><td>Correctly explains SSM agent, VPC endpoints, no port 22 needed</td></tr>
+  <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+</table>
+
+</body>
+</html>

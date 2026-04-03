@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 3 Lab — CloudFront + Edge Security</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; max-width: 780px; margin: 0 auto; padding: 1.5rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; color: #111; }
+  h2 { font-size: 1.15rem; font-weight: 700; margin: 2rem 0 0.5rem; color: #111; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.4rem; }
+  h3 { font-size: 0.97rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #222; }
+  p { margin-bottom: 0.8rem; color: #333; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+  li { margin-bottom: 0.4rem; color: #333; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem 1.2rem; border-radius: 8px; font-size: 0.83rem; overflow-x: auto; margin: 0.8rem 0 1rem; line-height: 1.6; }
+  .meta { color: #666; font-size: 0.88rem; margin-bottom: 1.5rem; }
+  .objective { background: #f0f6ff; border-left: 4px solid #0066cc; padding: 1rem 1.2rem; border-radius: 0 6px 6px 0; margin-bottom: 1.5rem; }
+  .objective p { margin-bottom: 0; }
+  .part { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+  .part-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
+  .part-num { background: #1F4E79; color: white; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 5px; white-space: nowrap; }
+  .part-title { font-weight: 700; font-size: 1rem; color: #111; }
+  .deliverable { background: #fff8e6; border-left: 3px solid #f0a500; padding: 0.5rem 0.8rem; margin-top: 0.8rem; border-radius: 0 4px 4px 0; font-size: 0.88rem; color: #555; }
+  .deliverable strong { color: #333; }
+  .note { background: #fff5f5; border-left: 3px solid #dc3545; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .info { background: #f0f6ff; border-left: 3px solid #0066cc; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .reflection { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
+  .rubric { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 1rem; }
+  .rubric th { background: #f0f4f8; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  .rubric td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #eee; color: #444; vertical-align: top; }
+  .rubric tr:last-child td { border-bottom: none; font-weight: 700; background: #f8f8f8; }
+</style>
+</head>
+<body>
+
+<h1>Week 3 Lab — CloudFront + Edge Security</h1>
+<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 100 pts &nbsp;·&nbsp; Due Apr 23</p>
+
+<div class="objective">
+  <p><strong>Objective:</strong> Fix all three Week 2 vulnerabilities by placing CloudFront in front of S3. The bucket goes fully private. HTTPS is enforced. A CloudFront Function blocks non-web files at the edge. Security response headers are added to every response.</p>
+</div>
+
+<div class="info">
+  <strong>Files for this lab:</strong> Get all files from the course GitHub repository →
+  <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week03" target="_blank">photoviewer/week03</a>
+</div>
+
+<h2>Part 1 — Lock down the S3 bucket</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Upload updated files to S3</span></div>
+  <p>Go to your bucket root → <strong>Upload</strong> → add the updated <code>app.js</code> and <code>photos.json</code> from the Week 3 GitHub folder → <strong>Upload.</strong></p>
+  <p>When prompted about overwriting the existing <code>app.js</code> — confirm the overwrite.</p>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Disable static website hosting</span></div>
+  <p>Go to your bucket → <strong>Properties tab → Static website hosting → Edit:</strong></p>
+  <ul>
+    <li>Static website hosting: <strong>Disable</strong> → <strong>Save changes</strong></li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Enable Block Public Access and remove bucket policy</span></div>
+  <p>Go to your bucket → <strong>Permissions tab → Block public access → Edit:</strong></p>
+  <ul>
+    <li>Check all four boxes → <strong>Save changes</strong> → type <code>confirm</code> → <strong>Confirm</strong></li>
+  </ul>
+  <p>Still on Permissions tab → <strong>Bucket policy → Edit</strong> → delete all content → <strong>Save changes.</strong></p>
+  <div class="deliverable"><strong>Screenshot:</strong> Permissions tab showing Block Public Access ON and empty bucket policy</div>
+</div>
+
+<h2>Part 2 — Create CloudFront distribution</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create the distribution with OAC</span></div>
+  <p>Go to <strong>CloudFront → Distributions → Create distribution:</strong></p>
+  <h3>Origin settings</h3>
+  <ul>
+    <li>Origin domain: select your S3 bucket from the dropdown</li>
+    <li>When prompted <em>"Allow private S3 bucket access to CloudFront?"</em> → click <strong>Yes, update the bucket policy</strong> — this creates OAC and updates the bucket policy automatically</li>
+  </ul>
+  <h3>Default cache behavior</h3>
+  <ul>
+    <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+    <li>Cache policy: leave as default (CachingOptimized)</li>
+    <li>Response headers policy: select <strong>SecurityHeadersPolicy</strong> (AWS managed)</li>
+  </ul>
+  <h3>Settings</h3>
+  <ul>
+    <li>Default root object: <code>index.html</code></li>
+    <li>WAF: leave disabled</li>
+  </ul>
+  <p>Click <strong>Create distribution</strong> — wait for Status: <strong>Enabled</strong> (~2 minutes).</p>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudFront distribution showing Enabled status and domain name</div>
+</div>
+
+<h2>Part 3 — CloudFront Function allowlist</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Create the allowlist function</span></div>
+  <p>Go to <strong>CloudFront → Functions → Create function:</strong></p>
+  <ul>
+    <li>Name: <code>photoviewer-allowlist</code></li>
+    <li>Runtime: cloudfront-js-2.0</li>
+    <li>Paste the code from <code>photoviewer-allowlist.js</code> in the GitHub repo</li>
+    <li>Click <strong>Save changes</strong> → <strong>Publish</strong></li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Attach the function to the distribution</span></div>
+  <p>Go to your distribution → <strong>Behaviors tab</strong> → select the default behavior → <strong>Edit:</strong></p>
+  <ul>
+    <li>Function associations → Viewer request → select <code>photoviewer-allowlist</code></li>
+    <li>Click <strong>Save changes</strong></li>
+  </ul>
+  <div class="deliverable"><strong>Screenshot:</strong> Default behavior showing photoviewer-allowlist attached at Viewer Request</div>
+</div>
+
+<h2>Part 4 — Invalidate and verify</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Create cache invalidation</span></div>
+  <p>Go to your distribution → <strong>Invalidations tab → Create invalidation:</strong></p>
+  <ul>
+    <li>Object paths: <code>/*</code> → <strong>Create invalidation</strong></li>
+    <li>Wait for status: Completed</li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Verify all four fixes</span></div>
+  <p>Copy your CloudFront domain name from the distribution details page. Open it in your browser and confirm each of the following:</p>
+
+  <h3>✅ HTTPS enforced</h3>
+  <p>Navigate to <code>http://[your-cf-domain]</code> — should redirect automatically to HTTPS. Padlock visible in browser.</p>
+
+  <h3>✅ Non-web files blocked at edge</h3>
+  <p>Navigate to <code>https://[your-cf-domain]/confidential.txt</code> — should return <strong>403 Forbidden.</strong></p>
+
+  <h3>✅ Security headers present</h3>
+  <p>Open DevTools → Network tab → click any request → Response Headers. Confirm all three:</p>
+  <ul>
+    <li><code>Strict-Transport-Security</code></li>
+    <li><code>X-Frame-Options</code></li>
+    <li><code>X-Content-Type-Options</code></li>
+  </ul>
+
+  <h3>✅ Bucket enumeration blocked</h3>
+  <p>In CloudShell:</p>
+  <pre>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</pre>
+  <p>Should return <strong>Access Denied</strong> — the bucket is now private.</p>
+
+  <div class="deliverable"><strong>Screenshot:</strong> Browser showing HTTPS padlock + Photo Viewer loading</div>
+  <div class="deliverable"><strong>Screenshot:</strong> 403 response on /confidential.txt through CloudFront</div>
+  <div class="deliverable"><strong>Screenshot:</strong> DevTools Response Headers showing all three security headers</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudShell showing Access Denied on --no-sign-request</div>
+</div>
+
+<div class="reflection">
+  <h2>Reflection</h2>
+  <p>Answer both questions in 2–3 sentences each.</p>
+  <h3>Question 1</h3>
+  <p>Origin Access Control (OAC) has two parts — request signing and a bucket policy condition. Explain why both parts are necessary. What happens if you have signing without the restrictive bucket policy, or the restrictive bucket policy without signing?</p>
+  <h3>Question 2</h3>
+  <p>The CloudFront Function uses an allowlist rather than a blocklist to control which file types are served. Explain the difference and why an allowlist is more secure. What would happen if you forgot to add a file type to a blocklist vs an allowlist?</p>
+</div>
+
+<h2>Grading rubric</h2>
+<table class="rubric">
+  <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
+  <tr><td>S3 bucket locked down</td><td>15</td><td>Screenshot shows Block Public Access ON and empty bucket policy</td></tr>
+  <tr><td>CloudFront distribution with OAC</td><td>20</td><td>Distribution Enabled, OAC created, bucket policy updated</td></tr>
+  <tr><td>HTTPS enforced</td><td>10</td><td>HTTP redirects to HTTPS — padlock in browser screenshot</td></tr>
+  <tr><td>CF Function — non-web files blocked</td><td>20</td><td>403 on /confidential.txt through CloudFront</td></tr>
+  <tr><td>Security headers present</td><td>10</td><td>DevTools showing HSTS, X-Frame-Options, X-Content-Type-Options</td></tr>
+  <tr><td>Bucket enumeration blocked</td><td>10</td><td>CloudShell showing Access Denied on --no-sign-request</td></tr>
+  <tr><td>Reflection Q1</td><td>7.5</td><td>Correctly explains both OAC parts and why each is necessary</td></tr>
+  <tr><td>Reflection Q2</td><td>7.5</td><td>Correctly explains allowlist vs blocklist and fail-closed behavior</td></tr>
+  <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 2 Lab — Static S3 Hosting</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #1a1a1a;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; color: #111; }
+  h2 { font-size: 1.15rem; font-weight: 700; margin: 2rem 0 0.5rem; color: #111; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.4rem; }
+  h3 { font-size: 0.97rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #222; }
+  p { margin-bottom: 0.8rem; color: #333; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+  li { margin-bottom: 0.4rem; color: #333; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem 1.2rem; border-radius: 8px; font-size: 0.83rem; overflow-x: auto; margin: 0.8rem 0 1rem; line-height: 1.6; }
+  .meta { color: #666; font-size: 0.88rem; margin-bottom: 1.5rem; }
+  .objective { background: #f0f6ff; border-left: 4px solid #0066cc; padding: 1rem 1.2rem; border-radius: 0 6px 6px 0; margin-bottom: 1.5rem; }
+  .objective p { margin-bottom: 0; }
+  .part { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+  .part-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
+  .part-num { background: #1F4E79; color: white; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 5px; white-space: nowrap; }
+  .part-title { font-weight: 700; font-size: 1rem; color: #111; }
+  .deliverable { background: #fff8e6; border-left: 3px solid #f0a500; padding: 0.5rem 0.8rem; margin-top: 0.8rem; border-radius: 0 4px 4px 0; font-size: 0.88rem; color: #555; }
+  .deliverable strong { color: #333; }
+  .note { background: #fff5f5; border-left: 3px solid #dc3545; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .info { background: #f0f6ff; border-left: 3px solid #0066cc; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .reflection { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
+  .rubric { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 1rem; }
+  .rubric th { background: #f0f4f8; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  .rubric td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #eee; color: #444; vertical-align: top; }
+  .rubric tr:last-child td { border-bottom: none; font-weight: 700; background: #f8f8f8; }
+</style>
+</head>
+<body>
+
+<h1>Week 2 Lab — Static S3 Hosting</h1>
+<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 25 pts &nbsp;·&nbsp; Due Apr 16</p>
+
+<div class="objective">
+  <p><strong>Objective:</strong> Deploy the Photo Viewer as a static website directly from an S3 bucket. This is the deliberately insecure starting point — every vulnerability introduced here has a specific fix in Week 3.</p>
+</div>
+
+<div class="info">
+  <strong>Files for this lab:</strong> Get all files from the course GitHub repository →
+  <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week02" target="_blank">photoviewer/week02</a>
+</div>
+
+<h2>Part 1 — Create S3 bucket</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Create the bucket</span></div>
+  <p>Go to <strong>S3 → Buckets → Create bucket:</strong></p>
+  <ul>
+    <li>Bucket name: <code>photoviewer-[your-account-id]</code> — use your 12-digit AWS account ID to make it globally unique. Find your account ID in the top-right corner of the console.</li>
+    <li>AWS Region: <strong>us-east-1</strong></li>
+    <li>Leave all other settings as default</li>
+    <li>Click <strong>Create bucket</strong></li>
+  </ul>
+  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket created and showing in the bucket list</div>
+</div>
+
+<h2>Part 2 — Enable static website hosting</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Enable website hosting</span></div>
+  <p>Go to your bucket → <strong>Properties tab</strong> → scroll to <strong>Static website hosting</strong> → click <strong>Edit:</strong></p>
+  <ul>
+    <li>Static website hosting: <strong>Enable</strong></li>
+    <li>Hosting type: Host a static website</li>
+    <li>Index document: <code>index.html</code></li>
+    <li>Click <strong>Save changes</strong></li>
+  </ul>
+</div>
+
+<h2>Part 3 — Make the bucket public (deliberately insecure)</h2>
+
+<div class="note"><strong>Note:</strong> You are intentionally making this bucket public to demonstrate the vulnerability. This is not how production buckets should be configured — we fix this in Week 3.</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Disable Block Public Access</span></div>
+  <p>Go to your bucket → <strong>Permissions tab</strong> → <strong>Block public access</strong> → click <strong>Edit:</strong></p>
+  <ul>
+    <li>Uncheck all four boxes</li>
+    <li>Click <strong>Save changes</strong> → type <code>confirm</code> → <strong>Confirm</strong></li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Create bucket policy</span></div>
+  <p>Still on the <strong>Permissions tab</strong> → <strong>Bucket policy</strong> → click <strong>Edit</strong> → paste the following, replacing <code>[your-account-id]</code>:</p>
+  <pre>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PublicReadGetObject",
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": ["s3:GetObject", "s3:ListBucket"],
+    "Resource": [
+      "arn:aws:s3:::photoviewer-[your-account-id]",
+      "arn:aws:s3:::photoviewer-[your-account-id]/*"
+    ]
+  }]
+}</pre>
+  <p>Click <strong>Save changes.</strong></p>
+  <div class="info"><code>s3:ListBucket</code> is included intentionally — this allows bucket enumeration, which is one of the vulnerabilities demonstrated at the end of this lab.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Permissions tab showing Block Public Access is OFF and bucket policy saved</div>
+</div>
+
+<h2>Part 4 — Upload files</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Add your photos</span></div>
+  <p>Go to your bucket → click <strong>Create folder</strong> → name it <code>photos</code> → <strong>Create folder.</strong></p>
+  <p>Open the <code>photos</code> folder → click <strong>Upload</strong> → add 5 photo files named <code>photo1.jpg</code> through <code>photo5.jpg</code> → <strong>Upload.</strong></p>
+  <div class="info">If you use different filenames, update <code>photos.json</code> to match — the <code>s3_key</code> field must match the actual filename in S3.</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Upload website files</span></div>
+  <p>Go to your bucket <strong>root</strong> (not inside the photos folder) → click <strong>Upload</strong> → add all of these files from the GitHub repo:</p>
+  <ul>
+    <li><code>index.html</code></li>
+    <li><code>style.css</code></li>
+    <li><code>app.js</code></li>
+    <li><code>photos.json</code></li>
+    <li><code>confidential.txt</code></li>
+  </ul>
+  <p>Click <strong>Upload.</strong></p>
+  <div class="note"><code>confidential.txt</code> must be at the bucket root alongside <code>index.html</code> — this is the file that demonstrates the vulnerability.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket root showing all 5 files uploaded</div>
+</div>
+
+<h2>Part 5 — Verify and demonstrate vulnerabilities</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Access the site</span></div>
+  <p>Go to your bucket → <strong>Properties tab</strong> → scroll to <strong>Static website hosting</strong> → copy the <strong>Bucket website endpoint.</strong> It will look like:</p>
+  <pre>http://photoviewer-[your-account-id].s3-website-us-east-1.amazonaws.com</pre>
+  <p>Open it in your browser — the Photo Viewer should load and display your photos.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading in browser showing HTTP in address bar (no padlock)</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Demonstrate the vulnerabilities</span></div>
+
+  <h3>Vulnerability 1 — Access confidential.txt directly</h3>
+  <p>Navigate to:</p>
+  <pre>http://photoviewer-[your-account-id].s3-website-us-east-1.amazonaws.com/confidential.txt</pre>
+  <p>The file contents are readable without any authentication.</p>
+
+  <h3>Vulnerability 2 — Enumerate the bucket</h3>
+  <p>In CloudShell, run:</p>
+  <pre>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</pre>
+  <p>This lists all files in the bucket without logging in — including files you never intended to expose.</p>
+
+  <h3>Vulnerability 3 — Confirm HTTP only</h3>
+  <p>Look at the URL in the browser — it starts with <code>http://</code>. Try changing it to <code>https://</code> — it will fail. The S3 website endpoint has no TLS support.</p>
+
+  <div class="deliverable"><strong>Screenshot:</strong> Terminal showing bucket enumeration output from <code>--no-sign-request</code></div>
+</div>
+
+<h2>Part 6 — Clean up</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Run the audit script</span></div>
+  <p>In CloudShell:</p>
+  <pre>cd ~/aws-security-course && git pull
+bash photoviewer/audit-aws-resources.sh</pre>
+  <p>S3 buckets are included in the output. Note: S3 storage is essentially free at this scale — no cleanup needed for the bucket itself. We will reuse it in Week 3.</p>
+</div>
+
+<div class="reflection">
+  <h2>Reflection</h2>
+  <p>Answer both questions in 2–3 sentences each.</p>
+  <h3>Question 1</h3>
+  <p>You ran <code>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</code> without any credentials and saw all the files in the bucket. Explain why this works — what specific AWS configuration choices made this possible?</p>
+  <h3>Question 2</h3>
+  <p>The S3 website endpoint is HTTP only — there is no way to enable HTTPS at this endpoint. Why is this a security problem even for a site that only shows public photos? Think about what future versions of this application will contain.</p>
+</div>
+
+<h2>Grading rubric</h2>
+<table class="rubric">
+  <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
+  <tr><td>S3 bucket created in us-east-1</td><td>5</td><td>Screenshot shows bucket with correct name format</td></tr>
+  <tr><td>Static hosting enabled + files uploaded</td><td>5</td><td>Screenshot shows Photo Viewer loading in browser</td></tr>
+  <tr><td>Vulnerability demo — confidential.txt accessible</td><td>5</td><td>Screenshot shows file contents readable in browser</td></tr>
+  <tr><td>Vulnerability demo — bucket enumeration</td><td>5</td><td>Screenshot shows --no-sign-request listing all files</td></tr>
+  <tr><td>Reflection Q1</td><td>2.5</td><td>Correctly identifies Block Public Access off + bucket policy Principal: *</td></tr>
+  <tr><td>Reflection Q2</td><td>2.5</td><td>Identifies credential interception risk for future login/upload features</td></tr>
+  <tr><td><strong>Total</strong></td><td><strong>25</strong></td><td></td></tr>
+</table>
+
+</body>
+</html>
