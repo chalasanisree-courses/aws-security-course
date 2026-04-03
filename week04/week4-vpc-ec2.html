@@ -125,8 +125,43 @@
   ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; }
   li { margin-bottom: 0.4rem; color: #333; }
 
-  /* Architecture diagram */
-  .arch-box {
+  /* Accordion list */
+  .accordion {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1rem 0 1.5rem;
+  }
+  .ac-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #e8e8e8;
+    background: #fafafa;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .ac-item:last-of-type { border-bottom: none; }
+  .ac-item:hover { background: #f0f6ff; }
+  .ac-item.open { background: #e8f0fc; border-bottom: 1px solid #B5D4F4; }
+  .ac-left { display: flex; align-items: center; gap: 0.7rem; flex: 1; min-width: 0; }
+  .ac-icon { font-size: 1.1rem; flex-shrink: 0; }
+  .ac-name { font-weight: 600; font-size: 0.95rem; color: #1a1a1a; white-space: nowrap; }
+  .ac-sub { font-size: 0.8rem; color: #888; margin-left: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ac-chevron { font-size: 1.2rem; color: #999; flex-shrink: 0; transition: transform 0.2s; line-height: 1; }
+  .ac-chevron.open { transform: rotate(90deg); color: #0066cc; }
+  .ac-body {
+    display: none;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #e8e8e8;
+    background: #fff;
+    font-size: 0.9rem;
+  }
+  .ac-body p { margin-bottom: 0.7rem; }
+  .ac-body p:last-child { margin-bottom: 0; }
+  .ac-body.open { display: block; }
     background: #f8f9fa;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
@@ -279,7 +314,6 @@
   }
 </style>
 </head>
-<body>
 
 <div class="breadcrumb">
   <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
@@ -287,18 +321,15 @@
 </div>
 
 <h1>VPC, EC2, and Application Tier Security</h1>
-<p class="subtitle">Building a 3-tier application in AWS — presentation, application, and data tiers — with a private subnet EC2 backend, DynamoDB, ALB, VPC endpoints, and SSM access control.</p>
+<p class="subtitle">Adding a real backend to the Photo Viewer — a 3-tier architecture with a private EC2 app server, DynamoDB, ALB, and VPC — and tracing exactly what happens when the page loads.</p>
 
 <div class="objectives">
   <strong>Learning objectives</strong>
   <ul>
-    <li>Explain the 3-tier application architecture and map it to AWS services</li>
-    <li>Design a VPC with public and private subnets and explain the security rationale for each</li>
-    <li>Explain how security groups chain together to implement least privilege at the network layer</li>
-    <li>Describe how SSM Session Manager provides remote access without SSH or open ports</li>
-    <li>Explain the difference between Gateway and Interface VPC endpoints</li>
-    <li>Explain why a NAT Gateway is needed for bootstrap but not for runtime</li>
-    <li>Explain why DynamoDB replaces static JSON and what the schema enables for future weeks</li>
+    <li>Explain why a static photo list is limiting and how a dynamic backend solves it</li>
+    <li>Map the 3-tier architecture pattern to AWS services in the Photo Viewer</li>
+    <li>Trace the full request path from browser to DynamoDB and back</li>
+    <li>Explain the purpose of each architectural component and why it is placed where it is</li>
     <li>Identify the deliberate security vulnerabilities in the Week 4 architecture and their fixes</li>
   </ul>
 </div>
@@ -306,19 +337,18 @@
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>1. The problem with a static photo list</h2>
 
-<p>In Weeks 2 and 3 the Photo Viewer served a static <code>photos.json</code> file listing five photos. This works but has a fundamental limitation — the list is fixed at deploy time. Adding a new photo to S3 doesn't automatically show it to website visitors. You have to manually update <code>photos.json</code> and redeploy.</p>
+<p>In Weeks 2 and 3 the Photo Viewer served a static <code>photos.json</code> file listing five photos. This works, but the list is fixed at deploy time. Adding a new photo to S3 means manually editing <code>photos.json</code>, re-uploading it, and invalidating the CloudFront cache. For an application where users can upload content this is unacceptable.</p>
 
-<p>For a real application where users upload content this is unacceptable. We need the photo list to come from a database that can be updated at runtime without redeploying anything. That's what Week 4 solves.</p>
+<p>What we want: add a photo to S3, have it appear to all visitors immediately. That requires a backend that queries a database at runtime — not a file that was written at deploy time.</p>
 
 <div class="callout info">
-  <p><strong>The one-line change:</strong> The entire Week 4 frontend change is one line in <code>app.js</code> — replacing <code>fetch('/photos.json')</code> with <code>fetch('/photos')</code>. Everything else — the HTML, CSS, photo rendering logic — stays identical. The backend does the new work.</p>
+  <p><strong>The one-line frontend change:</strong> Everything in <code>app.js</code> stays the same except one line — <code>fetch('/photos.json')</code> becomes <code>fetch('/photos')</code>. The browser now calls an API endpoint on our app server instead of fetching a static file. The backend does all the new work.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>2. 3-tier application architecture</h2>
 
-<p>The Photo Viewer follows the classic 3-tier architecture pattern. Click any component to learn what it does.</p>
-
+<p>The Photo Viewer follows the classic 3-tier pattern. Click any component to learn what it does.</p>
 <p class="hint">Click any box to explore</p>
 
 <!-- 3-tier interactive diagram -->
@@ -330,33 +360,21 @@
       <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#E65100"/></marker>
       <marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7B1FA2"/></marker>
     </defs>
-
-    <!-- Tier background bands -->
     <rect x="0" y="0" width="240" height="340" fill="#E8F5E9" rx="0"/>
     <rect x="240" y="0" width="320" height="340" fill="#E3F2FD" rx="0"/>
     <rect x="560" y="0" width="260" height="340" fill="#FFF3E0" rx="0"/>
-
-    <!-- Tier labels -->
     <text x="120" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#2E7D32" font-family="system-ui" letter-spacing="0.06em">PRESENTATION TIER</text>
     <text x="400" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#1565C0" font-family="system-ui" letter-spacing="0.06em">APPLICATION TIER</text>
     <text x="690" y="20" text-anchor="middle" font-size="10" font-weight="700" fill="#E65100" font-family="system-ui" letter-spacing="0.06em">DATA TIER</text>
-
-    <!-- Dividers -->
     <line x1="240" y1="0" x2="240" y2="340" stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
     <line x1="560" y1="0" x2="560" y2="340" stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
-
-    <!-- Browser -->
     <g class="tier-node" id="node-browser" onclick="selectTierNode('browser')" style="cursor:pointer;">
       <rect x="14" y="60" width="90" height="55" rx="8" fill="#fff" stroke="#4CAF50" stroke-width="2"/>
       <text x="59" y="82" text-anchor="middle" font-size="18" font-family="system-ui">🌐</text>
       <text x="59" y="105" text-anchor="middle" font-size="11" font-weight="600" fill="#333" font-family="system-ui">Browser</text>
     </g>
-
-    <!-- Arrow browser → CF -->
     <line x1="104" y1="87" x2="132" y2="87" stroke="#4CAF50" stroke-width="2" marker-end="url(#arrow-green)"/>
     <text x="118" y="81" text-anchor="middle" font-size="9" fill="#4CAF50" font-family="system-ui">HTTPS</text>
-
-    <!-- CloudFront — centred in presentation tier -->
     <g class="tier-node" id="node-cf" onclick="selectTierNode('cf')" style="cursor:pointer;">
       <rect x="132" y="45" width="96" height="100" rx="8" fill="#fff" stroke="#4CAF50" stroke-width="2"/>
       <text x="180" y="74" text-anchor="middle" font-size="22" font-family="system-ui">☁️</text>
@@ -364,35 +382,23 @@
       <text x="180" y="114" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">CDN + HTTPS</text>
       <text x="180" y="128" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">CF Function</text>
     </g>
-
-    <!-- S3 — below CF, still in presentation tier -->
     <g class="tier-node" id="node-s3" onclick="selectTierNode('s3')" style="cursor:pointer;">
       <rect x="132" y="195" width="96" height="55" rx="8" fill="#fff" stroke="#4CAF50" stroke-width="2"/>
       <text x="180" y="218" text-anchor="middle" font-size="18" font-family="system-ui">🪣</text>
       <text x="180" y="240" text-anchor="middle" font-size="11" font-weight="600" fill="#333" font-family="system-ui">S3 (OAC)</text>
     </g>
-
-    <!-- Arrow CF ↓ S3 -->
     <line x1="180" y1="145" x2="180" y2="195" stroke="#4CAF50" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow-green)"/>
     <text x="196" y="175" font-size="8" fill="#4CAF50" font-family="system-ui">static files</text>
-
-    <!-- Arrow CF → ALB -->
     <line x1="228" y1="87" x2="268" y2="87" stroke="#1976D2" stroke-width="2" marker-end="url(#arrow-blue)"/>
     <text x="248" y="80" text-anchor="middle" font-size="9" fill="#1976D2" font-family="system-ui">/photos</text>
-
-    <!-- ALB -->
     <g class="tier-node" id="node-alb" onclick="selectTierNode('alb')" style="cursor:pointer;">
       <rect x="268" y="58" width="90" height="58" rx="8" fill="#fff" stroke="#1976D2" stroke-width="2"/>
       <text x="313" y="82" text-anchor="middle" font-size="18" font-family="system-ui">⚖️</text>
       <text x="313" y="104" text-anchor="middle" font-size="11" font-weight="600" fill="#333" font-family="system-ui">ALB</text>
       <text x="313" y="117" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">public subnet</text>
     </g>
-
-    <!-- Arrow ALB → App Server -->
     <line x1="358" y1="87" x2="400" y2="87" stroke="#1976D2" stroke-width="2" marker-end="url(#arrow-blue)"/>
     <text x="379" y="80" text-anchor="middle" font-size="9" fill="#1976D2" font-family="system-ui">:8000</text>
-
-    <!-- App Server (EC2) -->
     <g class="tier-node" id="node-ec2" onclick="selectTierNode('ec2')" style="cursor:pointer;">
       <rect x="400" y="40" width="115" height="100" rx="8" fill="#fff" stroke="#1976D2" stroke-width="2"/>
       <text x="457" y="68" text-anchor="middle" font-size="22" font-family="system-ui">🖥</text>
@@ -401,588 +407,425 @@
       <text x="457" y="122" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">no public IP</text>
       <text x="457" y="136" text-anchor="middle" font-size="8" fill="#aaa" font-family="system-ui" font-style="italic">app.py</text>
     </g>
-
-    <!-- Arrow App Server → DynamoDB -->
     <line x1="515" y1="90" x2="570" y2="90" stroke="#E65100" stroke-width="2" marker-end="url(#arrow-orange)"/>
     <text x="543" y="83" text-anchor="middle" font-size="9" fill="#E65100" font-family="system-ui">endpoint</text>
-
-    <!-- DynamoDB -->
     <g class="tier-node" id="node-dynamo" onclick="selectTierNode('dynamo')" style="cursor:pointer;">
       <rect x="570" y="55" width="110" height="70" rx="8" fill="#fff" stroke="#E65100" stroke-width="2"/>
       <text x="625" y="82" text-anchor="middle" font-size="20" font-family="system-ui">🗄</text>
       <text x="625" y="106" text-anchor="middle" font-size="11" font-weight="600" fill="#333" font-family="system-ui">DynamoDB</text>
       <text x="625" y="119" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">photo catalog</text>
     </g>
-
-    <!-- SSM — below app server, dashed -->
     <g class="tier-node" id="node-ssm" onclick="selectTierNode('ssm')" style="cursor:pointer;">
       <rect x="400" y="195" width="115" height="55" rx="8" fill="#fff" stroke="#7B1FA2" stroke-width="2" stroke-dasharray="5,3"/>
       <text x="457" y="218" text-anchor="middle" font-size="15" font-family="system-ui">🔐</text>
       <text x="457" y="238" text-anchor="middle" font-size="11" font-weight="600" fill="#7B1FA2" font-family="system-ui">SSM</text>
       <text x="457" y="251" text-anchor="middle" font-size="9" fill="#7B1FA2" font-family="system-ui">no SSH</text>
     </g>
-
-    <!-- Arrow SSM ↑ App Server -->
     <line x1="457" y1="195" x2="457" y2="140" stroke="#7B1FA2" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow-purple)"/>
   </svg>
 </div>
 
-<!-- Detail panel for 3-tier diagram -->
-<div id="tier-detail" style="display:none; background:#f0f6ff; border:1px solid #B5D4F4; border-radius:8px; padding:1.2rem 1.5rem; margin-bottom:1.5rem; transition: all 0.2s;">
+<div id="tier-detail" style="display:none; background:#f0f6ff; border:1px solid #B5D4F4; border-radius:8px; padding:1.2rem 1.5rem; margin-bottom:1.5rem;">
   <div id="tier-detail-content"></div>
 </div>
 
-<p><strong>The key security principle:</strong> Each tier only communicates with the tier immediately adjacent to it. The browser never talks to DynamoDB directly. EC2 never talks to the browser directly. Everything flows through defined interfaces — this containment limits the blast radius of any single component being compromised.</p>
-
-<h3>Why the app server returns JSON, not HTML</h3>
-<p>The application server (<code>app.py</code>, built using Flask) only returns JSON — <code>[{"photo_id": "photo-001", "s3_key": "photos/photo1.jpg"}, ...]</code>. The browser's JavaScript (<code>app.js</code>) receives this and renders the UI. The app server is purely application tier — no presentation responsibility.</p>
+<p><strong>Security principle:</strong> Each tier only communicates with the tier immediately adjacent to it. The browser never talks to DynamoDB directly. The app server never talks to the browser directly. This containment limits the blast radius if any one component is compromised.</p>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. VPC design</h2>
+<h2>3. What happens when the page loads</h2>
 
-<p>A VPC — Virtual Private Cloud — is a logically isolated network inside AWS. Think of it as a fenced-off section of the AWS datacenter that belongs only to your account. Click any component in the diagram to explore it.</p>
+<p>This is the full request walkthrough — from the moment a user opens the Photo Viewer to the moment photos appear on screen. Every component in the architecture plays a role.</p>
 
-<p class="hint">Click any component to explore</p>
+<div style="counter-reset: step-counter; margin: 1.5rem 0;">
 
-<!-- VPC interactive diagram -->
-<div style="position:relative; margin: 1.5rem 0;">
-  <svg id="vpc-svg" viewBox="0 0 860 430" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;background:#F8F9FA;border:1px solid #dee2e6;">
-    <defs>
-      <marker id="v-arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#388E3C"/></marker>
-      <marker id="v-arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#1976D2"/></marker>
-      <marker id="v-arrow-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#F57C00"/></marker>
-      <marker id="v-arrow-orange2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#E65100"/></marker>
-      <marker id="v-arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7B1FA2"/></marker>
-    </defs>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 1</div>
+    <div>
+      <strong>Browser requests the page</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">User opens the Photo Viewer URL. The browser hits CloudFront, which forwards the request to S3 via OAC. CloudFront returns <code>index.html</code>, <code>style.css</code>, and <code>app.js</code>. These are served from CloudFront's cache — the request may never reach S3.</p>
+    </div>
+  </div>
 
-    <!-- External services top-right: DynamoDB, S3, SSM -->
-    <!-- DynamoDB -->
-    <g id="node-dynamo-ext" onclick="selectVpcNode('dynamo-ep')" style="cursor:pointer;">
-      <rect x="600" y="10" width="90" height="55" rx="8" fill="#fff" stroke="#E65100" stroke-width="2"/>
-      <text x="645" y="34" text-anchor="middle" font-size="16" font-family="system-ui">🗄</text>
-      <text x="645" y="54" text-anchor="middle" font-size="10" font-weight="600" fill="#E65100" font-family="system-ui">DynamoDB</text>
-    </g>
-    <!-- S3 -->
-    <g id="node-s3-ext" onclick="selectVpcNode('s3-ep')" style="cursor:pointer;">
-      <rect x="700" y="10" width="70" height="55" rx="8" fill="#fff" stroke="#388E3C" stroke-width="2"/>
-      <text x="735" y="34" text-anchor="middle" font-size="16" font-family="system-ui">🪣</text>
-      <text x="735" y="54" text-anchor="middle" font-size="10" font-weight="600" fill="#388E3C" font-family="system-ui">S3</text>
-    </g>
-    <!-- SSM -->
-    <g id="node-vpc-ssm" onclick="selectVpcNode('vpc-ssm')" style="cursor:pointer;">
-      <rect x="780" y="10" width="70" height="55" rx="8" fill="#fff" stroke="#7B1FA2" stroke-width="2" stroke-dasharray="4,2"/>
-      <text x="815" y="34" text-anchor="middle" font-size="16" font-family="system-ui">🔐</text>
-      <text x="815" y="54" text-anchor="middle" font-size="10" font-weight="600" fill="#7B1FA2" font-family="system-ui">SSM</text>
-    </g>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 2</div>
+    <div>
+      <strong>JavaScript runs and requests the photo list</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> executes in the browser and immediately makes a <code>fetch('/photos')</code> call. This hits CloudFront, which has a cache behavior for the <code>/photos</code> path — it routes this request to the ALB origin, not S3.</p>
+    </div>
+  </div>
 
-    <!-- IGW — far LEFT (external) -->
-    <g id="node-igw" onclick="selectVpcNode('igw')" style="cursor:pointer;">
-      <rect x="10" y="160" width="70" height="65" rx="8" fill="#fff" stroke="#388E3C" stroke-width="2"/>
-      <text x="45" y="185" text-anchor="middle" font-size="20" font-family="system-ui">🌐</text>
-      <text x="45" y="208" text-anchor="middle" font-size="10" font-weight="600" fill="#333" font-family="system-ui">IGW</text>
-      <text x="45" y="220" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">internet</text>
-    </g>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 3</div>
+    <div>
+      <strong>CloudFront forwards to the ALB</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">CloudFront connects directly to the ALB's public DNS name over AWS's internal network. The ALB is internet-facing — it sits in the public subnet and accepts HTTP on port 80. CloudFront does not go through the IGW; it reaches the ALB's public endpoint directly.</p>
+    </div>
+  </div>
 
-    <!-- VPC boundary -->
-    <rect x="90" y="75" width="700" height="345" rx="12" fill="none" stroke="#1F4E79" stroke-width="2.5"/>
-    <text x="106" y="67" font-size="11" font-weight="700" fill="#1F4E79" font-family="system-ui">photoviewer-vpc  10.0.0.0/16</text>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 4</div>
+    <div>
+      <strong>ALB forwards to the app server</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">The ALB routes the request to <code>photoviewer-ec2</code> on port 8000 using the EC2 instance's private IP. The security group on EC2 only allows inbound port 8000 from <code>photoviewer-alb-sg</code> — the ALB's security group — so no other source can reach it.</p>
+    </div>
+  </div>
 
-    <!-- AZ1 band -->
-    <rect x="100" y="90" width="680" height="155" rx="8" fill="#E3F2FD" opacity="0.4"/>
-    <text x="115" y="107" font-size="10" font-weight="600" fill="#1565C0" font-family="system-ui">us-east-1a</text>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 5</div>
+    <div>
+      <strong>App server queries DynamoDB</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.py</code> receives the <code>GET /photos</code> request and runs a DynamoDB Scan filtering for <code>is_public = true</code>. The request travels through the DynamoDB Gateway endpoint — a free private route that keeps traffic inside AWS's network, no internet needed.</p>
+    </div>
+  </div>
 
-    <!-- AZ2 band -->
-    <rect x="100" y="255" width="680" height="155" rx="8" fill="#E8F5E9" opacity="0.4"/>
-    <text x="115" y="272" font-size="10" font-weight="600" fill="#2E7D32" font-family="system-ui">us-east-1b</text>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 6</div>
+    <div>
+      <strong>App server returns JSON</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">DynamoDB returns the matching items. The app server constructs a JSON array — <code>[{"photo_id": "photo-001", "s3_key": "photos/photo1.jpg"}, ...]</code> — and returns it to the ALB, which returns it to CloudFront, which returns it to the browser.</p>
+    </div>
+  </div>
 
-    <!-- Public subnet AZ1 -->
-    <rect x="110" y="113" width="160" height="120" rx="6" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
-    <text x="190" y="129" text-anchor="middle" font-size="8" font-weight="700" fill="#F57F17" font-family="system-ui">PUBLIC  10.0.0.0/20</text>
+  <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
+    <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 7</div>
+    <div>
+      <strong>Browser fetches and displays photos</strong>
+      <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> receives the JSON, loops through the photo list, and for each photo requests <code>/photos/photo1.jpg</code> etc. from CloudFront. These are served from S3 via OAC — the same path as Week 3. Photos appear on screen.</p>
+    </div>
+  </div>
 
-    <!-- ALB node AZ1 -->
-    <g id="node-alb-az1" onclick="selectVpcNode('alb')" style="cursor:pointer;">
-      <rect x="130" y="138" width="80" height="50" rx="6" fill="#fff" stroke="#1976D2" stroke-width="2"/>
-      <text x="170" y="160" text-anchor="middle" font-size="16" font-family="system-ui">⚖️</text>
-      <text x="170" y="180" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="system-ui">ALB node</text>
-    </g>
-
-    <!-- NAT GW -->
-    <g id="node-nat" onclick="selectVpcNode('nat')" style="cursor:pointer;">
-      <rect x="130" y="195" width="80" height="28" rx="5" fill="#FFF3E0" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,2"/>
-      <text x="170" y="213" text-anchor="middle" font-size="9" font-weight="600" fill="#F57C00" font-family="system-ui">NAT GW (temp)</text>
-    </g>
-
-    <!-- Private subnet AZ1 -->
-    <rect x="285" y="113" width="485" height="120" rx="6" fill="#E8EAF6" stroke="#3949AB" stroke-width="1.5"/>
-    <text x="527" y="129" text-anchor="middle" font-size="8" font-weight="700" fill="#283593" font-family="system-ui">PRIVATE  10.0.128.0/20</text>
-
-    <!-- EC2 -->
-    <g id="node-vpc-ec2" onclick="selectVpcNode('vpc-ec2')" style="cursor:pointer;">
-      <rect x="300" y="138" width="100" height="65" rx="6" fill="#fff" stroke="#3949AB" stroke-width="2"/>
-      <text x="350" y="163" text-anchor="middle" font-size="18" font-family="system-ui">🖥</text>
-      <text x="350" y="185" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="system-ui">App Server</text>
-      <text x="350" y="197" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">10.0.138.x</text>
-    </g>
-
-    <!-- ALB → EC2 arrow -->
-    <line x1="210" y1="163" x2="300" y2="163" stroke="#1976D2" stroke-width="2" marker-end="url(#v-arrow-blue)"/>
-
-    <!-- IGW → ALB arrow -->
-    <line x1="80" y1="183" x2="130" y2="163" stroke="#388E3C" stroke-width="2" marker-end="url(#v-arrow-green)"/>
-
-    <!-- NAT → IGW arrow -->
-    <line x1="130" y1="209" x2="80" y2="200" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#v-arrow-orange)"/>
-
-    <!-- VPC boundary endpoint dots on right edge of private subnet -->
-    <!-- DynamoDB endpoint dot -->
-    <g id="node-dynamo-ep" onclick="selectVpcNode('dynamo-ep')" style="cursor:pointer;">
-      <circle cx="568" cy="163" r="9" fill="#E65100" stroke="#fff" stroke-width="2"/>
-      <text x="568" y="186" text-anchor="middle" font-size="8" fill="#E65100" font-family="system-ui">DB ep.</text>
-    </g>
-
-    <!-- S3 endpoint dot -->
-    <g id="node-s3-ep" onclick="selectVpcNode('s3-ep')" style="cursor:pointer;">
-      <circle cx="620" cy="163" r="9" fill="#388E3C" stroke="#fff" stroke-width="2"/>
-      <text x="620" y="186" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">S3 ep.</text>
-    </g>
-
-    <!-- SSM endpoint dot -->
-    <g id="node-ssm-ep" onclick="selectVpcNode('ssm-ep')" style="cursor:pointer;">
-      <circle cx="672" cy="163" r="9" fill="#7B1FA2" stroke="#fff" stroke-width="2"/>
-      <text x="672" y="186" text-anchor="middle" font-size="8" fill="#7B1FA2" font-family="system-ui">SSM ep.</text>
-    </g>
-
-    <!-- EC2 → endpoint arrows -->
-    <line x1="400" y1="163" x2="558" y2="163" stroke="#E65100" stroke-width="1.5" marker-end="url(#v-arrow-orange2)"/>
-    <line x1="610" y1="163" x2="631" y2="163" stroke="#388E3C" stroke-width="1.5"/>
-    <line x1="631" y1="163" x2="662" y2="163" stroke="#7B1FA2" stroke-width="1.5"/>
-
-    <!-- Endpoint dots → external services (going up through VPC boundary) -->
-    <line x1="568" y1="154" x2="645" y2="65" stroke="#E65100" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#v-arrow-orange2)"/>
-    <line x1="620" y1="154" x2="735" y2="65" stroke="#388E3C" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#v-arrow-green)"/>
-    <line x1="672" y1="154" x2="815" y2="65" stroke="#7B1FA2" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#v-arrow-purple)"/>
-
-    <!-- Public subnet AZ2 -->
-    <rect x="110" y="268" width="160" height="120" rx="6" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
-    <text x="190" y="284" text-anchor="middle" font-size="8" font-weight="700" fill="#F57F17" font-family="system-ui">PUBLIC  10.0.16.0/20</text>
-
-    <!-- ALB node AZ2 -->
-    <g id="node-alb-az2" onclick="selectVpcNode('alb')" style="cursor:pointer;">
-      <rect x="130" y="295" width="80" height="50" rx="6" fill="#fff" stroke="#1976D2" stroke-width="2"/>
-      <text x="170" y="317" text-anchor="middle" font-size="16" font-family="system-ui">⚖️</text>
-      <text x="170" y="337" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="system-ui">ALB node</text>
-    </g>
-
-    <!-- Private subnet AZ2 -->
-    <rect x="285" y="268" width="485" height="120" rx="6" fill="#E8EAF6" stroke="#3949AB" stroke-width="1.5"/>
-    <text x="527" y="284" text-anchor="middle" font-size="8" font-weight="700" fill="#283593" font-family="system-ui">PRIVATE  10.0.144.0/20  (empty — symmetry)</text>
-  </svg>
 </div>
 
-<!-- Detail panel for VPC diagram -->
+<div class="callout info">
+  <p><strong>Verify this in DevTools:</strong> Open the browser Network tab and click the <code>/photos</code> request. In Response Headers you should see <code>Server: Werkzeug/x.x Python/x.x</code> (proves it came from the app server on EC2) and <code>Via: CloudFront</code> (proves CloudFront forwarded it).</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. Architectural components</h2>
+
+<p>Click any component to understand what it does, why it is placed where it is, and how it connects to the others.</p>
+<p class="hint">Click any component to explore</p>
+
+<!-- VPC diagram -->
+<div style="position:relative; margin: 1.5rem 0;">
+<svg id="vpc-svg" viewBox="0 0 880 470" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;background:#fff;border:1px solid #dee2e6;">
+  <defs>
+    <marker id="v-arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#388E3C"/></marker>
+    <marker id="v-arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#1976D2"/></marker>
+    <marker id="v-arrow-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#F57C00"/></marker>
+    <marker id="v-arrow-orange2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#E65100"/></marker>
+    <marker id="v-arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7B1FA2"/></marker>
+  </defs>
+  <g id="node-vpc-cf" onclick="selectVpcNode('vpc-cf')" style="cursor:pointer;">
+    <rect x="10" y="15" width="100" height="80" rx="10" fill="#E8F5E9" stroke="#4CAF50" stroke-width="2"/>
+    <text x="60" y="44" text-anchor="middle" font-size="22" font-family="system-ui">☁️</text>
+    <text x="60" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#1B5E20" font-family="system-ui">CloudFront</text>
+    <text x="60" y="79" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">global CDN</text>
+  </g>
+  <g id="node-vpc-ssm" onclick="selectVpcNode('vpc-ssm')" style="cursor:pointer;">
+    <rect x="355" y="15" width="115" height="80" rx="10" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="2" stroke-dasharray="5,3"/>
+    <text x="412" y="44" text-anchor="middle" font-size="22" font-family="system-ui">🔐</text>
+    <text x="412" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#4A148C" font-family="system-ui">AWS Systems</text>
+    <text x="412" y="79" text-anchor="middle" font-size="8" fill="#7B1FA2" font-family="system-ui">Manager</text>
+  </g>
+  <g id="node-s3-ext" onclick="selectVpcNode('s3-ep')" style="cursor:pointer;">
+    <rect x="720" y="15" width="90" height="80" rx="10" fill="#E8F5E9" stroke="#388E3C" stroke-width="2"/>
+    <text x="765" y="44" text-anchor="middle" font-size="22" font-family="system-ui">🪣</text>
+    <text x="765" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#1B5E20" font-family="system-ui">S3</text>
+    <text x="765" y="79" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">static files</text>
+  </g>
+  <g id="node-dynamo-ext" onclick="selectVpcNode('dynamo-ep')" style="cursor:pointer;">
+    <rect x="820" y="220" width="52" height="80" rx="10" fill="#FBE9E7" stroke="#E65100" stroke-width="2"/>
+    <text x="846" y="248" text-anchor="middle" font-size="20" font-family="system-ui">🗄</text>
+    <text x="846" y="268" text-anchor="middle" font-size="8" font-weight="700" fill="#BF360C" font-family="system-ui">Dynamo</text>
+    <text x="846" y="280" text-anchor="middle" font-size="8" font-weight="700" fill="#BF360C" font-family="system-ui">DB</text>
+  </g>
+  <g id="node-igw" onclick="selectVpcNode('igw')" style="cursor:pointer;">
+    <rect x="10" y="310" width="80" height="65" rx="10" fill="#fff" stroke="#1F4E79" stroke-width="2"/>
+    <text x="50" y="335" text-anchor="middle" font-size="20" font-family="system-ui">🔗</text>
+    <text x="50" y="355" text-anchor="middle" font-size="10" font-weight="700" fill="#1F4E79" font-family="system-ui">IGW</text>
+    <text x="50" y="368" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">outbound</text>
+  </g>
+  <path d="M 110 45 Q 430 -8 720 45" stroke="#388E3C" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#v-arrow-green)"/>
+  <text x="420" y="10" text-anchor="middle" font-size="9" fill="#388E3C" font-family="system-ui">static files via OAC</text>
+  <path d="M 110 55 L 200 55 L 200 174" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#v-arrow-blue)"/>
+  <text x="175" y="48" text-anchor="middle" font-size="9" fill="#1976D2" font-family="system-ui">API: /photos</text>
+  <rect x="100" y="110" width="715" height="350" rx="14" fill="#E3F2FD" stroke="#1F4E79" stroke-width="2.5"/>
+  <text x="116" y="102" font-size="11" font-weight="700" fill="#1F4E79" font-family="system-ui">photoviewer-vpc  10.0.0.0/16</text>
+  <rect x="110" y="125" width="695" height="165" rx="10" fill="#BBDEFB" opacity="0.5"/>
+  <text x="126" y="143" font-size="9" font-weight="700" fill="#1565C0" font-family="system-ui">us-east-1a</text>
+  <rect x="122" y="150" width="155" height="128" rx="8" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="200" y="166" text-anchor="middle" font-size="8" font-weight="700" fill="#F57F17" font-family="system-ui">PUBLIC  10.0.0.0/20</text>
+  <g id="node-alb-az1" onclick="selectVpcNode('alb')" style="cursor:pointer;">
+    <rect x="138" y="174" width="120" height="45" rx="7" fill="#fff" stroke="#1976D2" stroke-width="2"/>
+    <text x="160" y="196" font-size="18" font-family="system-ui">⚖️</text>
+    <text x="210" y="188" text-anchor="middle" font-size="9" font-weight="700" fill="#0D47A1" font-family="system-ui">ALB</text>
+    <text x="210" y="202" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">spans both AZs</text>
+  </g>
+  <g id="node-nat" onclick="selectVpcNode('nat')" style="cursor:pointer;">
+    <rect x="138" y="228" width="120" height="38" rx="6" fill="#FFF3E0" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <text x="198" y="244" text-anchor="middle" font-size="9" font-weight="600" fill="#E65100" font-family="system-ui">NAT GW (temp)</text>
+    <text x="198" y="258" text-anchor="middle" font-size="8" fill="#F57C00" font-family="system-ui" font-style="italic">bootstrap only</text>
+  </g>
+  <path d="M 138 247 L 50 310" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#v-arrow-orange)"/>
+  <text x="72" y="285" text-anchor="middle" font-size="8" fill="#F57C00" font-family="system-ui">to internet</text>
+  <rect x="292" y="150" width="505" height="128" rx="8" fill="#C5CAE9" stroke="#3949AB" stroke-width="1.5"/>
+  <text x="544" y="166" text-anchor="middle" font-size="8" font-weight="700" fill="#283593" font-family="system-ui">PRIVATE  10.0.128.0/20</text>
+  <line x1="258" y1="197" x2="360" y2="215" stroke="#1976D2" stroke-width="2" marker-end="url(#v-arrow-blue)"/>
+  <g id="node-vpc-ec2" onclick="selectVpcNode('vpc-ec2')" style="cursor:pointer;">
+    <rect x="360" y="178" width="105" height="75" rx="8" fill="#fff" stroke="#3949AB" stroke-width="2"/>
+    <text x="412" y="205" text-anchor="middle" font-size="22" font-family="system-ui">🖥</text>
+    <text x="412" y="226" text-anchor="middle" font-size="9" font-weight="700" fill="#1A237E" font-family="system-ui">App Server</text>
+    <text x="412" y="240" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">EC2 · private</text>
+  </g>
+  <g id="node-ssm-ep" onclick="selectVpcNode('ssm-ep')" style="cursor:pointer;">
+    <circle cx="412" cy="110" r="11" fill="#7B1FA2" stroke="#fff" stroke-width="2.5"/>
+    <text x="412" y="134" text-anchor="middle" font-size="8" fill="#7B1FA2" font-family="system-ui" font-weight="600">SSM ep.</text>
+  </g>
+  <line x1="412" y1="178" x2="412" y2="121" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#v-arrow-purple)"/>
+  <line x1="412" y1="99" x2="412" y2="95" stroke="#7B1FA2" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#v-arrow-purple)"/>
+  <g id="node-s3-ep" onclick="selectVpcNode('s3-ep')" style="cursor:pointer;">
+    <circle cx="660" cy="110" r="11" fill="#388E3C" stroke="#fff" stroke-width="2.5"/>
+    <text x="660" y="134" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui" font-weight="600">S3 ep.</text>
+  </g>
+  <line x1="465" y1="192" x2="649" y2="116" stroke="#388E3C" stroke-width="1.5" marker-end="url(#v-arrow-green)"/>
+  <line x1="660" y1="99" x2="748" y2="60" stroke="#388E3C" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#v-arrow-green)"/>
+  <g id="node-dynamo-ep" onclick="selectVpcNode('dynamo-ep')" style="cursor:pointer;">
+    <circle cx="815" cy="260" r="11" fill="#E65100" stroke="#fff" stroke-width="2.5"/>
+    <text x="815" y="284" text-anchor="middle" font-size="8" fill="#E65100" font-family="system-ui" font-weight="600">DB ep.</text>
+  </g>
+  <line x1="465" y1="228" x2="804" y2="258" stroke="#E65100" stroke-width="1.5" marker-end="url(#v-arrow-orange2)"/>
+  <line x1="826" y1="260" x2="820" y2="260" stroke="#E65100" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#v-arrow-orange2)"/>
+  <rect x="110" y="300" width="695" height="150" rx="10" fill="#C8E6C9" opacity="0.5"/>
+  <text x="126" y="318" font-size="9" font-weight="700" fill="#2E7D32" font-family="system-ui">us-east-1b  (ALB node here too — required for ALB multi-AZ)</text>
+  <rect x="122" y="325" width="155" height="110" rx="8" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/>
+  <text x="200" y="341" text-anchor="middle" font-size="8" font-weight="700" fill="#F57F17" font-family="system-ui">PUBLIC  10.0.16.0/20</text>
+  <text x="200" y="380" text-anchor="middle" font-size="9" fill="#888" font-family="system-ui">ALB node</text>
+  <text x="200" y="395" text-anchor="middle" font-size="8" fill="#aaa" font-family="system-ui">(same ALB, 2nd AZ)</text>
+  <rect x="292" y="325" width="505" height="110" rx="8" fill="#C5CAE9" stroke="#3949AB" stroke-width="1.5"/>
+  <text x="544" y="341" text-anchor="middle" font-size="8" font-weight="700" fill="#283593" font-family="system-ui">PRIVATE  10.0.144.0/20  (empty — symmetry)</text>
+</svg>
+</div>
+
 <div id="vpc-detail" style="display:none; background:#f0f6ff; border:1px solid #B5D4F4; border-radius:8px; padding:1.2rem 1.5rem; margin-bottom:1.5rem;">
   <div id="vpc-detail-content"></div>
 </div>
 
-<div class="callout info">
-  <p><strong>ALB requires two subnets in different AZs.</strong> This is an AWS requirement — the ALB deploys a node in each selected AZ for availability. Even though we only have one EC2 instance in us-east-1a, the ALB needs both public subnets selected. The second subnet is there for the ALB node, not for EC2.</p>
-</div>
+<p class="hint" style="margin-top:0.5rem;">Click any row to expand</p>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>4. Security groups — defense in depth</h2>
+<!-- Accordion list -->
+<div class="accordion">
 
-<p>Security groups are stateful firewalls that attach to network interfaces. In AWS, anything with a network interface gets a security group — EC2 instances, ALBs, and VPC interface endpoints all have them.</p>
-
-<p class="hint">Click each card to explore the security group</p>
-
-<div class="card-grid">
-  <div class="card" onclick="toggleCard('sg1')">
-    <div class="card-icon">🌐</div>
-    <div class="card-title">photoviewer-alb-sg</div>
-    <div class="card-sub">Attaches to the ALB</div>
+  <div class="ac-item" onclick="toggleAc('ac-vpc')">
+    <div class="ac-left"><span class="ac-icon">🏗</span><span class="ac-name">VPC</span><span class="ac-sub">photoviewer-vpc · 10.0.0.0/16</span></div>
+    <span class="ac-chevron" id="ac-vpc-chev">›</span>
   </div>
-  <div class="card" onclick="toggleCard('sg2')">
-    <div class="card-icon">🖥</div>
-    <div class="card-title">photoviewer-ec2-sg</div>
-    <div class="card-sub">Attaches to App Server (EC2)</div>
+  <div class="ac-body" id="ac-vpc">
+    <p>A Virtual Private Cloud is a logically isolated network inside AWS — a fenced-off section of the datacenter that belongs only to your account. Your VPC spans <strong>two availability zones</strong> for resilience. Everything inside it is unreachable from the internet unless you explicitly open a path. The CIDR <code>10.0.0.0/16</code> gives you 65,536 private IP addresses to allocate across subnets.</p>
   </div>
-</div>
-<div class="card-panel" id="sg1">
-  <strong>photoviewer-alb-sg — ALB security group</strong>
-  <table style="margin-top:0.8rem;">
-    <tr><th>Direction</th><th>Port</th><th>Source/Dest</th><th>Why</th></tr>
-    <tr><td>Inbound</td><td>80 (HTTP)</td><td>0.0.0.0/0</td><td>Accept requests from CloudFront and internet</td></tr>
-    <tr><td>Outbound</td><td>All</td><td>0.0.0.0/0</td><td>Forward to EC2 on port 8000</td></tr>
-  </table>
-</div>
-<div class="card-panel" id="sg2">
-  <strong>photoviewer-ec2-sg — EC2 security group</strong>
-  <table style="margin-top:0.8rem;">
-    <tr><th>Direction</th><th>Port</th><th>Source/Dest</th><th>Why</th></tr>
-    <tr><td>Inbound</td><td>8000</td><td>photoviewer-alb-sg</td><td>Only ALB can reach the app server — not internet, not other VPC resources</td></tr>
-    <tr><td>Outbound</td><td>All</td><td>0.0.0.0/0</td><td>Reach DynamoDB and SSM endpoints</td></tr>
-  </table>
-  <p style="margin-top:0.8rem; font-size:0.88rem; color:#555;">No port 22 — SSH is never needed. SSM Session Manager handles all access to the app server.</p>
-</div>
 
-<div class="card-grid" style="margin-top:1rem;">
-  <div class="card" onclick="toggleCard('sg3')">
-    <div class="card-icon">🔌</div>
-    <div class="card-title">photoviewer-endpoint-sg</div>
-    <div class="card-sub">Attaches to SSM interface endpoints</div>
+  <div class="ac-item" onclick="toggleAc('ac-subnets')">
+    <div class="ac-left"><span class="ac-icon">🔲</span><span class="ac-name">Subnets</span><span class="ac-sub">2 public · 2 private · across 2 AZs</span></div>
+    <span class="ac-chevron" id="ac-subnets-chev">›</span>
   </div>
-</div>
-<div class="card-panel" id="sg3">
-  <strong>photoviewer-endpoint-sg — VPC endpoint security group</strong>
-  <table style="margin-top:0.8rem;">
-    <tr><th>Direction</th><th>Port</th><th>Source/Dest</th><th>Why</th></tr>
-    <tr><td>Inbound</td><td>443 (HTTPS)</td><td>photoviewer-ec2-sg</td><td>Only EC2 can reach the SSM endpoints — not other resources</td></tr>
-    <tr><td>Outbound</td><td>All</td><td>0.0.0.0/0</td><td>Forward to SSM service</td></tr>
-  </table>
-</div>
+  <div class="ac-body" id="ac-subnets">
+    <p>Subnets are subdivisions of the VPC. The difference between public and private is entirely about routing — a public subnet has a route to the Internet Gateway, a private subnet does not.</p>
+    <table style="font-size:0.88rem; margin-top:0.5rem;">
+      <tr><th>Subnet</th><th>AZ</th><th>CIDR</th><th>What lives here</th></tr>
+      <tr><td>public1</td><td>us-east-1a</td><td>10.0.0.0/20</td><td>ALB node, NAT GW (temp)</td></tr>
+      <tr><td>public2</td><td>us-east-1b</td><td>10.0.16.0/20</td><td>ALB node (required for multi-AZ)</td></tr>
+      <tr><td>private1</td><td>us-east-1a</td><td>10.0.128.0/20</td><td>App Server (EC2), SSM endpoint ENIs</td></tr>
+      <tr><td>private2</td><td>us-east-1b</td><td>10.0.144.0/20</td><td>Empty — for symmetry and future use</td></tr>
+    </table>
+    <p style="margin-top:0.6rem;"><strong>Why EC2 is in the private subnet:</strong> Even if a security group was misconfigured, there is no network route from the internet to the private subnet. Subnet placement is the outer wall; security groups are the inner wall — defense in depth.</p>
+  </div>
 
-<h3>The security group chain</h3>
-<p>Each security group references the previous one by security group ID — not by IP range. This means only resources with the correct security group attached can communicate. Even if an attacker launched a new EC2 instance in the same VPC with any IP address, it cannot reach the app server unless it has <code>photoviewer-alb-sg</code> attached — which requires IAM permissions to modify security groups.</p>
+  <div class="ac-item" onclick="toggleAc('ac-igw')">
+    <div class="ac-left"><span class="ac-icon">🔗</span><span class="ac-name">Internet Gateway</span><span class="ac-sub">Outbound internet for public subnets · NAT GW uses it during bootstrap</span></div>
+    <span class="ac-chevron" id="ac-igw-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-igw">
+    <p>The IGW is attached to the VPC and provides the internet connection for public subnets. The public route table has one key rule: <code>0.0.0.0/0 → IGW</code>. This is what makes a subnet "public." Private subnets have no such route — they cannot initiate or receive internet connections directly. <strong>CloudFront does not go through the IGW</strong> — it connects directly to the ALB's public DNS over AWS's own backbone network.</p>
+  </div>
 
-<div class="sg-chain">
-  <span class="sg-box">Internet</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-port">:80</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-box">ALB (alb-sg)</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-port">:8000</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-box">EC2 (ec2-sg)</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-port">:443</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-box">Endpoints (endpoint-sg)</span>
-  <span class="sg-arrow">→</span>
-  <span class="sg-box">SSM service</span>
-</div>
+  <div class="ac-item" onclick="toggleAc('ac-alb')">
+    <div class="ac-left"><span class="ac-icon">⚖️</span><span class="ac-name">Application Load Balancer</span><span class="ac-sub">Bridges CloudFront to EC2 · health checks · spans both AZs</span></div>
+    <span class="ac-chevron" id="ac-alb-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-alb">
+    <p>EC2 is in a private subnet with no public IP. CloudFront can only reach internet-routable endpoints. The ALB solves this — it sits in the public subnet with a public DNS name, receives requests from CloudFront, and forwards them to EC2's private IP inside the VPC.</p>
+    <p>The ALB also performs <strong>health checks</strong> — sending <code>GET /health</code> to port 8000 every 30 seconds. If the app server fails two consecutive checks, the ALB stops routing to it. This is why <code>app.py</code> has a <code>/health</code> endpoint returning 200.</p>
+    <p><strong>Vulnerability:</strong> The ALB's DNS name is public — anyone who discovers it can call <code>/photos</code> directly, bypassing CloudFront and any WAF rules. Fix in Week 9: add a secret custom header that CloudFront sends, and configure the ALB to reject requests missing it.</p>
+  </div>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>5. SSM Session Manager — access without SSH</h2>
+  <div class="ac-item" onclick="toggleAc('ac-ec2')">
+    <div class="ac-left"><span class="ac-icon">🖥</span><span class="ac-name">App Server (EC2)</span><span class="ac-sub">Private subnet · no public IP · app.py · systemd</span></div>
+    <span class="ac-chevron" id="ac-ec2-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-ec2">
+    <p>EC2 runs <code>app.py</code> on port 8000, managed by systemd so it starts on boot and restarts on crash. It handles two endpoints: <code>GET /health</code> (200 OK for ALB) and <code>GET /photos</code> (scans DynamoDB, returns JSON). The instance has no public IP, no key pair, and port 22 is never open — all access is through SSM Session Manager.</p>
+    <p>On first boot, the user data script runs automatically: installs Python and packages via NAT Gateway, downloads <code>app.py</code> from S3 via the S3 Gateway endpoint, creates the systemd service, and starts it. After this bootstrap completes the NAT Gateway is deleted — EC2 has no internet access at runtime.</p>
+  </div>
 
-<p>EC2 has no key pair and port 22 is never open. All access to the instance goes through AWS Systems Manager Session Manager.</p>
+  <div class="ac-item" onclick="toggleAc('ac-nat')">
+    <div class="ac-left"><span class="ac-icon">🔀</span><span class="ac-name">NAT Gateway</span><span class="ac-sub">Temporary · bootstrap only · ~$32/month · delete immediately after</span></div>
+    <span class="ac-chevron" id="ac-nat-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-nat">
+    <p>EC2 is on a private subnet with no internet access. But the user data script needs to run <code>dnf update</code> and <code>pip3 install flask boto3</code> — both require reaching the public internet (Amazon Linux repos and PyPI). The NAT Gateway sits in the public subnet and provides outbound-only internet access for private subnet resources.</p>
+    <p><strong>NAT is outbound only</strong> — the internet cannot initiate connections through it. After bootstrap, EC2 only needs DynamoDB (via Gateway endpoint) and SSM (via interface endpoints) — no internet required. So we delete the NAT Gateway immediately, saving ~$32/month and removing internet access from EC2 entirely.</p>
+  </div>
 
-<h3>How SSM works</h3>
-<p>The EC2 instance runs an SSM Agent (pre-installed on Amazon Linux). The agent maintains a persistent <strong>outbound</strong> connection to the SSM service through three VPC interface endpoints. When you start a session from the console, your browser connects to the SSM service which relays the session to the agent on EC2. No inbound ports needed.</p>
+  <div class="ac-item" onclick="toggleAc('ac-ssm')">
+    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">SSM Session Manager</span><span class="ac-sub">Remote access without SSH · no port 22 · IAM-controlled · CloudTrail logged</span></div>
+    <span class="ac-chevron" id="ac-ssm-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-ssm">
+    <p>The SSM Agent runs on EC2 and maintains a persistent <strong>outbound</strong> connection to the SSM service through three VPC interface endpoints. When you start a session from the console, your browser connects to SSM which relays it to the agent on EC2. No inbound ports needed — port 22 is never open.</p>
+    <p>Three interface endpoints are required — each creates an ENI with a private IP in the private subnet:</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Endpoint</th><th>Purpose</th></tr>
+      <tr><td><code>ssm</code></td><td>Agent registration and heartbeat</td></tr>
+      <tr><td><code>ssmmessages</code></td><td>Interactive session traffic — keystrokes and terminal output</td></tr>
+      <tr><td><code>ec2messages</code></td><td>Run Command — send shell commands without opening a full session</td></tr>
+    </table>
+    <table style="font-size:0.88rem; margin-top:0.5rem;">
+      <tr><th></th><th>SSH</th><th>SSM Session Manager</th></tr>
+      <tr><td>Port 22</td><td>Must be open — constantly scanned by attackers</td><td>Never needed</td></tr>
+      <tr><td>Credentials</td><td>Key file — can be lost, stolen, shared</td><td>IAM identity — integrates with your identity system</td></tr>
+      <tr><td>Audit trail</td><td>None by default</td><td>Every session logged in CloudTrail automatically</td></tr>
+      <tr><td>Private subnet</td><td>Requires a bastion host</td><td>Works natively via VPC endpoints</td></tr>
+    </table>
+  </div>
 
-<div class="arch-box">
-Your browser → SSM service (AWS managed)
-                    ↕  (via ssmmessages endpoint)
-               SSM Agent on EC2
-</div>
+  <div class="ac-item" onclick="toggleAc('ac-endpoints')">
+    <div class="ac-left"><span class="ac-icon">🔌</span><span class="ac-name">VPC Endpoints</span><span class="ac-sub">Private paths to AWS services · Gateway (free) vs Interface (~$7/mo each)</span></div>
+    <span class="ac-chevron" id="ac-endpoints-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-endpoints">
+    <p>EC2 needs to reach AWS services — DynamoDB, S3, and SSM. Without endpoints, that traffic would go over the internet (requiring the NAT Gateway to stay running). Endpoints create private paths that stay inside AWS's network.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th></th><th>Gateway endpoint</th><th>Interface endpoint</th></tr>
+      <tr><td>How it works</td><td>A route table entry — a "road sign" pointing traffic to the service</td><td>An ENI with a private IP inside your subnet</td></tr>
+      <tr><td>Security group</td><td>Not needed</td><td>Required</td></tr>
+      <tr><td>Cost</td><td>Free</td><td>~$7/month each</td></tr>
+      <tr><td>We use for</td><td>DynamoDB, S3</td><td>SSM (3 endpoints)</td></tr>
+    </table>
+    <p>We have 5 endpoints total: 2 free Gateway endpoints (DynamoDB, S3) and 3 Interface endpoints for SSM. The 3 SSM interface endpoints cost ~$21/month combined — delete them when you're done with the lab.</p>
+  </div>
 
-<h3>Why three endpoints?</h3>
+  <div class="ac-item" onclick="toggleAc('ac-dynamo')">
+    <div class="ac-left"><span class="ac-icon">🗄</span><span class="ac-name">DynamoDB</span><span class="ac-sub">Photo catalog · replaces static photos.json · enables per-user and public/private</span></div>
+    <span class="ac-chevron" id="ac-dynamo-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-dynamo">
+    <p>DynamoDB is a fully managed NoSQL database — no servers to provision, no schema migrations, scales automatically. The <code>photoviewer-photos</code> table stores photo metadata with these attributes:</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Attribute</th><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>photo_id</code></td><td>String (partition key)</td><td>Unique identifier e.g. <code>photo-001</code></td></tr>
+      <tr><td><code>s3_key</code></td><td>String</td><td>Path to the photo in S3 — app server returns this so the browser knows what to request from CloudFront</td></tr>
+      <tr><td><code>is_public</code></td><td>Boolean</td><td>App server filters on <code>is_public = true</code> — private photos never appear in the list</td></tr>
+      <tr><td><code>owner</code></td><td>String</td><td>Currently <code>anonymous</code> — Week 5 adds real user accounts and per-user filtering</td></tr>
+      <tr><td><code>uploaded_at</code></td><td>String (ISO 8601)</td><td>Timestamp for ordering</td></tr>
+    </table>
+    <p><strong>Why not static JSON?</strong> Adding a photo to <code>photos.json</code> requires editing, re-uploading, and a CloudFront cache invalidation. With DynamoDB, inserting a row is immediately visible to all users. Per-user and public/private filtering — impossible with a static file — are a simple query filter.</p>
+  </div>
 
-<table>
-  <tr>
-    <th>Endpoint</th>
-    <th>Purpose</th>
-  </tr>
-  <tr>
-    <td><code>ssm</code></td>
-    <td>Agent registration and heartbeat — EC2 announces itself to SSM, receives configuration</td>
-  </tr>
-  <tr>
-    <td><code>ssmmessages</code></td>
-    <td>Interactive session traffic — your keystrokes and terminal output travel through this</td>
-  </tr>
-  <tr>
-    <td><code>ec2messages</code></td>
-    <td>Run Command traffic — for sending shell commands without opening a full session</td>
-  </tr>
-</table>
+</div><!-- end accordion -->
 
-<p>All three are required. If any one is missing the agent can't register or sessions won't connect.</p>
+<!-- Security controls accordion -->
+<h3 style="margin-top:2rem;">Security controls</h3>
+<p class="hint">Click any row to expand</p>
 
-<h3>SSM vs SSH — why SSM wins for security</h3>
+<div class="accordion">
 
-<table>
-  <tr>
-    <th></th>
-    <th>SSH</th>
-    <th>SSM Session Manager</th>
-  </tr>
-  <tr>
-    <td><strong>Port 22</strong></td>
-    <td>Must be open — constantly attacked by scanners</td>
-    <td>Never needed</td>
-  </tr>
-  <tr>
-    <td><strong>Key files</strong></td>
-    <td>Can be lost, stolen, shared</td>
-    <td>No key files</td>
-  </tr>
-  <tr>
-    <td><strong>Access control</strong></td>
-    <td>Whoever has the key file</td>
-    <td>IAM policy — integrates with your identity system</td>
-  </tr>
-  <tr>
-    <td><strong>Audit trail</strong></td>
-    <td>None by default</td>
-    <td>Every session logged in CloudTrail automatically</td>
-  </tr>
-  <tr>
-    <td><strong>Private subnet</strong></td>
-    <td>Requires bastion host</td>
-    <td>Works natively via VPC endpoints</td>
-  </tr>
-</table>
+  <div class="ac-item" onclick="toggleAc('ac-sg')">
+    <div class="ac-left"><span class="ac-icon">🔒</span><span class="ac-name">Security groups</span><span class="ac-sub">Stateful firewalls · chained by SG ID · 3 groups forming a chain</span></div>
+    <span class="ac-chevron" id="ac-sg-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-sg">
+    <p>Security groups are stateful firewalls attached to network interfaces. Each group in our chain references the previous one by security group ID — not by IP address. This means only resources with the correct security group attached can communicate, regardless of their IP.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Security group</th><th>Inbound rule</th><th>Source</th></tr>
+      <tr><td><code>photoviewer-alb-sg</code></td><td>HTTP :80</td><td>0.0.0.0/0 — CloudFront and internet</td></tr>
+      <tr><td><code>photoviewer-ec2-sg</code></td><td>TCP :8000</td><td><code>photoviewer-alb-sg</code> only — no SSH, no port 22</td></tr>
+      <tr><td><code>photoviewer-endpoint-sg</code></td><td>HTTPS :443</td><td><code>photoviewer-ec2-sg</code> only — SSM endpoints</td></tr>
+    </table>
+    <div class="sg-chain" style="margin-top:0.8rem;">
+      <span class="sg-box">Internet</span><span class="sg-arrow">→</span><span class="sg-port">:80</span><span class="sg-arrow">→</span>
+      <span class="sg-box">ALB</span><span class="sg-arrow">→</span><span class="sg-port">:8000</span><span class="sg-arrow">→</span>
+      <span class="sg-box">EC2</span><span class="sg-arrow">→</span><span class="sg-port">:443</span><span class="sg-arrow">→</span>
+      <span class="sg-box">Endpoints</span><span class="sg-arrow">→</span><span class="sg-box">SSM</span>
+    </div>
+  </div>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>6. VPC endpoints</h2>
+  <div class="ac-item" onclick="toggleAc('ac-nacl')">
+    <div class="ac-left"><span class="ac-icon">🚧</span><span class="ac-name">Network ACLs</span><span class="ac-sub">Stateless subnet-level firewall · default allows all · security groups do the real work here</span></div>
+    <span class="ac-chevron" id="ac-nacl-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-nacl">
+    <p>Network ACLs (NACLs) are stateless packet filters that apply at the subnet boundary — before traffic even reaches a resource's security group. Unlike security groups, NACLs are stateless: you must explicitly allow both inbound <em>and</em> the return traffic outbound.</p>
+    <p>In Week 4 we use the <strong>default NACL</strong> which allows all inbound and outbound traffic. This is intentional — our security groups handle access control with more precision (by SG ID, not by IP). Adding custom NACL rules on top would add complexity without adding meaningful security for our architecture.</p>
+    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet (e.g. blocking a country's IP range before it hits the ALB). Security groups cannot block by IP range at scale — NACLs can. This is a Week 9 topic when we add WAF and geo-restriction.</p>
+    <table style="font-size:0.88rem; margin-top:0.5rem;">
+      <tr><th></th><th>Security group</th><th>NACL</th></tr>
+      <tr><td>Level</td><td>Instance (ENI)</td><td>Subnet</td></tr>
+      <tr><td>Stateful?</td><td>Yes — return traffic allowed automatically</td><td>No — must allow both directions explicitly</td></tr>
+      <tr><td>Rule logic</td><td>All rules evaluated, most permissive wins</td><td>Rules evaluated in order by number, first match wins</td></tr>
+      <tr><td>We use</td><td>Yes — three SGs</td><td>Default only (allow all)</td></tr>
+    </table>
+  </div>
 
-<p>EC2 in a private subnet needs to reach AWS services — DynamoDB, S3, and SSM. Without VPC endpoints, that traffic would need to leave the VPC, go over the internet (requiring a NAT Gateway), and come back. VPC endpoints create private network paths from inside the VPC directly to AWS services.</p>
+  <div class="ac-item" onclick="toggleAc('ac-iam')">
+    <div class="ac-left"><span class="ac-icon">🪪</span><span class="ac-name">IAM instance role</span><span class="ac-sub">photoviewer-ec2-role · 3 policies · no access keys on disk</span></div>
+    <span class="ac-chevron" id="ac-iam-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-iam">
+    <p>Instead of storing access keys on the instance (which is insecure — keys can be stolen from disk or leaked in logs), we attach an IAM role. EC2 retrieves temporary credentials automatically from the instance metadata service. The credentials rotate automatically and expire — even if leaked they have a short window.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Policy</th><th>What it allows</th></tr>
+      <tr><td><code>AmazonSSMManagedInstanceCore</code></td><td>SSM Session Manager — remote access without SSH</td></tr>
+      <tr><td><code>photoviewer-dynamodb-read</code></td><td><code>dynamodb:Scan</code> on <code>photoviewer-photos</code> table only — no other tables, no writes</td></tr>
+      <tr><td><code>photoviewer-s3-app-read</code></td><td><code>s3:GetObject</code> on <code>photoviewer-[account-id]/app/*</code> only — just enough to download <code>app.py</code> at boot</td></tr>
+    </table>
+    <p>This is least privilege — each permission is scoped to the exact resource and action needed. If EC2 is compromised, the attacker can only scan one DynamoDB table and read one S3 prefix. Nothing else.</p>
+  </div>
 
-<h3>Two types of endpoints</h3>
+  <div class="ac-item" onclick="toggleAc('ac-rtb')">
+    <div class="ac-left"><span class="ac-icon">🗺</span><span class="ac-name">Route tables</span><span class="ac-sub">Public routes to IGW · private routes to Gateway endpoints · no 0.0.0.0/0 in private</span></div>
+    <span class="ac-chevron" id="ac-rtb-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-rtb">
+    <p>Route tables control where traffic goes. Each subnet is associated with one route table. The critical difference between our public and private subnets is a single route table entry.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Route table</th><th>Destination</th><th>Target</th><th>Meaning</th></tr>
+      <tr><td>public</td><td>10.0.0.0/16</td><td>local</td><td>VPC-internal traffic stays local</td></tr>
+      <tr><td>public</td><td>0.0.0.0/0</td><td>IGW</td><td>Everything else goes to the internet</td></tr>
+      <tr><td>private</td><td>10.0.0.0/16</td><td>local</td><td>VPC-internal traffic stays local</td></tr>
+      <tr><td>private</td><td>pl-XXXXX (DynamoDB)</td><td>Gateway endpoint</td><td>DynamoDB traffic goes through private endpoint</td></tr>
+      <tr><td>private</td><td>pl-XXXXX (S3)</td><td>Gateway endpoint</td><td>S3 traffic goes through private endpoint</td></tr>
+    </table>
+    <p>The private route table has <strong>no <code>0.0.0.0/0</code> entry</strong> at runtime (the NAT Gateway route is deleted after bootstrap). This means there is literally no network path from the private subnet to the internet — not a firewall rule, an absent route. A misconfigured security group cannot override this.</p>
+  </div>
 
-<table>
-  <tr>
-    <th></th>
-    <th>Gateway endpoint</th>
-    <th>Interface endpoint</th>
-  </tr>
-  <tr>
-    <td><strong>How it works</strong></td>
-    <td>A route table entry — like a road sign pointing traffic to AWS service</td>
-    <td>An ENI (network interface) with a private IP inside your subnet — a physical connection point</td>
-  </tr>
-  <tr>
-    <td><strong>Security group</strong></td>
-    <td>None needed — no ENI</td>
-    <td>Required — controls who can reach the endpoint</td>
-  </tr>
-  <tr>
-    <td><strong>Cost</strong></td>
-    <td>Free</td>
-    <td>~$0.01/hour per endpoint</td>
-  </tr>
-  <tr>
-    <td><strong>Supported services</strong></td>
-    <td>S3 and DynamoDB only</td>
-    <td>Any AWS service</td>
-  </tr>
-  <tr>
-    <td><strong>We use it for</strong></td>
-    <td>DynamoDB, S3</td>
-    <td>SSM, ssmmessages, ec2messages</td>
-  </tr>
-</table>
-
-<div class="callout">
-  <p><strong>Gateway endpoints are route table entries.</strong> When you associate a Gateway endpoint with a route table, AWS adds an entry like <code>pl-XXXXX (S3 prefix list) → vpce-XXXXX</code>. Traffic destined for S3 or DynamoDB automatically takes this route — no DNS change, no application change needed.</p>
-</div>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>7. NAT Gateway — temporary bootstrap only</h2>
-
-<p>EC2 in the private subnet has no internet access by default. But during first boot the user data script needs to install Python packages:</p>
-<ul>
-  <li><code>dnf update</code> — downloads OS packages from Amazon Linux repositories — <strong>requires internet via NAT Gateway</strong></li>
-  <li><code>pip3 install flask boto3</code> — downloads from PyPI — <strong>requires internet via NAT Gateway</strong></li>
-  <li><code>aws s3 cp</code> — downloads <code>app.py</code> from S3 — uses the S3 Gateway endpoint, no NAT Gateway needed</li>
-</ul>
-
-<p>PyPI is not on AWS infrastructure — there is no VPC endpoint for it. The only way to reach PyPI from a private subnet is through a NAT Gateway.</p>
-
-<h3>NAT Gateway flow</h3>
-<div class="arch-box">
-EC2 (private subnet)
-  → NAT Gateway (public subnet)
-    → Internet Gateway
-      → PyPI / Amazon Linux repos
-</div>
-
-<p>NAT Gateway is <strong>outbound only</strong> — internet resources cannot initiate connections to your private subnet. It costs ~$32/month which is why we delete it immediately after EC2 bootstrap is complete. At runtime EC2 only needs DynamoDB (Gateway endpoint) and SSM (Interface endpoints) — no internet access required.</p>
-
-<h3>Bootstrap sequence</h3>
-<ol style="margin-bottom:1rem;">
-  <li>EC2 starts — user data script runs automatically on first boot</li>
-  <li><code>dnf update</code> → downloads OS packages via NAT Gateway</li>
-  <li><code>pip3 install flask boto3</code> → downloads from PyPI via NAT Gateway</li>
-  <li><code>aws s3 cp</code> → downloads <code>app.py</code> from S3 via S3 Gateway endpoint (no NAT needed)</li>
-  <li>systemd service created → Flask starts → listens on port 8000</li>
-  <li>NAT Gateway deleted — EC2 has zero internet access at runtime</li>
-</ol>
-
-<div class="callout info">
-  <p><strong>systemd manages the app server.</strong> Instead of starting it with <code>python3 app.py &</code> (which dies on reboot), we create a systemd service. systemd starts the app server automatically whenever EC2 starts, and restarts it automatically if it crashes. This is the standard Linux pattern for managing long-running processes.</p>
-</div>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>8. IAM instance role — least privilege</h2>
-
-<p>The EC2 instance needs permissions to call AWS services. Instead of storing access keys on the instance (which is insecure), we attach an IAM role. EC2 retrieves temporary credentials automatically from the instance metadata service.</p>
-
-<p>The <code>photoviewer-ec2-role</code> has exactly three policies:</p>
-
-<table>
-  <tr>
-    <th>Policy</th>
-    <th>Type</th>
-    <th>What it allows</th>
-  </tr>
-  <tr>
-    <td><code>AmazonSSMManagedInstanceCore</code></td>
-    <td>AWS managed</td>
-    <td>SSM Session Manager access — required for remote access without SSH</td>
-  </tr>
-  <tr>
-    <td><code>photoviewer-dynamodb-read</code></td>
-    <td>Customer inline</td>
-    <td><code>dynamodb:Scan</code> on <code>photoviewer-photos</code> table only — no other tables, no write access</td>
-  </tr>
-  <tr>
-    <td><code>photoviewer-s3-app-read</code></td>
-    <td>Customer inline</td>
-    <td><code>s3:GetObject</code> on <code>photoviewer-[account-id]/app/*</code> only — just enough to download <code>app.py</code> at boot</td>
-  </tr>
-</table>
-
-<p>This is least privilege — each permission is scoped to the exact resource and action needed. Nothing more.</p>
+</div><!-- end security controls accordion -->
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>9. Application Load Balancer</h2>
-
-<p>The ALB sits between CloudFront and EC2. It serves two purposes — routing and health checking.</p>
-
-<h3>Why an ALB instead of direct CloudFront → EC2?</h3>
-<p>EC2 is in a private subnet with no public IP. CloudFront is a global service outside your VPC — it can only reach internet-routable endpoints. The ALB is in the public subnet with a public DNS name, making it reachable from CloudFront. The ALB then routes the request to EC2's private IP inside the VPC.</p>
-
-<h3>Health checks</h3>
-<p>The ALB sends an HTTP GET to <code>/health</code> on port 8000 every 30 seconds. The app server responds with <code>{"status": "ok"}</code> and a 200 status code. If the health check fails twice consecutively the ALB marks the target unhealthy and stops routing traffic to it. This is why we have a <code>/health</code> endpoint in <code>app.py</code>.</p>
-
-<h3>Verifying the request path</h3>
-<p>In DevTools → Network → <code>/photos</code> request → Response Headers:</p>
-<ul>
-  <li><code>Server: Werkzeug/x.x.x Python/x.x.x</code> — proves the response came from the app server on EC2 (Werkzeug is the development server built into Flask)</li>
-  <li><code>Via: 1.1 [id].cloudfront.net (CloudFront)</code> — proves CloudFront forwarded the request</li>
-  <li><code>X-Cache: Miss from cloudfront</code> — confirms caching is disabled for API responses</li>
-</ul>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>10. DynamoDB — the photo catalog</h2>
-
-<p>DynamoDB is a fully managed NoSQL database — no servers to provision, no schema migrations, scales automatically. We use it to store photo metadata so the photo list can be updated at runtime without redeploying anything.</p>
-
-<h3>Table schema</h3>
+<h2>5. What changed from Week 3</h2>
 
 <table>
-  <tr>
-    <th>Attribute</th>
-    <th>Type</th>
-    <th>Purpose</th>
-  </tr>
-  <tr>
-    <td><code>photo_id</code></td>
-    <td>String — partition key</td>
-    <td>Unique identifier e.g. <code>photo-001</code></td>
-  </tr>
-  <tr>
-    <td><code>s3_key</code></td>
-    <td>String</td>
-    <td>Path to the photo in S3 e.g. <code>photos/photo1.jpg</code> — the app server returns this so the browser can request the image from CloudFront</td>
-  </tr>
-  <tr>
-    <td><code>is_public</code></td>
-    <td>Boolean</td>
-    <td>Whether the photo is visible to anonymous users. The app server filters on <code>is_public = true</code></td>
-  </tr>
-  <tr>
-    <td><code>owner</code></td>
-    <td>String</td>
-    <td>Username of the photo owner. Currently <code>anonymous</code> — Week 5 adds real user accounts</td>
-  </tr>
-  <tr>
-    <td><code>uploaded_at</code></td>
-    <td>String (ISO 8601)</td>
-    <td>Timestamp — for ordering and audit purposes</td>
-  </tr>
-</table>
-
-<h3>Why database instead of static JSON?</h3>
-
-<table>
-  <tr>
-    <th></th>
-    <th>static photos.json (Week 2/3)</th>
-    <th>DynamoDB (Week 4+)</th>
-  </tr>
-  <tr>
-    <td><strong>Add a photo</strong></td>
-    <td>Edit JSON file, redeploy to S3, invalidate CloudFront cache</td>
-    <td>Insert a row — visible immediately</td>
-  </tr>
-  <tr>
-    <td><strong>Per-user photos</strong></td>
-    <td>Impossible — one static list for everyone</td>
-    <td>Filter by <code>owner</code> field</td>
-  </tr>
-  <tr>
-    <td><strong>Public/private</strong></td>
-    <td>Impossible — all photos visible to all</td>
-    <td>Filter by <code>is_public</code> field</td>
-  </tr>
-  <tr>
-    <td><strong>Scale</strong></td>
-    <td>Impractical beyond dozens of photos</td>
-    <td>Millions of items, automatic scaling</td>
-  </tr>
+  <tr><th></th><th>Week 3</th><th>Week 4</th></tr>
+  <tr><td><strong>Photo list source</strong></td><td>Static <code>photos.json</code> in S3</td><td>DynamoDB — dynamic, updatable at runtime</td></tr>
+  <tr><td><strong>Backend</strong></td><td>None — S3 only</td><td>EC2 app server in private VPC subnet</td></tr>
+  <tr><td><strong>Network</strong></td><td>No VPC</td><td>VPC with public/private subnets, security groups, route tables</td></tr>
+  <tr><td><strong>Remote access</strong></td><td>N/A</td><td>SSM Session Manager — no SSH, no port 22</td></tr>
+  <tr><td><strong>CloudFront origins</strong></td><td>One — S3</td><td>Two — S3 (static) and ALB (<code>/photos</code> API)</td></tr>
+  <tr><td><strong>app.js change</strong></td><td><code>fetch('/photos.json')</code></td><td><code>fetch('/photos')</code> — one line</td></tr>
+  <tr><td><strong>New vulnerabilities</strong></td><td>—</td><td>ALB bypassable, no rate limiting, supply chain risk</td></tr>
 </table>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>11. What changed from Week 3</h2>
-
-<table>
-  <tr>
-    <th></th>
-    <th>Week 3</th>
-    <th>Week 4</th>
-  </tr>
-  <tr>
-    <td><strong>Photo list source</strong></td>
-    <td>Static <code>photos.json</code> file in S3</td>
-    <td>DynamoDB table — dynamic, updatable at runtime</td>
-  </tr>
-  <tr>
-    <td><strong>Backend</strong></td>
-    <td>None — S3 only</td>
-    <td>EC2 app server in private VPC subnet</td>
-  </tr>
-  <tr>
-    <td><strong>Network</strong></td>
-    <td>No VPC</td>
-    <td>VPC with public/private subnets, security groups, route tables</td>
-  </tr>
-  <tr>
-    <td><strong>Remote access</strong></td>
-    <td>N/A</td>
-    <td>SSM Session Manager — no SSH, no port 22</td>
-  </tr>
-  <tr>
-    <td><strong>CloudFront origins</strong></td>
-    <td>One — S3</td>
-    <td>Two — S3 (static) and ALB (<code>/photos</code> API)</td>
-  </tr>
-  <tr>
-    <td><strong>app.js change</strong></td>
-    <td><code>fetch('/photos.json')</code></td>
-    <td><code>fetch('/photos')</code> — one line change</td>
-  </tr>
-  <tr>
-    <td><strong>New vulnerabilities</strong></td>
-    <td>—</td>
-    <td>ALB internet-facing, no rate limiting, supply chain risk</td>
-  </tr>
-</table>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>12. Security vulnerabilities in Week 4</h2>
+<h2>6. Security vulnerabilities in Week 4</h2>
 
 <p class="hint">Click each vulnerability to see the attack scenario and fix</p>
 
@@ -993,34 +836,34 @@ EC2 (private subnet)
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v1">
-    <p><strong>The vulnerability:</strong> The ALB has a public DNS name (<code>photoviewer-alb-XXXXXX.us-east-1.elb.amazonaws.com</code>). Anyone who discovers this name can call the <code>/photos</code> API directly, bypassing CloudFront entirely — and bypassing any WAF rules, geo-restrictions, or rate limiting configured at the CloudFront layer.</p>
-    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin (e.g. <code>X-Origin-Secret: abc123</code>). Configure an ALB listener rule to return 403 for any request missing that header. Without the secret, direct ALB access is blocked. This is the standard production pattern since AWS does not have an OAC equivalent for ALB origins.</p>
+    <p><strong>The vulnerability:</strong> The ALB has a public DNS name (<code>photoviewer-alb-XXXXXX.us-east-1.elb.amazonaws.com</code>). Anyone who discovers this name can call the <code>/photos</code> API directly, bypassing CloudFront — and bypassing any WAF rules, geo-restrictions, or rate limiting at the CloudFront layer.</p>
+    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin (e.g. <code>X-Origin-Secret: abc123</code>). Configure an ALB listener rule to return 403 for any request missing that header. This is the standard production pattern — AWS has no OAC equivalent for ALB origins.</p>
   </div>
 </div>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v2')">
     <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">Overprivileged instance role — supply chain attack vector</div>
+    <div class="vuln-title">Supply chain risk — pip installs from the public internet</div>
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v2">
-    <p><strong>The vulnerability:</strong> If an attacker achieves code execution on EC2 — for example through a supply chain attack where a malicious version of <code>flask</code> or <code>boto3</code> is published to PyPI and our user data script installs it — they inherit the EC2 instance role. With that role they can scan the entire <code>photoviewer-photos</code> DynamoDB table and read <code>app.py</code> from S3.</p>
-    <p><strong>The supply chain attack scenario:</strong> A malicious actor publishes a backdoored version of <code>boto3</code> to PyPI. When any server runs <code>pip3 install boto3</code> it installs the malicious version. The malware runs as root (user data runs as root), inherits the instance role, and exfiltrates data. A real example: in 2018 the npm package <code>event-stream</code> was taken over by a malicious actor who inserted a backdoor targeting cryptocurrency wallets — it was downloaded millions of times before discovery. Package managers are a high-value attack surface.</p>
-    <p><strong>The fix:</strong> We already implemented least privilege — the role only allows <code>dynamodb:Scan</code> on one specific table and <code>s3:GetObject</code> on one specific prefix. The blast radius is contained. Pin package versions in requirements files so <code>pip3 install boto3==1.34.0</code> rather than whatever is latest. Use CodeArtifact or a private PyPI mirror to control which packages are installable.</p>
+    <p><strong>The vulnerability:</strong> The user data script runs <code>pip3 install flask boto3</code> pulling whatever is currently published on PyPI. If a malicious version of <code>boto3</code> was published, every new EC2 instance would install it. The malware runs as root, inherits the instance role, and can exfiltrate data.</p>
+    <p><strong>Real example:</strong> In 2018 the npm package <code>event-stream</code> was taken over by a malicious actor who inserted a backdoor targeting cryptocurrency wallets — downloaded millions of times before discovery. Package managers are a high-value attack surface.</p>
+    <p><strong>The fix:</strong> We already implemented least privilege — the role only allows <code>dynamodb:Scan</code> on one table and <code>s3:GetObject</code> on one prefix, so blast radius is contained. Additionally: pin package versions (<code>pip3 install boto3==1.34.0</code>), use a private package mirror (AWS CodeArtifact) so you control what's installable.</p>
   </div>
 </div>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v3')">
     <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">No rate limiting on /photos API — Layer 7 DDoS risk</div>
+    <div class="vuln-title">No rate limiting on /photos — Layer 7 DDoS risk</div>
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v3">
-    <p><strong>The vulnerability:</strong> The <code>/photos</code> endpoint has no throttling. A flood of valid HTTP requests — each looking identical to a real user request — would exhaust Flask (single-threaded) and consume DynamoDB read capacity. Static content is naturally protected because CloudFront serves it from cache. Dynamic API responses bypass the cache and hit EC2 every time, making the API the DDoS target.</p>
-    <p><strong>L3/L4 vs L7 DDoS:</strong> Shield Standard on CloudFront protects against volumetric network-layer attacks (SYN floods, UDP amplification) automatically and for free. But application-layer attacks — floods of valid HTTP requests — look identical to real traffic at the network layer. Shield Standard cannot distinguish them. WAF rate limiting is the fix.</p>
-    <p><strong>The fix:</strong> AWS WAF rate-based rule — cap requests per IP per minute on the <code>/photos</code> path. Real users make a handful of requests per session. Attackers make thousands. Rate limiting blocks the attacker while legitimate users are unaffected. We add WAF in Week 9.</p>
+    <p><strong>The vulnerability:</strong> The <code>/photos</code> endpoint has no throttling. A flood of valid HTTP requests would exhaust the app server (single-threaded) and consume DynamoDB read capacity. Static content is safe because CloudFront serves it from cache — but API responses bypass the cache and hit EC2 every time.</p>
+    <p><strong>L3/L4 vs L7 DDoS:</strong> Shield Standard protects against volumetric network-layer attacks automatically. But application-layer floods of valid HTTP requests look identical to real traffic at the network layer — Shield Standard cannot distinguish them. WAF rate limiting is the fix.</p>
+    <p><strong>The fix:</strong> AWS WAF rate-based rule capping requests per IP per minute on the <code>/photos</code> path. We add WAF in Week 9.</p>
   </div>
 </div>
 
@@ -1038,12 +881,8 @@ EC2 (private subnet)
 </div>
 
 <div class="page-nav">
-  <div>
-    <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
-  </div>
-  <div>
-    <a href="https://chalasanisree-courses.github.io/aws-security-course/week03/week3-cloudfront-edge.html">← Week 3: CloudFront + Edge Security</a>
-  </div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week03/week3-cloudfront-edge.html">← Week 3: CloudFront + Edge Security</a></div>
 </div>
 
 <footer>
@@ -1093,10 +932,15 @@ const tierData = {
 
 // VPC diagram data
 const vpcData = {
+  'vpc-cf': {
+    title: '☁️ CloudFront',
+    color: '#4CAF50',
+    text: 'CloudFront is the entry point for all user traffic. It sits outside the VPC — it is a global AWS edge network, not regional infrastructure. Traffic from browsers hits the nearest CloudFront POP. Static files are served from S3 via OAC. <code>/photos</code> API requests are forwarded to the ALB inside the VPC. CloudFront enforces HTTPS, runs the CF Function allowlist, and adds security headers before any request reaches your VPC.'
+  },
   igw: {
-    title: '🌐 Internet Gateway (IGW)',
-    color: '#388E3C',
-    text: 'The IGW is attached to the VPC and provides a route to the internet for resources in <b>public subnets</b>. The public route table has a rule: <code>0.0.0.0/0 → IGW</code>. Resources in private subnets have no IGW route — they cannot initiate or receive internet connections directly. The IGW is stateful — it tracks connections and allows return traffic automatically.'
+    title: '🔗 Internet Gateway (IGW)',
+    color: '#1F4E79',
+    text: 'The IGW is attached to the VPC and provides <b>outbound</b> internet access for resources in public subnets. In our setup, the NAT Gateway uses it during bootstrap to reach PyPI and Amazon Linux repos. <b>CloudFront does NOT go through the IGW</b> — CloudFront connects directly to the ALB\'s public DNS name over AWS\'s backbone network. The IGW is not involved in the CloudFront → ALB → App Server request path at runtime.'
   },
   alb: {
     title: '⚖️ ALB — Application Load Balancer',
@@ -1160,6 +1004,16 @@ function selectVpcNode(id) {
   panel.style.borderColor = data.color;
   panel.style.background = data.color + '10';
   content.innerHTML = '<strong style="color:' + data.color + '; font-size:1rem;">' + data.title + '</strong><p style="margin-top:0.7rem; font-size:0.92rem; color:#333;">' + data.text + '</p>';
+}
+
+function toggleAc(id) {
+  const body = document.getElementById(id);
+  const chev = document.getElementById(id + '-chev');
+  const item = chev ? chev.closest('.ac-item') : null;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chev) chev.classList.toggle('open', !isOpen);
+  if (item) item.classList.toggle('open', !isOpen);
 }
 
 function toggleCard(id) {
