@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPC, EC2, and Application Tier Security — CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .breadcrumb {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+  .breadcrumb a { color: #0066cc; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb span { margin: 0 0.4rem; color: #999; }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    color: #111;
+  }
+  .subtitle {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid #e8e8e8;
+    padding-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+    color: #111;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #e8e8e8;
+  }
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.8rem 0 0.6rem;
+    color: #222;
+  }
+
+  .objectives {
+    background: #f8f9fa;
+    border-left: 4px solid #0066cc;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 0 6px 6px 0;
+  }
+  .objectives ul { margin: 0; padding-left: 1.2rem; }
+  .objectives li { margin-bottom: 0.4rem; color: #333; }
+
+  p { margin-bottom: 1rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: #f0f0f0;
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: #c7254e;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2rem 0 1.5rem;
+    font-size: 0.95rem;
+  }
+  th {
+    background: #f0f4f8;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #d0d8e0;
+  }
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e8e8e8;
+    vertical-align: top;
+    color: #444;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .callout {
+    border-left: 4px solid #e8a000;
+    background: #fffbf0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn { border-color: #dc3545; background: #fff5f5; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.83rem;
+    overflow-x: auto;
+    margin: 0.8rem 0 1rem;
+    line-height: 1.6;
+  }
+
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+  li { margin-bottom: 0.4rem; color: #333; }
+
+  /* Architecture diagram */
+  .arch-box {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    margin: 1rem 0 1.5rem;
+    color: #333;
+    overflow-x: auto;
+  }
+
+  /* Expandable cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.2rem 0;
+  }
+  .card {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .card:hover { border-color: #0066cc; background: #f0f6ff; }
+  .card.active { border-color: #0066cc; background: #e8f0fc; }
+  .card .card-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+  .card .card-title { font-weight: 600; font-size: 0.95rem; color: #222; }
+  .card .card-sub { font-size: 0.82rem; color: #666; margin-top: 0.25rem; }
+  .card-panel {
+    display: none;
+    background: #f8faff;
+    border: 1px solid #c8d8f0;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 0.5rem;
+  }
+  .card-panel.active { display: block; }
+
+  /* Vulnerability cards */
+  .vuln-card {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .vuln-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.2rem;
+    cursor: pointer;
+    background: #fafafa;
+    user-select: none;
+  }
+  .vuln-header:hover { background: #f0f0f0; }
+  .vuln-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-red { background: #E24B4A; }
+  .dot-orange { background: #E8A000; }
+  .vuln-title { font-weight: 600; font-size: 0.95rem; color: #222; flex: 1; }
+  .vuln-body {
+    display: none;
+    padding: 1rem 1.2rem;
+    border-top: 1px solid #e8e8e8;
+    background: #fff;
+  }
+  .vuln-body.active { display: block; }
+  .vuln-body p { font-size: 0.92rem; margin-bottom: 0.7rem; }
+  .vuln-body p:last-child { margin-bottom: 0; }
+
+  .hint { font-size: 0.82rem; color: #999; font-style: italic; margin-bottom: 1rem; }
+
+  /* SG chain */
+  .sg-chain {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+  }
+  .sg-box {
+    background: #E6F1FB;
+    border: 1px solid #B5D4F4;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-weight: 600;
+    color: #1F4E79;
+    white-space: nowrap;
+  }
+  .sg-arrow { color: #aaa; font-size: 1rem; }
+  .sg-port {
+    font-size: 0.78rem;
+    color: #666;
+    background: #f0f0f0;
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+
+  /* Downloads */
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #1F4E79;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #B5D4F4;
+    background: #E6F1FB;
+    transition: background 0.15s;
+    margin-right: 8px;
+    margin-bottom: 8px;
+  }
+  .download-btn:hover { background: #B5D4F4; }
+
+  .page-nav {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.9rem;
+  }
+  .page-nav a { color: #0066cc; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.82rem;
+    color: #999;
+    text-align: center;
+  }
+  footer a { color: #0066cc; text-decoration: none; }
+
+  @media (max-width: 600px) {
+    .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="breadcrumb">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
+  <span>›</span> Week 4 <span>›</span> VPC, EC2, and Application Tier Security
+</div>
+
+<h1>VPC, EC2, and Application Tier Security</h1>
+<p class="subtitle">Building a 3-tier application in AWS — presentation, application, and data tiers — with a private subnet EC2 backend, DynamoDB, ALB, VPC endpoints, and SSM access control.</p>
+
+<div class="objectives">
+  <strong>Learning objectives</strong>
+  <ul>
+    <li>Explain the 3-tier application architecture and map it to AWS services</li>
+    <li>Design a VPC with public and private subnets and explain the security rationale for each</li>
+    <li>Explain how security groups chain together to implement least privilege at the network layer</li>
+    <li>Describe how SSM Session Manager provides remote access without SSH or open ports</li>
+    <li>Explain the difference between Gateway and Interface VPC endpoints</li>
+    <li>Explain why a NAT Gateway is needed for bootstrap but not for runtime</li>
+    <li>Identify the deliberate security vulnerabilities in the Week 4 architecture</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. The problem with a static photo list</h2>
+
+<p>In Weeks 2 and 3 the Photo Viewer served a static <code>photos.json</code> file listing five photos. This works but has a fundamental limitation — the list is fixed at deploy time. Adding a new photo to S3 doesn't automatically show it to website visitors. You have to manually update <code>photos.json</code> and redeploy.</p>
+
+<p>For a real application where users upload content this is unacceptable. We need the photo list to come from a database that can be updated at runtime without redeploying anything. That's what Week 4 solves.</p>
+
+<div class="callout info">
+  <p><strong>The one-line change:</strong> The entire Week 4 frontend change is one line in <code>app.js</code> — replacing <code>fetch('/photos.json')</code> with <code>fetch('/photos')</code>. Everything else — the HTML, CSS, photo rendering logic — stays identical. The backend does the new work.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. 3-tier application architecture</h2>
+
+<p>The Photo Viewer follows the classic 3-tier architecture pattern — the most common pattern for web applications.</p>
+
+<table>
+  <tr>
+    <th>Tier</th>
+    <th>What it does</th>
+    <th>Photo Viewer component</th>
+  </tr>
+  <tr>
+    <td><strong>Presentation</strong></td>
+    <td>Serves content to users — HTML, CSS, JS, images. No business logic.</td>
+    <td>CloudFront + S3</td>
+  </tr>
+  <tr>
+    <td><strong>Application</strong></td>
+    <td>Executes business logic. Receives API requests, queries the database, returns data.</td>
+    <td>ALB + EC2 Flask</td>
+  </tr>
+  <tr>
+    <td><strong>Data</strong></td>
+    <td>Stores and retrieves data. No business logic, no presentation.</td>
+    <td>DynamoDB</td>
+  </tr>
+</table>
+
+<p><strong>The key security principle:</strong> Each tier only communicates with the tier immediately adjacent to it. The browser never talks to DynamoDB directly. EC2 never talks to the browser directly. Everything flows through defined interfaces — this containment limits the blast radius of any single component being compromised.</p>
+
+<div class="arch-box">
+Browser
+  → CloudFront (HTTPS)
+      → S3 (static files: HTML, CSS, JS, photos) via OAC
+      → ALB (HTTP, public subnet) for /photos API requests
+          → EC2 Flask (private subnet, port 8000)
+              → DynamoDB (via Gateway endpoint)
+</div>
+
+<h3>Why Flask returns JSON, not HTML</h3>
+<p>Flask is a web framework that can serve either HTML pages or JSON API responses. In our setup Flask only returns JSON — <code>[{"photo_id": "photo-001", "s3_key": "photos/photo1.jpg"}, ...]</code>. The browser's JavaScript (<code>app.js</code>) receives this JSON and renders the UI. Flask is purely application tier — it has no presentation responsibility.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. VPC design</h2>
+
+<p>A VPC — Virtual Private Cloud — is a logically isolated network inside AWS. Think of it as a fenced-off section of the AWS datacenter that belongs only to your account.</p>
+
+<h3>Public vs private subnets</h3>
+
+<table>
+  <tr>
+    <th></th>
+    <th>Public subnet</th>
+    <th>Private subnet</th>
+  </tr>
+  <tr>
+    <td><strong>Route to internet</strong></td>
+    <td>Yes — via Internet Gateway (IGW)</td>
+    <td>No — no route to IGW</td>
+  </tr>
+  <tr>
+    <td><strong>Resources can have public IPs</strong></td>
+    <td>Yes</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td><strong>Internet can initiate connections</strong></td>
+    <td>Yes (if security group allows)</td>
+    <td>Never — no route exists</td>
+  </tr>
+  <tr>
+    <td><strong>What lives here</strong></td>
+    <td>ALB, NAT Gateway</td>
+    <td>EC2, VPC endpoints</td>
+  </tr>
+</table>
+
+<p><strong>Why EC2 is in the private subnet:</strong> EC2 has no public IP and no internet route. Even if a security group rule was misconfigured to allow inbound traffic, there is no network path from the internet to EC2. Defense in depth — the subnet placement is the outer wall, the security group is the inner wall.</p>
+
+<h3>The Photo Viewer VPC layout</h3>
+
+<div class="arch-box">
+photoviewer-vpc  10.0.0.0/16
+│
+├── Public subnets
+│   ├── photoviewer-subnet-public1-us-east-1a  10.0.0.0/20
+│   │   └── ALB node, NAT Gateway
+│   └── photoviewer-subnet-public2-us-east-1b  10.0.16.0/20
+│       └── ALB node (ALB requires 2 AZs)
+│
+└── Private subnets
+    ├── photoviewer-subnet-private1-us-east-1a  10.0.128.0/20
+    │   └── EC2 Flask, VPC endpoint ENIs
+    └── photoviewer-subnet-private2-us-east-1b  10.0.144.0/20
+        └── (empty — for symmetry and future use)
+</div>
+
+<div class="callout info">
+  <p><strong>ALB requires two subnets in different AZs.</strong> This is an AWS requirement — the ALB deploys a node in each selected AZ for availability. Even though we only have one EC2 instance in us-east-1a, the ALB needs both public subnets selected. The second subnet is there for the ALB node, not for EC2.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. Security groups — defense in depth</h2>
+
+<p>Security groups are stateful firewalls that attach to network interfaces. In AWS, anything with a network interface gets a security group — EC2 instances, ALBs, and VPC interface endpoints all have them.</p>
+
+<p class="hint">Click each card to explore the security group</p>
+
+<div class="card-grid">
+  <div class="card" onclick="toggleCard('sg1')">
+    <div class="card-icon">🌐</div>
+    <div class="card-title">photoviewer-alb-sg</div>
+    <div class="card-sub">Attaches to the ALB</div>
+  </div>
+  <div class="card" onclick="toggleCard('sg2')">
+    <div class="card-icon">🖥</div>
+    <div class="card-title">photoviewer-ec2-sg</div>
+    <div class="card-sub">Attaches to EC2</div>
+  </div>
+</div>
+<div class="card-panel" id="sg1">
+  <strong>photoviewer-alb-sg — ALB security group</strong>
+  <table style="margin-top:0.8rem;">
+    <tr><th>Direction</th><th>Port</th><th>Source/Dest</th><th>Why</th></tr>
+    <tr><td>Inbound</td><td>80 (HTTP)</td><td>0.0.0.0/0</td><td>Accept requests from CloudFront and internet</td></tr>
+    <tr><td>Outbound</td><td>All</td><td>0.0.0.0/0</td><td>Forward to EC2 on port 8000</td></tr>
+  </table>
+</div>
+<div class="card-panel" id="sg2">
+  <strong>photoviewer-ec2-sg — EC2 security group</strong>
+  <table style="margin-top:0.8rem;">
+    <tr><th>Direction</th><th>Port</th><th>Source/Dest</th><th>Why</th></tr>
+    <tr><td>Inbound</td><td>8000</td><td>photoviewer-alb-sg</td><td>Only ALB can reach Flask — not internet, not other VPC resources</td></tr>
+    <tr><td>Outbound</td><td>All</td><td>0.0.0.0/0</td><td>Reach DynamoDB and SSM endpoints</td></tr>
+  </table>
+  <p style="margin-top:0.8rem; font-size:0.88rem; color:#555;">No port 22 — SSH is never needed. SSM Session Manager handles all access.</p>
+</div>
+
+<div class="card-grid" style="margin-top:1rem;">
+  <div class="card" onclick="toggleCard('sg3')">
+    <div class="card-icon">🔌</div>
+    <div class="card-title">photoviewer-endpoint-sg</div>
+    <div class="card-sub">Attaches to SSM interface endpoints</div>
+  </div>
+</div>
+<div class="card-panel" id="sg3">
+  <strong>photoviewer-endpoint-sg — VPC endpoint security group</strong>
+  <table style="margin-top:0.8rem;">
+    <tr><th>Direction</th><th>Port</th><th>Source/Dest</th><th>Why</th></tr>
+    <tr><td>Inbound</td><td>443 (HTTPS)</td><td>photoviewer-ec2-sg</td><td>Only EC2 can reach the SSM endpoints — not other resources</td></tr>
+    <tr><td>Outbound</td><td>All</td><td>0.0.0.0/0</td><td>Forward to SSM service</td></tr>
+  </table>
+</div>
+
+<h3>The security group chain</h3>
+<p>Each security group references the previous one by security group ID — not by IP range. This means only resources with the correct security group attached can communicate. Even if an attacker launched a new EC2 instance in the same VPC with any IP address, it cannot reach Flask unless it has <code>photoviewer-alb-sg</code> attached — which requires IAM permissions to modify security groups.</p>
+
+<div class="sg-chain">
+  <span class="sg-box">Internet</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-port">:80</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-box">ALB (alb-sg)</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-port">:8000</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-box">EC2 (ec2-sg)</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-port">:443</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-box">Endpoints (endpoint-sg)</span>
+  <span class="sg-arrow">→</span>
+  <span class="sg-box">SSM service</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. SSM Session Manager — access without SSH</h2>
+
+<p>EC2 has no key pair and port 22 is never open. All access to the instance goes through AWS Systems Manager Session Manager.</p>
+
+<h3>How SSM works</h3>
+<p>The EC2 instance runs an SSM Agent (pre-installed on Amazon Linux). The agent maintains a persistent <strong>outbound</strong> connection to the SSM service through three VPC interface endpoints. When you start a session from the console, your browser connects to the SSM service which relays the session to the agent on EC2. No inbound ports needed.</p>
+
+<div class="arch-box">
+Your browser → SSM service (AWS managed)
+                    ↕  (via ssmmessages endpoint)
+               SSM Agent on EC2
+</div>
+
+<h3>Why three endpoints?</h3>
+
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td><code>ssm</code></td>
+    <td>Agent registration and heartbeat — EC2 announces itself to SSM, receives configuration</td>
+  </tr>
+  <tr>
+    <td><code>ssmmessages</code></td>
+    <td>Interactive session traffic — your keystrokes and terminal output travel through this</td>
+  </tr>
+  <tr>
+    <td><code>ec2messages</code></td>
+    <td>Run Command traffic — for sending shell commands without opening a full session</td>
+  </tr>
+</table>
+
+<p>All three are required. If any one is missing the agent can't register or sessions won't connect.</p>
+
+<h3>SSM vs SSH — why SSM wins for security</h3>
+
+<table>
+  <tr>
+    <th></th>
+    <th>SSH</th>
+    <th>SSM Session Manager</th>
+  </tr>
+  <tr>
+    <td><strong>Port 22</strong></td>
+    <td>Must be open — constantly attacked by scanners</td>
+    <td>Never needed</td>
+  </tr>
+  <tr>
+    <td><strong>Key files</strong></td>
+    <td>Can be lost, stolen, shared</td>
+    <td>No key files</td>
+  </tr>
+  <tr>
+    <td><strong>Access control</strong></td>
+    <td>Whoever has the key file</td>
+    <td>IAM policy — integrates with your identity system</td>
+  </tr>
+  <tr>
+    <td><strong>Audit trail</strong></td>
+    <td>None by default</td>
+    <td>Every session logged in CloudTrail automatically</td>
+  </tr>
+  <tr>
+    <td><strong>Private subnet</strong></td>
+    <td>Requires bastion host</td>
+    <td>Works natively via VPC endpoints</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>6. VPC endpoints</h2>
+
+<p>EC2 in a private subnet needs to reach AWS services — DynamoDB, S3, and SSM. Without VPC endpoints, that traffic would need to leave the VPC, go over the internet (requiring a NAT Gateway), and come back. VPC endpoints create private network paths from inside the VPC directly to AWS services.</p>
+
+<h3>Two types of endpoints</h3>
+
+<table>
+  <tr>
+    <th></th>
+    <th>Gateway endpoint</th>
+    <th>Interface endpoint</th>
+  </tr>
+  <tr>
+    <td><strong>How it works</strong></td>
+    <td>A route table entry — like a road sign pointing traffic to AWS service</td>
+    <td>An ENI (network interface) with a private IP inside your subnet — a physical connection point</td>
+  </tr>
+  <tr>
+    <td><strong>Security group</strong></td>
+    <td>None needed — no ENI</td>
+    <td>Required — controls who can reach the endpoint</td>
+  </tr>
+  <tr>
+    <td><strong>Cost</strong></td>
+    <td>Free</td>
+    <td>~$0.01/hour per endpoint</td>
+  </tr>
+  <tr>
+    <td><strong>Supported services</strong></td>
+    <td>S3 and DynamoDB only</td>
+    <td>Any AWS service</td>
+  </tr>
+  <tr>
+    <td><strong>We use it for</strong></td>
+    <td>DynamoDB, S3</td>
+    <td>SSM, ssmmessages, ec2messages</td>
+  </tr>
+</table>
+
+<div class="callout">
+  <p><strong>Gateway endpoints are route table entries.</strong> When you associate a Gateway endpoint with a route table, AWS adds an entry like <code>pl-XXXXX (S3 prefix list) → vpce-XXXXX</code>. Traffic destined for S3 or DynamoDB automatically takes this route — no DNS change, no application change needed.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>7. NAT Gateway — temporary bootstrap only</h2>
+
+<p>EC2 in the private subnet has no internet access by default. But during first boot the user data script needs to install Python packages:</p>
+<ul>
+  <li><code>dnf update</code> — downloads from Amazon Linux repos on S3 (reachable via S3 Gateway endpoint)</li>
+  <li><code>pip3 install flask boto3</code> — downloads from PyPI — <strong>this requires internet</strong></li>
+</ul>
+
+<p>PyPI is not on AWS infrastructure — there is no VPC endpoint for it. The only way to reach PyPI from a private subnet is through a NAT Gateway.</p>
+
+<h3>NAT Gateway flow</h3>
+<div class="arch-box">
+EC2 (private subnet)
+  → NAT Gateway (public subnet)
+    → Internet Gateway
+      → PyPI / Amazon Linux repos
+</div>
+
+<p>NAT Gateway is <strong>outbound only</strong> — internet resources cannot initiate connections to your private subnet. It costs ~$32/month which is why we delete it immediately after EC2 bootstrap is complete. At runtime EC2 only needs DynamoDB (Gateway endpoint) and SSM (Interface endpoints) — no internet access required.</p>
+
+<h3>Bootstrap sequence</h3>
+<ol style="margin-bottom:1rem;">
+  <li>EC2 starts — user data script runs automatically on first boot</li>
+  <li><code>dnf update</code> → downloads via NAT Gateway (or S3 Gateway endpoint)</li>
+  <li><code>pip3 install flask boto3</code> → downloads from PyPI via NAT Gateway</li>
+  <li><code>aws s3 cp</code> → downloads <code>app.py</code> from S3 via S3 Gateway endpoint</li>
+  <li>systemd service created → Flask starts → listens on port 8000</li>
+  <li>NAT Gateway deleted — EC2 has zero internet access at runtime</li>
+</ol>
+
+<div class="callout info">
+  <p><strong>systemd manages Flask.</strong> Instead of starting Flask with <code>python3 app.py &</code> (which dies on reboot), we create a systemd service. systemd starts Flask automatically whenever EC2 starts, and restarts it automatically if it crashes. This is the standard Linux pattern for managing long-running processes.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>8. IAM instance role — least privilege</h2>
+
+<p>The EC2 instance needs permissions to call AWS services. Instead of storing access keys on the instance (which is insecure), we attach an IAM role. EC2 retrieves temporary credentials automatically from the instance metadata service.</p>
+
+<p>The <code>photoviewer-ec2-role</code> has exactly three policies:</p>
+
+<table>
+  <tr>
+    <th>Policy</th>
+    <th>Type</th>
+    <th>What it allows</th>
+  </tr>
+  <tr>
+    <td><code>AmazonSSMManagedInstanceCore</code></td>
+    <td>AWS managed</td>
+    <td>SSM Session Manager access — required for remote access without SSH</td>
+  </tr>
+  <tr>
+    <td><code>photoviewer-dynamodb-read</code></td>
+    <td>Customer inline</td>
+    <td><code>dynamodb:Scan</code> on <code>photoviewer-photos</code> table only — no other tables, no write access</td>
+  </tr>
+  <tr>
+    <td><code>photoviewer-s3-app-read</code></td>
+    <td>Customer inline</td>
+    <td><code>s3:GetObject</code> on <code>photoviewer-[account-id]/app/*</code> only — just enough to download <code>app.py</code> at boot</td>
+  </tr>
+</table>
+
+<p>This is least privilege — each permission is scoped to the exact resource and action needed. Nothing more.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>9. Application Load Balancer</h2>
+
+<p>The ALB sits between CloudFront and EC2. It serves two purposes — routing and health checking.</p>
+
+<h3>Why an ALB instead of direct CloudFront → EC2?</h3>
+<p>EC2 is in a private subnet with no public IP. CloudFront is a global service outside your VPC — it can only reach internet-routable endpoints. The ALB is in the public subnet with a public DNS name, making it reachable from CloudFront. The ALB then routes the request to EC2's private IP inside the VPC.</p>
+
+<h3>Health checks</h3>
+<p>The ALB sends an HTTP GET to <code>/health</code> on port 8000 every 30 seconds. Flask responds with <code>{"status": "ok"}</code> and a 200 status code. If the health check fails twice consecutively the ALB marks the target unhealthy and stops routing traffic to it. This is why we have a <code>/health</code> endpoint in <code>app.py</code>.</p>
+
+<h3>Verifying the request path</h3>
+<p>In DevTools → Network → <code>/photos</code> request → Response Headers:</p>
+<ul>
+  <li><code>Server: Werkzeug/x.x.x Python/x.x.x</code> — proves the response came from Flask on EC2</li>
+  <li><code>Via: 1.1 [id].cloudfront.net (CloudFront)</code> — proves CloudFront forwarded the request</li>
+  <li><code>X-Cache: Miss from cloudfront</code> — confirms caching is disabled for API responses</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>10. Security vulnerabilities in Week 4</h2>
+
+<p class="hint">Click each vulnerability to see the attack scenario and fix</p>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v1')">
+    <div class="vuln-dot dot-orange"></div>
+    <div class="vuln-title">ALB is internet-facing — CloudFront bypassable</div>
+    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v1">
+    <p><strong>The vulnerability:</strong> The ALB has a public DNS name (<code>photoviewer-alb-XXXXXX.us-east-1.elb.amazonaws.com</code>). Anyone who discovers this name can call the <code>/photos</code> API directly, bypassing CloudFront entirely — and bypassing any WAF rules, geo-restrictions, or rate limiting configured at the CloudFront layer.</p>
+    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin (e.g. <code>X-Origin-Secret: abc123</code>). Configure an ALB listener rule to return 403 for any request missing that header. Without the secret, direct ALB access is blocked. This is the standard production pattern since AWS does not have an OAC equivalent for ALB origins.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v2')">
+    <div class="vuln-dot dot-orange"></div>
+    <div class="vuln-title">Overprivileged instance role — supply chain attack vector</div>
+    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v2">
+    <p><strong>The vulnerability:</strong> If an attacker achieves code execution on EC2 — for example through a supply chain attack where a malicious version of <code>flask</code> or <code>boto3</code> is published to PyPI and our user data script installs it — they inherit the EC2 instance role. With that role they can scan the entire <code>photoviewer-photos</code> DynamoDB table and read <code>app.py</code> from S3.</p>
+    <p><strong>The supply chain attack scenario:</strong> A malicious actor publishes a backdoored version of <code>boto3</code> to PyPI. When any server runs <code>pip3 install boto3</code> it installs the malicious version. The malware runs as root (user data runs as root), inherits the instance role, and exfiltrates data. This is exactly what happened in the Log4J vulnerability — a widely used library contained malicious behavior.</p>
+    <p><strong>The fix:</strong> We already implemented least privilege — the role only allows <code>dynamodb:Scan</code> on one specific table and <code>s3:GetObject</code> on one specific prefix. The blast radius is contained. Pin package versions in requirements files so <code>pip3 install boto3==1.34.0</code> rather than whatever is latest. Use CodeArtifact or a private PyPI mirror to control which packages are installable.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v3')">
+    <div class="vuln-dot dot-orange"></div>
+    <div class="vuln-title">No rate limiting on /photos API — Layer 7 DDoS risk</div>
+    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v3">
+    <p><strong>The vulnerability:</strong> The <code>/photos</code> endpoint has no throttling. A flood of valid HTTP requests — each looking identical to a real user request — would exhaust Flask (single-threaded) and consume DynamoDB read capacity. Static content is naturally protected because CloudFront serves it from cache. Dynamic API responses bypass the cache and hit EC2 every time, making the API the DDoS target.</p>
+    <p><strong>L3/L4 vs L7 DDoS:</strong> Shield Standard on CloudFront protects against volumetric network-layer attacks (SYN floods, UDP amplification) automatically and for free. But application-layer attacks — floods of valid HTTP requests — look identical to real traffic at the network layer. Shield Standard cannot distinguish them. WAF rate limiting is the fix.</p>
+    <p><strong>The fix:</strong> AWS WAF rate-based rule — cap requests per IP per minute on the <code>/photos</code path. Real users make a handful of requests per session. Attackers make thousands. Rate limiting blocks the attacker while legitimate users are unaffected. We add WAF in Week 9.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Lab files</h2>
+<p>Download the Week 4 application files. Upload <code>app.py</code> to your S3 bucket at <code>app/app.py</code> before launching EC2. Upload the updated <code>app.js</code> to your S3 bucket root replacing the Week 3 version.</p>
+
+<div style="margin: 1rem 0;">
+  <a class="download-btn" href="photoviewer-stage3.zip" download>⬇ photoviewer-week4.zip</a>
+</div>
+
+<p>Or view the individual files on GitHub:</p>
+<div style="margin: 0.5rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week04" target="_blank">⌥ View Week 4 code on GitHub</a>
+</div>
+
+<div class="page-nav">
+  <div>
+    <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
+  </div>
+  <div>
+    <a href="https://chalasanisree-courses.github.io/aws-security-course/week03/week3-cloudfront-edge.html">← Week 3: CloudFront + Edge Security</a>
+  </div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+<script>
+function toggleCard(id) {
+  const panel = document.getElementById(id);
+  const isActive = panel.classList.contains('active');
+  document.querySelectorAll('.card-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  if (!isActive) {
+    panel.classList.add('active');
+    panel.previousElementSibling.classList.add('active');
+  }
+}
+
+function toggleVuln(id) {
+  const body = document.getElementById(id);
+  const isActive = body.classList.contains('active');
+  document.querySelectorAll('.vuln-body').forEach(b => b.classList.remove('active'));
+  if (!isActive) body.classList.add('active');
+}
+</script>
+
+</body>
+</html>
