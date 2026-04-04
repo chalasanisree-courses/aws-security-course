@@ -134,14 +134,36 @@
   .aaa-panel.open { display: block; }
   .aaa-panel p { font-size: 13.5px; margin-bottom: 10px; color: var(--text-light); }
 
-  /* Controls */
-  .controls-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 24px 0; }
-  .ctrl-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--card-shadow); }
-  .ctrl-card h4 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-  .ctrl-card h4 span { font-size: 20px; }
-  .ctrl-item { font-size: 13px; color: var(--text-light); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
-  .ctrl-item:last-child { border-bottom: none; }
-  .ctrl-item strong { color: var(--text); display: block; font-size: 12px; }
+  /* Controls — accordion */
+  .ctrl-accordion { margin: 16px 0; }
+  .ctrl-acc-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; box-shadow: var(--card-shadow); }
+  .ctrl-acc-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s; }
+  .ctrl-acc-header:hover { background: #f8fafc; }
+  .ctrl-acc-icon { font-size: 20px; flex-shrink: 0; }
+  .ctrl-acc-title { flex: 1; font-size: 14px; font-weight: 600; color: var(--navy); }
+  .ctrl-acc-sub { font-size: 12px; color: var(--slate); }
+  .ctrl-acc-chev { font-size: 12px; color: var(--slate); transition: transform 0.2s; }
+  .ctrl-acc-body { display: none; padding: 14px 18px; border-top: 1px solid var(--border); }
+  .ctrl-acc-body.open { display: block; }
+  .ctrl-acc-body p { font-size: 13.5px; color: var(--text-light); margin-bottom: 8px; line-height: 1.6; }
+  .ctrl-acc-body p:last-child { margin-bottom: 0; }
+
+  /* Layered security — diagram + side panel */
+  .layered-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin: 28px 0; }
+  .layered-svg-wrap { position: relative; }
+  .layered-svg-wrap svg { width: 100%; display: block; cursor: pointer; }
+  .layer-ring { cursor: pointer; transition: opacity 0.15s; }
+  .layer-ring:hover { opacity: 0.85; }
+  .layer-ring.active { opacity: 1; filter: drop-shadow(0 0 8px rgba(0,0,0,0.3)); }
+  .layered-hint { text-align: center; font-size: 12px; color: var(--slate); margin-top: 6px; font-style: italic; }
+  .layered-panel { display: none; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--card-shadow); }
+  .layered-panel.open { display: block; }
+  .layered-panel-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .layered-panel h4 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .layered-panel p { font-size: 13.5px; color: var(--text-light); line-height: 1.6; margin-bottom: 0; }
+  .layered-empty { display: flex; align-items: center; justify-content: center; min-height: 180px; color: var(--slate-light); font-size: 13px; font-style: italic; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); padding: 20px; }
+
+  @media (max-width: 640px) { .layered-layout { grid-template-columns: 1fr; } }
 
   /* Compliance */
   .compliance-list { margin: 24px 0; }
@@ -167,8 +189,9 @@
   .footer a { color: var(--teal); text-decoration: none; }
 
   @media (max-width: 640px) {
-    .cia-cards, .aaa-cards, .controls-grid { grid-template-columns: 1fr; }
+    .cia-cards, .aaa-cards { grid-template-columns: 1fr; }
     .enc-grid { grid-template-columns: 1fr; }
+    .layered-layout { grid-template-columns: 1fr; }
     .hero h1 { font-size: 1.5rem; }
     .main { padding: 24px 16px 60px; }
   }
@@ -300,7 +323,7 @@
 
   <div class="cia-wrapper">
     <div class="cia-cards">
-      <div class="cia-card active" onclick="selectCIA(this, 'cia-c')">
+      <div class="cia-card" onclick="selectCIA(this, 'cia-c')">
         <div class="cia-icon">🔒</div>
         <h4>Confidentiality</h4>
         <p class="sub">Only authorized parties can access the data</p>
@@ -317,7 +340,7 @@
       </div>
     </div>
 
-    <div class="cia-panel open" id="cia-c">
+    <div class="cia-panel" id="cia-c">
       <p>Confidentiality means keeping sensitive information away from those who should not have it — whether data is moving across a network or sitting in a database.</p>
       <ul>
         <li><strong>Encryption in transit:</strong> TLS ensures credentials and session data cannot be read by anyone intercepting network traffic</li>
@@ -362,7 +385,7 @@
 
   <div class="aaa-wrapper">
     <div class="aaa-cards">
-      <div class="aaa-card active" onclick="selectAAA(this, 'aaa-authn')">
+      <div class="aaa-card" onclick="selectAAA(this, 'aaa-authn')">
         <div class="aaa-icon">🪪</div>
         <h4>Authentication</h4>
         <p class="sub">Who are you? Prove it.</p>
@@ -379,7 +402,7 @@
       </div>
     </div>
 
-    <div class="aaa-panel open" id="aaa-authn">
+    <div class="aaa-panel" id="aaa-authn">
       <p>Authentication is the process of verifying that someone is who they claim to be. A username alone is just a claim — authentication requires <em>proof</em>.</p>
       <p><strong>Weak authentication</strong> relies only on a password. Passwords can be guessed, phished, or stolen in a database breach. <strong>Multi-factor authentication (MFA)</strong> adds a second factor — something you have (a phone or hardware key) in addition to something you know (a password). Even if a password is stolen, an attacker cannot log in without the second factor.</p>
     </div>
@@ -399,122 +422,164 @@
   <!-- 4. Controls -->
   <h2 id="controls">4. Security Controls</h2>
 
-  <p>A security control is any safeguard or countermeasure designed to protect the confidentiality, integrity, or availability of information. Controls are organized in two dimensions: <strong>type</strong> (what kind of control it is) and <strong>function</strong> (what it is designed to do).</p>
+  <p>We now know what we are protecting (CIA) and how identity is managed (AAA). But security is not just about identity — it requires a whole range of mechanisms working together. These mechanisms are called <strong>security controls</strong>: any safeguard or countermeasure designed to protect the confidentiality, integrity, or availability of information. Controls are organized in two dimensions: <strong>type</strong> (what kind of control it is) and <strong>function</strong> (what it is designed to do).</p>
 
   <h3>Control Types — How They Work</h3>
 
-  <div class="controls-grid">
-    <div class="ctrl-card">
-      <h4><span>🏢</span> Physical Controls</h4>
-      <div class="ctrl-item"><strong>What they are</strong>Tangible, real-world barriers and mechanisms</div>
-      <div class="ctrl-item"><strong>Examples</strong>Data center locks, badge access readers, security guards, CCTV, biometric entry, server cage locks, mantrap entries</div>
-      <div class="ctrl-item"><strong>In cloud context</strong>AWS is entirely responsible for physical controls. You never interact with the hardware — this is one of the core security benefits of cloud computing.</div>
+  <div class="ctrl-accordion">
+    <div class="ctrl-acc-item">
+      <div class="ctrl-acc-header" onclick="toggleCtrl(this)">
+        <span class="ctrl-acc-icon">🏢</span>
+        <span class="ctrl-acc-title">Physical Controls</span>
+        <span class="ctrl-acc-sub">Tangible, real-world barriers</span>
+        <span class="ctrl-acc-chev">▶</span>
+      </div>
+      <div class="ctrl-acc-body">
+        <p>Physical controls are tangible mechanisms that prevent unauthorized physical access to systems and infrastructure — locks, guards, cameras, and barriers.</p>
+        <p><strong>Examples:</strong> Data center locks, badge access readers, security guards, CCTV, biometric entry, server cage locks, mantrap entries.</p>
+        <p><strong>In cloud context:</strong> AWS is entirely responsible for physical controls. You never interact with the hardware — this is one of the core security benefits of cloud computing. Physical security is fully on AWS's side of the Shared Responsibility Model.</p>
+      </div>
     </div>
-    <div class="ctrl-card">
-      <h4><span>💻</span> Technical Controls</h4>
-      <div class="ctrl-item"><strong>What they are</strong>Software and hardware mechanisms enforced by systems automatically</div>
-      <div class="ctrl-item"><strong>Examples</strong>Firewalls, encryption, MFA, access control policies, VPNs, intrusion detection systems, antivirus, security groups</div>
-      <div class="ctrl-item"><strong>In cloud context</strong>The majority of what you configure in AWS are technical controls — and they are your primary responsibility under the Shared Responsibility Model.</div>
+    <div class="ctrl-acc-item">
+      <div class="ctrl-acc-header" onclick="toggleCtrl(this)">
+        <span class="ctrl-acc-icon">💻</span>
+        <span class="ctrl-acc-title">Technical Controls</span>
+        <span class="ctrl-acc-sub">Software and hardware mechanisms</span>
+        <span class="ctrl-acc-chev">▶</span>
+      </div>
+      <div class="ctrl-acc-body">
+        <p>Technical controls are automated safeguards enforced by systems — they operate without requiring human action each time and are the primary category of security work in cloud environments.</p>
+        <p><strong>Examples:</strong> Firewalls, encryption, MFA, access control policies, VPNs, intrusion detection systems, antivirus, security groups.</p>
+        <p><strong>In cloud context:</strong> The majority of what you configure in AWS are technical controls — IAM policies, security groups, encryption settings, CloudTrail — and they are your primary responsibility under the Shared Responsibility Model.</p>
+      </div>
     </div>
-    <div class="ctrl-card">
-      <h4><span>📄</span> Administrative Controls</h4>
-      <div class="ctrl-item"><strong>What they are</strong>Policies, procedures, and organizational practices governing people and processes</div>
-      <div class="ctrl-item"><strong>Examples</strong>Security policies, employee training, incident response plans, access review procedures, change management processes, acceptable use policies</div>
-      <div class="ctrl-item"><strong>In cloud context</strong>Your organization's policies for AWS account creation, credential rotation, and incident escalation are administrative controls. AWS provides the tools; you write the policies.</div>
+    <div class="ctrl-acc-item">
+      <div class="ctrl-acc-header" onclick="toggleCtrl(this)">
+        <span class="ctrl-acc-icon">📄</span>
+        <span class="ctrl-acc-title">Administrative Controls</span>
+        <span class="ctrl-acc-sub">Policies, procedures, and practices</span>
+        <span class="ctrl-acc-chev">▶</span>
+      </div>
+      <div class="ctrl-acc-body">
+        <p>Administrative controls govern how people behave and how processes are run — they are the organizational foundation that makes technical controls effective.</p>
+        <p><strong>Examples:</strong> Security policies, employee training, incident response plans, access review procedures, change management processes, acceptable use policies.</p>
+        <p><strong>In cloud context:</strong> Your organization's policies for AWS account creation, credential rotation, and incident escalation are administrative controls. AWS provides the tools; you write the policies that govern how they are used.</p>
+      </div>
     </div>
   </div>
 
   <h3>Control Functions — What They Do</h3>
 
-  <div class="controls-grid">
-    <div class="ctrl-card">
-      <h4><span>🛡</span> Preventive</h4>
-      <div class="ctrl-item">Stop an incident from happening in the first place</div>
-      <div class="ctrl-item"><strong>Examples:</strong> MFA, least-privilege IAM policies, encryption, firewall rules blocking unauthorized traffic, S3 bucket policies denying public access, disabling root account access keys</div>
+  <div class="ctrl-accordion">
+    <div class="ctrl-acc-item">
+      <div class="ctrl-acc-header" onclick="toggleCtrl(this)">
+        <span class="ctrl-acc-icon">🛡</span>
+        <span class="ctrl-acc-title">Preventive</span>
+        <span class="ctrl-acc-sub">Stop incidents before they happen</span>
+        <span class="ctrl-acc-chev">▶</span>
+      </div>
+      <div class="ctrl-acc-body">
+        <p>Preventive controls reduce the likelihood of a security incident occurring in the first place. They are the first line of defense.</p>
+        <p><strong>Examples:</strong> MFA, least-privilege access policies, encryption, firewall rules blocking unauthorized traffic, bucket policies denying public access, disabling unused credentials.</p>
+      </div>
     </div>
-    <div class="ctrl-card">
-      <h4><span>🔍</span> Detective</h4>
-      <div class="ctrl-item">Identify that an incident has occurred or is occurring</div>
-      <div class="ctrl-item"><strong>Examples:</strong> CloudTrail logging, GuardDuty threat detection, CloudWatch alarms on anomalous activity, AWS Config compliance rules flagging drift, Security Hub aggregating findings</div>
+    <div class="ctrl-acc-item">
+      <div class="ctrl-acc-header" onclick="toggleCtrl(this)">
+        <span class="ctrl-acc-icon">🔍</span>
+        <span class="ctrl-acc-title">Detective</span>
+        <span class="ctrl-acc-sub">Identify incidents as they occur</span>
+        <span class="ctrl-acc-chev">▶</span>
+      </div>
+      <div class="ctrl-acc-body">
+        <p>Detective controls identify that a security incident has occurred or is currently occurring, enabling a timely response. They cannot prevent the incident but limit the damage.</p>
+        <p><strong>Examples:</strong> Audit logging, threat detection services, anomaly alarms, compliance monitoring rules, security dashboards aggregating findings across services.</p>
+      </div>
     </div>
-    <div class="ctrl-card">
-      <h4><span>🔧</span> Corrective</h4>
-      <div class="ctrl-item">Restore systems to normal after an incident is detected</div>
-      <div class="ctrl-item"><strong>Examples:</strong> Restoring from backup after ransomware, revoking compromised credentials, patching a vulnerable system, isolating a compromised instance, rolling back a misconfigured change</div>
+    <div class="ctrl-acc-item">
+      <div class="ctrl-acc-header" onclick="toggleCtrl(this)">
+        <span class="ctrl-acc-icon">🔧</span>
+        <span class="ctrl-acc-title">Corrective</span>
+        <span class="ctrl-acc-sub">Restore systems after an incident</span>
+        <span class="ctrl-acc-chev">▶</span>
+      </div>
+      <div class="ctrl-acc-body">
+        <p>Corrective controls restore systems and operations to normal after a security incident has been detected. They minimize the impact and duration of a breach.</p>
+        <p><strong>Examples:</strong> Restoring from backup after ransomware, revoking compromised credentials, patching a vulnerable system, isolating a compromised instance, rolling back a misconfigured change.</p>
+      </div>
     </div>
   </div>
 
   <h2 id="layered">5. Layered Security — Defense in Depth</h2>
 
-  <p>No single control is sufficient on its own. The principle of <strong>defense in depth</strong> says that security should be applied at every layer of a system — so that if one layer is breached, the others still hold. An attacker who gets past the network firewall should still face application-level access controls. An attacker who steals a password should still be stopped by MFA. An attacker who encrypts your data should still be stopped by your backups.</p>
+  <p>You have now seen three types of controls and three functions they serve. The natural question is: which ones do you actually need? The answer is all of them — and the reason is the principle of <strong>defense in depth</strong>. No single control is sufficient on its own. Security should be applied at every layer of a system so that if one control fails, others still hold. An attacker who gets past the network firewall should still face application-level access controls. An attacker who steals a password should still be stopped by MFA. An attacker who encrypts your data should still be stopped by your backups.</p>
 
-  <p>Think of it as concentric rings of protection, from the outermost network perimeter down to the identity at the core. Each ring is a distinct security domain that must be independently secured.</p>
+  <p>Click any ring in the diagram to learn about that layer.</p>
 
-  <div style="display:flex; justify-content:center; margin: 28px 0;">
-    <svg viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:420px;display:block;" font-family="'Segoe UI',system-ui,sans-serif">
-
-      <!-- Layer 5 — Network (outermost) -->
-      <circle cx="210" cy="210" r="200" fill="#0e7490"/>
-      <!-- Layer 4 — Device -->
-      <circle cx="210" cy="210" r="162" fill="#0891b2"/>
-      <!-- Layer 3 — Application -->
-      <circle cx="210" cy="210" r="124" fill="#06b6d4"/>
-      <!-- Layer 2 — Data -->
-      <circle cx="210" cy="210" r="86" fill="#22d3ee"/>
-      <!-- Layer 1 — Identity (innermost) -->
-      <circle cx="210" cy="210" r="52" fill="#67e8f9"/>
-
-      <!-- Labels — arc text approximated with positioned text -->
-      <!-- Network -->
-      <text x="210" y="36" text-anchor="middle" font-size="15" font-weight="600" fill="white" opacity="0.95">Network Security</text>
-      <!-- Device -->
-      <text x="210" y="76" text-anchor="middle" font-size="14" font-weight="600" fill="white" opacity="0.95">Device Security</text>
-      <!-- Application -->
-      <text x="210" y="116" text-anchor="middle" font-size="13" font-weight="600" fill="white" opacity="0.95">Application Security</text>
-      <!-- Data -->
-      <text x="210" y="153" text-anchor="middle" font-size="12.5" font-weight="600" fill="white" opacity="0.95">Data Security</text>
-      <!-- Identity -->
-      <text x="210" y="204" text-anchor="middle" font-size="13" font-weight="700" fill="#164e63">Identity</text>
-      <text x="210" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#164e63">Security</text>
-    </svg>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 28px;">
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #0e7490;">
-      <div style="font-size:12px;font-weight:700;color:#0e7490;margin-bottom:6px;">🌐 Network Security</div>
-      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Controls which traffic is allowed to reach your systems at all</div>
-      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Firewalls, VPCs, subnets, and NACLs sit at the perimeter — filtering traffic before it gets anywhere near your applications or data. An attacker who cannot reach your network cannot attack it.</div>
+  <div class="layered-layout">
+    <div class="layered-svg-wrap">
+      <svg viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,sans-serif">
+        <!-- Layer 5 — Network (outermost) -->
+        <circle class="layer-ring" id="ring-network" cx="210" cy="210" r="200" fill="#0e7490" onclick="selectLayer('network')"/>
+        <!-- Layer 4 — Device -->
+        <circle class="layer-ring" id="ring-device" cx="210" cy="210" r="162" fill="#0891b2" onclick="selectLayer('device')"/>
+        <!-- Layer 3 — Application -->
+        <circle class="layer-ring" id="ring-app" cx="210" cy="210" r="124" fill="#06b6d4" onclick="selectLayer('app')"/>
+        <!-- Layer 2 — Data -->
+        <circle class="layer-ring" id="ring-data" cx="210" cy="210" r="86" fill="#22d3ee" onclick="selectLayer('data')"/>
+        <!-- Layer 1 — Identity (innermost) -->
+        <circle class="layer-ring" id="ring-identity" cx="210" cy="210" r="52" fill="#67e8f9" onclick="selectLayer('identity')"/>
+        <!-- Labels -->
+        <text x="210" y="36" text-anchor="middle" font-size="15" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Network Security</text>
+        <text x="210" y="76" text-anchor="middle" font-size="14" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Device Security</text>
+        <text x="210" y="116" text-anchor="middle" font-size="13" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Application Security</text>
+        <text x="210" y="153" text-anchor="middle" font-size="12.5" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Data Security</text>
+        <text x="210" y="204" text-anchor="middle" font-size="13" font-weight="700" fill="#164e63" pointer-events="none">Identity</text>
+        <text x="210" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#164e63" pointer-events="none">Security</text>
+      </svg>
+      <div class="layered-hint">Click a ring to explore that layer</div>
     </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #0891b2;">
-      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:6px;">💻 Device Security</div>
-      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Protects the machines themselves — servers, laptops, and endpoints</div>
-      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Even if network controls allow traffic through, a vulnerable or unpatched device is an open door. OS patching, endpoint protection (antivirus, EDR), and disabling unused services keep devices hardened.</div>
-    </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #06b6d4;">
-      <div style="font-size:12px;font-weight:700;color:#0e7490;margin-bottom:6px;">⚙️ Application Security</div>
-      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Secures the software running on those devices</div>
-      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Applications are where most modern attacks occur — SQL injection, cross-site scripting, logic flaws. WAF rules, secure coding practices, input validation, and vulnerability scanning address this layer.</div>
-    </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #22d3ee;">
-      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:6px;">🗄 Data Security</div>
-      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Protects the data itself — at rest and in transit</div>
-      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Even if an attacker gets through every outer layer, encrypted data is useless without the key. Encryption at rest and in transit, strict access policies, data classification, and backups are the last line before the most sensitive information.</div>
-    </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #67e8f9;grid-column:1/-1;">
-      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:6px;">🪪 Identity Security</div>
-      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Controls who can access what — the core of every other layer</div>
-      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Identity is at the center because it underpins every other layer. Authentication (MFA), authorization (least privilege), and SSO determine whether someone should be allowed in at all. If identity is compromised — a stolen credential, an over-permissioned role — an attacker can walk past every outer layer as a legitimate user.</div>
+
+    <div id="layered-detail">
+      <div class="layered-empty">← Click a ring to see details</div>
+
+      <div class="layered-panel" id="panel-network">
+        <div class="layered-panel-label" style="color:#0e7490;">🌐 Outermost layer</div>
+        <h4>Network Security</h4>
+        <p>Controls which traffic is allowed to reach your systems at all. Firewalls, VPCs, subnets, and NACLs sit at the perimeter — filtering traffic before it gets anywhere near your applications or data. An attacker who cannot reach your network cannot attack it.</p>
+      </div>
+      <div class="layered-panel" id="panel-device">
+        <div class="layered-panel-label" style="color:#0891b2;">💻 Layer 2</div>
+        <h4>Device Security</h4>
+        <p>Protects the machines themselves — servers, laptops, and endpoints. Even if network controls allow traffic through, a vulnerable or unpatched device is an open door. OS patching, endpoint protection (antivirus, EDR), and disabling unused services keep devices hardened.</p>
+      </div>
+      <div class="layered-panel" id="panel-app">
+        <div class="layered-panel-label" style="color:#0e7490;">⚙️ Layer 3</div>
+        <h4>Application Security</h4>
+        <p>Secures the software running on those devices. Applications are where most modern attacks occur — SQL injection, cross-site scripting, logic flaws. WAF rules, secure coding practices, input validation, and vulnerability scanning address this layer.</p>
+      </div>
+      <div class="layered-panel" id="panel-data">
+        <div class="layered-panel-label" style="color:#0891b2;">🗄 Layer 4</div>
+        <h4>Data Security</h4>
+        <p>Protects the data itself — at rest and in transit. Even if an attacker gets through every outer layer, encrypted data is useless without the key. Encryption, strict access policies, data classification, and backups are the last line before the most sensitive information.</p>
+      </div>
+      <div class="layered-panel" id="panel-identity">
+        <div class="layered-panel-label" style="color:#0891b2;">🪪 Innermost — the core</div>
+        <h4>Identity Security</h4>
+        <p>Controls who can access what — and underpins every other layer. Authentication (MFA), authorization (least privilege), and SSO determine whether someone should be allowed in at all. If identity is compromised — a stolen credential, an over-permissioned role — an attacker can walk past every outer layer as a legitimate user.</p>
+      </div>
     </div>
   </div>
 
-  <!-- 5. Compliance -->
+  <!-- 6. Compliance -->
   <h2 id="compliance">6. Compliance Frameworks</h2>
+
+  <p>Knowing how to build a secure, layered system is necessary — but in many industries it is not sufficient on its own. Regulators, customers, and partners often require you to demonstrate that your controls meet a defined external standard. This is what compliance frameworks are: structured sets of requirements that an independent party can audit and verify.</p>
 
   <div class="warning-box">
     <strong>Compliance is not the same as security.</strong> Security is about genuinely reducing risk. Compliance is about demonstrating to a third party that you meet a defined standard. A system can be fully compliant but still insecure — and a highly secure system may not satisfy a compliance auditor if it lacks required documentation. Compliance frameworks provide a useful baseline of controls, but the goal is always genuine security, not a checkbox.
   </div>
 
-  <p>Compliance frameworks are externally defined standards specifying minimum security controls for specific industries or data types. Many organizations are legally required to meet one or more. Click each to expand.</p>
+  <p>The four frameworks below are the most commonly encountered in industry. Each applies to a specific type of data or sector — but all of them map back to the CIA triad. Click each to expand.</p>
 
   <div class="compliance-list">
     <div class="comp-item">
@@ -592,23 +657,54 @@
 
 <script>
   function selectCIA(card, panelId) {
+    const wasActive = card.classList.contains('active');
     document.querySelectorAll('.cia-card').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.cia-panel').forEach(p => p.classList.remove('open'));
-    card.classList.add('active');
-    document.getElementById(panelId).classList.add('open');
+    if (!wasActive) {
+      card.classList.add('active');
+      document.getElementById(panelId).classList.add('open');
+    }
   }
+
   function selectAAA(card, panelId) {
+    const wasActive = card.classList.contains('active');
     document.querySelectorAll('.aaa-card').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.aaa-panel').forEach(p => p.classList.remove('open'));
-    card.classList.add('active');
-    document.getElementById(panelId).classList.add('open');
+    if (!wasActive) {
+      card.classList.add('active');
+      document.getElementById(panelId).classList.add('open');
+    }
   }
+
+  function toggleCtrl(header) {
+    const body = header.nextElementSibling;
+    const chev = header.querySelector('.ctrl-acc-chev');
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chev.textContent = isOpen ? '▶' : '▼';
+  }
+
   function toggleComp(header) {
     const body = header.nextElementSibling;
     const chev = header.querySelector('.comp-chev');
     const isOpen = body.classList.contains('open');
     body.classList.toggle('open', !isOpen);
     chev.textContent = isOpen ? '▶' : '▼';
+  }
+
+  const layerPanels = { network: 'panel-network', device: 'panel-device', app: 'panel-app', data: 'panel-data', identity: 'panel-identity' };
+
+  function selectLayer(layer) {
+    document.querySelectorAll('.layered-panel').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.layer-ring').forEach(r => r.classList.remove('active'));
+    const empty = document.querySelector('.layered-empty');
+    const ring = document.getElementById('ring-' + layer);
+    const panel = document.getElementById(layerPanels[layer]);
+    if (ring) ring.classList.add('active');
+    if (panel) {
+      panel.classList.add('open');
+      if (empty) empty.style.display = 'none';
+    }
   }
 </script>
 </body>
