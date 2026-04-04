@@ -356,7 +356,9 @@
   <!-- 3. AAA -->
   <h2 id="aaa">3. The AAA Framework</h2>
 
-  <p>The AAA framework describes how identity and access management works in practice. It flows directly from Confidentiality in the CIA triad — once you understand that only authorized users should have access, you need a systematic way to establish identity, enforce access limits, and track what was done. Click each component to learn more.</p>
+  <p>CIA defines <em>what</em> you are protecting. AAA is the operational mechanism that enforces one of those properties — Confidentiality. You cannot control who accesses data without first knowing who someone is (Authentication), then deciding what they are allowed to do (Authorization), and recording what they actually did (Accounting). Accounting also touches Integrity — the audit trail is evidence that data was accessed legitimately and has not been tampered with.</p>
+
+  <p>Click each component to learn more.</p>
 
   <div class="aaa-wrapper">
     <div class="aaa-cards">
@@ -380,19 +382,17 @@
     <div class="aaa-panel open" id="aaa-authn">
       <p>Authentication is the process of verifying that someone is who they claim to be. A username alone is just a claim — authentication requires <em>proof</em>.</p>
       <p><strong>Weak authentication</strong> relies only on a password. Passwords can be guessed, phished, or stolen in a database breach. <strong>Multi-factor authentication (MFA)</strong> adds a second factor — something you have (a phone or hardware key) in addition to something you know (a password). Even if a password is stolen, an attacker cannot log in without the second factor.</p>
-      <p>In AWS: you authenticate to the console with a password and MFA. IAM authenticates API calls using access keys or role credentials. End users authenticate to your application via services like Cognito.</p>
     </div>
 
     <div class="aaa-panel" id="aaa-authz">
       <p>After identity is verified, authorization determines what that identity is permitted to do. Being authenticated does not mean being allowed to do everything.</p>
       <p>A bank customer who successfully logs in can see their own account — but not another customer's. They cannot access the password database or administrative systems. An employee in a read-only role can view records but not delete them. This control based on identity is called <strong>Role-Based Access Control (RBAC)</strong>.</p>
-      <p>In AWS: IAM policies define exactly which actions (e.g., <code>s3:GetObject</code>) are allowed on which resources for which identities. The principle of least privilege — every identity gets only the minimum permissions needed, nothing more — is the gold standard.</p>
+      <p>The principle of least privilege states that every identity should have only the minimum permissions needed for its job — nothing more. Over-permissioned accounts are one of the most common sources of cloud security incidents.</p>
     </div>
 
     <div class="aaa-panel" id="aaa-acct">
       <p>Accounting means recording what authenticated and authorized users actually did. It creates the audit trail necessary to detect anomalies, investigate incidents, and demonstrate compliance.</p>
       <p>Who logged in? From where? What data did they access? What did they change or delete? A complete, tamper-proof audit trail answers these questions after the fact. An attacker who can erase logs removes all evidence of what they did — which is why log immutability is a key security requirement.</p>
-      <p>In AWS: CloudTrail records every API call across your account — every action taken by any user, role, or service, with timestamp, source IP, and full request details. This is the primary accounting mechanism for AWS environments.</p>
     </div>
   </div>
 
@@ -444,7 +444,7 @@
     </div>
   </div>
 
-  <h3 id="layered">Layered Security — Defense in Depth</h3>
+  <h2 id="layered">5. Layered Security — Defense in Depth</h2>
 
   <p>No single control is sufficient on its own. The principle of <strong>defense in depth</strong> says that security should be applied at every layer of a system — so that if one layer is breached, the others still hold. An attacker who gets past the network firewall should still face application-level access controls. An attacker who steals a password should still be stopped by MFA. An attacker who encrypts your data should still be stopped by your backups.</p>
 
@@ -480,30 +480,35 @@
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 28px;">
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-left:4px solid #0e7490;">
-      <div style="font-size:12px;font-weight:700;color:#0e7490;margin-bottom:4px;">🌐 Network Security</div>
-      <div style="font-size:13px;color:var(--text-light);">Firewalls, VPCs, subnets, NACLs — control which traffic is allowed to reach your systems at all</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #0e7490;">
+      <div style="font-size:12px;font-weight:700;color:#0e7490;margin-bottom:6px;">🌐 Network Security</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Controls which traffic is allowed to reach your systems at all</div>
+      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Firewalls, VPCs, subnets, and NACLs sit at the perimeter — filtering traffic before it gets anywhere near your applications or data. An attacker who cannot reach your network cannot attack it.</div>
     </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-left:4px solid #0891b2;">
-      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:4px;">💻 Device Security</div>
-      <div style="font-size:13px;color:var(--text-light);">OS patching, endpoint protection, disabling unused services — secure the machines themselves</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #0891b2;">
+      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:6px;">💻 Device Security</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Protects the machines themselves — servers, laptops, and endpoints</div>
+      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Even if network controls allow traffic through, a vulnerable or unpatched device is an open door. OS patching, endpoint protection (antivirus, EDR), and disabling unused services keep devices hardened.</div>
     </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-left:4px solid #06b6d4;">
-      <div style="font-size:12px;font-weight:700;color:#06b6d4;margin-bottom:4px;">⚙️ Application Security</div>
-      <div style="font-size:13px;color:var(--text-light);">Input validation, WAF rules, secure coding — protect the software running on those machines</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #06b6d4;">
+      <div style="font-size:12px;font-weight:700;color:#0e7490;margin-bottom:6px;">⚙️ Application Security</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Secures the software running on those devices</div>
+      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Applications are where most modern attacks occur — SQL injection, cross-site scripting, logic flaws. WAF rules, secure coding practices, input validation, and vulnerability scanning address this layer.</div>
     </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-left:4px solid #22d3ee;">
-      <div style="font-size:12px;font-weight:700;color:#0e7490;margin-bottom:4px;">🗄 Data Security</div>
-      <div style="font-size:13px;color:var(--text-light);">Encryption at rest and in transit, access controls, backups — protect the data itself</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #22d3ee;">
+      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:6px;">🗄 Data Security</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Protects the data itself — at rest and in transit</div>
+      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Even if an attacker gets through every outer layer, encrypted data is useless without the key. Encryption at rest and in transit, strict access policies, data classification, and backups are the last line before the most sensitive information.</div>
     </div>
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-left:4px solid #67e8f9;grid-column:1/-1;">
-      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:4px;">🪪 Identity Security</div>
-      <div style="font-size:13px;color:var(--text-light);">Authentication, MFA, authorization, least privilege — at the core, everything comes down to controlling who can do what. If identity is compromised, all outer layers can be bypassed.</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;border-left:4px solid #67e8f9;grid-column:1/-1;">
+      <div style="font-size:12px;font-weight:700;color:#0891b2;margin-bottom:6px;">🪪 Identity Security</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;">Controls who can access what — the core of every other layer</div>
+      <div style="font-size:12.5px;color:var(--text-light);line-height:1.6;">Identity is at the center because it underpins every other layer. Authentication (MFA), authorization (least privilege), and SSO determine whether someone should be allowed in at all. If identity is compromised — a stolen credential, an over-permissioned role — an attacker can walk past every outer layer as a legitimate user.</div>
     </div>
   </div>
 
   <!-- 5. Compliance -->
-  <h2 id="compliance">5. Compliance Frameworks</h2>
+  <h2 id="compliance">6. Compliance Frameworks</h2>
 
   <div class="warning-box">
     <strong>Compliance is not the same as security.</strong> Security is about genuinely reducing risk. Compliance is about demonstrating to a third party that you meet a defined standard. A system can be fully compliant but still insecure — and a highly secure system may not satisfy a compliance auditor if it lacks required documentation. Compliance frameworks provide a useful baseline of controls, but the goal is always genuine security, not a checkbox.
@@ -523,7 +528,6 @@
         <p><strong>Who it applies to:</strong> Any organization handling Protected Health Information (PHI) — medical records, health data, insurance claims. Healthcare providers, insurers, and their business associates including cloud vendors storing PHI.</p>
         <p><strong>Key requirements:</strong> Access controls on PHI, audit logging of all access, encryption of PHI at rest and in transit, breach notification within 72 hours, Business Associate Agreements (BAAs) with vendors.</p>
         <p><strong>CIA connection:</strong> Primarily enforces Confidentiality (who can access PHI) and Integrity (audit trails, breach notification). Availability requirements exist but are secondary.</p>
-        <div class="tag-row"><span class="svc-tag">CloudTrail</span><span class="svc-tag">KMS</span><span class="svc-tag">IAM</span><span class="svc-tag">CloudWatch</span><span class="svc-tag">Macie</span></div>
       </div>
     </div>
 
@@ -538,7 +542,6 @@
         <p><strong>Who it applies to:</strong> Any organization that stores, processes, or transmits cardholder data — payment processors, e-commerce sites, retailers, banks.</p>
         <p><strong>Key requirements:</strong> Network segmentation to isolate cardholder data, no storage of full card numbers after authorization, encryption in transit (TLS 1.2+), quarterly vulnerability scans, annual penetration testing, MFA for all administrative access.</p>
         <p><strong>CIA connection:</strong> Enforces all three — Confidentiality (card number protection), Integrity (tamper detection, penetration testing), Availability (network resilience requirements).</p>
-        <div class="tag-row"><span class="svc-tag">VPC</span><span class="svc-tag">WAF</span><span class="svc-tag">CloudTrail</span><span class="svc-tag">Inspector</span><span class="svc-tag">KMS</span><span class="svc-tag">Security Hub</span></div>
       </div>
     </div>
 
@@ -553,7 +556,6 @@
         <p><strong>Who it applies to:</strong> Any organization seeking to demonstrate a systematic approach to information security management. Commonly required in enterprise procurement and government contracts globally.</p>
         <p><strong>Key requirements:</strong> Formal risk assessment and treatment, documented security policies, access control policy, incident response plan, business continuity planning, regular internal audits and management reviews.</p>
         <p><strong>CIA connection:</strong> Uniquely holistic — addresses all three CIA properties through a management system framework, not just specific technical controls.</p>
-        <div class="tag-row"><span class="svc-tag">AWS Config</span><span class="svc-tag">Security Hub</span><span class="svc-tag">CloudTrail</span><span class="svc-tag">IAM</span><span class="svc-tag">Organizations</span></div>
       </div>
     </div>
 
@@ -568,7 +570,6 @@
         <p><strong>Who it applies to:</strong> Any organization processing personal data of EU residents — regardless of where the organization is based. A US company with EU customers must comply.</p>
         <p><strong>Key requirements:</strong> Lawful basis for processing personal data, right to access, erasure, and portability, data minimization, privacy by design, breach notification within 72 hours, Data Protection Impact Assessments for high-risk processing.</p>
         <p><strong>CIA connection:</strong> Primarily enforces Confidentiality (who can access personal data and why) and Integrity (accuracy, breach notification). The right to erasure creates a unique tension with backup and availability controls.</p>
-        <div class="tag-row"><span class="svc-tag">Macie</span><span class="svc-tag">KMS</span><span class="svc-tag">CloudTrail</span><span class="svc-tag">S3</span><span class="svc-tag">Cognito</span></div>
       </div>
     </div>
   </div>
