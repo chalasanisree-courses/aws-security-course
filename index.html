@@ -351,7 +351,7 @@
       <span class="week-chevron" id="w4-chev">▶</span>
     </div>
     <div class="week-body" id="w4">
-      <p class="week-desc">3-tier application architecture — presentation, application, data tiers. VPC design: public and private subnets, security groups, route tables. ALB in public subnet, EC2 Flask in private subnet, DynamoDB as data tier. VPC endpoints for DynamoDB, S3, and SSM. SSM Session Manager — no SSH, no port 22. NAT Gateway for bootstrap then deleted. Deliberate vulnerabilities: ALB internet-facing, no rate limiting, overprivileged role supply chain attack demo.</p>
+      <p class="week-desc">3-tier application architecture — presentation, application, data tiers. VPC design: public and private subnets, security groups, route tables. ALB in public subnet, EC2 application server in private subnet, DynamoDB as data tier. VPC endpoints for DynamoDB, S3, and SSM. SSM Session Manager — no SSH, no port 22. NAT Gateway for bootstrap then deleted. Deliberate vulnerabilities: ALB internet-facing, no rate limiting, overprivileged role supply chain attack demo.</p>
       <div class="resource-list">
         <a class="resource-link" href="week04/week4-vpc-ec2.html">
           <span class="icon">◈</span> VPC, EC2, and Application Tier Security — concept notes
@@ -365,12 +365,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w5')">
       <span class="week-num">Week 5</span>
-      <span class="week-title">Authentication — OIDC, tokens, session management</span>
+      <span class="week-title">Serverless Migration — Lambda + API Gateway</span>
       <span class="week-domain">SCS-C03: D4, D3</span>
       <span class="week-chevron" id="w5-chev">▶</span>
     </div>
     <div class="week-body" id="w5">
-      <p class="week-desc">OAuth vs OIDC, Google login, ID token structure, JWKS signature verification. Demonstrate token forgery attack. Server-side sessions in DynamoDB, HttpOnly/Secure/SameSite cookies, idle timeout, logout and invalidation.</p>
+      <p class="week-desc">EC2 and ALB replaced with Lambda and API Gateway. Same DynamoDB table, same CloudFront distribution. Eliminates the EC2 attack surface — no OS patching, no SSH, no VPC endpoint management needed.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -381,12 +381,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w6')">
       <span class="week-num">Week 6</span>
-      <span class="week-title">Modern auth — PKCE, Cognito, app-level authorization</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D4, D1</span>
       <span class="week-chevron" id="w6-chev">▶</span>
     </div>
     <div class="week-body" id="w6">
-      <p class="week-desc">Why implicit flow is insecure, OAuth 2.1, PKCE Authorization Code Flow via Cognito. Social login. Free vs premium user tiers, feature gating, server-side enforcement. Demonstrate client-side-only auth bypass.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -397,12 +397,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w7')">
       <span class="week-num">Week 7</span>
-      <span class="week-title">Infrastructure identity — IAM Identity Center + role model</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D4, D3</span>
       <span class="week-chevron" id="w7-chev">▶</span>
     </div>
     <div class="week-body" id="w7">
-      <p class="week-desc">IAM Identity Center SSO, permission sets, builder personas. IAM role model: 6 roles — free user, premium user, infra admin, web developer, content employee, compliance auditor. Least privilege per role, resource-based conditions, MFA enforcement.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -417,12 +417,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w8')">
       <span class="week-num phase2">Week 8</span>
-      <span class="week-title">Content safety, cross-account governance + Lambda in VPC</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D3, D5, D6</span>
       <span class="week-chevron" id="w8-chev">▶</span>
     </div>
     <div class="week-body" id="w8">
-      <p class="week-desc">Rekognition unsafe content detection, S3 → Lambda → Rekognition workflow. AWS Organizations and SCPs — restrict Rekognition to Lambda roles only. Lambda in VPC: private subnets, VPC endpoints for S3 and DynamoDB, zero public egress.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -437,12 +437,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w9')">
       <span class="week-num phase3">Week 9</span>
-      <span class="week-title">WAF + KMS encryption + Macie</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D3, D5</span>
       <span class="week-chevron" id="w9-chev">▶</span>
     </div>
     <div class="week-body" id="w9">
-      <p class="week-desc">AWS WAF managed rules (OWASP Top 10), rate limiting, bot control — demonstrate SQLi/XSS attack then block. Customer-managed KMS keys for S3 and DynamoDB encryption, key policies, decrypt audit trail. Macie PII detection in S3.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -453,12 +453,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w10')">
       <span class="week-num phase3">Week 10</span>
-      <span class="week-title">Vulnerability assessment + continuous compliance</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D1, D6</span>
       <span class="week-chevron" id="w10-chev">▶</span>
     </div>
     <div class="week-body" id="w10">
-      <p class="week-desc">Amazon Inspector CVE scanning on EC2 before and after patching via SSM. AWS Config continuous compliance rules: S3 not public, EC2 SSM-managed, CloudTrail enabled, KMS rotation active. Trusted Advisor security checks overview.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -469,12 +469,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w11')">
       <span class="week-num phase4">Week 11</span>
-      <span class="week-title">Threat detection — GuardDuty, Security Hub, IAM Access Analyzer</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D1, D4</span>
       <span class="week-chevron" id="w11-chev">▶</span>
     </div>
     <div class="week-body" id="w11">
-      <p class="week-desc">GuardDuty: finding categories, anomalous IAM calls, reconnaissance patterns. IAM Access Analyzer: detecting unintended external access, policy misconfigurations. Security Hub: unified posture dashboard, ASFF format, before-and-after posture comparison. Centralized log analysis: CloudTrail, API Gateway, WAF, Lambda logs.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -489,12 +489,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w12')">
       <span class="week-num phase4">Week 12</span>
-      <span class="week-title">Incident response + governance + final posture review</span>
+      <span class="week-title">Coming</span>
       <span class="week-domain">SCS-C03: D2, D1, D6</span>
       <span class="week-chevron" id="w12-chev">▶</span>
     </div>
     <div class="week-body" id="w12">
-      <p class="week-desc">Structured IR simulation: investigate real findings, identify attacker, document remediation, write formal IR report using ASFF. Multi-account governance overview: Control Tower, Landing Zone. CloudHSM vs KMS. Security Hub posture review — Week 12 vs Week 1. Final exam.</p>
+      <p class="week-desc">Content coming.</p>
             <div class="resource-list">
         <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
       </div>
@@ -571,7 +571,7 @@
           <td><div class="svc-name"><a href="https://aws.amazon.com/cloudwatch/" target="_blank">CloudWatch</a></div><div class="svc-abbr">Amazon CloudWatch</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-done">Week 1</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Monitors AWS resources. Collects metrics, creates alarms, and triggers automated responses.</td>
-          <td>Billing alarm in us-east-1 (Week 1). Lambda error alarms, structured log analysis (Week 6+).
+          <td>Billing alarm in us-east-1 (Week 1). Lambda error alarms and log analysis in later weeks.
             <div class="course-use">Billing metrics only exist in us-east-1 — must switch regions to create billing alarm.</div>
           </td>
         </tr>
@@ -591,77 +591,77 @@
         </tr>
 
         <tr data-scope="az" data-week="3" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/ec2/" target="_blank">EC2</a></div><div class="svc-abbr">Elastic Compute Cloud</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/ec2/" target="_blank">EC2</a></div><div class="svc-abbr">Elastic Compute Cloud</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
           <td><span class="scope-pill scope-az">AZ-specific</span></td>
           <td>Virtual servers. Each instance runs in exactly one AZ determined by its subnet. You manage the OS.</td>
-          <td>Hosting the Photo Viewer frontend web server. Inspector scan target.</td>
+          <td>Hosting the Photo Viewer application server (backend). Inspector scan target.</td>
         </tr>
 
         <tr data-scope="regional" data-week="3" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/vpc/" target="_blank">VPC</a></div><div class="svc-abbr">Virtual Private Cloud</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/vpc/" target="_blank">VPC</a></div><div class="svc-abbr">Virtual Private Cloud</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Software-defined private network. VPC spans the whole region. Subnets within a VPC are each pinned to one AZ.</td>
           <td>Network boundary for EC2. Public subnet for web server.</td>
         </tr>
 
         <tr data-scope="global" data-week="3" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/route53/" target="_blank">Route 53</a></div><div class="svc-abbr">Amazon Route 53</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/route53/" target="_blank">Route 53</a></div><div class="svc-abbr">Amazon Route 53</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 4</span></td>
           <td><span class="scope-pill scope-global">Global</span></td>
           <td>DNS service. Routes internet traffic to your application. Health checks enable automatic failover.</td>
           <td>Custom domain for Photo Viewer pointing to CloudFront.</td>
         </tr>
 
         <tr data-scope="regional" data-week="3" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/systems-manager/" target="_blank">Systems Manager</a></div><div class="svc-abbr">AWS Systems Manager</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 3</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/systems-manager/" target="_blank">Systems Manager</a></div><div class="svc-abbr">AWS Systems Manager</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Manages EC2 instances without SSH. Session Manager, patch baselines, run commands remotely.</td>
           <td>Replacing SSH on EC2. Automated OS patching. Inspector integration.</td>
         </tr>
 
         <tr data-scope="regional" data-week="4" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/lambda/" target="_blank">Lambda</a></div><div class="svc-abbr">AWS Lambda</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/lambda/" target="_blank">Lambda</a></div><div class="svc-abbr">AWS Lambda</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 5</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Run code without managing servers. AWS runs functions across AZs automatically. PaaS — you manage code only.</td>
           <td>Backend API: image listing, uploads, session validation, Rekognition integration.</td>
         </tr>
 
         <tr data-scope="regional" data-week="4" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/api-gateway/" target="_blank">API Gateway</a></div><div class="svc-abbr">Amazon API Gateway</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/api-gateway/" target="_blank">API Gateway</a></div><div class="svc-abbr">Amazon API Gateway</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 5</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Creates and secures REST APIs. Handles throttling, JWT authentication, and usage plans.</td>
           <td>REST endpoints for Photo Viewer. JWT Authorizer for token validation. Rate limiting.</td>
         </tr>
 
         <tr data-scope="regional" data-week="4" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><div class="svc-abbr">Amazon Inspector</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><div class="svc-abbr">Amazon Inspector</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">coming</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Automated CVE scanning for EC2 instances. References NIST NVD. Requires SSM Agent.</td>
           <td>Scanning EC2 web server for CVEs. Verifying patch compliance after SSM patching.</td>
         </tr>
 
         <tr data-scope="regional" data-week="5" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><div class="svc-abbr">AWS Web Application Firewall</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">Week 5</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><div class="svc-abbr">AWS Web Application Firewall</div><span class="special-pill paid-only">paid</span><br><span class="week-tag week-tag-future">coming</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Filters web traffic. Blocks SQLi, XSS, and rate-based attacks. Must be us-east-1 for CloudFront.</td>
           <td>Rate-limiting /login. SQLi and XSS rules on CloudFront (Week 12).</td>
         </tr>
 
         <tr data-scope="regional" data-week="6" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/dynamodb/" target="_blank">DynamoDB</a></div><div class="svc-abbr">Amazon DynamoDB</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 6</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/dynamodb/" target="_blank">DynamoDB</a></div><div class="svc-abbr">Amazon DynamoDB</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 4</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>Fully managed NoSQL database. AWS distributes across AZs automatically. TTL expires old records.</td>
           <td>Server-side sessions with idle timeout. User accounts table with tier field.</td>
         </tr>
 
         <tr data-scope="regional" data-week="7" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/cognito/" target="_blank">Cognito</a></div><div class="svc-abbr">Amazon Cognito</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 7</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/cognito/" target="_blank">Cognito</a></div><div class="svc-abbr">Amazon Cognito</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">coming</span></td>
           <td><span class="scope-pill scope-regional">Regional</span></td>
           <td>User authentication. Supports Google, Apple, Facebook via Authorization Code + PKCE flow.</td>
           <td>End-user login. Free vs premium tier. Social login via Google, Apple, Facebook.</td>
         </tr>
 
         <tr data-scope="global" data-week="8" class="future">
-          <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><div class="svc-abbr">AWS SSO</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">Week 8</span></td>
+          <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><div class="svc-abbr">AWS SSO</div><span class="special-pill free-tier">free tier</span><br><span class="week-tag week-tag-future">coming</span></td>
           <td><span class="scope-pill scope-global">Global</span></td>
           <td>Single sign-on for employee access. Centralizes identity for multiple roles and accounts.</td>
           <td>Employee login for 4 internal roles: infra admin, web dev, content employee, auditor.</td>

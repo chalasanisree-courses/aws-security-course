@@ -352,7 +352,7 @@
         <div class="week-subtitle">Lab complete</div>
       </div>
       <div class="week-body">
-        <p class="week-desc">Photo metadata moved from a static JSON file to DynamoDB. A Flask API server on EC2 in a private VPC subnet serves the photo list dynamically. CloudFront routes <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">/photos</code> API requests to an ALB which forwards to EC2.</p>
+        <p class="week-desc">Photo metadata moved from a static JSON file to DynamoDB. An application server on EC2 in a private VPC subnet serves the photo list dynamically. CloudFront routes <code style="font-size:10px;background:#f0efe8;padding:1px 3px;border-radius:3px;">/photos</code> API requests to an ALB which forwards to EC2.</p>
 
         <div class="arch-row">
           <span class="arch-label">Traffic</span>
@@ -407,7 +407,7 @@
       <span class="tl-week">Week 4</span>
       <div class="tl-content">
         <div class="tl-title">EC2 Backend in VPC</div>
-        <div class="tl-desc">Flask API on EC2 in a private subnet serves photo list from DynamoDB. ALB in public subnet. VPC endpoints for DynamoDB, S3, and SSM. No SSH — SSM Session Manager only.</div>
+        <div class="tl-desc">Application server on EC2 in a private subnet serves photo list from DynamoDB. ALB in public subnet. VPC endpoints for DynamoDB, S3, and SSM. No SSH — SSM Session Manager only.</div>
       </div>
     </div>
     <div class="timeline-row">
