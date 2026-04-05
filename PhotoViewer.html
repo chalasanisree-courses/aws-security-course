@@ -73,10 +73,10 @@
     white-space: nowrap; flex-shrink: 0;
   }
   .badge-1 { background: #F1EFE8; color: #444441; }
-  .badge-2 { background: #FAECE7; color: #712B13; }
-  .badge-3 { background: #E1F5EE; color: #085041; }
-  .badge-4 { background: #E6F1FB; color: #0C447C; }
-  .badge-5 { background: #EEEDFE; color: #3C3489; }
+  .badge-2 { background: #F1EFE8; color: #444441; }
+  .badge-3 { background: #F1EFE8; color: #444441; }
+  .badge-4 { background: #F1EFE8; color: #444441; }
+  .badge-5 { background: #F1EFE8; color: #444441; }
 
   .ac-title-group { flex: 1; }
   .ac-title { font-size: 14px; font-weight: 600; color: #1a1a18; }
@@ -183,6 +183,115 @@
     <div class="eyebrow">CS 55D — Course Project</div>
     <h1>Photo Viewer</h1>
     <p>A cloud-native web application built and secured on AWS — week by week. Each stage evolves the infrastructure, security posture, or product capabilities of the application. This page tracks what the app can do at each stage, how it is built on AWS, and what limitations motivated the next stage.</p>
+  </div>
+
+  <div class="section-label">What we are building</div>
+
+  <div style="margin-bottom:32px;">
+    <p style="font-size:13px;color:#5f5e5a;line-height:1.7;margin-bottom:1.25rem;">Photo Viewer is a photo-sharing web application. The same base UI is shared across all tiers — what changes is what each user can do. Unauthenticated users can browse. Free users get search. Premium users get full photo management.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+
+      <!-- Unauthenticated -->
+      <div style="border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);overflow:hidden;background:#fff;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:7px 10px;background:#F1EFE8;color:#5F5E5A;">Unauthenticated</div>
+        <div style="background:#e8e8e8;padding:8px;">
+          <div style="background:#fff;border-radius:6px;overflow:hidden;border:0.5px solid #ddd;">
+            <div style="background:#f5f5f5;padding:5px 8px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid #e0e0e0;">
+              <div style="display:flex;gap:3px;flex-shrink:0;"><div style="width:6px;height:6px;border-radius:50%;background:#ff5f57;"></div><div style="width:6px;height:6px;border-radius:50%;background:#febc2e;"></div><div style="width:6px;height:6px;border-radius:50%;background:#28c840;"></div></div>
+              <div style="flex:1;"></div>
+              <div style="background:#1F4E79;color:#fff;font-size:8px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Login</div>
+            </div>
+            <div style="background:#fff;padding:10px 12px;">
+              <div style="font-size:11px;font-weight:700;color:#1a1a18;text-align:center;margin-bottom:2px;">Photo Viewer</div>
+              <div style="font-size:8px;color:#888;text-align:center;margin-bottom:8px;">Explore our collection</div>
+              <div style="width:100%;height:75px;border-radius:6px;overflow:hidden;margin-bottom:6px;background:linear-gradient(135deg,#fce4ec,#f8bbd0,#e8a0b4);display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;">
+                🌸<div style="background:rgba(0,0,0,0.5);color:#fff;font-size:7px;padding:2px 5px;border-radius:3px;position:absolute;bottom:4px;left:4px;">✓ Week 2</div>
+              </div>
+              <div style="background:#1F4E79;color:#fff;font-size:7px;padding:3px 0;border-radius:4px;text-align:center;width:60%;margin:0 auto 3px;">Next Photo</div>
+              <div style="font-size:7px;color:#aaa;text-align:center;">1 of 5</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:9px 11px;border-top:0.5px solid rgba(0,0,0,0.08);">
+          <span style="display:inline-block;font-size:9px;background:#EAF3DE;color:#27500A;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Built — Week 2</span>
+          <ul style="list-style:none;margin:0;padding:0;">
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Browse photos with Next Photo</li>
+            <li style="font-size:10px;color:#5f5e5a;padding:2px 0;display:flex;gap:5px;">– No account needed</li>
+            <li style="font-size:10px;color:#5f5e5a;padding:2px 0;display:flex;gap:5px;">– No search, no uploads</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Free -->
+      <div style="border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);overflow:hidden;background:#fff;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:7px 10px;background:#E1F5EE;color:#085041;">Free user</div>
+        <div style="background:#e8e8e8;padding:8px;">
+          <div style="background:#fff;border-radius:6px;overflow:hidden;border:0.5px solid #ddd;">
+            <div style="background:#f5f5f5;padding:5px 8px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid #e0e0e0;">
+              <div style="display:flex;gap:3px;flex-shrink:0;"><div style="width:6px;height:6px;border-radius:50%;background:#ff5f57;"></div><div style="width:6px;height:6px;border-radius:50%;background:#febc2e;"></div><div style="width:6px;height:6px;border-radius:50%;background:#28c840;"></div></div>
+              <div style="flex:1;background:#fff;border:0.5px solid #ccc;border-radius:3px;padding:2px 8px;display:flex;align-items:center;gap:4px;"><span style="font-size:8px;color:#555;flex:1;">British Columbia</span><span style="font-size:8px;">🔍</span></div>
+              <div style="width:16px;height:16px;border-radius:50%;background:#27500A;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600;flex-shrink:0;">F</div>
+            </div>
+            <div style="background:#fff;padding:10px 12px;">
+              <div style="font-size:11px;font-weight:700;color:#1a1a18;text-align:center;margin-bottom:2px;">Photo Viewer</div>
+              <div style="font-size:8px;color:#888;text-align:center;margin-bottom:8px;">3 results for "British Columbia"</div>
+              <div style="width:100%;height:75px;border-radius:6px;overflow:hidden;margin-bottom:6px;background:linear-gradient(135deg,#b2dfdb,#80cbc4);display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;">
+                🏔<div style="background:rgba(8,80,65,0.75);color:#fff;font-size:7px;padding:2px 5px;border-radius:3px;position:absolute;bottom:4px;left:4px;">+ Search</div>
+              </div>
+              <div style="background:#1F4E79;color:#fff;font-size:7px;padding:3px 0;border-radius:4px;text-align:center;width:60%;margin:0 auto 3px;">Next Photo</div>
+              <div style="font-size:7px;color:#aaa;text-align:center;">1 of 3</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:9px 11px;border-top:0.5px solid rgba(0,0,0,0.08);">
+          <span style="display:inline-block;font-size:9px;background:#F1EFE8;color:#888780;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Coming — Week 6+</span>
+          <ul style="list-style:none;margin:0;padding:0;">
+            <li style="font-size:10px;color:#5f5e5a;padding:2px 0;display:flex;gap:5px;">– Browse photos with Next Photo</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Login with account</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Search by keyword or tag</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Premium -->
+      <div style="border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);overflow:hidden;background:#fff;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:7px 10px;background:#EEEDFE;color:#3C3489;">Premium user</div>
+        <div style="background:#e8e8e8;padding:8px;">
+          <div style="background:#fff;border-radius:6px;overflow:hidden;border:0.5px solid #ddd;">
+            <div style="background:#f5f5f5;padding:5px 8px;display:flex;align-items:center;gap:6px;border-bottom:0.5px solid #e0e0e0;">
+              <div style="display:flex;gap:3px;flex-shrink:0;"><div style="width:6px;height:6px;border-radius:50%;background:#ff5f57;"></div><div style="width:6px;height:6px;border-radius:50%;background:#febc2e;"></div><div style="width:6px;height:6px;border-radius:50%;background:#28c840;"></div></div>
+              <div style="flex:1;background:#fff;border:0.5px solid #ccc;border-radius:3px;padding:2px 8px;display:flex;align-items:center;gap:4px;"><span style="font-size:8px;color:#555;flex:1;">My photos</span><span style="font-size:8px;">🔍</span></div>
+              <div style="display:flex;gap:3px;flex-shrink:0;">
+                <div style="width:15px;height:15px;border:1px solid #ccc;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#555;">✎</div>
+                <div style="width:15px;height:15px;border:1px solid #ccc;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#555;">🗑</div>
+                <div style="width:15px;height:15px;border:1px solid #ccc;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#555;">⊞</div>
+                <div style="width:16px;height:16px;border-radius:50%;background:#3C3489;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:600;">F</div>
+              </div>
+            </div>
+            <div style="background:#fff;padding:10px 12px;">
+              <div style="font-size:11px;font-weight:700;color:#1a1a18;text-align:center;margin-bottom:2px;">Photo Viewer</div>
+              <div style="font-size:8px;color:#888;text-align:center;margin-bottom:8px;">My uploads · 4 photos</div>
+              <div style="width:100%;height:75px;border-radius:6px;overflow:hidden;margin-bottom:6px;background:linear-gradient(135deg,#ffe0b2,#ffcc80);display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;">
+                🌅<div style="background:rgba(60,52,137,0.75);color:#fff;font-size:7px;padding:2px 5px;border-radius:3px;position:absolute;bottom:4px;left:4px;">+ CRUD</div>
+              </div>
+              <div style="background:#1F4E79;color:#fff;font-size:7px;padding:3px 0;border-radius:4px;text-align:center;width:60%;margin:0 auto 3px;">Next Photo</div>
+              <div style="font-size:7px;color:#aaa;text-align:center;">1 of 4</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:9px 11px;border-top:0.5px solid rgba(0,0,0,0.08);">
+          <span style="display:inline-block;font-size:9px;background:#F1EFE8;color:#888780;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Coming — Week 6+</span>
+          <ul style="list-style:none;margin:0;padding:0;">
+            <li style="font-size:10px;color:#5f5e5a;padding:2px 0;display:flex;gap:5px;">– Everything in free tier</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Upload your own photos</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Edit permissions (public / private)</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Delete your photos</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <div class="section-label">Application build stages</div>
@@ -398,6 +507,179 @@
     </div>
 
   </div>
+
+  <!-- Pentagon section -->
+  <div class="section-label" style="margin-top:40px;">Why does the design evolve?</div>
+
+  <div style="background:#fff; border-radius:10px; border:0.5px solid rgba(0,0,0,0.1); padding:24px 20px; margin-bottom:40px;">
+
+    <div id="pent-container" style="display:flex;flex-direction:column;align-items:center;">
+
+      <!-- Week buttons -->
+      <div style="display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center;">
+        <button class="pent-btn active" data-week="overview" onclick="pentSelectWeek('overview')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Overview</button>
+        <button class="pent-btn" data-week="2" onclick="pentSelectWeek('2')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 2</button>
+        <button class="pent-btn" data-week="3" onclick="pentSelectWeek('3')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 3</button>
+        <button class="pent-btn" data-week="4" onclick="pentSelectWeek('4')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 4</button>
+      </div>
+
+      <!-- Pentagon SVG -->
+      <svg width="100%" viewBox="0 0 460 330" style="max-width:460px;overflow:visible;">
+        <style>
+          .pent-vnode { cursor:pointer; transition:opacity 0.2s; }
+          .pent-vnode.pent-dim { opacity:0.15; cursor:default; pointer-events:none; }
+          .pent-vlabel { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; font-size:12px; font-weight:600; text-anchor:middle; fill:#1a1a18; }
+          .pent-spoke { stroke:#E2E0D8; stroke-width:0.5; stroke-dasharray:4 3; fill:none; }
+        </style>
+        <polygon points="230,38 354,130 310,278 150,278 106,130" fill="#FAFAF8" stroke="#D3D1C7" stroke-width="1"/>
+        <line class="pent-spoke" x1="230" y1="168" x2="230" y2="38"/>
+        <line class="pent-spoke" x1="230" y1="168" x2="354" y2="130"/>
+        <line class="pent-spoke" x1="230" y1="168" x2="310" y2="278"/>
+        <line class="pent-spoke" x1="230" y1="168" x2="150" y2="278"/>
+        <line class="pent-spoke" x1="230" y1="168" x2="106" y2="130"/>
+        <circle cx="230" cy="168" r="3" fill="#C8C6BE"/>
+
+        <g class="pent-vnode" id="pv-security" onclick="pentShowDetail('security')">
+          <circle cx="230" cy="38" r="20" fill="#FCEBEB" stroke="#E24B4A" stroke-width="1.5"/>
+          <text class="pent-vlabel" x="230" y="72">Security</text>
+        </g>
+        <g class="pent-vnode" id="pv-functional" onclick="pentShowDetail('functional')">
+          <circle cx="354" cy="130" r="20" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+          <text class="pent-vlabel" x="354" y="164">Functionality</text>
+        </g>
+        <g class="pent-vnode" id="pv-operability" onclick="pentShowDetail('operability')">
+          <circle cx="310" cy="278" r="20" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+          <text class="pent-vlabel" x="310" y="312">Operability</text>
+        </g>
+        <g class="pent-vnode" id="pv-reliability" onclick="pentShowDetail('reliability')">
+          <circle cx="150" cy="278" r="20" fill="#F1EFE8" stroke="#888780" stroke-width="1.5"/>
+          <text class="pent-vlabel" x="150" y="312">Reliability</text>
+        </g>
+        <g class="pent-vnode" id="pv-performance" onclick="pentShowDetail('performance')">
+          <circle cx="106" cy="130" r="20" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+          <text class="pent-vlabel" x="106" y="164">Performance</text>
+        </g>
+      </svg>
+
+      <p id="pent-hint" style="font-size:12px;color:#888780;text-align:center;margin:4px 0 0;">Click any circle to learn what it means</p>
+
+      <div id="pent-detail" style="display:none;margin-top:1rem;max-width:480px;width:100%;padding:0.875rem 1.125rem;border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);background:#f8f8f6;">
+        <div id="pent-dtitle" style="font-size:14px;font-weight:600;margin-bottom:5px;color:#1a1a18;"></div>
+        <div id="pent-dbody" style="font-size:13px;color:#5f5e5a;line-height:1.6;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <style>
+    .pent-btn {
+      padding:5px 16px; border-radius:20px; font-size:12px; font-weight:600;
+      border:1.5px solid rgba(0,0,0,0.15); cursor:pointer; transition:opacity 0.15s;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      letter-spacing:0.04em; text-transform:uppercase;
+    }
+    .pent-btn:hover { opacity:0.8; }
+    .pent-btn.active { box-shadow:0 0 0 2px rgba(0,0,0,0.15); background:#444441 !important; color:#fff !important; border-color:#444441 !important; }
+  </style>
+
+  <script>
+  var pentCurrentWeek = 'overview';
+  var pentVectors = ['security','functional','operability','reliability','performance'];
+
+  var pentOverview = {
+    security:    { title:'Security',     body:'The system has a vulnerability, exposure, or attack surface that puts data or users at risk. Security issues are often invisible until exploited — which is why we introduce them deliberately and fix them in the next stage.' },
+    functional:  { title:'Functionality', body:'The product cannot do something users need. Functionality gaps drive feature development — the engineering changes often introduce new infrastructure and new security challenges.' },
+    operability: { title:'Operability',  body:'The system is hard to maintain, patch, monitor, or manage. Operability issues accumulate silently — they rarely cause immediate outages but increase risk and cost over time.' },
+    reliability: { title:'Reliability',  body:'The system has single points of failure or cannot recover from component outages. Reliability engineering means designing for failure — assuming components will fail and ensuring the system degrades gracefully.' },
+    performance: { title:'Performance',  body:'The system is too slow, does not scale to load, or costs too much to run. Performance improvements often unlock better security posture — a CDN that improves speed also enables HTTPS enforcement at the edge.' }
+  };
+
+  var pentWeeks = {
+    '2': {
+      active: ['security','performance'],
+      issues: {
+        security: { title:'Security issues in Week 2', bullets:[
+          'HTTP only — no TLS. Traffic is unencrypted and injectable in transit.',
+          'Public S3 bucket — any file including confidential.txt is readable by anyone who knows the URL.',
+          'Bucket contents are enumerable via the AWS CLI.'
+        ]},
+        performance: { title:'Performance issues in Week 2', bullets:[
+          'No edge caching — every request travels to us-east-1 regardless of where the user is located.',
+          'Slow for users outside the US.'
+        ]}
+      }
+    },
+    '3': {
+      active: ['functional'],
+      issues: {
+        functional: { title:'Functionality issues in Week 3', bullets:[
+          'Photo list is still static — photos.json is a file deployed with the application.',
+          'Adding or removing photos requires editing the file and redeploying.',
+          'A real photo-sharing platform needs a database.'
+        ]}
+      }
+    },
+    '4': {
+      active: ['security','operability','functional'],
+      issues: {
+        security: { title:'Security issues in Week 4', bullets:[
+          'ALB is internet-facing — its public DNS name is reachable directly, bypassing CloudFront and all edge controls.',
+          'EC2 bootstrap script installs packages from the public internet — a compromised package could exfiltrate data.',
+          'No rate limiting on /photos — the API has no throttling against request floods.'
+        ]},
+        operability: { title:'Operability issues in Week 4', bullets:[
+          'EC2 requires ongoing OS patching, SSM agent updates, and capacity management — and runs continuously, costing money even when idle.'
+        ]},
+        functional: { title:'Functionality issues in Week 4', bullets:[
+          'No user accounts — the platform cannot distinguish visitors, offer a free tier, or support premium features like upload or delete.'
+        ]}
+      }
+    }
+  };
+
+  function pentSelectWeek(week) {
+    pentCurrentWeek = week;
+    document.querySelectorAll('.pent-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelector('[data-week="'+week+'"]').classList.add('active');
+    document.getElementById('pent-detail').style.display = 'none';
+    if (week === 'overview') {
+      pentVectors.forEach(function(v){
+        var el = document.getElementById('pv-'+v);
+        el.classList.remove('pent-dim');
+        el.style.pointerEvents = 'auto';
+      });
+      document.getElementById('pent-hint').textContent = 'Click any circle to learn what it means';
+    } else {
+      var active = pentWeeks[week].active;
+      pentVectors.forEach(function(v){
+        var el = document.getElementById('pv-'+v);
+        if (active.includes(v)) { el.classList.remove('pent-dim'); el.style.pointerEvents = 'auto'; }
+        else { el.classList.add('pent-dim'); el.style.pointerEvents = 'none'; }
+      });
+      document.getElementById('pent-hint').textContent = 'Click a highlighted circle to see the specific issue';
+    }
+  }
+
+  function pentShowDetail(vector) {
+    var d = pentCurrentWeek === 'overview' ? pentOverview[vector] : (pentWeeks[pentCurrentWeek] && pentWeeks[pentCurrentWeek].issues[vector]);
+    if (!d) return;
+    document.getElementById('pent-dtitle').textContent = d.title;
+    var bodyEl = document.getElementById('pent-dbody');
+    if (d.bullets) {
+      var ul = '<ul style="margin:4px 0 0;padding-left:18px;list-style:disc;">';
+      d.bullets.forEach(function(b){ ul += '<li style="margin-bottom:5px;">'+b+'</li>'; });
+      ul += '</ul>';
+      bodyEl.innerHTML = ul;
+    } else {
+      bodyEl.textContent = d.body;
+    }
+    document.getElementById('pent-detail').style.display = 'block';
+  }
+  </script>
 
   <footer>
     CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
