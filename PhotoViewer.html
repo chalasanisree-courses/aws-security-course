@@ -600,16 +600,18 @@
 
   var pentWeeks = {
     '2': {
-      active: ['security','performance'],
+      active: ['security','performance','functional'],
       issues: {
         security: { title:'Security issues in Week 2', bullets:[
           'HTTP only — no TLS. Traffic is unencrypted and injectable in transit.',
-          'Public S3 bucket — any file including confidential.txt is readable by anyone who knows the URL.',
-          'Bucket contents are enumerable via the AWS CLI.'
+          'Public S3 bucket — any file including confidential.txt is readable by anyone who knows the URL. Bucket contents are enumerable via the AWS CLI.'
         ]},
         performance: { title:'Performance issues in Week 2', bullets:[
           'No edge caching — every request travels to us-east-1 regardless of where the user is located.',
           'Slow for users outside the US.'
+        ]},
+        functional: { title:'Functionality issues in Week 2', bullets:[
+          'Photo list is static — adding a photo means manually editing photos.json and redeploying. Not scalable.'
         ]}
       }
     },
