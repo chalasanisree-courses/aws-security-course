@@ -23,7 +23,7 @@
     color: #666;
     margin-bottom: 2rem;
   }
-  .breadcrumb a { color: #0066cc; text-decoration: none; }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
   .breadcrumb span { margin: 0 0.4rem; color: #999; }
 
@@ -107,7 +107,7 @@
     margin: 1.2rem 0;
     border-radius: 0 6px 6px 0;
   }
-  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.info { border-color: #1F4E79; background: #f0f6ff; }
   .callout.warn { border-color: #dc3545; background: #fff5f5; }
   .callout p:last-child { margin-bottom: 0; }
 
@@ -151,7 +151,7 @@
   .ac-name { font-weight: 600; font-size: 0.95rem; color: #1a1a1a; white-space: nowrap; }
   .ac-sub { font-size: 0.8rem; color: #888; margin-left: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ac-chevron { font-size: 1.2rem; color: #999; flex-shrink: 0; transition: transform 0.2s; line-height: 1; }
-  .ac-chevron.open { transform: rotate(90deg); color: #0066cc; }
+  .ac-chevron.open { transform: rotate(90deg); color: #1F4E79; }
   .ac-body {
     display: none;
     padding: 1rem 1.2rem;
@@ -189,8 +189,8 @@
     transition: all 0.2s;
     user-select: none;
   }
-  .card:hover { border-color: #0066cc; background: #f0f6ff; }
-  .card.active { border-color: #0066cc; background: #e8f0fc; }
+  .card:hover { border-color: #1F4E79; background: #f0f6ff; }
+  .card.active { border-color: #1F4E79; background: #e8f0fc; }
   .card .card-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
   .card .card-title { font-weight: 600; font-size: 0.95rem; color: #222; }
   .card .card-sub { font-size: 0.82rem; color: #666; margin-top: 0.25rem; }
@@ -296,7 +296,7 @@
     border-top: 1px solid #e8e8e8;
     font-size: 0.9rem;
   }
-  .page-nav a { color: #0066cc; text-decoration: none; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
   .page-nav a:hover { text-decoration: underline; }
 
   footer {
@@ -307,11 +307,31 @@
     color: #999;
     text-align: center;
   }
-  footer a { color: #0066cc; text-decoration: none; }
+  footer a { color: #1F4E79; text-decoration: none; }
 
   @media (max-width: 600px) {
     .card-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── Course nav ── */
+  .course-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #163756;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .course-nav a {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: rgba(255,255,255,0.85);
+    text-decoration: none;
+  }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+  }
+
 </style>
 </head>
 
