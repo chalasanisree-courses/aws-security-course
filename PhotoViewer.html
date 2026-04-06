@@ -4,36 +4,93 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Photo Viewer — Application Design — CS 55D</title>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600&display=swap');
+
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
     background: #f5f5f3;
     color: #1a1a18;
     min-height: 100vh;
-    padding: 40px 16px;
   }
 
-  .page { max-width: 900px; margin: 0 auto; }
+  /* ── Top Nav ── */
+  .topnav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 32px;
+    background: #163756;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav-left {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .topnav-left:hover { color: #fff; }
+  .topnav-left span { color: rgba(255,255,255,0.4); margin: 0 8px; }
+  .topnav-right {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
 
-  .breadcrumb { font-size: 12px; color: #888780; margin-bottom: 24px; }
-  .breadcrumb a { color: #1F4E79; text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 24px 60px; }
 
-  .hero {
-    background: #1F4E79;
-    border-radius: 14px;
-    padding: 32px 40px;
-    margin-bottom: 32px;
+  /* Hero — full bleed dark, matching index.html */
+  .hero-shell {
+    background: #163756;
+    padding: 56px 48px 40px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  .hero-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hero-eyebrow::after {
+    content: ''; display: block; height: 1px; width: 60px;
+    background: rgba(255,255,255,0.2);
+  }
+  .hero-h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(44px, 7vw, 80px);
+    font-weight: 900;
+    line-height: 0.92;
     color: #fff;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
   }
-  .hero .eyebrow {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #85B7EB; margin-bottom: 8px;
+  .hero-h1 em { font-style: normal; color: #85B7EB; }
+  .hero-p {
+    font-size: 15px; color: rgba(255,255,255,0.55);
+    line-height: 1.65; max-width: 560px;
   }
-  .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-  .hero p { font-size: 14px; color: #B5D4F4; line-height: 1.6; }
 
   .section-label {
     font-size: 11px; font-weight: 600; color: #888780;
@@ -164,26 +221,29 @@
   .code-link:hover { background: #B5D4F4; }
 
   footer {
-    text-align: center; font-size: 12px; color: #B4B2A9;
-    margin-top: 48px; padding-top: 24px;
-    border-top: 0.5px solid #e5e4de;
+    text-align: center; font-size: 11px; color: #aaa9a4;
+    padding: 24px 0 32px;
+    border-top: 0.5px solid #e8e7e0;
+    margin-top: 20px;
   }
-  footer a { color: #888780; text-decoration: none; }
+  footer a { color: #aaa9a4; text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
+
+<nav class="topnav">
+  <a class="topnav-left" href="index.html">CS 55D <span>·</span> Security in Amazon Web Services</a>
+  <div class="topnav-right">Foothill College &nbsp;·&nbsp; Computer Science</div>
+</nav>
+
+<div class="hero-shell">
+  <div class="hero-eyebrow">CS 55D — Course Project</div>
+  <div class="hero-h1">Photo<br><em>Viewer</em></div>
+  <p class="hero-p">A cloud-native web application built and secured on AWS — week by week. Each stage evolves the infrastructure, security posture, or product capabilities of the application.</p>
+</div>
+
 <div class="page">
-
-  <div class="breadcrumb">
-    <a href="index.html">← CS 55D Home</a> › Photo Viewer — Application Design
-  </div>
-
-  <div class="hero">
-    <div class="eyebrow">CS 55D — Course Project</div>
-    <h1>Photo Viewer</h1>
-    <p>A cloud-native web application built and secured on AWS — week by week. Each stage evolves the infrastructure, security posture, or product capabilities of the application. This page tracks what the app can do at each stage, how it is built on AWS, and what limitations motivated the next stage.</p>
-  </div>
 
   <div class="section-label">What we are building</div>
 
@@ -535,7 +595,7 @@
         <style>
           .pent-vnode { cursor:pointer; transition:opacity 0.2s; }
           .pent-vnode.pent-dim { opacity:0.15; cursor:default; pointer-events:none; }
-          .pent-vlabel { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; font-size:12px; font-weight:600; text-anchor:middle; fill:#1a1a18; }
+          .pent-vlabel { font-family:'Barlow',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; font-size:12px; font-weight:600; text-anchor:middle; fill:#1a1a18; }
           .pent-spoke { stroke:#E2E0D8; stroke-width:0.5; stroke-dasharray:4 3; fill:none; }
         </style>
         <polygon points="230,38 354,130 310,278 150,278 106,130" fill="#FAFAF8" stroke="#D3D1C7" stroke-width="1"/>
@@ -582,7 +642,7 @@
     .pent-btn {
       padding:5px 16px; border-radius:20px; font-size:12px; font-weight:600;
       border:1.5px solid rgba(0,0,0,0.15); cursor:pointer; transition:opacity 0.15s;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      font-family:'Barlow',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       letter-spacing:0.04em; text-transform:uppercase;
     }
     .pent-btn:hover { opacity:0.8; }
