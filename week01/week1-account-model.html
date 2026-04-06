@@ -141,7 +141,7 @@
     border-top: 1px solid #e8e8e8;
     font-size: 0.9rem;
   }
-  .page-nav a { color: #0066cc; text-decoration: none; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
   .page-nav a:hover { text-decoration: underline; }
   footer {
     text-align: center;
@@ -150,9 +150,34 @@
     margin-top: 24px;
     padding-bottom: 16px;
   }
+
+  /* ── Course nav ── */
+  .course-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #163756;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .course-nav a {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: rgba(255,255,255,0.85);
+    text-decoration: none;
+  }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+  }
+
 </style>
 </head>
 <body>
+<nav class="course-nav">
+  <a href="index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
 <div class="page">
   <div class="header">
     <div class="course-label">CS 55D — Security in Amazon Web Services &nbsp;·&nbsp; Week 1</div>

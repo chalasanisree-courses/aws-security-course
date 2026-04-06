@@ -63,9 +63,34 @@
   .nav-link.home:hover { background: #0C447C; }
   footer { text-align: center; font-size: 12px; color: #888780; margin-top: 32px; padding-bottom: 16px; }
   footer a { color: #888780; }
+
+  /* ── Course nav ── */
+  .course-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #163756;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .course-nav a {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: rgba(255,255,255,0.85);
+    text-decoration: none;
+  }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+  }
+
 </style>
 </head>
 <body>
+<nav class="course-nav">
+  <a href="index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
 <div class="page">
 
   <div class="breadcrumb">
