@@ -24,7 +24,7 @@
     color: #666;
     margin-bottom: 2rem;
   }
-  .breadcrumb a { color: #1F4E79; text-decoration: none; }
+  .breadcrumb a { color: #0066cc; text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
   .breadcrumb span { margin: 0 0.4rem; color: #999; }
 
@@ -122,7 +122,7 @@
     border-radius: 0 6px 6px 0;
   }
   .callout.info {
-    border-color: #1F4E79;
+    border-color: #0066cc;
     background: #f0f6ff;
   }
   .callout.success {
@@ -152,8 +152,8 @@
     background: #fafafa;
     user-select: none;
   }
-  .issue-card:hover { border-color: #1F4E79; background: #f0f6ff; }
-  .issue-card.active { border-color: #1F4E79; background: #e8f0fc; }
+  .issue-card:hover { border-color: #0066cc; background: #f0f6ff; }
+  .issue-card.active { border-color: #0066cc; background: #e8f0fc; }
   .issue-card .icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
   .issue-card .issue-num {
     font-size: 0.7rem;
@@ -375,7 +375,7 @@
     border-top: 1px solid #e8e8e8;
     font-size: 0.9rem;
   }
-  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .page-nav a { color: #0066cc; text-decoration: none; }
   .page-nav a:hover { text-decoration: underline; }
 
   /* Footer */
@@ -387,7 +387,7 @@
     color: #999;
     text-align: center;
   }
-  footer a { color: #1F4E79; text-decoration: none; }
+  footer a { color: #0066cc; text-decoration: none; }
 
   /* Hint text */
   .hint { font-size: 0.82rem; color: #999; font-style: italic; margin-bottom: 1rem; }
@@ -397,42 +397,9 @@
     .oac-diagram { grid-template-columns: 1fr; }
     .flow-steps { min-width: 500px; }
   }
-
-  /* ── Course nav ── */
-  .course-nav {
-    position: sticky; top: 0; z-index: 100;
-    background: #163756;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 11px 28px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-  .course-nav a {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
-    text-transform: uppercase; color: rgba(255,255,255,0.85);
-    text-decoration: none;
-  }
-  .course-nav a:hover { color: #fff; }
-  .course-nav-right {
-    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
-    text-transform: uppercase; color: rgba(255,255,255,0.4);
-  }
-
 </style>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-6BVW2TTTLE');
-</script>
 </head>
 <body>
-<nav class="course-nav">
-  <a href="../index.html">← Course home</a>
-  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
-</nav>
-
 
 <div class="breadcrumb">
   <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
@@ -601,23 +568,34 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Details</h2>
-
-<p>The table below shows which CloudFront control operates at each layer. This clarifies a common confusion — OAC and the CF Function are often mistaken for doing the same thing.</p>
-
-<table>
-  <tr><th>Layer</th><th>What runs here</th><th>What it controls</th></tr>
-  <tr><td><strong>Viewer Request</strong></td><td>CF Function (allowlist)</td><td>Blocks non-web file types before cache or origin. <code>confidential.txt</code> → 403 here.</td></tr>
-  <tr><td><strong>Protocol</strong></td><td>Viewer Protocol Policy</td><td>HTTP → HTTPS redirect — before any content is served.</td></tr>
-  <tr><td><strong>Cache</strong></td><td>Cache Policy</td><td>TTL, cache key. Cache hit → serve immediately, no origin request.</td></tr>
-  <tr><td><strong>Origin Request</strong></td><td>OAC + Origin Request Policy</td><td>OAC signs with CloudFront identity. Policy strips unnecessary headers/cookies.</td></tr>
-  <tr><td><strong>S3 bucket</strong></td><td>OAC bucket policy</td><td>Only allows requests signed by your specific distribution. All other callers → 403.</td></tr>
-  <tr><td><strong>Viewer Response</strong></td><td>Response Headers Policy</td><td>Adds HSTS, X-Frame-Options, X-Content-Type-Options to every response.</td></tr>
-</table>
-
-<p class="hint" style="margin-top:1.5rem;">Click any row to explore each component in depth</p>
+<h2>5. Key Concepts in This Solution</h2>
 
 <div class="accordion">
+
+  <div class="ac-item" onclick="toggleAc('ac-cdn')">
+    <div class="ac-left"><span class="ac-icon">🌐</span><span class="ac-name">What is a CDN?</span><span class="ac-sub">Edge locations · cache hits and misses · why latency matters</span></div>
+    <span class="ac-chevron" id="ac-cdn-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-cdn">
+    <p>A <strong>Content Delivery Network (CDN)</strong> is a globally distributed network of servers — called <strong>edge locations</strong> or Points of Presence (POPs) — that store copies of your content close to your users. Instead of every request traveling to your origin server, users are served from the nearest edge location.</p>
+    <p><strong>Why distance causes latency:</strong> Data travels at roughly two-thirds the speed of light through fiber. A request from Tokyo to a server in Virginia travels ~10,000km each way — adding 150–200ms of round-trip latency before a single byte is sent. For video streaming that means buffering. For a web page it means a visibly slow load. For a global application it means users in far regions get a worse experience than users near your origin.</p>
+    <p><strong>Cache hit vs cache miss:</strong></p>
+    <table style="font-size:0.88rem;margin:0.5rem 0;">
+      <tr><th>Event</th><th>What happens</th><th>Origin contacted?</th></tr>
+      <tr><td><strong>Cache hit</strong></td><td>Edge has a fresh copy — serves it immediately</td><td>No</td></tr>
+      <tr><td><strong>Cache miss</strong></td><td>Edge has no copy or TTL expired — fetches from origin</td><td>Yes — once, then cached</td></tr>
+    </table>
+    <p>After a cache miss, the edge stores the response for the TTL duration. All subsequent requests get a cache hit until TTL expires. For a static photo gallery almost every request after the first warm-up will be a cache hit.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the Photo Viewer — Week 2 vs Week 3</div>
+      <table style="font-size:0.88rem;margin:0.5rem 0;width:100%;">
+        <tr><th>Scenario</th><th>Week 2 (no CDN)</th><th>Week 3 (CloudFront)</th></tr>
+        <tr><td>User in Tokyo requests a photo</td><td>~150ms latency to us-east-1</td><td>~5ms latency from Tokyo POP</td></tr>
+        <tr><td>1,000 users load the same photo</td><td>1,000 GET requests hit S3</td><td>1 origin fetch, 999 cache hits</td></tr>
+        <tr><td>DDoS flood of requests</td><td>Hits S3 directly — origin overwhelmed</td><td>Absorbed at the edge — origin shielded</td></tr>
+      </table>
+    </div>
+  </div>
 
   <div class="ac-item" onclick="toggleAc('ac-cf')">
     <div class="ac-left"><span class="ac-icon">☁️</span><span class="ac-name">CloudFront</span><span class="ac-sub">Global CDN · 400+ edge locations · HTTPS termination · cache · REST endpoint</span></div>
@@ -627,6 +605,10 @@
     <p>CloudFront is a globally distributed cache. Requests are served from the nearest edge location — a user in Tokyo gets content from a Tokyo POP, not Northern Virginia. CloudFront also terminates HTTPS at the edge, replacing the HTTP-only S3 website endpoint entirely.</p>
     <p>CloudFront reaches S3 via the <strong>REST endpoint</strong> — not the static website endpoint. The REST endpoint supports TLS and authenticated requests (required for OAC). The website endpoint supports neither.</p>
     <p><strong>Bucket enumeration is structurally impossible through CloudFront.</strong> CloudFront only issues <code>GetObject</code> requests for specific keys — there is no HTTP operation that maps to <code>s3:ListBucket</code>. The <code>aws s3 ls --no-sign-request</code> command that worked in Week 2 fails in Week 3 because it talks directly to the S3 API, which is now locked by OAC.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">We disabled S3 static website hosting, turned Block Public Access back on, and created a CloudFront distribution pointing to the bucket. Once deployed, the distribution URL (<code>d1xxxxxxxxxx.cloudfront.net</code>) became the only way to reach the Photo Viewer — direct S3 access returns 403. The bucket policy was updated to allow <code>s3:GetObject</code> only from our specific CloudFront distribution ARN.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-oac')">
@@ -660,6 +642,10 @@
     return { statusCode: 403, statusDescription: 'Forbidden' };
 }</code></pre>
     <p><strong>Allowlist vs blocklist:</strong> An allowlist permits only what is explicitly listed — everything else is blocked. A blocklist blocks only what is listed — everything else is permitted. Allowlists are more secure: a forgotten file type causes a blocklist to fail open, an allowlist to fail closed.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">A function called <code>PhotoViewer-AllowList</code> was created and associated with the distribution behavior at the Viewer Request stage. Accessing <code>/confidential.txt</code> through CloudFront returned 403 — the function blocked it before the request reached S3. We then removed the function, ran an invalidation, and accessed <code>/confidential.txt</code> again — this time it returned the file successfully, demonstrating exactly why the function is necessary.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-policies')">
@@ -669,12 +655,21 @@
   <div class="ac-body" id="ac-policies">
     <table style="font-size:0.88rem;margin:0.5rem 0;">
       <tr><th>Policy</th><th>Stage</th><th>What it controls</th></tr>
-      <tr><td><strong>Viewer Protocol</strong></td><td>Browser ↔ CF</td><td>Redirect HTTP to HTTPS automatically</td></tr>
-      <tr><td><strong>Cache Policy</strong></td><td>CF cache</td><td>TTL — how long objects stay cached. Always invalidate (<code>/*</code>) after security-relevant changes</td></tr>
-      <tr><td><strong>Origin Request</strong></td><td>CF → S3</td><td>Which headers/cookies/query strings forward to S3. Strip what's not needed — least privilege for HTTP forwarding</td></tr>
-      <tr><td><strong>Response Headers</strong></td><td>CF → Browser</td><td>Adds HSTS, X-Frame-Options, X-Content-Type-Options to every response</td></tr>
+      <tr><td><strong>Viewer Protocol</strong></td><td>Browser ↔ CF</td><td>Redirect HTTP to HTTPS automatically — if user types <code>http://</code>, CloudFront redirects before serving any content</td></tr>
+      <tr><td><strong>Cache Policy</strong></td><td>CF cache</td><td>TTL — how long objects stay cached. Cache hit → served immediately, no origin request. Always invalidate (<code>/*</code>) after security-relevant changes</td></tr>
+      <tr><td><strong>Origin Request</strong></td><td>CF → S3</td><td>Controls what travels from CF to S3 on a cache miss. HTTP request headers can carry malicious payloads — strip headers, cookies, and query strings that S3 doesn't need. Least privilege for HTTP forwarding</td></tr>
+      <tr><td><strong>Response Headers</strong></td><td>CF → Browser</td><td>Adds security headers to every response — HSTS tells the browser to always use HTTPS on future requests, eliminating the first-request vulnerability window</td></tr>
     </table>
-    <p><strong>HSTS and login pages:</strong> For a static site HSTS has limited impact — no credentials to steal. But in Week 5 when we add a login page, HSTS becomes critical. It eliminates the window where a user typing <code>http://</code> could have their password intercepted before the redirect to HTTPS. We add it now as infrastructure baseline.</p>
+    <p><strong>Why HSTS matters even with HTTP redirect:</strong> The Viewer Protocol Policy redirects HTTP to HTTPS at CloudFront — but that first request from the browser still travels to CloudFront over HTTP before the redirect. In Week 6 when we add a login page, a user typing <code>http://</code> and submitting their password would send credentials in plaintext before the redirect kicks in. HSTS fixes this: after the first HTTPS response, the browser enforces HTTPS itself on all subsequent requests — never sending the first request over HTTP again. We add it now as infrastructure baseline.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <ul style="margin:0;padding-left:1.2rem;font-size:13px;line-height:1.8;">
+        <li><strong>Viewer Protocol Policy</strong> — set to <em>Redirect HTTP to HTTPS</em>. Typing the HTTP URL in the browser automatically redirected to HTTPS.</li>
+        <li><strong>Cache Policy</strong> — set to <em>CachingOptimized</em>, the AWS-managed policy recommended for S3 origins.</li>
+        <li><strong>Origin Request Policy</strong> — left as none for the Photo Viewer. S3 is a static origin — no headers, cookies, or query strings need to be forwarded.</li>
+        <li><strong>Response Headers Policy</strong> — set to <em>SecurityHeadersPolicy</em>, the AWS-managed policy that adds HSTS, X-Frame-Options, and X-Content-Type-Options. Inspect these in browser DevTools → Network → any Photo Viewer response → Response Headers.</li>
+      </ul>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-geo')">
@@ -682,8 +677,18 @@
     <span class="ac-chevron" id="ac-geo-chev">›</span>
   </div>
   <div class="ac-body" id="ac-geo">
-    <p>CloudFront has built-in geo-restriction — no WAF, no function, no extra cost. Two modes: allowlist (only listed countries can access) or blocklist (listed countries blocked). Blocked requests receive 403 at the nearest POP.</p>
-    <p>Limitation: applies to the entire distribution. For path-level geo-restriction (e.g. block one country from <code>/admin</code> only), use a CloudFront Function instead.</p>
+    <p>Geo-restriction lets you control which countries can access your CloudFront distribution — no WAF, no Lambda, no extra cost. CloudFront determines the viewer's country from their IP address and enforces the restriction at the nearest edge POP before any content is served.</p>
+    <table style="font-size:0.88rem;margin:0.5rem 0;">
+      <tr><th>Mode</th><th>How it works</th><th>Use when</th></tr>
+      <tr><td><strong>Allowlist</strong></td><td>Only listed countries can access</td><td>App is licensed for specific markets only</td></tr>
+      <tr><td><strong>Blocklist</strong></td><td>Listed countries are blocked, all others can access</td><td>Compliance requires blocking specific regions</td></tr>
+    </table>
+    <p>Blocked requests receive a 403 at the nearest POP — the viewer never reaches your origin.</p>
+    <p><strong>Limitation:</strong> Applies to the entire distribution. For path-level control (e.g. block one country from <code>/admin</code> only), use a CloudFront Function instead.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Geo-restriction was configured in the demo by adding Iran to the blocklist under CloudFront → Security → Geographic Restrictions. This took effect within minutes with no changes to S3 or application code — a single CloudFront setting blocked an entire country at the edge. The restriction was added purely to demonstrate the feature; it is not active on your distribution for the lab.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-invalidation')">
@@ -693,6 +698,10 @@
   <div class="ac-body" id="ac-invalidation">
     <p>After updating content in S3 — patched JavaScript, new CF Function code, updated policies — edge caches may still serve the old version until TTL expires. Create an invalidation to purge immediately: use <code>/*</code> for everything or specific paths like <code>/app.js</code> for targeted invalidation.</p>
     <p><strong>Always invalidate after security-relevant changes.</strong> Without invalidation, stale cached responses — missing your new headers, function behavior, or patched code — continue to be served globally until TTL expires.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">We ran an invalidation with <code>/*</code> after removing the CloudFront Function from the distribution behavior — to demonstrate what happens without the function. Without the invalidation, edge caches would have continued serving responses under the old function rules. After invalidation, accessing <code>/confidential.txt</code> returned the file successfully — confirming the function was no longer blocking it. We then re-associated the function to restore the protection.</p>
+    </div>
   </div>
 
 </div><!-- end accordion -->
