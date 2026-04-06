@@ -131,25 +131,24 @@
   .service-models {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin: 24px 0;
+    gap: 10px;
+    margin: 24px 0 0;
   }
   .sm-card {
-    background: var(--white);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: var(--card-shadow);
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: box-shadow 0.15s;
   }
-  .sm-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
-  .sm-card.active { border-color: var(--teal); }
+  .sm-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.09); }
+  .sm-card.active { border-color: #1F4E79; }
   .sm-header {
-    padding: 16px;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     gap: 10px;
+    height: 100%;
   }
   .sm-header .badge {
     font-size: 11px;
@@ -158,21 +157,36 @@
     padding: 3px 8px;
     border-radius: 4px;
     font-family: var(--font-mono);
+    flex-shrink: 0;
   }
   .iaas .sm-header { background: #eff6ff; }
+  .iaas.active .sm-header { background: #dbeafe; }
   .iaas .badge { background: #dbeafe; color: #1d4ed8; }
   .paas .sm-header { background: #f0fdf4; }
+  .paas.active .sm-header { background: #dcfce7; }
   .paas .badge { background: #dcfce7; color: #15803d; }
   .saas .sm-header { background: #fdf4ff; }
+  .saas.active .sm-header { background: #f3e8ff; }
   .saas .badge { background: #f3e8ff; color: #7e22ce; }
-  .sm-header h4 { font-size: 15px; font-weight: 600; color: var(--navy); }
-  .sm-header p { font-size: 12px; color: var(--slate); margin: 0; }
-  .sm-body { padding: 14px 16px; border-top: 1px solid var(--border); }
-  .sm-detail { display: none; }
-  .sm-card.active .sm-detail { display: block; }
-  .sm-detail p { font-size: 13px; margin-bottom: 10px; }
-  .sm-detail .examples { font-size: 12px; color: var(--slate); }
-  .sm-detail .examples strong { color: var(--text); display: block; margin-bottom: 4px; }
+  .sm-header h4 { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .sm-header p { font-size: 11px; color: var(--slate); margin: 0; }
+  /* Detail panel sits below all three cards */
+  .sm-panel {
+    display: none;
+    background: var(--white);
+    border: 1px solid #1F4E79;
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.65;
+  }
+  .sm-panel.visible { display: block; }
+  .sm-panel p { margin-bottom: 10px; }
+  .sm-panel p:last-child { margin-bottom: 0; }
+  .sm-panel .examples { font-size: 12px; color: var(--slate); margin-top: 10px; }
+  .sm-panel .examples strong { color: var(--text); display: block; margin-bottom: 4px; }
   .pill {
     display: inline-block;
     background: var(--bg);
@@ -443,84 +457,73 @@
   <p>Click each model to expand it.</p>
 
   <div class="service-models">
-    <div class="sm-card iaas active" onclick="selectModel(this)">
+    <div class="sm-card iaas active" onclick="selectModel('iaas')">
       <div class="sm-header">
-        <div>
-          <div class="badge">IaaS</div>
-        </div>
+        <div class="badge">IaaS</div>
         <div>
           <h4>Infrastructure as a Service</h4>
           <p>You manage the OS and everything above</p>
         </div>
       </div>
-      <div class="sm-body">
-        <p style="font-size:13px;color:#475569;margin-bottom:10px;">The provider gives you virtual hardware — a machine, a disk, a network interface. You install the OS, you patch it, you run your software on it.</p>
-        <div class="sm-detail">
-          <p><strong>What the provider handles:</strong> physical servers, networking equipment, power, cooling, and the hypervisor that runs your virtual machine.</p>
-          <p><strong>What you handle:</strong> operating system installation and patching, firewall rules, application software, and all security configuration above the hypervisor.</p>
-          <p><strong>Analogy:</strong> Renting an empty apartment. The building exists and the utilities are on — but you furnish it, lock it, and maintain what's inside.</p>
-          <div class="examples">
-            <strong>Examples across providers:</strong>
-            <span class="pill">AWS EC2</span>
-            <span class="pill">Azure Virtual Machines</span>
-            <span class="pill">Google Compute Engine</span>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <div class="sm-card paas" onclick="selectModel(this)">
+    <div class="sm-card paas" onclick="selectModel('paas')">
       <div class="sm-header">
-        <div>
-          <div class="badge">PaaS</div>
-        </div>
+        <div class="badge">PaaS</div>
         <div>
           <h4>Platform as a Service</h4>
           <p>You manage the code and config</p>
         </div>
       </div>
-      <div class="sm-body">
-        <p style="font-size:13px;color:#475569;margin-bottom:10px;">The provider manages the OS, runtime, and scaling. You bring your application code — the platform handles everything underneath it.</p>
-        <div class="sm-detail">
-          <p><strong>What the provider handles:</strong> OS patching, runtime updates, scaling infrastructure, and availability. You never touch a server.</p>
-          <p><strong>What you handle:</strong> your application code, access permissions, encryption settings, and environment configuration.</p>
-          <p><strong>Analogy:</strong> Renting a furnished apartment. The kitchen is there and working — you just cook. You don't fix the appliances.</p>
-          <div class="examples">
-            <strong>Examples across providers:</strong>
-            <span class="pill">AWS Lambda / RDS</span>
-            <span class="pill">Azure App Service</span>
-            <span class="pill">Google App Engine</span>
-            <span class="pill">Heroku</span>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <div class="sm-card saas" onclick="selectModel(this)">
+    <div class="sm-card saas" onclick="selectModel('saas')">
       <div class="sm-header">
-        <div>
-          <div class="badge">SaaS</div>
-        </div>
+        <div class="badge">SaaS</div>
         <div>
           <h4>Software as a Service</h4>
           <p>You manage your data and access</p>
         </div>
       </div>
-      <div class="sm-body">
-        <p style="font-size:13px;color:#475569;margin-bottom:10px;">The provider runs the entire application. You log in and use it. There is no infrastructure or code for you to manage at all.</p>
-        <div class="sm-detail">
-          <p><strong>What the provider handles:</strong> everything — servers, OS, application code, uptime, patching, scaling.</p>
-          <p><strong>What you handle:</strong> who in your organization has access, what data you put in, and how you configure the application for your needs.</p>
-          <p><strong>Analogy:</strong> Staying in a hotel. Everything is provided. Your only job is to use it responsibly and not leave your laptop unlocked in the lobby.</p>
-          <div class="examples">
-            <strong>Examples across providers:</strong>
-            <span class="pill">Gmail / Google Workspace</span>
-            <span class="pill">Salesforce</span>
-            <span class="pill">Microsoft 365</span>
-            <span class="pill">Slack</span>
-          </div>
-        </div>
-      </div>
+    </div>
+  </div>
+
+  <div class="sm-panel visible" id="panel-iaas">
+    <p>The provider gives you virtual hardware — a machine, a disk, a network interface. You install the OS, you patch it, you run your software on it.</p>
+    <p><strong>What the provider handles:</strong> physical servers, networking equipment, power, cooling, and the hypervisor that runs your virtual machine.</p>
+    <p><strong>What you handle:</strong> operating system installation and patching, firewall rules, application software, and all security configuration above the hypervisor.</p>
+    <p><strong>Analogy:</strong> Baking a birthday cake from scratch. You buy the raw ingredients, mix the batter, bake it, and decorate it yourself. Total control — but every step is your responsibility. If it burns, that's on you.</p>
+    <div class="examples">
+      <strong>Examples:</strong>
+      <span class="pill">AWS EC2</span>
+      <span class="pill">Azure Virtual Machines</span>
+      <span class="pill">Google Compute Engine</span>
+    </div>
+  </div>
+
+  <div class="sm-panel" id="panel-paas">
+    <p>The provider manages the OS, runtime, and scaling. You bring your application code — the platform handles everything underneath it.</p>
+    <p><strong>What the provider handles:</strong> OS patching, runtime updates, scaling infrastructure, and availability. You never touch a server.</p>
+    <p><strong>What you handle:</strong> your application code, access permissions, encryption settings, and environment configuration.</p>
+    <p><strong>Analogy:</strong> Buying a plain pre-baked cake and decorating it yourself. The hard part is done. You focus on the frosting and decorations — you can still make it look terrible, but you didn't have to worry about whether it rose properly.</p>
+    <div class="examples">
+      <strong>Examples:</strong>
+      <span class="pill">AWS Lambda / RDS</span>
+      <span class="pill">Azure App Service</span>
+      <span class="pill">Google App Engine</span>
+      <span class="pill">Heroku</span>
+    </div>
+  </div>
+
+  <div class="sm-panel" id="panel-saas">
+    <p>The provider runs the entire application. You log in and use it. There is no infrastructure or code for you to manage at all.</p>
+    <p><strong>What the provider handles:</strong> everything — servers, OS, application code, uptime, patching, scaling.</p>
+    <p><strong>What you handle:</strong> who in your organization has access, what data you put in, and how you configure the application for your needs.</p>
+    <p><strong>Analogy:</strong> Ordering a fully decorated birthday cake from a bakery. You just show up and enjoy it. Your only job is deciding who gets a slice and not leaving it out in the rain.</p>
+    <div class="examples">
+      <strong>Examples:</strong>
+      <span class="pill">Gmail / Google Workspace</span>
+      <span class="pill">Salesforce</span>
+      <span class="pill">Microsoft 365</span>
+      <span class="pill">Slack</span>
     </div>
   </div>
 
@@ -782,9 +785,11 @@
 
 <script>
   // Service model cards
-  function selectModel(card) {
+  function selectModel(model) {
     document.querySelectorAll('.sm-card').forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
+    document.querySelectorAll('.sm-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelector('.sm-card.' + model).classList.add('active');
+    document.getElementById('panel-' + model).classList.add('visible');
   }
 
   // Pillar toggle
