@@ -18,16 +18,6 @@
     padding: 2rem 1.5rem 4rem;
   }
 
-  /* Breadcrumb */
-  .breadcrumb {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 2rem;
-  }
-  .breadcrumb a { color: #0066cc; text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  .breadcrumb span { margin: 0 0.4rem; color: #999; }
-
   /* Page header */
   h1 {
     font-size: 2rem;
@@ -365,6 +355,25 @@
   }
   .download-btn:hover { background: #B5D4F4; }
 
+  /* ── Course nav ── */
+  .course-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #163756;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .course-nav a {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: rgba(255,255,255,0.85);
+    text-decoration: none;
+  }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+  }
+
   .page-nav {
     display: flex;
     justify-content: space-between;
@@ -375,10 +384,9 @@
     border-top: 1px solid #e8e8e8;
     font-size: 0.9rem;
   }
-  .page-nav a { color: #0066cc; text-decoration: none; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
   .page-nav a:hover { text-decoration: underline; }
 
-  /* Footer */
   footer {
     margin-top: 3rem;
     padding-top: 1.5rem;
@@ -387,9 +395,9 @@
     color: #999;
     text-align: center;
   }
-  footer a { color: #0066cc; text-decoration: none; }
+  footer a { color: #1F4E79; text-decoration: none; }
 
-  /* Hint text */
+/* Hint text */
   .hint { font-size: 0.82rem; color: #999; font-style: italic; margin-bottom: 1rem; }
 
   @media (max-width: 600px) {
@@ -398,16 +406,21 @@
     .flow-steps { min-width: 500px; }
   }
 </style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6BVW2TTTLE');
+</script>
 </head>
 <body>
 
-<div class="breadcrumb">
-  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
-  <span>›</span>
-  Week 3
-  <span>›</span>
-  CloudFront and Edge Security
-</div>
+<nav class="course-nav">
+  <a href="../index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
 
 <h1>CloudFront and Edge Security</h1>
 <p class="subtitle">How Amazon CloudFront fixes the three Week 2 vulnerabilities — and the additional controls that make the edge a real security boundary.</p>

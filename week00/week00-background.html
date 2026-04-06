@@ -24,11 +24,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
-  .breadcrumb { background: var(--white); border-bottom: 1px solid var(--border); padding: 10px 32px; font-size: 13px; color: var(--slate); }
-  .breadcrumb a { color: var(--teal); text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  .breadcrumb span { margin: 0 6px; }
-  .hero { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); color: var(--white); padding: 52px 32px 44px; max-width: 900px; margin: 0 auto; }
+.hero { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%); color: var(--white); padding: 52px 32px 44px; max-width: 900px; margin: 0 auto; }
   .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.02em; }
   .hero p { color: #a8c4e0; font-size: 1rem; max-width: 640px; }
   .main { max-width: 900px; margin: 0 auto; padding: 40px 32px 80px; }
@@ -185,8 +181,15 @@
   .page-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); gap: 16px; flex-wrap: wrap; }
   .nav-link { display: flex; align-items: center; gap: 8px; color: var(--teal); text-decoration: none; font-size: 14px; font-weight: 500; padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); transition: border-color 0.15s, background 0.15s; }
   .nav-link:hover { border-color: var(--teal); background: #f0fdf9; }
-  .footer { text-align: center; padding: 24px; color: var(--slate-light); font-size: 12px; border-top: 1px solid var(--border); margin-top: 40px; }
-  .footer a { color: var(--teal); text-decoration: none; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.82rem;
+    color: #999;
+    text-align: center;
+  }
+  footer a { color: #1F4E79; text-decoration: none; }
 
   @media (max-width: 640px) {
     .cia-cards, .aaa-cards { grid-template-columns: 1fr; }
@@ -231,11 +234,6 @@
   <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
 </nav>
 
-
-<div class="breadcrumb">
-  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
-  <span>›</span> Background — Security Foundations
-</div>
 
 <div class="hero">
   <h1>Security Foundations</h1>
@@ -677,16 +675,17 @@
   </div>
 
   <div class="page-nav">
-    <a class="nav-link" href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
-    <a class="nav-link" href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-aws-intro.html">Introduction to AWS →</a>
-  </div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-aws-intro.html">Week 1: Introduction to AWS →</a></div>
+</div>
 
 </div>
 
-<div class="footer">
+<footer>
   CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
-  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">Course home</a>
-</div>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
 
 <script>
   function selectCIA(card, panelId) {

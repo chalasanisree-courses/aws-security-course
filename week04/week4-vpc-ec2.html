@@ -17,17 +17,7 @@
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;
   }
-
-  .breadcrumb {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 2rem;
-  }
-  .breadcrumb a { color: #1F4E79; text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  .breadcrumb span { margin: 0 0.4rem; color: #999; }
-
-  h1 {
+h1 {
     font-size: 2rem;
     font-weight: 700;
     line-height: 1.2;
@@ -309,7 +299,7 @@
   }
   footer a { color: #1F4E79; text-decoration: none; }
 
-  @media (max-width: 600px) {
+@media (max-width: 600px) {
     .card-grid { grid-template-columns: 1fr; }
   }
 
@@ -343,10 +333,10 @@
 </script>
 </head>
 
-<div class="breadcrumb">
-  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
-  <span>›</span> Week 4 <span>›</span> VPC, EC2, and Application Tier Security
-</div>
+<nav class="course-nav">
+  <a href="../index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
 
 <h1>VPC, EC2, and Application Tier Security</h1>
 <p class="subtitle">Adding a real backend to the Photo Viewer — a 3-tier architecture with a private EC2 app server, DynamoDB, ALB, and VPC — and tracing exactly what happens when the page loads.</p>

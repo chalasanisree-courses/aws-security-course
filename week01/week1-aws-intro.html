@@ -32,20 +32,7 @@
     line-height: 1.7;
     font-size: 15px;
   }
-
-  /* ── breadcrumb ── */
-  .breadcrumb {
-    background: var(--white);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 32px;
-    font-size: 13px;
-    color: var(--slate);
-  }
-  .breadcrumb a { color: var(--teal); text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  .breadcrumb span { margin: 0 6px; }
-
-    /* ── main layout ── */
+/* ── main layout ── */
   .main { max-width: 900px; margin: 0 auto; padding: 40px 32px 80px; }
 
   /* ── toc ── */
@@ -326,39 +313,25 @@
   .page-nav {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-top: 64px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
-    gap: 16px;
     flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.9rem;
   }
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--teal);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 10px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--white);
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .nav-link:hover { border-color: var(--teal); background: #f0fdf9; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
 
-  /* ── footer ── */
-  .footer {
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8e8e8;
+    font-size: 0.82rem;
+    color: #999;
     text-align: center;
-    padding: 24px;
-    color: var(--slate-light);
-    font-size: 12px;
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
   }
-  .footer a { color: var(--teal); text-decoration: none; }
+  footer a { color: #1F4E79; text-decoration: none; }
 
   @media (max-width: 640px) {
     .service-models { grid-template-columns: 1fr; }
@@ -403,12 +376,6 @@
   <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
 </nav>
 
-
-<div class="breadcrumb">
-  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a>
-  <span>›</span> Week 1
-  <span>›</span> Introduction to AWS
-</div>
 
 <div class="main">
 
@@ -780,16 +747,17 @@
 
   <!-- ── nav ── -->
   <div class="page-nav">
-    <a class="nav-link" href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
-    <a class="nav-link" href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-global-infrastructure.html">AWS Global Infrastructure →</a>
-  </div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week00/week00-background.html">← Week 0: Background</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week01/week1-global-infrastructure.html">Week 1: Global Infrastructure →</a></div>
+</div>
 
 </div><!-- /main -->
 
-<div class="footer">
+<footer>
   CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
-  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">Course home</a>
-</div>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
 
 <script>
   // Service model cards
