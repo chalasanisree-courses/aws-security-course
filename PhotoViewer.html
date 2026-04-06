@@ -4,13 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Photo Viewer — Application Design — CS 55D</title>
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600&display=swap');
-
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: #f5f5f3;
     color: #1a1a18;
     min-height: 100vh;
@@ -28,8 +26,8 @@
     z-index: 100;
   }
   .topnav-left {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
     font-weight: 700;
     color: rgba(255,255,255,0.9);
     letter-spacing: 0.04em;
@@ -77,7 +75,7 @@
     background: rgba(255,255,255,0.2);
   }
   .hero-h1 {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: clamp(44px, 7vw, 80px);
     font-weight: 900;
     line-height: 0.92;
@@ -233,8 +231,8 @@
 <body>
 
 <nav class="topnav">
-  <a class="topnav-left" href="index.html">CS 55D <span>·</span> Security in Amazon Web Services</a>
-  <div class="topnav-right">Foothill College &nbsp;·&nbsp; Computer Science</div>
+  <a class="topnav-left" href="index.html">← Course home</a>
+  <div class="topnav-right">CS 55D &nbsp;·&nbsp; Photo Viewer</div>
 </nav>
 
 <div class="hero-shell">
@@ -595,7 +593,7 @@
         <style>
           .pent-vnode { cursor:pointer; transition:opacity 0.2s; }
           .pent-vnode.pent-dim { opacity:0.15; cursor:default; pointer-events:none; }
-          .pent-vlabel { font-family:'Barlow',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; font-size:12px; font-weight:600; text-anchor:middle; fill:#1a1a18; }
+          .pent-vlabel { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:12px; font-weight:600; text-anchor:middle; fill:#1a1a18; }
           .pent-spoke { stroke:#E2E0D8; stroke-width:0.5; stroke-dasharray:4 3; fill:none; }
         </style>
         <polygon points="230,38 354,130 310,278 150,278 106,130" fill="#FAFAF8" stroke="#D3D1C7" stroke-width="1"/>
@@ -642,7 +640,7 @@
     .pent-btn {
       padding:5px 16px; border-radius:20px; font-size:12px; font-weight:600;
       border:1.5px solid rgba(0,0,0,0.15); cursor:pointer; transition:opacity 0.15s;
-      font-family:'Barlow',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       letter-spacing:0.04em; text-transform:uppercase;
     }
     .pent-btn:hover { opacity:0.8; }
