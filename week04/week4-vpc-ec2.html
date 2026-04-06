@@ -378,16 +378,6 @@
 
 <p>We introduce a real backend: an EC2 application server in a private VPC subnet, backed by DynamoDB. The photo list is now constructed dynamically at request time — add a row to DynamoDB and it appears to all users immediately.</p>
 
-<table>
-  <tr><th></th><th>Week 3</th><th>Week 4</th></tr>
-  <tr><td><strong>Photo list source</strong></td><td>Static <code>photos.json</code> in S3</td><td>DynamoDB — dynamic, updatable at runtime</td></tr>
-  <tr><td><strong>Backend</strong></td><td>None — S3 only</td><td>EC2 app server in private VPC subnet</td></tr>
-  <tr><td><strong>Network</strong></td><td>No VPC</td><td>VPC with public/private subnets, security groups, route tables</td></tr>
-  <tr><td><strong>Remote access</strong></td><td>N/A</td><td>SSM Session Manager — no SSH, no port 22</td></tr>
-  <tr><td><strong>CloudFront origins</strong></td><td>One — S3</td><td>Two — S3 (static) and ALB (<code>/photos</code> API)</td></tr>
-  <tr><td><strong>app.js change</strong></td><td><code>fetch('/photos.json')</code></td><td><code>fetch('/photos')</code> — one line</td></tr>
-</table>
-
 <p>The classic 3-tier pattern separates concerns into three isolated layers. Click any component to learn what it does.</p>
 <p class="hint">Click any box to explore</p>
 
@@ -582,204 +572,7 @@
   <div id="vpc-detail-content"></div>
 </div>
 
-<p class="hint" style="margin-top:0.5rem;">Click any row to expand</p>
 
-<!-- Accordion list -->
-<div class="accordion">
-
-  <div class="ac-item" onclick="toggleAc('ac-vpc')">
-    <div class="ac-left"><span class="ac-icon">🏗</span><span class="ac-name">VPC</span><span class="ac-sub">photoviewer-vpc · 10.0.0.0/16</span></div>
-    <span class="ac-chevron" id="ac-vpc-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-vpc">
-    <p>A Virtual Private Cloud is a logically isolated network inside AWS — a fenced-off section of the datacenter that belongs only to your account. Your VPC spans <strong>two availability zones</strong> for resilience. Everything inside it is unreachable from the internet unless you explicitly open a path. The CIDR <code>10.0.0.0/16</code> gives you 65,536 private IP addresses to allocate across subnets.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-subnets')">
-    <div class="ac-left"><span class="ac-icon">🔲</span><span class="ac-name">Subnets</span><span class="ac-sub">2 public · 2 private · across 2 AZs</span></div>
-    <span class="ac-chevron" id="ac-subnets-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-subnets">
-    <p>Subnets are subdivisions of the VPC. The difference between public and private is entirely about routing — a public subnet has a route to the Internet Gateway, a private subnet does not.</p>
-    <table style="font-size:0.88rem; margin-top:0.5rem;">
-      <tr><th>Subnet</th><th>AZ</th><th>CIDR</th><th>What lives here</th></tr>
-      <tr><td>public1</td><td>us-east-1a</td><td>10.0.0.0/20</td><td>ALB node, NAT GW (temp)</td></tr>
-      <tr><td>public2</td><td>us-east-1b</td><td>10.0.16.0/20</td><td>ALB node (required for multi-AZ)</td></tr>
-      <tr><td>private1</td><td>us-east-1a</td><td>10.0.128.0/20</td><td>App Server (EC2), SSM endpoint ENIs</td></tr>
-      <tr><td>private2</td><td>us-east-1b</td><td>10.0.144.0/20</td><td>Empty — for symmetry and future use</td></tr>
-    </table>
-    <p style="margin-top:0.6rem;"><strong>Why EC2 is in the private subnet:</strong> Even if a security group was misconfigured, there is no network route from the internet to the private subnet. Subnet placement is the outer wall; security groups are the inner wall — defense in depth.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-igw')">
-    <div class="ac-left"><span class="ac-icon">🔗</span><span class="ac-name">Internet Gateway</span><span class="ac-sub">Outbound internet for public subnets · NAT GW uses it during bootstrap</span></div>
-    <span class="ac-chevron" id="ac-igw-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-igw">
-    <p>The IGW is attached to the VPC and provides the internet connection for public subnets. The public route table has one key rule: <code>0.0.0.0/0 → IGW</code>. This is what makes a subnet "public." Private subnets have no such route — they cannot initiate or receive internet connections directly. <strong>CloudFront does not go through the IGW</strong> — it connects directly to the ALB's public DNS over AWS's own backbone network.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-alb')">
-    <div class="ac-left"><span class="ac-icon">⚖️</span><span class="ac-name">Application Load Balancer</span><span class="ac-sub">Bridges CloudFront to EC2 · health checks · spans both AZs</span></div>
-    <span class="ac-chevron" id="ac-alb-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-alb">
-    <p>EC2 is in a private subnet with no public IP. CloudFront can only reach internet-routable endpoints. The ALB solves this — it sits in the public subnet with a public DNS name, receives requests from CloudFront, and forwards them to EC2's private IP inside the VPC.</p>
-    <p>The ALB also performs <strong>health checks</strong> — sending <code>GET /health</code> to port 8000 every 30 seconds. If the app server fails two consecutive checks, the ALB stops routing to it. This is why <code>app.py</code> has a <code>/health</code> endpoint returning 200.</p>
-    <p><strong>Vulnerability:</strong> The ALB's DNS name is public — anyone who discovers it can call <code>/photos</code> directly, bypassing CloudFront and any WAF rules. Fix in Week 9: add a secret custom header that CloudFront sends, and configure the ALB to reject requests missing it.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-ec2')">
-    <div class="ac-left"><span class="ac-icon">🖥</span><span class="ac-name">App Server (EC2)</span><span class="ac-sub">Private subnet · no public IP · app.py · systemd</span></div>
-    <span class="ac-chevron" id="ac-ec2-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-ec2">
-    <p>EC2 runs <code>app.py</code> on port 8000, managed by systemd so it starts on boot and restarts on crash. It handles two endpoints: <code>GET /health</code> (200 OK for ALB) and <code>GET /photos</code> (scans DynamoDB, returns JSON). The instance has no public IP, no key pair, and port 22 is never open — all access is through SSM Session Manager.</p>
-    <p>On first boot, the user data script runs automatically: installs Python and packages via NAT Gateway, downloads <code>app.py</code> from S3 via the S3 Gateway endpoint, creates the systemd service, and starts it. After this bootstrap completes the NAT Gateway is deleted — EC2 has no internet access at runtime.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-nat')">
-    <div class="ac-left"><span class="ac-icon">🔀</span><span class="ac-name">NAT Gateway</span><span class="ac-sub">Temporary · bootstrap only · ~$32/month · delete immediately after</span></div>
-    <span class="ac-chevron" id="ac-nat-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-nat">
-    <p>EC2 is on a private subnet with no internet access. But the user data script needs to run <code>dnf update</code> and <code>pip3 install flask boto3</code> — both require reaching the public internet (Amazon Linux repos and PyPI). The NAT Gateway sits in the public subnet and provides outbound-only internet access for private subnet resources.</p>
-    <p><strong>NAT is outbound only</strong> — the internet cannot initiate connections through it. After bootstrap, EC2 only needs DynamoDB (via Gateway endpoint) and SSM (via interface endpoints) — no internet required. So we delete the NAT Gateway immediately, saving ~$32/month and removing internet access from EC2 entirely.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-ssm')">
-    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">SSM Session Manager</span><span class="ac-sub">Remote access without SSH · no port 22 · IAM-controlled · CloudTrail logged</span></div>
-    <span class="ac-chevron" id="ac-ssm-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-ssm">
-    <p>The SSM Agent runs on EC2 and maintains a persistent <strong>outbound</strong> connection to the SSM service through three VPC interface endpoints. When you start a session from the console, your browser connects to SSM which relays it to the agent on EC2. No inbound ports needed — port 22 is never open.</p>
-    <p>Three interface endpoints are required — each creates an ENI with a private IP in the private subnet:</p>
-    <table style="font-size:0.88rem; margin:0.5rem 0;">
-      <tr><th>Endpoint</th><th>Purpose</th></tr>
-      <tr><td><code>ssm</code></td><td>Agent registration and heartbeat</td></tr>
-      <tr><td><code>ssmmessages</code></td><td>Interactive session traffic — keystrokes and terminal output</td></tr>
-      <tr><td><code>ec2messages</code></td><td>Run Command — send shell commands without opening a full session</td></tr>
-    </table>
-    <table style="font-size:0.88rem; margin-top:0.5rem;">
-      <tr><th></th><th>SSH</th><th>SSM Session Manager</th></tr>
-      <tr><td>Port 22</td><td>Must be open — constantly scanned by attackers</td><td>Never needed</td></tr>
-      <tr><td>Credentials</td><td>Key file — can be lost, stolen, shared</td><td>IAM identity — integrates with your identity system</td></tr>
-      <tr><td>Audit trail</td><td>None by default</td><td>Every session logged in CloudTrail automatically</td></tr>
-      <tr><td>Private subnet</td><td>Requires a bastion host</td><td>Works natively via VPC endpoints</td></tr>
-    </table>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-endpoints')">
-    <div class="ac-left"><span class="ac-icon">🔌</span><span class="ac-name">VPC Endpoints</span><span class="ac-sub">Private paths to AWS services · Gateway (free) vs Interface (~$7/mo each)</span></div>
-    <span class="ac-chevron" id="ac-endpoints-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-endpoints">
-    <p>EC2 needs to reach AWS services — DynamoDB, S3, and SSM. Without endpoints, that traffic would go over the internet (requiring the NAT Gateway to stay running). Endpoints create private paths that stay inside AWS's network.</p>
-    <table style="font-size:0.88rem; margin:0.5rem 0;">
-      <tr><th></th><th>Gateway endpoint</th><th>Interface endpoint</th></tr>
-      <tr><td>How it works</td><td>A route table entry — a "road sign" pointing traffic to the service</td><td>An ENI with a private IP inside your subnet</td></tr>
-      <tr><td>Security group</td><td>Not needed</td><td>Required</td></tr>
-      <tr><td>Cost</td><td>Free</td><td>~$7/month each</td></tr>
-      <tr><td>We use for</td><td>DynamoDB, S3</td><td>SSM (3 endpoints)</td></tr>
-    </table>
-    <p>We have 5 endpoints total: 2 free Gateway endpoints (DynamoDB, S3) and 3 Interface endpoints for SSM. The 3 SSM interface endpoints cost ~$21/month combined — delete them when you're done with the lab.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-dynamo')">
-    <div class="ac-left"><span class="ac-icon">🗄</span><span class="ac-name">DynamoDB</span><span class="ac-sub">Photo catalog · replaces static photos.json · enables per-user and public/private</span></div>
-    <span class="ac-chevron" id="ac-dynamo-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-dynamo">
-    <p>DynamoDB is a fully managed NoSQL database — no servers to provision, no schema migrations, scales automatically. The <code>photoviewer-photos</code> table stores photo metadata with these attributes:</p>
-    <table style="font-size:0.88rem; margin:0.5rem 0;">
-      <tr><th>Attribute</th><th>Type</th><th>Purpose</th></tr>
-      <tr><td><code>photo_id</code></td><td>String (partition key)</td><td>Unique identifier e.g. <code>photo-001</code></td></tr>
-      <tr><td><code>s3_key</code></td><td>String</td><td>Path to the photo in S3 — app server returns this so the browser knows what to request from CloudFront</td></tr>
-      <tr><td><code>is_public</code></td><td>Boolean</td><td>App server filters on <code>is_public = true</code> — private photos never appear in the list</td></tr>
-      <tr><td><code>owner</code></td><td>String</td><td>Currently <code>anonymous</code> — Week 5 adds real user accounts and per-user filtering</td></tr>
-      <tr><td><code>uploaded_at</code></td><td>String (ISO 8601)</td><td>Timestamp for ordering</td></tr>
-    </table>
-    <p><strong>Why not static JSON?</strong> Adding a photo to <code>photos.json</code> requires editing, re-uploading, and a CloudFront cache invalidation. With DynamoDB, inserting a row is immediately visible to all users. Per-user and public/private filtering — impossible with a static file — are a simple query filter.</p>
-  </div>
-
-</div><!-- end accordion -->
-
-<!-- Security controls accordion -->
-<h3 style="margin-top:2rem;">Security controls</h3>
-<p class="hint">Click any row to expand</p>
-
-<div class="accordion">
-
-  <div class="ac-item" onclick="toggleAc('ac-sg')">
-    <div class="ac-left"><span class="ac-icon">🔒</span><span class="ac-name">Security groups</span><span class="ac-sub">Stateful firewalls · chained by SG ID · 3 groups forming a chain</span></div>
-    <span class="ac-chevron" id="ac-sg-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-sg">
-    <p>Security groups are stateful firewalls attached to network interfaces. Each group in our chain references the previous one by security group ID — not by IP address. This means only resources with the correct security group attached can communicate, regardless of their IP.</p>
-    <table style="font-size:0.88rem; margin:0.5rem 0;">
-      <tr><th>Security group</th><th>Inbound rule</th><th>Source</th></tr>
-      <tr><td><code>photoviewer-alb-sg</code></td><td>HTTP :80</td><td>0.0.0.0/0 — CloudFront and internet</td></tr>
-      <tr><td><code>photoviewer-ec2-sg</code></td><td>TCP :8000</td><td><code>photoviewer-alb-sg</code> only — no SSH, no port 22</td></tr>
-      <tr><td><code>photoviewer-endpoint-sg</code></td><td>HTTPS :443</td><td><code>photoviewer-ec2-sg</code> only — SSM endpoints</td></tr>
-    </table>
-    <div class="sg-chain" style="margin-top:0.8rem;">
-      <span class="sg-box">Internet</span><span class="sg-arrow">→</span><span class="sg-port">:80</span><span class="sg-arrow">→</span>
-      <span class="sg-box">ALB</span><span class="sg-arrow">→</span><span class="sg-port">:8000</span><span class="sg-arrow">→</span>
-      <span class="sg-box">EC2</span><span class="sg-arrow">→</span><span class="sg-port">:443</span><span class="sg-arrow">→</span>
-      <span class="sg-box">Endpoints</span><span class="sg-arrow">→</span><span class="sg-box">SSM</span>
-    </div>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-nacl')">
-    <div class="ac-left"><span class="ac-icon">🚧</span><span class="ac-name">Network ACLs</span><span class="ac-sub">Stateless subnet-level firewall · default allows all · security groups do the real work here</span></div>
-    <span class="ac-chevron" id="ac-nacl-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-nacl">
-    <p>Network ACLs (NACLs) are stateless packet filters that apply at the subnet boundary — before traffic even reaches a resource's security group. Unlike security groups, NACLs are stateless: you must explicitly allow both inbound <em>and</em> the return traffic outbound.</p>
-    <p>In Week 4 we use the <strong>default NACL</strong> which allows all inbound and outbound traffic. This is intentional — our security groups handle access control with more precision (by SG ID, not by IP). Adding custom NACL rules on top would add complexity without adding meaningful security for our architecture.</p>
-    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet (e.g. blocking a country's IP range before it hits the ALB). Security groups cannot block by IP range at scale — NACLs can. This is a Week 9 topic when we add WAF and geo-restriction.</p>
-    <table style="font-size:0.88rem; margin-top:0.5rem;">
-      <tr><th></th><th>Security group</th><th>NACL</th></tr>
-      <tr><td>Level</td><td>Instance (ENI)</td><td>Subnet</td></tr>
-      <tr><td>Stateful?</td><td>Yes — return traffic allowed automatically</td><td>No — must allow both directions explicitly</td></tr>
-      <tr><td>Rule logic</td><td>All rules evaluated, most permissive wins</td><td>Rules evaluated in order by number, first match wins</td></tr>
-      <tr><td>We use</td><td>Yes — three SGs</td><td>Default only (allow all)</td></tr>
-    </table>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-iam')">
-    <div class="ac-left"><span class="ac-icon">🪪</span><span class="ac-name">IAM instance role</span><span class="ac-sub">photoviewer-ec2-role · 3 policies · no access keys on disk</span></div>
-    <span class="ac-chevron" id="ac-iam-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-iam">
-    <p>Instead of storing access keys on the instance (which is insecure — keys can be stolen from disk or leaked in logs), we attach an IAM role. EC2 retrieves temporary credentials automatically from the instance metadata service. The credentials rotate automatically and expire — even if leaked they have a short window.</p>
-    <table style="font-size:0.88rem; margin:0.5rem 0;">
-      <tr><th>Policy</th><th>What it allows</th></tr>
-      <tr><td><code>AmazonSSMManagedInstanceCore</code></td><td>SSM Session Manager — remote access without SSH</td></tr>
-      <tr><td><code>photoviewer-dynamodb-read</code></td><td><code>dynamodb:Scan</code> on <code>photoviewer-photos</code> table only — no other tables, no writes</td></tr>
-      <tr><td><code>photoviewer-s3-app-read</code></td><td><code>s3:GetObject</code> on <code>photoviewer-[account-id]/app/*</code> only — just enough to download <code>app.py</code> at boot</td></tr>
-    </table>
-    <p>This is least privilege — each permission is scoped to the exact resource and action needed. If EC2 is compromised, the attacker can only scan one DynamoDB table and read one S3 prefix. Nothing else.</p>
-  </div>
-
-  <div class="ac-item" onclick="toggleAc('ac-rtb')">
-    <div class="ac-left"><span class="ac-icon">🗺</span><span class="ac-name">Route tables</span><span class="ac-sub">Public routes to IGW · private routes to Gateway endpoints · no 0.0.0.0/0 in private</span></div>
-    <span class="ac-chevron" id="ac-rtb-chev">›</span>
-  </div>
-  <div class="ac-body" id="ac-rtb">
-    <p>Route tables control where traffic goes. Each subnet is associated with one route table. The critical difference between our public and private subnets is a single route table entry.</p>
-    <table style="font-size:0.88rem; margin:0.5rem 0;">
-      <tr><th>Route table</th><th>Destination</th><th>Target</th><th>Meaning</th></tr>
-      <tr><td>public</td><td>10.0.0.0/16</td><td>local</td><td>VPC-internal traffic stays local</td></tr>
-      <tr><td>public</td><td>0.0.0.0/0</td><td>IGW</td><td>Everything else goes to the internet</td></tr>
-      <tr><td>private</td><td>10.0.0.0/16</td><td>local</td><td>VPC-internal traffic stays local</td></tr>
-      <tr><td>private</td><td>pl-XXXXX (DynamoDB)</td><td>Gateway endpoint</td><td>DynamoDB traffic goes through private endpoint</td></tr>
-      <tr><td>private</td><td>pl-XXXXX (S3)</td><td>Gateway endpoint</td><td>S3 traffic goes through private endpoint</td></tr>
-    </table>
-    <p>The private route table has <strong>no <code>0.0.0.0/0</code> entry</strong> at runtime (the NAT Gateway route is deleted after bootstrap). This means there is literally no network path from the private subnet to the internet — not a firewall rule, an absent route. A misconfigured security group cannot override this.</p>
-  </div>
-
-</div><!-- end security controls accordion -->
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>4. How it works — request walkthrough</h2>
@@ -837,10 +630,253 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Details</h2>
+<h2>5. Key Concepts in This Solution</h2>
 
-<p>Click any row to explore the components and security controls in depth.</p>
+<div class="ac-item" onclick="toggleAc('ac-vpc')">
+    <div class="ac-left"><span class="ac-icon">🏗</span><span class="ac-name">VPC</span><span class="ac-sub">photoviewer-vpc · 10.0.0.0/16</span></div>
+    <span class="ac-chevron" id="ac-vpc-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-vpc">
+    <p>A Virtual Private Cloud is a logically isolated network inside AWS — a fenced-off section of the datacenter that belongs only to your account. Your VPC spans <strong>two availability zones</strong> for resilience. Everything inside it is unreachable from the internet unless you explicitly open a path. The CIDR <code>10.0.0.0/16</code> gives you 65,536 private IP addresses to allocate across subnets.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">We created <code>photoviewer-vpc</code> with CIDR <code>10.0.0.0/16</code> spanning two AZs (us-east-1a and us-east-1b). The VPC wizard created 2 public and 2 private subnets, an Internet Gateway, and a zonal NAT Gateway in one AZ — enough for a single EC2 instance without the cost of a multi-AZ NAT setup.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-subnets')">
+    <div class="ac-left"><span class="ac-icon">🔲</span><span class="ac-name">Subnets</span><span class="ac-sub">2 public · 2 private · across 2 AZs</span></div>
+    <span class="ac-chevron" id="ac-subnets-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-subnets">
+    <p>Subnets are subdivisions of the VPC. The difference between public and private is entirely about routing — a public subnet has a route to the Internet Gateway, a private subnet does not.</p>
+    <table style="font-size:0.88rem; margin-top:0.5rem;">
+      <tr><th>Subnet</th><th>AZ</th><th>CIDR</th><th>What lives here</th></tr>
+      <tr><td>public1</td><td>us-east-1a</td><td>10.0.0.0/20</td><td>ALB node, NAT GW (temp)</td></tr>
+      <tr><td>public2</td><td>us-east-1b</td><td>10.0.16.0/20</td><td>ALB node (required for multi-AZ)</td></tr>
+      <tr><td>private1</td><td>us-east-1a</td><td>10.0.128.0/20</td><td>App Server (EC2), SSM endpoint ENIs</td></tr>
+      <tr><td>private2</td><td>us-east-1b</td><td>10.0.144.0/20</td><td>Empty — for symmetry and future use</td></tr>
+    </table>
+    <p style="margin-top:0.6rem;"><strong>Why EC2 is in the private subnet:</strong> Even if a security group was misconfigured, there is no network route from the internet to the private subnet. Subnet placement is the outer wall; security groups are the inner wall — defense in depth.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">The VPC wizard created all four subnets automatically. EC2 was launched in <code>private1</code> (us-east-1a) with no public IP. The ALB spans both public subnets — required for ALB multi-AZ even though only one AZ has an active EC2 instance.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-igw')">
+    <div class="ac-left"><span class="ac-icon">🔗</span><span class="ac-name">Internet Gateway</span><span class="ac-sub">Outbound internet for public subnets · NAT GW uses it during bootstrap</span></div>
+    <span class="ac-chevron" id="ac-igw-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-igw">
+    <p>The IGW is attached to the VPC and provides the internet connection for public subnets. The public route table has one key rule: <code>0.0.0.0/0 → IGW</code>. This is what makes a subnet "public." Private subnets have no such route — they cannot initiate or receive internet connections directly. <strong>CloudFront does not go through the IGW</strong> — it connects directly to the ALB's public DNS over AWS's own backbone network.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">The IGW was created automatically by the VPC wizard. It enables the NAT Gateway (in the public subnet) to reach PyPI and Amazon Linux repos during EC2 bootstrap. After the NAT Gateway was deleted, the IGW is still there — ALB still needs the public subnet's internet-facing route to receive CloudFront requests.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-alb')">
+    <div class="ac-left"><span class="ac-icon">⚖️</span><span class="ac-name">Application Load Balancer</span><span class="ac-sub">Bridges CloudFront to EC2 · health checks · spans both AZs</span></div>
+    <span class="ac-chevron" id="ac-alb-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-alb">
+    <p>EC2 is in a private subnet with no public IP. CloudFront can only reach internet-routable endpoints. The ALB solves this — it sits in the public subnet with a public DNS name, receives requests from CloudFront, and forwards them to EC2's private IP inside the VPC.</p>
+    <p>The ALB also performs <strong>health checks</strong> — sending <code>GET /health</code> to port 8000 every 30 seconds. If the app server fails two consecutive checks, the ALB stops routing to it. This is why <code>app.py</code> has a <code>/health</code> endpoint returning 200.</p>
+    <p><strong>Vulnerability:</strong> The ALB's DNS name is public — anyone who discovers it can call <code>/photos</code> directly, bypassing CloudFront and any WAF rules. Fix in Week 9: add a secret custom header that CloudFront sends, and configure the ALB to reject requests missing it.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Created <code>photoviewer-alb</code> in the public subnets across both AZs. Added a second CloudFront origin pointing to the ALB DNS name, with a cache behavior routing <code>/photos</code> requests to it. The ALB listener forwards to a target group containing the EC2 instance on port 8000.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-ec2')">
+    <div class="ac-left"><span class="ac-icon">🖥</span><span class="ac-name">App Server (EC2)</span><span class="ac-sub">Private subnet · no public IP · app.py · systemd</span></div>
+    <span class="ac-chevron" id="ac-ec2-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-ec2">
+    <p>EC2 runs <code>app.py</code> on port 8000, managed by systemd so it starts on boot and restarts on crash. It handles two endpoints: <code>GET /health</code> (200 OK for ALB) and <code>GET /photos</code> (scans DynamoDB, returns JSON). The instance has no public IP, no key pair, and port 22 is never open — all access is through SSM Session Manager.</p>
+    <p>On first boot, the user data script runs automatically: installs Python and packages via NAT Gateway, downloads <code>app.py</code> from S3 via the S3 Gateway endpoint, creates the systemd service, and starts it. After this bootstrap completes the NAT Gateway is deleted — EC2 has no internet access at runtime.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Launched <code>t3.micro</code> Amazon Linux 2023 in the private subnet with no public IP and no key pair. The user data script bootstrapped the app at first boot — after it completed, the NAT Gateway was deleted. SSM was verified by opening a session from the console and checking the app with <code>curl localhost:8000/health</code>.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-nat')">
+    <div class="ac-left"><span class="ac-icon">🔀</span><span class="ac-name">NAT Gateway</span><span class="ac-sub">Temporary · bootstrap only · ~$32/month · delete immediately after</span></div>
+    <span class="ac-chevron" id="ac-nat-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-nat">
+    <p>EC2 is on a private subnet with no internet access. But the user data script needs to run <code>dnf update</code> and <code>pip3 install boto3</code> — both require reaching the public internet (Amazon Linux repos and PyPI). The NAT Gateway sits in the public subnet and provides outbound-only internet access for private subnet resources.</p>
+    <p><strong>NAT is outbound only</strong> — the internet cannot initiate connections through it. After bootstrap, EC2 only needs DynamoDB (via Gateway endpoint) and SSM (via interface endpoints) — no internet required. So we delete the NAT Gateway immediately, saving ~$32/month and removing internet access from EC2 entirely.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">A zonal NAT Gateway was created in the public subnet (us-east-1a only — sufficient for a single EC2 instance). After the user data script completed and the app was verified running, the NAT Gateway and its Elastic IP were deleted. The private route table no longer has a <code>0.0.0.0/0</code> route — EC2 has no internet path at runtime.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-ssm')">
+    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">SSM Session Manager</span><span class="ac-sub">Remote access without SSH · no port 22 · IAM-controlled · CloudTrail logged</span></div>
+    <span class="ac-chevron" id="ac-ssm-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-ssm">
+    <p>The SSM Agent runs on EC2 and maintains a persistent <strong>outbound</strong> connection to the SSM service through three VPC interface endpoints. When you start a session from the console, your browser connects to SSM which relays it to the agent on EC2. No inbound ports needed — port 22 is never open.</p>
+    <p>Three interface endpoints are required — each creates an ENI with a private IP in the private subnet:</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Endpoint</th><th>Purpose</th></tr>
+      <tr><td><code>ssm</code></td><td>Agent registration and heartbeat</td></tr>
+      <tr><td><code>ssmmessages</code></td><td>Interactive session traffic — keystrokes and terminal output</td></tr>
+      <tr><td><code>ec2messages</code></td><td>Run Command — send shell commands without opening a full session</td></tr>
+    </table>
+    <table style="font-size:0.88rem; margin-top:0.5rem;">
+      <tr><th></th><th>SSH</th><th>SSM Session Manager</th></tr>
+      <tr><td>Port 22</td><td>Must be open — constantly scanned by attackers</td><td>Never needed</td></tr>
+      <tr><td>Credentials</td><td>Key file — can be lost, stolen, shared</td><td>IAM identity — integrates with your identity system</td></tr>
+      <tr><td>Audit trail</td><td>None by default</td><td>Every session logged in CloudTrail automatically</td></tr>
+      <tr><td>Private subnet</td><td>Requires a bastion host</td><td>Works natively via VPC endpoints</td></tr>
+    </table>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Connected to the EC2 instance via Systems Manager → Session Manager from the AWS Console — no SSH client, no key pair, no bastion host. Verified the app was running with <code>curl localhost:8000/health</code>. The three SSM interface endpoints in the private subnet make this possible without any internet access.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-endpoints')">
+    <div class="ac-left"><span class="ac-icon">🔌</span><span class="ac-name">VPC Endpoints</span><span class="ac-sub">Private paths to AWS services · Gateway (free) vs Interface (~$7/mo each)</span></div>
+    <span class="ac-chevron" id="ac-endpoints-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-endpoints">
+    <p>EC2 needs to reach AWS services — DynamoDB, S3, and SSM. Without endpoints, that traffic would go over the internet (requiring the NAT Gateway to stay running). Endpoints create private paths that stay inside AWS's network.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th></th><th>Gateway endpoint</th><th>Interface endpoint</th></tr>
+      <tr><td>How it works</td><td>A route table entry — a "road sign" pointing traffic to the service</td><td>An ENI with a private IP inside your subnet</td></tr>
+      <tr><td>Security group</td><td>Not needed</td><td>Required</td></tr>
+      <tr><td>Cost</td><td>Free</td><td>~$7/month each</td></tr>
+      <tr><td>We use for</td><td>DynamoDB, S3</td><td>SSM (3 endpoints)</td></tr>
+    </table>
+    <p>We have 5 endpoints total: 2 free Gateway endpoints (DynamoDB, S3) and 3 Interface endpoints for SSM. The 3 SSM interface endpoints cost ~$21/month combined — delete them when you're done with the lab.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Created 2 Gateway endpoints (S3, DynamoDB) — free, added as route entries in the private route table. Created 3 Interface endpoints for SSM — each gets an ENI with a private IP in the private subnet. All three SSM endpoints must be deleted after the lab to avoid ongoing charges.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-dynamo')">
+    <div class="ac-left"><span class="ac-icon">🗄</span><span class="ac-name">DynamoDB</span><span class="ac-sub">Photo catalog · replaces static photos.json · enables per-user and public/private</span></div>
+    <span class="ac-chevron" id="ac-dynamo-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-dynamo">
+    <p>DynamoDB is a fully managed NoSQL database — no servers to provision, no schema migrations, scales automatically. The <code>photoviewer-photos</code> table stores photo metadata with these attributes:</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Attribute</th><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>photo_id</code></td><td>String (partition key)</td><td>Unique identifier e.g. <code>photo-001</code></td></tr>
+      <tr><td><code>s3_key</code></td><td>String</td><td>Path to the photo in S3 — app server returns this so the browser knows what to request from CloudFront</td></tr>
+      <tr><td><code>is_public</code></td><td>Boolean</td><td>App server filters on <code>is_public = true</code> — private photos never appear in the list</td></tr>
+      <tr><td><code>owner</code></td><td>String</td><td>Currently <code>anonymous</code> — Week 6 adds real user accounts and per-user filtering</td></tr>
+      <tr><td><code>uploaded_at</code></td><td>String (ISO 8601)</td><td>Timestamp for ordering</td></tr>
+    </table>
+    <p><strong>Why not static JSON?</strong> Adding a photo to <code>photos.json</code> requires editing, re-uploading, and a CloudFront cache invalidation. With DynamoDB, inserting a row is immediately visible to all users. Per-user and public/private filtering — impossible with a static file — are a simple query filter.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Created table <code>photoviewer-photos</code> with partition key <code>photo_id</code> (String). Added 5 items manually using the JSON view in the DynamoDB console — one per photo in the S3 bucket. Each item has <code>is_public: true</code>, <code>owner: anonymous</code>, an <code>s3_key</code> pointing to the photo in S3, and an <code>uploaded_at</code> timestamp.</p>
+    </div>
+  </div>
+
+</div><!-- end accordion -->
+
+<!-- Security controls accordion -->
+<h3 style="margin-top:2rem;">Security controls</h3>
 <p class="hint">Click any row to expand</p>
+
+<div class="accordion">
+
+  <div class="ac-item" onclick="toggleAc('ac-sg')">
+    <div class="ac-left"><span class="ac-icon">🔒</span><span class="ac-name">Security groups</span><span class="ac-sub">Stateful firewalls · chained by SG ID · 3 groups forming a chain</span></div>
+    <span class="ac-chevron" id="ac-sg-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-sg">
+    <p>Security groups are stateful firewalls attached to network interfaces. Each group in our chain references the previous one by security group ID — not by IP address. This means only resources with the correct security group attached can communicate, regardless of their IP.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Security group</th><th>Inbound rule</th><th>Source</th></tr>
+      <tr><td><code>photoviewer-alb-sg</code></td><td>HTTP :80</td><td>0.0.0.0/0 — CloudFront and internet</td></tr>
+      <tr><td><code>photoviewer-ec2-sg</code></td><td>TCP :8000</td><td><code>photoviewer-alb-sg</code> only — no SSH, no port 22</td></tr>
+      <tr><td><code>photoviewer-endpoint-sg</code></td><td>HTTPS :443</td><td><code>photoviewer-ec2-sg</code> only — SSM endpoints</td></tr>
+    </table>
+    <div class="sg-chain" style="margin-top:0.8rem;">
+      <span class="sg-box">Internet</span><span class="sg-arrow">→</span><span class="sg-port">:80</span><span class="sg-arrow">→</span>
+      <span class="sg-box">ALB</span><span class="sg-arrow">→</span><span class="sg-port">:8000</span><span class="sg-arrow">→</span>
+      <span class="sg-box">EC2</span><span class="sg-arrow">→</span><span class="sg-port">:443</span><span class="sg-arrow">→</span>
+      <span class="sg-box">Endpoints</span><span class="sg-arrow">→</span><span class="sg-box">SSM</span>
+    </div>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Created three security groups: <code>photoviewer-alb-sg</code> (HTTP :80 from internet, outbound :8000 to EC2), <code>photoviewer-ec2-sg</code> (inbound :8000 from ALB only, no port 22), and <code>photoviewer-endpoint-sg</code> (HTTPS :443 from EC2 only). Groups reference each other by SG ID, not IP.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-nacl')">
+    <div class="ac-left"><span class="ac-icon">🚧</span><span class="ac-name">Network ACLs</span><span class="ac-sub">Stateless subnet-level firewall · default allows all · security groups do the real work here</span></div>
+    <span class="ac-chevron" id="ac-nacl-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-nacl">
+    <p>Network ACLs (NACLs) are stateless packet filters that apply at the subnet boundary — before traffic even reaches a resource's security group. Unlike security groups, NACLs are stateless: you must explicitly allow both inbound <em>and</em> the return traffic outbound.</p>
+    <p>In Week 4 we use the <strong>default NACL</strong> which allows all inbound and outbound traffic. This is intentional — our security groups handle access control with more precision (by SG ID, not by IP). Adding custom NACL rules on top would add complexity without adding meaningful security for our architecture.</p>
+    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet (e.g. blocking a country's IP range before it hits the ALB). Security groups cannot block by IP range at scale — NACLs can. This is a Week 9 topic when we add WAF and geo-restriction.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">We left NACLs at the default (allow all inbound and outbound) for all four subnets. This was deliberate — adding custom NACL rules requires allowing return traffic explicitly for every rule (because NACLs are stateless), which adds complexity without meaningful additional security when security groups are already tightly chained by SG ID. All access control in Week 4 is handled by the three security groups.</p>
+    </div>
+    <table style="font-size:0.88rem; margin-top:0.5rem;">
+      <tr><th></th><th>Security group</th><th>NACL</th></tr>
+      <tr><td>Level</td><td>Instance (ENI)</td><td>Subnet</td></tr>
+      <tr><td>Stateful?</td><td>Yes — return traffic allowed automatically</td><td>No — must allow both directions explicitly</td></tr>
+      <tr><td>Rule logic</td><td>All rules evaluated, most permissive wins</td><td>Rules evaluated in order by number, first match wins</td></tr>
+      <tr><td>We use</td><td>Yes — three SGs</td><td>Default only (allow all)</td></tr>
+    </table>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-iam')">
+    <div class="ac-left"><span class="ac-icon">🪪</span><span class="ac-name">IAM instance role</span><span class="ac-sub">photoviewer-ec2-role · 3 policies · no access keys on disk</span></div>
+    <span class="ac-chevron" id="ac-iam-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-iam">
+    <p>Instead of storing access keys on the instance (which is insecure — keys can be stolen from disk or leaked in logs), we attach an IAM role. EC2 retrieves temporary credentials automatically from the instance metadata service. The credentials rotate automatically and expire — even if leaked they have a short window.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Policy</th><th>What it allows</th></tr>
+      <tr><td><code>AmazonSSMManagedInstanceCore</code></td><td>SSM Session Manager — remote access without SSH</td></tr>
+      <tr><td><code>photoviewer-dynamodb-read</code></td><td><code>dynamodb:Scan</code> on <code>photoviewer-photos</code> table only — no other tables, no writes</td></tr>
+      <tr><td><code>photoviewer-s3-app-read</code></td><td><code>s3:GetObject</code> on <code>photoviewer-[account-id]/app/*</code> only — just enough to download <code>app.py</code> at boot</td></tr>
+    </table>
+    <p>This is least privilege — each permission is scoped to the exact resource and action needed. If EC2 is compromised, the attacker can only scan one DynamoDB table and read one S3 prefix. Nothing else.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Created <code>photoviewer-ec2-role</code> in IAM with EC2 as trusted entity. Attached <code>AmazonSSMManagedInstanceCore</code> for SSM, plus custom policies scoping DynamoDB to <code>Scan</code> on <code>photoviewer-photos</code> only and S3 to <code>GetObject</code> on the app code prefix only. Attached the role to the EC2 instance at launch.</p>
+    </div>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-rtb')">
+    <div class="ac-left"><span class="ac-icon">🗺</span><span class="ac-name">Route tables</span><span class="ac-sub">Public routes to IGW · private routes to Gateway endpoints · no 0.0.0.0/0 in private</span></div>
+    <span class="ac-chevron" id="ac-rtb-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-rtb">
+    <p>Route tables control where traffic goes. Each subnet is associated with one route table. The critical difference between our public and private subnets is a single route table entry.</p>
+    <table style="font-size:0.88rem; margin:0.5rem 0;">
+      <tr><th>Route table</th><th>Destination</th><th>Target</th><th>Meaning</th></tr>
+      <tr><td>public</td><td>10.0.0.0/16</td><td>local</td><td>VPC-internal traffic stays local</td></tr>
+      <tr><td>public</td><td>0.0.0.0/0</td><td>IGW</td><td>Everything else goes to the internet</td></tr>
+      <tr><td>private</td><td>10.0.0.0/16</td><td>local</td><td>VPC-internal traffic stays local</td></tr>
+      <tr><td>private</td><td>pl-XXXXX (DynamoDB)</td><td>Gateway endpoint</td><td>DynamoDB traffic goes through private endpoint</td></tr>
+      <tr><td>private</td><td>pl-XXXXX (S3)</td><td>Gateway endpoint</td><td>S3 traffic goes through private endpoint</td></tr>
+    </table>
+    <p>The private route table has <strong>no <code>0.0.0.0/0</code> entry</strong> at runtime (the NAT Gateway route is deleted after bootstrap). This means there is literally no network path from the private subnet to the internet — not a firewall rule, an absent route. A misconfigured security group cannot override this.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">The VPC wizard created route tables automatically. After deleting the NAT Gateway, the <code>0.0.0.0/0 → NAT</code> route was removed from the private route table. The only non-local routes remaining in the private table are the two gateway endpoint entries for S3 and DynamoDB.</p>
+    </div>
+  </div>
+
+</div><!-- end security controls accordion -->
 
 <h2>6. Problems with this solution</h2>
 
@@ -865,7 +901,7 @@
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v2">
-    <p><strong>The vulnerability:</strong> The user data script runs <code>pip3 install flask boto3</code> pulling whatever is currently published on PyPI. If a malicious version of <code>boto3</code> was published, every new EC2 instance would install it. The malware runs as root, inherits the instance role, and can exfiltrate data.</p>
+    <p><strong>The vulnerability:</strong> The user data script runs <code>pip3 install boto3</code> pulling whatever is currently published on PyPI. If a malicious version of <code>boto3</code> was published, every new EC2 instance would install it. The malware runs as root, inherits the instance role, and can exfiltrate data.</p>
     <p><strong>Real example:</strong> In 2018 the npm package <code>event-stream</code> was taken over by a malicious actor who inserted a backdoor targeting cryptocurrency wallets — downloaded millions of times before discovery. Package managers are a high-value attack surface.</p>
     <p><strong>The fix:</strong> We already implemented least privilege — the role only allows <code>dynamodb:Scan</code> on one table and <code>s3:GetObject</code> on one prefix, so blast radius is contained. Additionally: pin package versions (<code>pip3 install boto3==1.34.0</code>), use a private package mirror (AWS CodeArtifact) so you control what's installable.</p>
   </div>
@@ -925,17 +961,17 @@ const tierData = {
   alb: {
     title: '⚖️ Application Load Balancer',
     color: '#1976D2',
-    text: 'Sits in the public subnet and forwards <code>/photos</code> API requests to EC2 on port 8000. Performs health checks every 30 seconds by calling <code>/health</code> on Flask. If health checks fail, the ALB stops routing to that instance. The ALB is the only reason EC2 can be in a private subnet — CloudFront can reach the ALB\'s public DNS, and the ALB reaches EC2 via private IP.'
+    text: 'Sits in the public subnet and forwards <code>/photos</code> API requests to EC2 on port 8000. Performs health checks every 30 seconds by calling <code>/health</code> on the app server. If health checks fail, the ALB stops routing to that instance. The ALB is the only reason EC2 can be in a private subnet — CloudFront can reach the ALB\'s public DNS, and the ALB reaches EC2 via private IP.'
   },
   ec2: {
     title: '🖥 App Server (EC2)',
     color: '#1976D2',
-    text: 'The application server runs <code>app.py</code> on EC2, listening on port 8000. It handles two endpoints: <code>GET /health</code> (returns 200 for ALB health checks) and <code>GET /photos</code> (queries DynamoDB and returns a JSON array of public photos). The app server is built using Flask, a lightweight Python web framework. It has no public IP — only reachable from the ALB via private IP inside the VPC. Managed by systemd — starts automatically on boot and restarts if it crashes.'
+    text: 'The application server runs <code>app.py</code> on EC2, listening on port 8000. It handles two endpoints: <code>GET /health</code> (returns 200 for ALB health checks) and <code>GET /photos</code> (queries DynamoDB and returns a JSON array of public photos). The app server is a lightweight Python application. It has no public IP — only reachable from the ALB via private IP inside the VPC. Managed by systemd — starts automatically on boot and restarts if it crashes.'
   },
   dynamo: {
     title: '🗄 DynamoDB',
     color: '#E65100',
-    text: 'Stores photo metadata in the <code>photoviewer-photos</code> table. Each item has: <code>photo_id</code> (partition key), <code>s3_key</code> (path to photo in S3), <code>is_public</code> (true/false), <code>owner</code> (username), <code>uploaded_at</code> (timestamp). Flask uses <code>dynamodb:Scan</code> with a filter for <code>is_public = true</code>. EC2 reaches DynamoDB via a free Gateway endpoint — no internet needed.'
+    text: 'Stores photo metadata in the <code>photoviewer-photos</code> table. Each item has: <code>photo_id</code> (partition key), <code>s3_key</code> (path to photo in S3), <code>is_public</code> (true/false), <code>owner</code> (username), <code>uploaded_at</code> (timestamp). The app uses <code>dynamodb:Scan</code> with a filter for <code>is_public = true</code>. EC2 reaches DynamoDB via a free Gateway endpoint — no internet needed.'
   },
   ssm: {
     title: '🔐 SSM Session Manager',
@@ -964,7 +1000,7 @@ const vpcData = {
   nat: {
     title: '🔀 NAT Gateway — temporary',
     color: '#F57C00',
-    text: 'Used only during EC2 bootstrap to give the private subnet outbound internet access. The user data script needs to run <code>pip3 install flask boto3</code> which downloads from PyPI — a non-AWS internet service. After bootstrap completes, the NAT Gateway is <b>deleted</b> — EC2 has zero internet access at runtime. Costs ~$32/month so we don\'t leave it running. The dashed border in the diagram indicates it\'s temporary.'
+    text: 'Used only during EC2 bootstrap to give the private subnet outbound internet access. The user data script needs to run <code>pip3 install boto3</code> which downloads from PyPI — a non-AWS internet service. After bootstrap completes, the NAT Gateway is <b>deleted</b> — EC2 has zero internet access at runtime. Costs ~$32/month so we don\'t leave it running. The dashed border in the diagram indicates it\'s temporary.'
   },
   'vpc-ec2': {
     title: '🖥 App Server (EC2) — private subnet',
