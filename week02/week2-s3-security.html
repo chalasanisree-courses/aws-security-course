@@ -401,7 +401,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
-<h2>5. Key Concepts in solution</h2>
+<h2>5. Key Concepts in This Solution</h2>
 
 <p class="hint">Click any row to expand</p>
 
@@ -420,15 +420,23 @@
       <tr><td><strong>Object</strong></td><td>Discrete objects retrieved via direct API call — no OS file system</td><td>S3</td><td>Photos, video, backups, static web files</td></tr>
     </table>
     <p style="margin-top:0.6rem;">The application talks directly to S3 via API. S3 returns the object to whoever requested it — no file system in between.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Week 2 uses S3 as a web server for static objects — HTML, CSS, JavaScript, and photos. All five file types are object storage use cases: write once, read many, no server-side logic needed.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-bucket')">
-    <div class="ac-left"><span class="ac-icon">🪣</span><span class="ac-name">S3 bucket</span><span class="ac-sub">photoviewer-9876543210 · us-east-1 · globally unique name</span></div>
+    <div class="ac-left"><span class="ac-icon">🪣</span><span class="ac-name">S3 bucket</span><span class="ac-sub">photoviewer-[account-id] · us-east-1 · globally unique name</span></div>
     <span class="ac-chevron" id="ac-bucket-chev">›</span>
   </div>
   <div class="ac-body" id="ac-bucket">
     <p>A bucket is a container for objects. Key properties: bucket names are <strong>globally unique</strong> across all AWS accounts (that's why ours includes the account ID); each bucket lives in a specific region; S3 automatically replicates across multiple AZs; S3 exists <strong>outside your VPC</strong>.</p>
     <p>Objects are accessed via URL: <code>https://bucket-name.s3.us-east-1.amazonaws.com/path/to/object.jpg</code></p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">Our bucket is named <code>photoviewer-[account-id]</code> — the account ID suffix ensures global uniqueness. It lives in <code>us-east-1</code>. All photos, HTML, CSS, and JavaScript for the Photo Viewer live in this single bucket.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-statichosting')">
@@ -440,6 +448,10 @@
     <p><strong>What it does:</strong> Serves <code>index.html</code> on root requests, returns matching files for any path, returns a 404 error page when a file isn't found.</p>
     <p><strong>What it does NOT do:</strong> No server-side code (no PHP, Python, Node.js). No SSL/TLS — HTTP only. No sessions, cookies, or database connections.</p>
     <p><strong>Mental model:</strong> S3 is a smart file server. All logic lives in the browser JavaScript. S3 just delivers files when asked.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">We enabled static website hosting on <code>photoviewer-[account-id]</code>, set <code>index.html</code> as the root document, and accessed the Photo Viewer via the S3 website endpoint over HTTP. The browser downloads <code>app.js</code>, which fetches <code>photos.json</code> and loops through the photo list locally — no server involved.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-access')">
@@ -479,7 +491,11 @@
   <div class="ac-body" id="ac-cloudtrail">
     <p>Even with a public bucket, access isn't invisible. CloudTrail can log S3 data events including anonymous <code>GetObject</code> and <code>ListBucket</code> calls — the <code>userIdentity</code> field shows <strong>Anonymous</strong>, which is a signal worth alerting on.</p>
     <p><strong>Important:</strong> S3 data events are not logged by default — only management events (creating buckets, changing policies) are. Without explicit data event logging enabled, file-level access leaves no trace.</p>
-    <p>Try it: <code>aws s3 ls s3://photoviewer-9876543210 --no-sign-request</code> lists every file in the bucket. Then <code>aws s3 cp s3://photoviewer-9876543210/confidential.txt .</code> downloads it — no credentials needed. This is what "public bucket" means in practice.</p>
+    <p>Try it: <code>aws s3 ls s3://photoviewer-[account-id] --no-sign-request</code> lists every file in the bucket. Then <code>aws s3 cp s3://photoviewer-[account-id]/confidential.txt .</code> downloads it — no credentials needed. This is what "public bucket" means in practice.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">In the demo we ran both CLI commands above to show that anonymous access works on the public bucket. CloudTrail logged the anonymous <code>GetObject</code> — the <code>userIdentity</code> field showed <code>Anonymous</code>. S3 data event logging was confirmed enabled so access attempts are visible even from unauthenticated users.</p>
+    </div>
   </div>
 
 </div><!-- end accordion -->

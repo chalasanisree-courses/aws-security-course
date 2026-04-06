@@ -627,6 +627,10 @@
   }}
 }</code></pre>
     <p><strong>What OAC does not fix:</strong> OAC controls <em>who</em> can talk to S3. A request for <code>/confidential.txt</code> through CloudFront would still be served unless blocked by a CloudFront Function.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
+      <p style="margin:0;font-size:13px;line-height:1.6;">After creating the CloudFront distribution, we copied the OAC-generated bucket policy into S3 — replacing the old <code>Principal: *</code> policy. Block Public Access was turned back on. Direct S3 access then returned 403 for all requests, confirming only CloudFront could reach the bucket.</p>
+    </div>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-function')">
