@@ -870,43 +870,80 @@ h1 {
 
 <h2>6. Problems with this solution</h2>
 
-<p class="hint">Click each vulnerability to see the attack scenario and fix</p>
+<p class="hint">Click each problem to see the impact and fix. 🔶 marks deliberate lab simplifications — known tradeoffs, not oversights.</p>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v1')">
     <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">ALB is internet-facing — CloudFront bypassable</div>
+    <div class="vuln-title">No WAF on CloudFront — /photos vulnerable to app-layer attacks</div>
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v1">
-    <p><strong>The vulnerability:</strong> The ALB has a public DNS name (<code>photoviewer-alb-XXXXXX.us-east-1.elb.amazonaws.com</code>). Anyone who discovers this name can call the <code>/photos</code> API directly, bypassing CloudFront — and bypassing any WAF rules, geo-restrictions, or rate limiting at the CloudFront layer.</p>
-    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin (e.g. <code>X-Origin-Secret: abc123</code>). Configure an ALB listener rule to return 403 for any request missing that header. This is the standard production pattern — AWS has no OAC equivalent for ALB origins.</p>
+    <p><strong>The vulnerability:</strong> CloudFront has no Web Application Firewall attached. The <code>/photos</code> endpoint is exposed to application-layer attacks — request floods, SQL injection attempts, bot traffic — with no inspection or throttling. Shield Standard protects against volumetric L3/L4 attacks automatically, but it cannot distinguish a flood of valid HTTP requests from real traffic. Any IP can make unlimited requests to <code>/photos</code>.</p>
+    <p><strong>The fix:</strong> Attach an AWS WAF Web ACL to the CloudFront distribution with a rate-based rule on the <code>/photos</code> path. This caps requests per IP per minute and can be extended with managed rule groups for SQL injection, XSS, and known bot signatures.</p>
   </div>
 </div>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v2')">
     <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">Supply chain risk — pip installs from the public internet</div>
+    <div class="vuln-title">ALB is internet-facing — directly reachable, bypassing CloudFront</div>
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v2">
-    <p><strong>The vulnerability:</strong> The user data script runs <code>pip3 install boto3</code> pulling whatever is currently published on PyPI. If a malicious version of <code>boto3</code> was published, every new EC2 instance would install it. The malware runs as root, inherits the instance role, and can exfiltrate data.</p>
-    <p><strong>Real example:</strong> In 2018 the npm package <code>event-stream</code> was taken over by a malicious actor who inserted a backdoor targeting cryptocurrency wallets — downloaded millions of times before discovery. Package managers are a high-value attack surface.</p>
-    <p><strong>The fix:</strong> We already implemented least privilege — the role only allows <code>dynamodb:Scan</code> on one table and <code>s3:GetObject</code> on one prefix, so blast radius is contained. Additionally: pin package versions (<code>pip3 install boto3==1.34.0</code>), use a private package mirror (AWS CodeArtifact) so you control what's installable.</p>
+    <p><strong>The vulnerability:</strong> The ALB has a public DNS name (<code>photoviewer-alb-XXXXXX.us-east-1.elb.amazonaws.com</code>). Anyone who discovers this name can call <code>/photos</code> directly — bypassing CloudFront, bypassing WAF, bypassing any geo-restrictions or rate limiting at the edge. The ALB will also absorb a DDoS attack directly, with no CloudFront or Shield buffering in front of it.</p>
+    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin. Configure an ALB listener rule to return 403 for any request missing that header. This is the standard production pattern — AWS has no OAC equivalent for ALB origins. Replacing the ALB with API Gateway eliminates the problem entirely: API Gateway supports a resource policy restricting access to a specific CloudFront distribution.</p>
   </div>
 </div>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v3')">
     <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">No rate limiting on /photos — Layer 7 DDoS risk</div>
+    <div class="vuln-title">Supply chain risk — pip installs from the public internet</div>
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v3">
-    <p><strong>The vulnerability:</strong> The <code>/photos</code> endpoint has no throttling. A flood of valid HTTP requests would exhaust the app server (single-threaded) and consume DynamoDB read capacity. Static content is safe because CloudFront serves it from cache — but API responses bypass the cache and hit EC2 every time.</p>
-    <p><strong>L3/L4 vs L7 DDoS:</strong> Shield Standard protects against volumetric network-layer attacks automatically. But application-layer floods of valid HTTP requests look identical to real traffic at the network layer — Shield Standard cannot distinguish them. WAF rate limiting is the fix.</p>
-    <p><strong>The fix:</strong> AWS WAF rate-based rule capping requests per IP per minute on the <code>/photos</code> path. We add WAF in Week 9.</p>
+    <p><strong>The vulnerability:</strong> The user data script runs <code>pip3 install boto3</code> pulling whatever is currently published on PyPI. If a malicious version of <code>boto3</code> was published, every new EC2 instance would install it. The malware runs as root, inherits the instance role, and can exfiltrate data.</p>
+    <p><strong>Real example:</strong> In 2018 the npm package <code>event-stream</code> was taken over by a malicious actor who inserted a backdoor targeting cryptocurrency wallets — downloaded millions of times before discovery. Package managers are a high-value attack surface.</p>
+    <p><strong>The fix:</strong> We already implemented least privilege — the role only allows <code>dynamodb:Scan</code> on one table and <code>s3:GetObject</code> on one prefix, so blast radius is contained. Additionally: pin package versions (<code>pip3 install boto3==1.34.0</code>), use a private package mirror (AWS CodeArtifact) so you control what's installable. Replacing EC2 with Lambda eliminates the problem entirely — Lambda provides the Python runtime and boto3 with no installation step.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v4')">
+    <div class="vuln-dot dot-orange"></div>
+    <div class="vuln-title">EC2 requires ongoing maintenance — idle cost with no traffic</div>
+    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v4">
+    <p><strong>The problem:</strong> EC2 runs continuously whether or not anyone is using the app. A t3.micro plus ALB costs roughly $20–25/month even at zero traffic. Every running EC2 instance is also a maintenance obligation — OS patches, SSM agent updates, Amazon Linux version upgrades. In a course lab, students provision instances and rarely patch them, leaving known-vulnerable OS versions running indefinitely.</p>
+    <p><strong>The fix:</strong> Lambda runs only when a request arrives — idle cost is zero. AWS manages the runtime entirely, including patching. The maintenance obligation disappears.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v5')">
+    <div class="vuln-dot dot-orange"></div>
+    <div class="vuln-title">CloudFront → ALB hop is HTTP — MITM injection possible 🔶</div>
+    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v5">
+    <p><strong>The deliberate simplification:</strong> CloudFront terminates HTTPS from the browser — that hop is encrypted. But CloudFront forwards requests to the ALB over HTTP (port 80), not HTTPS. Traffic between CloudFront and the ALB travels in plaintext. An attacker with access to the network path could read or inject content into responses. We made this choice to avoid provisioning an ACM certificate for the ALB in the lab.</p>
+    <p><strong>Why it matters:</strong> In most architectures this traffic stays on AWS's internal backbone, so the practical risk is low. But it violates defense-in-depth — end-to-end encryption is the correct posture for production systems handling user data.</p>
+    <p><strong>The production fix:</strong> Add an HTTPS listener on the ALB with an ACM certificate and update the CloudFront origin protocol to HTTPS-only. Replacing the ALB with API Gateway eliminates this tradeoff — API Gateway only exposes an HTTPS endpoint. There is no HTTP option.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v6')">
+    <div class="vuln-dot dot-orange"></div>
+    <div class="vuln-title">Single EC2 instance in one AZ — no failover 🔶</div>
+    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v6">
+    <p><strong>The deliberate simplification:</strong> The entire <code>/photos</code> API runs on one EC2 instance in one Availability Zone. We made this choice to keep the lab focused on security concepts rather than infrastructure redundancy. The ALB is deployed across two AZs but has only one target to route to.</p>
+    <p><strong>What failure looks like:</strong> If the instance crashes, hits a memory limit, or reboots for OS patching, the API goes offline completely. Recovery requires a manual restart via SSM, then waiting for the ALB health check to pass (typically 30–90 seconds). During that window every <code>/photos</code> request returns a 502. Static content continues from CloudFront — only the dynamic API is affected.</p>
+    <p><strong>The production fix:</strong> An Auto Scaling Group with a minimum of 2 instances across 2 AZs eliminates the single point of failure. Replacing EC2 with Lambda resolves this differently — Lambda is inherently multi-AZ and scales automatically. There is no instance to crash.</p>
   </div>
 </div>
 

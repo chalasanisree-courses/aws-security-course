@@ -195,6 +195,7 @@
   .dot-functional { background: #185FA5; }
   .dot-performance { background: #3B6D11; }
   .dot-operability { background: #BA7517; }
+  .dot-reliability { background: #888780; }
 
   .legend {
     display: flex; flex-wrap: wrap; gap: 14px;
@@ -516,12 +517,15 @@
             <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Functionality</span>
             <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Performance</span>
             <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Operability</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#888780"></span>Reliability</span>
           </div>
           <ul class="issue-list">
             <li><span class="dot dot-security"></span><span class="text">ALB is internet-facing — its public DNS name is reachable directly, bypassing CloudFront and all edge security controls.</span></li>
             <li><span class="dot dot-security"></span><span class="text">Supply chain risk — the EC2 bootstrap script installs packages from the public internet. A compromised package would run as root, inherit the instance role, and could exfiltrate data.</span></li>
-            <li><span class="dot dot-security"></span><span class="text">No rate limiting on <code>/photos</code> — the API endpoint has no throttling. A flood of requests goes straight through CloudFront to the ALB and EC2, consuming resources with no protection.</span></li>
+            <li><span class="dot dot-security"></span><span class="text">No rate limiting on <code>/photos</code> — even legitimate traffic through CloudFront hits EC2 unthrottled. A flood of valid requests consumes resources with no protection.</span></li>
+            <li><span class="dot dot-security"></span><span class="text">CloudFront → ALB hop is HTTP — traffic between CloudFront and the ALB is unencrypted. Production requires an HTTPS listener on the ALB.</span></li>
             <li><span class="dot dot-operability"></span><span class="text">EC2 requires ongoing maintenance — OS patching, SSM agent updates, capacity management. Every hour the instance runs costs money even during idle periods.</span></li>
+            <li><span class="dot dot-reliability"></span><span class="text">Single EC2 instance in one AZ — no failover. If the instance crashes or reboots for patching, <code>/photos</code> goes offline. Production requires an Auto Scaling Group across multiple AZs.</span></li>
             <li><span class="dot dot-functional"></span><span class="text">No user accounts — the platform still cannot distinguish visitors, offer a free tier, or support premium features.</span></li>
           </ul>
         </div>
@@ -695,15 +699,19 @@
       }
     },
     '4': {
-      active: ['security','operability','functional'],
+      active: ['security','operability','functional','reliability'],
       issues: {
         security: { title:'Security issues in Week 4', bullets:[
           'ALB is internet-facing — its public DNS name is reachable directly, bypassing CloudFront and all edge controls.',
           'EC2 bootstrap script installs packages from the public internet — a compromised package could exfiltrate data.',
-          'No rate limiting on /photos — the API has no throttling against request floods.'
+          'No rate limiting on /photos — even traffic through CloudFront hits EC2 unthrottled. A flood of valid requests consumes resources with no protection.',
+          'CloudFront → ALB hop is HTTP — unencrypted in transit. Production requires HTTPS on the ALB listener.'
         ]},
         operability: { title:'Operability issues in Week 4', bullets:[
           'EC2 requires ongoing OS patching, SSM agent updates, and capacity management — and runs continuously, costing money even when idle.'
+        ]},
+        reliability: { title:'Reliability issues in Week 4', bullets:[
+          'Single EC2 instance in one AZ — no failover. Production requires an Auto Scaling Group across multiple AZs.'
         ]},
         functional: { title:'Functionality issues in Week 4', bullets:[
           'No user accounts — the platform cannot distinguish visitors, offer a free tier, or support premium features like upload or delete.'
