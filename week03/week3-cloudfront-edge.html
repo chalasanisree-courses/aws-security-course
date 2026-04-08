@@ -726,18 +726,9 @@
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>6. Problems with this solution</h2>
 
-<p>Week 3 fixes all three Week 2 vulnerabilities. But it introduces a new one — and leaves one issue unresolved that will matter more in future weeks.</p>
+<p>Week 3 resolves all three Week 2 problems. For a static site, this architecture has no significant remaining security gaps — CloudFront with OAC, HTTPS enforcement, response security headers, and a CF Function allowlist is a solid, well-layered setup.</p>
 
-<div class="vuln-card">
-  <div class="vuln-header" onclick="toggleVuln('v1')">
-    <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">Static photo list — no dynamic content yet</div>
-    <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
-  </div>
-  <div class="vuln-body" id="v1">
-    <p><strong>The limitation:</strong> Photos are still listed in a static <code>photos.json</code> file. Adding a new photo requires editing the JSON, re-uploading it, and creating a CloudFront cache invalidation. There is no way to add content at runtime. The app has no backend — everything is static. <strong>Fixed in Week 4</strong> by introducing EC2, DynamoDB, and a dynamic API endpoint.</p>
-  </div>
-</div>
+<p>The next limitation is not a security issue. It is a capability one: the photo list is static, and serving dynamic content requires a backend. Week 4 introduces EC2, ALB, and DynamoDB — and with a dynamic backend comes a new attack surface to secure.</p>
 
 
 
