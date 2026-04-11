@@ -109,9 +109,9 @@
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Confirm the old S3 website is now blocked</span></div>
-  <p>Try to access your old S3 website endpoint in the browser — it should now return <strong>403 Forbidden</strong> or be completely inaccessible.</p>
+  <p>Try to access your old S3 website endpoint in the browser — it should now return an error (typically an XML <code>NoSuchWebsiteConfiguration</code> message or an access denied response). Either is correct — the important thing is the site is no longer serving your content.</p>
   <p>The URL looks like: <code>http://photoviewer-[your-account-id].s3-website-us-east-1.amazonaws.com</code></p>
-  <div class="deliverable"><strong>Screenshot:</strong> Browser showing 403 or access denied on the old S3 website URL — make sure the URL is visible in the screenshot</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Browser showing an error on the old S3 website URL — make sure the URL is visible in the screenshot</div>
 </div>
 
 <h2>Part 2 — Create CloudFront distribution</h2>
@@ -139,9 +139,16 @@
     <li>Default root object: <code>index.html</code> — <strong>don't skip this</strong> or your CloudFront URL will return an error instead of the Photo Viewer</li>
     <li>WAF: leave disabled</li>
   </ul>
-  <p>Click <strong>Create distribution</strong> — wait for Status: <strong>Enabled</strong> (~2 minutes).</p>
+  <p>Click <strong>Create distribution.</strong></p>
+  <p>AWS will attempt to update your S3 bucket policy automatically. One of two things will happen:</p>
+  <ul>
+    <li><strong>If the policy was applied automatically:</strong> you will land on the distribution detail page. Go to your S3 bucket → <strong>Permissions tab → Bucket policy</strong> and confirm a CloudFront OAC policy is already there.</li>
+    <li><strong>If you see a yellow banner</strong> saying the bucket policy needs to be updated: click <strong>Copy policy</strong> in the banner, then go to your S3 bucket → <strong>Permissions tab → Bucket policy → Edit</strong> → paste the copied policy → <strong>Save changes.</strong></li>
+  </ul>
+  <div class="note">Either way, confirm the OAC bucket policy exists in S3 before proceeding — if it is missing, every CloudFront request will return 403 and the rest of the lab will not work.</div>
+  <p>Wait for distribution Status: <strong>Enabled</strong> (~2 minutes).</p>
   <div class="deliverable"><strong>Screenshot:</strong> CloudFront distribution Details page showing Enabled status and your CloudFront domain name — URL must be visible</div>
-  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket Permissions tab showing the OAC bucket policy that CloudFront automatically created</div>
+  <div class="deliverable"><strong>Screenshot:</strong> S3 bucket Permissions tab showing the OAC bucket policy</div>
 </div>
 
 <h2>Part 3 — Verify basics</h2>
@@ -243,7 +250,7 @@
 <table class="rubric">
   <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
   <tr><td>S3 bucket locked down — Block Public Access ON, policy removed</td><td>10</td><td>Screenshot shows all four BPA settings enabled and empty bucket policy</td></tr>
-  <tr><td>Old S3 website returns 403</td><td>5</td><td>Screenshot shows 403 on the old S3 website URL</td></tr>
+  <tr><td>Old S3 website returns error</td><td>5</td><td>Screenshot shows an error (403, access denied, or NoSuchWebsiteConfiguration) on the old S3 website URL</td></tr>
   <tr><td>CloudFront distribution with OAC</td><td>10</td><td>Distribution Enabled, OAC bucket policy screenshot showing CloudFront-only access</td></tr>
   <tr><td>HTTPS enforced + HTTP redirect</td><td>10</td><td>Screenshots show padlock + HTTP redirecting to HTTPS</td></tr>
   <tr><td>Bucket enumeration blocked</td><td>5</td><td>CloudShell showing Access Denied on --no-sign-request</td></tr>
