@@ -332,92 +332,118 @@
 </table>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. Architecture</h2>
+<h2>3. Architecture — AWS service boundary</h2>
 
-<p>Click any component to learn what it does and why it's designed this way.</p>
+<p>All services this week are fully managed — there is no VPC. The diagram shows the AWS global service boundary and contrasts it with the VPC infrastructure Week 4 required. Click any service to learn more.</p>
 <p class="hint">Click any component to explore</p>
 
 <div style="margin:1.5rem 0;">
-<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;margin:0 auto;border-radius:10px;background:#fff;border:1px solid #dee2e6;">
+<svg viewBox="0 0 860 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;margin:0 auto;border-radius:10px;background:#fff;border:1px solid #dee2e6;">
   <defs>
-    <marker id="arr-grn" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2E7D32"/></marker>
-    <marker id="arr-pur" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6A1B9A"/></marker>
-    <marker id="arr-ora" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#E65100"/></marker>
-    <marker id="arr-grn-sm" markerWidth="6" markerHeight="6" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L6,2.5 z" fill="#2E7D32"/></marker>
+    <marker id="arr2-grn" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2E7D32"/></marker>
+    <marker id="arr2-pur" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6A1B9A"/></marker>
+    <marker id="arr2-ora" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#E65100"/></marker>
+    <marker id="arr2-grn-sm" markerWidth="6" markerHeight="6" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L6,2.5 z" fill="#2E7D32"/></marker>
   </defs>
 
-  <!-- Browser -->
-  <g onclick="selectArchNode('browser')" style="cursor:pointer;">
-    <rect x="10" y="60" width="90" height="100" rx="8" fill="#E3F2FD" stroke="#1976D2" stroke-width="2"/>
-    <text x="55" y="101" text-anchor="middle" font-size="26" font-family="system-ui">&#x1F4BB;</text>
-    <text x="55" y="145" text-anchor="middle" font-size="11" font-weight="600" fill="#555" font-family="system-ui">Browser</text>
-  </g>
+  <!-- AWS Global Network boundary -->
+  <rect x="108" y="8" width="742" height="385" rx="12" fill="#F8F8F8" stroke="#999999" stroke-width="2"/>
+  <text x="480" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#888888" font-family="system-ui" letter-spacing="0.08em">AWS GLOBAL NETWORK</text>
 
-  <line x1="100" y1="105" x2="138" y2="105" stroke="#2E7D32" stroke-width="2" marker-end="url(#arr-grn)"/>
-  <text x="119" y="97" text-anchor="middle" font-size="9" fill="#2E7D32" font-family="system-ui" font-weight="600">HTTPS</text>
+  <!-- Browser (outside AWS) -->
+  <g onclick="selectArchNode('browser')" style="cursor:pointer;">
+    <rect x="8" y="80" width="88" height="90" rx="8" fill="#E3F2FD" stroke="#1976D2" stroke-width="2"/>
+    <text x="52" y="116" text-anchor="middle" font-size="24" font-family="system-ui">&#x1F4BB;</text>
+    <text x="52" y="160" text-anchor="middle" font-size="10" font-weight="600" fill="#555" font-family="system-ui">Browser</text>
+  </g>
+  <text x="52" y="178" text-anchor="middle" font-size="8" fill="#999" font-family="system-ui">(outside AWS)</text>
+
+  <!-- Browser → WAF arrow -->
+  <line x1="96" y1="120" x2="126" y2="120" stroke="#2E7D32" stroke-width="2" marker-end="url(#arr2-grn)"/>
+  <text x="111" y="112" text-anchor="middle" font-size="8" fill="#2E7D32" font-family="system-ui" font-weight="600">HTTPS</text>
 
   <!-- WAF -->
   <g onclick="selectArchNode('waf')" style="cursor:pointer;">
-    <rect x="140" y="60" width="90" height="100" rx="8" fill="#FFEBEE" stroke="#C62828" stroke-width="2"/>
-    <text x="185" y="101" text-anchor="middle" font-size="26" font-family="system-ui">&#x1F6E1;&#xFE0F;</text>
-    <text x="185" y="130" text-anchor="middle" font-size="11" font-weight="600" fill="#B71C1C" font-family="system-ui">WAF</text>
-    <text x="185" y="146" text-anchor="middle" font-size="9" fill="#C62828" font-family="system-ui">Rate rules</text>
+    <rect x="128" y="80" width="88" height="90" rx="8" fill="#FFEBEE" stroke="#C62828" stroke-width="2"/>
+    <text x="172" y="116" text-anchor="middle" font-size="24" font-family="system-ui">&#x1F6E1;&#xFE0F;</text>
+    <text x="172" y="143" text-anchor="middle" font-size="10" font-weight="600" fill="#B71C1C" font-family="system-ui">WAF</text>
+    <text x="172" y="158" text-anchor="middle" font-size="8" fill="#C62828" font-family="system-ui">Rate rules</text>
   </g>
 
-  <line x1="230" y1="105" x2="268" y2="105" stroke="#2E7D32" stroke-width="2" marker-end="url(#arr-grn)"/>
+  <line x1="216" y1="120" x2="244" y2="120" stroke="#2E7D32" stroke-width="2" marker-end="url(#arr2-grn)"/>
 
   <!-- CloudFront -->
   <g onclick="selectArchNode('cf')" style="cursor:pointer;">
-    <rect x="270" y="40" width="110" height="140" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
-    <text x="325" y="82" text-anchor="middle" font-size="26" font-family="system-ui">&#x2601;&#xFE0F;</text>
-    <text x="325" y="107" text-anchor="middle" font-size="11" font-weight="600" fill="#1B5E20" font-family="system-ui">CloudFront</text>
-    <text x="325" y="122" text-anchor="middle" font-size="9" fill="#388E3C" font-family="system-ui">&#x26A1; CF Function</text>
-    <text x="325" y="136" text-anchor="middle" font-size="9" fill="#388E3C" font-family="system-ui">&#x1F4BE; Cache</text>
-    <text x="325" y="150" text-anchor="middle" font-size="9" fill="#388E3C" font-family="system-ui">&#x1F510; Shield Std</text>
+    <rect x="246" y="55" width="100" height="155" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
+    <text x="296" y="92" text-anchor="middle" font-size="24" font-family="system-ui">&#x2601;&#xFE0F;</text>
+    <text x="296" y="115" text-anchor="middle" font-size="10" font-weight="600" fill="#1B5E20" font-family="system-ui">CloudFront</text>
+    <text x="296" y="130" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">&#x26A1; CF Function</text>
+    <text x="296" y="143" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">&#x1F4BE; Cache</text>
+    <text x="296" y="156" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">&#x1F510; Shield Std</text>
+    <text x="296" y="169" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">Two origins</text>
+    <text x="296" y="182" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">&#x2193; S3  &#x2192; API GW</text>
   </g>
 
   <!-- CF down to S3 -->
-  <line x1="325" y1="180" x2="325" y2="218" stroke="#2E7D32" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-grn)"/>
-  <text x="345" y="203" font-size="8" fill="#2E7D32" font-family="system-ui">OAC / static</text>
+  <line x1="296" y1="210" x2="296" y2="248" stroke="#2E7D32" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr2-grn)"/>
+  <text x="316" y="233" font-size="8" fill="#2E7D32" font-family="system-ui">OAC / static</text>
 
   <!-- S3 below CloudFront -->
   <g onclick="selectArchNode('s3')" style="cursor:pointer;">
-    <rect x="270" y="220" width="110" height="65" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
-    <text x="325" y="248" text-anchor="middle" font-size="20" font-family="system-ui">&#x1FAA3;</text>
-    <text x="325" y="275" text-anchor="middle" font-size="11" font-weight="600" fill="#1B5E20" font-family="system-ui">S3 (OAC)</text>
+    <rect x="246" y="250" width="100" height="70" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
+    <text x="296" y="280" text-anchor="middle" font-size="22" font-family="system-ui">&#x1FAA3;</text>
+    <text x="296" y="308" text-anchor="middle" font-size="10" font-weight="600" fill="#1B5E20" font-family="system-ui">S3 (OAC)</text>
   </g>
 
   <!-- CF → API GW -->
-  <line x1="380" y1="90" x2="428" y2="90" stroke="#6A1B9A" stroke-width="2" marker-end="url(#arr-pur)"/>
-  <text x="404" y="81" text-anchor="middle" font-size="9" fill="#6A1B9A" font-family="system-ui" font-weight="600">HTTPS /photos</text>
+  <line x1="346" y1="105" x2="384" y2="105" stroke="#6A1B9A" stroke-width="2" marker-end="url(#arr2-pur)"/>
+  <text x="365" y="96" text-anchor="middle" font-size="8" fill="#6A1B9A" font-family="system-ui" font-weight="600">HTTPS</text>
 
   <!-- API Gateway -->
   <g onclick="selectArchNode('apigw')" style="cursor:pointer;">
-    <rect x="430" y="57" width="110" height="85" rx="8" fill="#EDE7F6" stroke="#6A1B9A" stroke-width="2"/>
-    <text x="485" y="92" text-anchor="middle" font-size="22" font-family="system-ui">&#x1F50C;</text>
-    <text x="485" y="116" text-anchor="middle" font-size="11" font-weight="600" fill="#4A148C" font-family="system-ui">API Gateway</text>
-    <text x="485" y="131" text-anchor="middle" font-size="9" fill="#6A1B9A" font-family="system-ui">Resource policy</text>
+    <rect x="386" y="68" width="112" height="90" rx="8" fill="#EDE7F6" stroke="#6A1B9A" stroke-width="2"/>
+    <text x="442" y="104" text-anchor="middle" font-size="20" font-family="system-ui">&#x1F50C;</text>
+    <text x="442" y="128" text-anchor="middle" font-size="10" font-weight="600" fill="#4A148C" font-family="system-ui">API Gateway</text>
+    <text x="442" y="143" text-anchor="middle" font-size="8" fill="#6A1B9A" font-family="system-ui">Resource policy</text>
   </g>
 
-  <line x1="540" y1="99" x2="578" y2="99" stroke="#E65100" stroke-width="2" marker-end="url(#arr-ora)"/>
+  <line x1="498" y1="108" x2="526" y2="108" stroke="#E65100" stroke-width="2" marker-end="url(#arr2-ora)"/>
 
   <!-- Lambda -->
   <g onclick="selectArchNode('lambda')" style="cursor:pointer;">
-    <rect x="580" y="57" width="105" height="85" rx="8" fill="#FFF3E0" stroke="#E65100" stroke-width="2"/>
-    <text x="632" y="92" text-anchor="middle" font-size="22" font-family="system-ui">&#x03BB;</text>
-    <text x="632" y="116" text-anchor="middle" font-size="11" font-weight="600" fill="#BF360C" font-family="system-ui">Lambda</text>
-    <text x="632" y="131" text-anchor="middle" font-size="9" fill="#E65100" font-family="system-ui">Execution role</text>
+    <rect x="528" y="68" width="112" height="90" rx="8" fill="#FFF3E0" stroke="#E65100" stroke-width="2"/>
+    <text x="584" y="104" text-anchor="middle" font-size="20" font-family="system-ui">&#x03BB;</text>
+    <text x="584" y="128" text-anchor="middle" font-size="10" font-weight="600" fill="#BF360C" font-family="system-ui">Lambda</text>
+    <text x="584" y="143" text-anchor="middle" font-size="8" fill="#E65100" font-family="system-ui">Execution role</text>
   </g>
 
-  <line x1="685" y1="99" x2="713" y2="99" stroke="#E65100" stroke-width="2" marker-end="url(#arr-ora)"/>
+  <line x1="640" y1="108" x2="668" y2="108" stroke="#E65100" stroke-width="2" marker-end="url(#arr2-ora)"/>
 
   <!-- DynamoDB -->
   <g onclick="selectArchNode('dynamo')" style="cursor:pointer;">
-    <rect x="715" y="57" width="95" height="85" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
-    <text x="762" y="92" text-anchor="middle" font-size="22" font-family="system-ui">&#x1F5C4;&#xFE0F;</text>
-    <text x="762" y="116" text-anchor="middle" font-size="11" font-weight="600" fill="#1B5E20" font-family="system-ui">DynamoDB</text>
-    <text x="762" y="131" text-anchor="middle" font-size="9" fill="#388E3C" font-family="system-ui">Private network</text>
+    <rect x="670" y="68" width="110" height="90" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
+    <text x="725" y="104" text-anchor="middle" font-size="20" font-family="system-ui">&#x1F5C4;&#xFE0F;</text>
+    <text x="725" y="128" text-anchor="middle" font-size="10" font-weight="600" fill="#1B5E20" font-family="system-ui">DynamoDB</text>
+    <text x="725" y="143" text-anchor="middle" font-size="8" fill="#388E3C" font-family="system-ui">Private network</text>
   </g>
+
+  <!-- Ghosted VPC box -->
+  <rect x="370" y="230" width="468" height="148" rx="10" fill="#FFFFFF" stroke="#BBBBBB" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="604" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#AAAAAA" font-family="system-ui" letter-spacing="0.06em">VPC — NOT USED THIS WEEK</text>
+  <text x="604" y="278" text-anchor="middle" font-size="9" fill="#BBBBBB" font-family="system-ui">Week 4 required: ALB &#xB7; EC2 &#xB7; NAT Gateway &#xB7; Subnets &#xB7; Security Groups &#xB7; Route Tables</text>
+  <text x="604" y="295" text-anchor="middle" font-size="9" fill="#BBBBBB" font-family="system-ui">All services this week are fully managed &#x2014; AWS handles the network infrastructure</text>
+
+  <!-- Ghost component icons inside VPC box -->
+  <text x="430" y="338" text-anchor="middle" font-size="22" font-family="system-ui" opacity="0.2">&#x2696;&#xFE0F;</text>
+  <text x="430" y="358" text-anchor="middle" font-size="8" fill="#CCCCCC" font-family="system-ui">ALB</text>
+  <text x="510" y="338" text-anchor="middle" font-size="22" font-family="system-ui" opacity="0.2">&#x1F5A5;</text>
+  <text x="510" y="358" text-anchor="middle" font-size="8" fill="#CCCCCC" font-family="system-ui">EC2</text>
+  <text x="590" y="338" text-anchor="middle" font-size="22" font-family="system-ui" opacity="0.2">&#x1F500;</text>
+  <text x="590" y="358" text-anchor="middle" font-size="8" fill="#CCCCCC" font-family="system-ui">NAT GW</text>
+  <text x="680" y="338" text-anchor="middle" font-size="22" font-family="system-ui" opacity="0.2">&#x1F4C1;</text>
+  <text x="680" y="358" text-anchor="middle" font-size="8" fill="#CCCCCC" font-family="system-ui">Subnets</text>
+  <text x="760" y="338" text-anchor="middle" font-size="22" font-family="system-ui" opacity="0.2">&#x1F6E1;</text>
+  <text x="760" y="358" text-anchor="middle" font-size="8" fill="#CCCCCC" font-family="system-ui">Sec Groups</text>
 </svg>
 </div>
 
@@ -427,24 +453,25 @@
 
 <h3>Key architecture points</h3>
 
-<div style="display:flex; flex-direction:column; gap:0.7rem; margin:1rem 0 1.5rem;">
-  <div style="display:flex; gap:0.8rem; align-items:flex-start;">
-    <span style="background:#1F4E79; color:#fff; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; margin-top:2px;">No VPC</span>
-    <p style="margin:0; font-size:0.93rem; color:#333;">Lambda, API Gateway, WAF, CloudFront, S3, and DynamoDB are all fully managed services. There are no subnets to design, no security groups to configure, no route tables to manage. AWS handles the network infrastructure entirely.</p>
+<div style="display:flex; flex-direction:column; gap:0.8rem; margin:1rem 0 1.5rem;">
+  <div style="border-left:3px solid #2E7D32; padding:0.6rem 0.9rem; background:#f6fbf6; border-radius:0 6px 6px 0;">
+    <div style="font-weight:600; font-size:0.9rem; color:#1B5E20; margin-bottom:0.2rem;">No VPC</div>
+    <p style="margin:0; font-size:0.9rem; color:#333;">Lambda, API Gateway, WAF, CloudFront, S3, and DynamoDB are all fully managed services. There are no subnets to design, no security groups to configure, no route tables to manage. AWS handles the network infrastructure entirely.</p>
   </div>
-  <div style="display:flex; gap:0.8rem; align-items:flex-start;">
-    <span style="background:#1F4E79; color:#fff; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Two origins</span>
-    <p style="margin:0; font-size:0.93rem; color:#333;">CloudFront serves as the single entry point for all traffic. It routes <code>/photos</code> requests to API Gateway (CachingDisabled) and all other requests to S3 via OAC. The browser only ever talks to CloudFront.</p>
+  <div style="border-left:3px solid #2E7D32; padding:0.6rem 0.9rem; background:#f6fbf6; border-radius:0 6px 6px 0;">
+    <div style="font-weight:600; font-size:0.9rem; color:#1B5E20; margin-bottom:0.2rem;">Two origins</div>
+    <p style="margin:0; font-size:0.9rem; color:#333;">CloudFront serves as the single entry point for all traffic. It routes <code>/photos</code> requests to API Gateway (CachingDisabled) and all other requests to S3 via OAC. The browser only ever talks to CloudFront.</p>
   </div>
-  <div style="display:flex; gap:0.8rem; align-items:flex-start;">
-    <span style="background:#1F4E79; color:#fff; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; margin-top:2px;">HTTPS end-to-end</span>
-    <p style="margin:0; font-size:0.93rem; color:#333;">Every hop is encrypted. Browser → CloudFront → API Gateway — all HTTPS. Unlike Week 4 where the CloudFront → ALB hop was HTTP, API Gateway only exposes HTTPS endpoints. No certificate management required.</p>
+  <div style="border-left:3px solid #2E7D32; padding:0.6rem 0.9rem; background:#f6fbf6; border-radius:0 6px 6px 0;">
+    <div style="font-weight:600; font-size:0.9rem; color:#1B5E20; margin-bottom:0.2rem;">HTTPS end-to-end</div>
+    <p style="margin:0; font-size:0.9rem; color:#333;">Every hop is encrypted. Browser &#x2192; CloudFront &#x2192; API Gateway &#x2014; all HTTPS. Unlike Week 4 where the CloudFront &#x2192; ALB hop was HTTP, API Gateway only exposes HTTPS endpoints. No certificate management required.</p>
   </div>
-  <div style="display:flex; gap:0.8rem; align-items:flex-start;">
-    <span style="background:#1F4E79; color:#fff; font-size:0.75rem; font-weight:700; padding:3px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; margin-top:2px;">IAM enforcement</span>
-    <p style="margin:0; font-size:0.93rem; color:#333;">The API Gateway resource policy uses <code>aws:SourceArn</code> to restrict invocations to our specific CloudFront distribution. This is IAM-enforced — not header matching. DynamoDB is reached over AWS's private network, no internet path.</p>
+  <div style="border-left:3px solid #2E7D32; padding:0.6rem 0.9rem; background:#f6fbf6; border-radius:0 6px 6px 0;">
+    <div style="font-weight:600; font-size:0.9rem; color:#1B5E20; margin-bottom:0.2rem;">IAM enforcement</div>
+    <p style="margin:0; font-size:0.9rem; color:#333;">The API Gateway resource policy uses <code>aws:SourceArn</code> to restrict invocations to our specific CloudFront distribution. IAM-enforced, not header matching. DynamoDB is reached over AWS&#x27;s private network &#x2014; no internet path.</p>
   </div>
 </div>
+
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>4. How it works — request walkthrough</h2>
@@ -504,95 +531,132 @@
 </div>
 
 <div class="callout info">
-  <p><strong>Verify in DevTools:</strong> Open the Network tab and click the <code>/photos</code> request. Response headers should show <code>Via: CloudFront</code> and no <code>Server: Werkzeug</code> header — that header is gone because there is no Flask server. The response comes from Lambda via API Gateway.</p>
+  <p><strong>Verify in DevTools:</strong> Open your Photo Viewer site in the browser. Press <strong>F12</strong> (or right-click → Inspect) to open DevTools, then go to the <strong>Network</strong> tab. Reload the page and click the <code>/photos</code> request. In the Response Headers you should see <code>Via: CloudFront</code> — confirming the request went through CloudFront — and no <code>Server: Werkzeug</code> header. That header is gone because there is no longer a Flask server. The response came from Lambda via API Gateway.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>5. Key Concepts in This Solution</h2>
 
+<p class="hint">Click any row to expand</p>
+
 <div class="accordion">
 
   <div class="ac-item" onclick="toggleAc('ac-lambda')">
-    <div class="ac-left"><span class="ac-icon">λ</span><span class="ac-name">Lambda execution model</span><span class="ac-sub">Invocation · cold start · timeout · concurrency</span></div>
+    <div class="ac-left"><span class="ac-icon">λ</span><span class="ac-name">AWS Lambda</span><span class="ac-sub">Serverless compute · invocation model · cold start · concurrency</span></div>
     <span class="ac-chevron" id="ac-lambda-chev">›</span>
   </div>
   <div class="ac-body" id="ac-lambda">
-    <p>Lambda functions run in response to events — in our case, an API Gateway invocation. There is no persistent process. When a request arrives, AWS either reuses a warm execution environment or creates a new one (a <strong>cold start</strong>, typically 100–500ms for Python). After the function returns, the environment may be kept warm briefly for reuse.</p>
+    <p>Lambda is a serverless compute service — you provide a function, AWS provides everything else: servers, OS, runtime, scaling, patching, availability. You are billed only for the time your code actually runs — idle cost is zero. There is no persistent process: each invocation gets its own isolated execution environment, which is discarded after the function returns.</p>
+    <p><strong>Execution model:</strong> When a request arrives, AWS either reuses a warm environment or creates a new one — a <strong>cold start</strong> (typically 100–500ms for Python). After the function returns the environment is held briefly for possible reuse, then discarded.</p>
     <p><strong>Key parameters:</strong></p>
     <ul>
-      <li><strong>Timeout</strong> — maximum execution time (default 3 seconds, max 15 minutes). If the function doesn't return in time, Lambda terminates it and returns a 504.</li>
-      <li><strong>Memory</strong> — allocated RAM (128MB–10GB). CPU scales proportionally with memory.</li>
-      <li><strong>Concurrency</strong> — Lambda scales horizontally automatically. Each simultaneous request gets its own execution environment. Default account limit is 1,000 concurrent executions per region.</li>
+      <li><strong>Timeout</strong> — maximum execution time (default 3 seconds, max 15 minutes). Function exceeds timeout → Lambda terminates it and returns 504.</li>
+      <li><strong>Memory</strong> — allocated RAM (128MB–10GB). CPU allocation scales proportionally.</li>
+      <li><strong>Concurrency</strong> — each simultaneous request gets its own environment. Lambda scales horizontally automatically. Default account limit: 1,000 concurrent executions per region.</li>
     </ul>
-    <p><strong>Security implication:</strong> No persistent process means no persistent compromise. An attacker who exploits a function gets one invocation's worth of access — the execution environment is discarded after the call completes.</p>
+    <p><strong>In the demo:</strong> <code>lambda_function.py</code> handles <code>GET /photos</code> — scans DynamoDB, returns JSON. No Flask, no port to listen on, no server to manage.</p>
   </div>
 
+  <div class="ac-item" onclick="toggleAc('ac-apigw-comp')">
+    <div class="ac-left"><span class="ac-icon">🔌</span><span class="ac-name">Amazon API Gateway</span><span class="ac-sub">Managed API layer · HTTP API · HTTPS-only · built-in throttling</span></div>
+    <span class="ac-chevron" id="ac-apigw-comp-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-apigw-comp">
+    <p>API Gateway is a fully managed service that handles the HTTP layer for your backend — routing, throttling, authentication, access control — so your Lambda function only handles business logic. Unlike the ALB in Week 4, API Gateway is IAM-aware: you can attach resource policies, Cognito authorizers, and Lambda authorizers directly to the API.</p>
+    <p><strong>HTTP API vs REST API:</strong> API Gateway offers two types. REST API has more features (usage plans, API keys, per-method throttling). HTTP API is simpler, cheaper, and lower latency — sufficient for our use case. We use HTTP API.</p>
+    <p><strong>Built-in throttling:</strong> API Gateway enforces default account-level throttling (10,000 requests/second burst, 5,000 requests/second steady-state) independently of WAF. This is a backstop against runaway traffic even before WAF rate rules activate.</p>
+    <p><strong>HTTPS only:</strong> API Gateway exposes HTTPS endpoints exclusively. There is no HTTP option — TLS is enforced by the service, not by configuration.</p>
+    <p><strong>In the demo:</strong> HTTP API with one route: <code>GET /photos → lambda_function</code>. Resource policy restricts invocations to our CloudFront distribution ARN.</p>
+  </div>
+
+  <div class="ac-item" onclick="toggleAc('ac-waf-comp')">
+    <div class="ac-left"><span class="ac-icon">🛡️</span><span class="ac-name">AWS WAF — Web Application Firewall</span><span class="ac-sub">L7 inspection · Web ACL · rules and rule groups · attached to CloudFront</span></div>
+    <span class="ac-chevron" id="ac-waf-comp-chev">›</span>
+  </div>
+  <div class="ac-body" id="ac-waf-comp">
+    <p>AWS WAF is a web application firewall that inspects HTTP requests at Layer 7 — the application layer. Unlike network firewalls that filter by IP and port, WAF reads the content of requests: the path, headers, query strings, and body. This lets it detect and block attacks that look like legitimate traffic at the network layer.</p>
+    <p><strong>Web ACL:</strong> A Web Access Control List is the top-level WAF resource. You attach it to a CloudFront distribution (or an API Gateway stage, ALB, or AppSync API). The ACL contains an ordered list of rules evaluated against every request.</p>
+    <p><strong>Rule types:</strong></p>
+    <ul>
+      <li><strong>Rate-based rules</strong> — count requests per IP over a time window, block when a threshold is exceeded</li>
+      <li><strong>Managed rule groups</strong> — curated rule sets maintained by AWS or third parties: Core Rule Set (OWASP Top 10), Known Bad Inputs, SQL injection, XSS, Bot Control. Many are free; some are paid.</li>
+      <li><strong>Custom rules</strong> — match on specific strings, IP sets, geo conditions, or combinations using AND/OR logic</li>
+    </ul>
+    <p><strong>WAF vs Shield Standard:</strong> Shield Standard (free, automatic) protects against L3/L4 volumetric attacks — SYN floods, UDP reflection. WAF operates at L7 and catches application-layer abuse that Shield cannot see. They complement each other.</p>
+    <p><strong>In the demo:</strong> Web ACL attached to our CloudFront distribution with one rate-based rule scoped to the <code>/photos</code> path.</p>
+  </div>
+
+</div>
+
+<!-- Security controls accordion -->
+<h3 style="margin-top:2rem;">Security controls</h3>
+<p class="hint">Click any row to expand</p>
+
+<div class="accordion">
+
   <div class="ac-item" onclick="toggleAc('ac-role')">
-    <div class="ac-left"><span class="ac-icon">🔑</span><span class="ac-name">Lambda execution role</span><span class="ac-sub">Least privilege for serverless · temporary credentials · no access keys</span></div>
+    <div class="ac-left"><span class="ac-icon">🔑</span><span class="ac-name">Lambda execution role</span><span class="ac-sub">IAM role · least privilege · temporary credentials · no access keys</span></div>
     <span class="ac-chevron" id="ac-role-chev">›</span>
   </div>
   <div class="ac-body" id="ac-role">
-    <p>Every Lambda function has an <strong>execution role</strong> — an IAM role that AWS assumes on the function's behalf for each invocation. Lambda injects temporary credentials into the execution environment automatically. There are no long-lived access keys to rotate or store.</p>
+    <p>Every Lambda function has an <strong>execution role</strong> — an IAM role that AWS assumes on the function's behalf for each invocation. Lambda automatically injects temporary credentials (access key, secret key, session token) into the execution environment. These credentials expire and rotate automatically. There are no long-lived access keys to store, rotate, or accidentally leak.</p>
     <p><strong>Our role — least privilege:</strong></p>
     <ul>
-      <li><code>dynamodb:Scan</code> on <code>arn:aws:dynamodb:us-east-1:644094189785:table/photoviewer-photos</code> only</li>
+      <li><code>dynamodb:Scan</code> on <code>arn:aws:dynamodb:us-east-1:644094189785:table/photoviewer-photos</code> only — no other tables, no writes</li>
       <li><code>logs:CreateLogGroup</code>, <code>logs:CreateLogStream</code>, <code>logs:PutLogEvents</code> — required for CloudWatch Logs</li>
     </ul>
-    <p>No <code>dynamodb:*</code>, no access to other tables, no S3, no IAM. If the function is compromised, the blast radius is one table scan.</p>
+    <p>No <code>dynamodb:*</code>, no S3, no IAM. If the function is compromised, the blast radius is one table scan. Notice that <code>lambda_function.py</code> contains no credentials — the execution role handles all authentication to AWS services automatically.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-apigw')">
-    <div class="ac-left"><span class="ac-icon">🔌</span><span class="ac-name">API Gateway resource policy</span><span class="ac-sub">IAM-enforced origin restriction · stronger than custom headers</span></div>
+    <div class="ac-left"><span class="ac-icon">📜</span><span class="ac-name">API Gateway resource policy</span><span class="ac-sub">IAM-enforced · restricts to CloudFront ARN · stronger than custom headers</span></div>
     <span class="ac-chevron" id="ac-apigw-chev">›</span>
   </div>
   <div class="ac-body" id="ac-apigw">
-    <p>An API Gateway <strong>resource policy</strong> is an IAM policy attached to the API itself. It controls who can call <code>execute-api:Invoke</code>. We use the <code>aws:SourceArn</code> condition to restrict invocations to our specific CloudFront distribution ARN.</p>
+    <p>A <strong>resource policy</strong> is an IAM policy attached directly to the API. It controls who can call <code>execute-api:Invoke</code>. We use the <code>aws:SourceArn</code> condition key to restrict invocations to our specific CloudFront distribution ARN — so only requests originating from our distribution are allowed through.</p>
     <p><strong>Why this is stronger than the ALB custom header pattern:</strong></p>
     <ul>
-      <li>Custom headers are string matching — any caller who knows the secret passes. The secret lives in CloudFront's origin config in plaintext.</li>
-      <li>Resource policies are IAM conditions — enforced cryptographically by AWS's authorization layer before the request reaches your API. There is no secret to discover or leak.</li>
-      <li>The condition ties to <em>your</em> distribution ARN specifically — not just "any CloudFront IP," which is what the ALB prefix list gave us.</li>
+      <li><strong>Custom headers</strong> are string matching — any caller who knows the secret passes. The secret lives in CloudFront's origin config in plaintext and must be manually rotated.</li>
+      <li><strong>Resource policy</strong> uses IAM conditions — enforced cryptographically by AWS's authorization layer before the request reaches your API. There is no secret to discover or leak.</li>
+      <li>The <code>aws:SourceArn</code> condition ties to <em>your</em> specific distribution ARN — not just "any CloudFront IP," which is what the ALB security group prefix list gave us.</li>
     </ul>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-waf')">
-    <div class="ac-left"><span class="ac-icon">🛡️</span><span class="ac-name">WAF rate-based rule</span><span class="ac-sub">L7 protection · requests per IP · how it differs from Shield Standard</span></div>
+    <div class="ac-left"><span class="ac-icon">⚡</span><span class="ac-name">WAF rate-based rule</span><span class="ac-sub">Requests per IP · rolling window · 429 response · Lambda never invoked</span></div>
     <span class="ac-chevron" id="ac-waf-chev">›</span>
   </div>
   <div class="ac-body" id="ac-waf">
-    <p>AWS WAF sits at the CloudFront layer and inspects every HTTP request before CloudFront routes it. We attach a Web ACL with a <strong>rate-based rule</strong> scoped to the <code>/photos</code> path.</p>
-    <p><strong>How a rate-based rule works:</strong> WAF counts requests per source IP over a rolling 5-minute window. If a single IP exceeds the threshold, WAF blocks subsequent requests from that IP with a 429 response — without touching CloudFront, API Gateway, or Lambda.</p>
-    <p><strong>Shield Standard vs WAF:</strong></p>
-    <ul>
-      <li><strong>Shield Standard</strong> (free, automatic) — protects against L3/L4 volumetric attacks: SYN floods, UDP reflection. Operates at the network layer.</li>
-      <li><strong>WAF</strong> (configured by you) — protects against L7 application attacks: request floods, SQL injection, XSS, bot traffic. Operates at the HTTP layer and inspects headers, paths, and body content.</li>
-    </ul>
-    <p>They complement each other — Shield Standard handles network-layer floods, WAF handles application-layer abuse.</p>
+    <p>We attach a Web ACL to the CloudFront distribution with one rate-based rule scoped to the <code>/photos</code> path. WAF evaluates every request before CloudFront routes it — so a blocked request never reaches API Gateway or Lambda.</p>
+    <p><strong>How it works:</strong> WAF counts requests per source IP over a rolling 5-minute window. If a single IP exceeds the configured threshold, WAF blocks subsequent requests from that IP with a 429 response. The block lifts automatically once the request rate drops below the threshold.</p>
+    <p><strong>What this stops:</strong> A script hammering <code>/photos</code> — consuming Lambda invocations and DynamoDB read capacity — is stopped at the edge before it costs you anything. Real users are unaffected as long as their request rate is below the threshold.</p>
+    <p><strong>What this doesn't stop:</strong> A distributed flood from many IPs simultaneously (each below the per-IP threshold). That requires managed rule groups or Bot Control — beyond this week's scope but worth knowing.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-logs')">
-    <div class="ac-left"><span class="ac-icon">📋</span><span class="ac-name">CloudWatch Logs — automatic Lambda logging</span><span class="ac-sub">Every invocation · no agent · log groups and streams</span></div>
+    <div class="ac-left"><span class="ac-icon">📋</span><span class="ac-name">CloudWatch Logs — automatic audit trail</span><span class="ac-sub">Every invocation logged · no agent · detective control</span></div>
     <span class="ac-chevron" id="ac-logs-chev">›</span>
   </div>
   <div class="ac-body" id="ac-logs">
-    <p>Every Lambda invocation is automatically logged to CloudWatch Logs — no CloudWatch agent to install, no configuration beyond the execution role having <code>logs:PutLogEvents</code> permission. Lambda creates a log group (<code>/aws/lambda/photoviewer-lambda</code>) and a log stream per execution environment.</p>
-    <p><strong>What's logged automatically:</strong></p>
+    <p>Every Lambda invocation is automatically logged to CloudWatch Logs — no agent to install, no configuration required beyond the execution role having <code>logs:PutLogEvents</code>. Lambda creates a log group (<code>/aws/lambda/photoviewer-lambda</code>) and a new log stream per execution environment.</p>
+    <p><strong>What's logged automatically per invocation:</strong></p>
     <ul>
-      <li>START — invocation ID, runtime version</li>
-      <li>END — invocation ID</li>
-      <li>REPORT — duration, billed duration, memory used, cold start indicator</li>
+      <li><strong>START</strong> — invocation ID, runtime version</li>
+      <li><strong>END</strong> — invocation ID</li>
+      <li><strong>REPORT</strong> — duration (ms), billed duration (ms), memory used, cold start indicator</li>
       <li>Any <code>print()</code> or <code>logging.*</code> output from your function code</li>
     </ul>
-    <p><strong>Security value:</strong> Every <code>/photos</code> request leaves an automatic trace. Compare this to EC2 where you had to configure the CloudWatch agent manually and decide what to capture.</p>
+    <p><strong>Security classification:</strong> CloudWatch Logs is a <strong>detective control</strong> — it doesn't prevent attacks but creates a record that enables detection and investigation after the fact. Compare this to EC2: in Week 4, logging required manually installing and configuring the CloudWatch agent. With Lambda, the audit trail is automatic and non-bypassable.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-https')">
-    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">End-to-end HTTPS</span><span class="ac-sub">API Gateway enforces TLS · no certificate to manage</span></div>
+    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">End-to-end HTTPS</span><span class="ac-sub">Encryption in transit · API Gateway enforces TLS · no certificate to manage</span></div>
     <span class="ac-chevron" id="ac-https-chev">›</span>
   </div>
   <div class="ac-body" id="ac-https">
-    <p>In Week 4, the CloudFront → ALB hop ran over HTTP because we didn't provision an ACM certificate for the ALB — a deliberate lab simplification that left the origin hop unencrypted.</p>
-    <p>API Gateway exposes only HTTPS endpoints. There is no HTTP option and no certificate to provision — AWS manages the TLS certificate for the <code>execute-api.amazonaws.com</code> domain automatically. The result is true end-to-end encryption: browser → CloudFront → API Gateway, all HTTPS, with no configuration required on our part.</p>
+    <p>In Week 4, the CloudFront → ALB hop ran over HTTP (port 80) because we skipped provisioning an ACM certificate for the ALB. That left one hop unencrypted — a deliberate lab simplification that violates defense-in-depth.</p>
+    <p>API Gateway exposes HTTPS endpoints only. There is no HTTP option — TLS is enforced by the service. AWS manages the certificate for <code>execute-api.amazonaws.com</code> automatically. The result is true end-to-end encryption with no configuration on our part: browser → CloudFront → API Gateway, all HTTPS.</p>
+    <p><strong>Security classification:</strong> This is a <strong>preventive control</strong> — it prevents a man-in-the-middle attacker from reading or injecting content into the CloudFront → origin hop. It operates on the CIA triad's Confidentiality and Integrity dimensions.</p>
   </div>
 
 </div>
@@ -624,6 +688,7 @@
   <div class="vuln-body" id="v2">
     <p><strong>The limitation:</strong> The API Gateway endpoint (<code>https://XXXXXX.execute-api.us-east-1.amazonaws.com/photos</code>) has a publicly resolvable URL. The resource policy restricts invocations to our CloudFront distribution ARN — so a direct call without the correct CloudFront origin is denied at the IAM layer. But the URL is discoverable, and any misconfiguration of the resource policy would immediately expose the API.</p>
     <p><strong>The distinction from Week 4:</strong> The ALB was reachable by any IP that knew the DNS name — no policy enforcement. API Gateway with a resource policy requires the request to originate from our specific CloudFront distribution, enforced by IAM. The exposure surface is much smaller — but the URL being public is worth noting.</p>
+    <p><strong>Production hardening:</strong> In production, you can attach a second WAF Web ACL directly to the API Gateway stage (Regional WAF, separate from the CloudFront WAF). This means even direct calls to the execute-api URL — which the resource policy rejects — are rate-limited before consuming API Gateway capacity. Two WAF layers: one at the CloudFront edge catching floods early, one at API Gateway as a backstop if CloudFront is misconfigured or bypassed. For this course, the CloudFront WAF combined with the resource policy is the correct and sufficient posture.</p>
   </div>
 </div>
 

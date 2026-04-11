@@ -198,7 +198,10 @@
     <li>Specify your bucket: browse and select <code>photoviewer-[your-account-id]</code></li>
     <li>Log both Read and Write events → <strong>Save changes</strong></li>
   </ul>
-  <p>Now access <code>confidential.txt</code> again in your browser. Wait ~2 minutes, then go back to <strong>CloudTrail → Event history</strong> and filter by your bucket name. You should now see a <code>GetObject</code> event for <code>confidential.txt</code>.</p>
+  <p>Now access <code>confidential.txt</code> using the <strong>S3 REST endpoint</strong> — a different URL from the website URL you used in Step 6. In your browser, open:</p>
+  <pre>https://photoviewer-[your-account-id].s3.amazonaws.com/confidential.txt</pre>
+  <div class="info"><strong>Why a different URL?</strong> S3 gives you two ways to access objects. The <strong>website endpoint</strong> (<code>s3-website-...amazonaws.com</code>) serves files like a web server — it bypasses the S3 API entirely, so CloudTrail never sees it. The <strong>REST endpoint</strong> (<code>s3.amazonaws.com</code>) is the actual S3 API — every request through it is an API call that CloudTrail can log. To generate a <code>GetObject</code> data event, you must use the REST endpoint.</div>
+  <p>Wait <strong>5–15 minutes</strong>, then go back to <strong>CloudTrail → Event history</strong> and filter by your bucket name. You should now see a <code>GetObject</code> event for <code>confidential.txt</code>.</p>
   <p><strong>After verifying, disable data events immediately:</strong> CloudTrail → Trails → photoviewer-trail → Edit → remove the S3 data event → Save changes.</p>
   <div class="deliverable"><strong>Screenshot:</strong> CloudTrail event history showing GetObject event for confidential.txt</div>
 </div>
