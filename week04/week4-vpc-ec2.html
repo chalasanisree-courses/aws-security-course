@@ -152,6 +152,7 @@ h1 {
   .ac-body p { margin-bottom: 0.7rem; }
   .ac-body p:last-child { margin-bottom: 0; }
   .ac-body.open { display: block; }
+  .policy-block {
     background: #f8f9fa;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
@@ -353,7 +354,7 @@ h1 {
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>1. The problem with a static photo list</h2>
+<h2>1. Where we left off</h2>
 
 <p>In Weeks 2 and 3 the Photo Viewer served a static <code>photos.json</code> file listing five photos. This works, but the list is fixed at deploy time. Adding a new photo to S3 means manually editing <code>photos.json</code>, re-uploading it, and invalidating the CloudFront cache. For an application where users can upload content this is unacceptable.</p>
 
@@ -364,7 +365,7 @@ h1 {
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>2. The solution — 3-tier application architecture</h2>
+<h2>2. This week's solution</h2>
 
 <p>We introduce a real backend: an EC2 application server in a private VPC subnet, backed by DynamoDB. The photo list is now constructed dynamically at request time — add a row to DynamoDB and it appears to all users immediately.</p>
 
@@ -492,15 +493,15 @@ h1 {
     <text x="846" y="280" text-anchor="middle" font-size="8" font-weight="700" fill="#BF360C" font-family="system-ui">DB</text>
   </g>
   <g id="node-igw" onclick="selectVpcNode('igw')" style="cursor:pointer;">
-    <rect x="10" y="310" width="80" height="65" rx="10" fill="#fff" stroke="#1F4E79" stroke-width="2"/>
-    <text x="50" y="335" text-anchor="middle" font-size="20" font-family="system-ui">🔗</text>
-    <text x="50" y="355" text-anchor="middle" font-size="10" font-weight="700" fill="#1F4E79" font-family="system-ui">IGW</text>
-    <text x="50" y="368" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">outbound</text>
+    <rect x="10" y="180" width="80" height="58" rx="10" fill="#fff" stroke="#1F4E79" stroke-width="2"/>
+    <text x="50" y="204" text-anchor="middle" font-size="20" font-family="system-ui">🔗</text>
+    <text x="50" y="226" text-anchor="middle" font-size="10" font-weight="700" fill="#1F4E79" font-family="system-ui">IGW</text>
   </g>
   <path d="M 110 45 Q 430 -8 720 45" stroke="#388E3C" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#v-arrow-green)"/>
   <text x="420" y="10" text-anchor="middle" font-size="9" fill="#388E3C" font-family="system-ui">static files via OAC</text>
-  <path d="M 110 55 L 200 55 L 200 174" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#v-arrow-blue)"/>
-  <text x="175" y="48" text-anchor="middle" font-size="9" fill="#1976D2" font-family="system-ui">API: /photos</text>
+  <line x1="50" y1="95" x2="50" y2="180" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#v-arrow-blue)"/>
+  <text x="72" y="132" text-anchor="middle" font-size="9" fill="#1976D2" font-family="system-ui">API:</text>
+  <text x="72" y="144" text-anchor="middle" font-size="9" fill="#1976D2" font-family="system-ui">/photos</text>
   <rect x="100" y="110" width="715" height="350" rx="14" fill="#E3F2FD" stroke="#1F4E79" stroke-width="2.5"/>
   <text x="116" y="102" font-size="11" font-weight="700" fill="#1F4E79" font-family="system-ui">photoviewer-vpc  10.0.0.0/16</text>
   <rect x="110" y="125" width="695" height="165" rx="10" fill="#BBDEFB" opacity="0.5"/>
@@ -513,13 +514,14 @@ h1 {
     <text x="210" y="188" text-anchor="middle" font-size="9" font-weight="700" fill="#0D47A1" font-family="system-ui">ALB</text>
     <text x="210" y="202" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">spans both AZs</text>
   </g>
+  <line x1="90" y1="209" x2="138" y2="196" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#v-arrow-blue)"/>
   <g id="node-nat" onclick="selectVpcNode('nat')" style="cursor:pointer;">
     <rect x="138" y="228" width="120" height="38" rx="6" fill="#FFF3E0" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,2"/>
     <text x="198" y="244" text-anchor="middle" font-size="9" font-weight="600" fill="#E65100" font-family="system-ui">NAT GW (temp)</text>
     <text x="198" y="258" text-anchor="middle" font-size="8" fill="#F57C00" font-family="system-ui" font-style="italic">bootstrap only</text>
   </g>
-  <path d="M 138 247 L 50 310" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#v-arrow-orange)"/>
-  <text x="72" y="285" text-anchor="middle" font-size="8" fill="#F57C00" font-family="system-ui">to internet</text>
+  <line x1="138" y1="247" x2="90" y2="232" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#v-arrow-orange)"/>
+  <text x="98" y="255" text-anchor="middle" font-size="8" fill="#F57C00" font-family="system-ui">to internet</text>
   <rect x="292" y="150" width="505" height="128" rx="8" fill="#C5CAE9" stroke="#3949AB" stroke-width="1.5"/>
   <text x="544" y="166" text-anchor="middle" font-size="8" font-weight="700" fill="#283593" font-family="system-ui">PRIVATE  10.0.128.0/20</text>
   <line x1="258" y1="197" x2="360" y2="215" stroke="#1976D2" stroke-width="2" marker-end="url(#v-arrow-blue)"/>
@@ -529,6 +531,8 @@ h1 {
     <text x="412" y="226" text-anchor="middle" font-size="9" font-weight="700" fill="#1A237E" font-family="system-ui">App Server</text>
     <text x="412" y="240" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">EC2 · private</text>
   </g>
+  <line x1="360" y1="240" x2="258" y2="247" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#v-arrow-orange)"/>
+  <text x="305" y="236" text-anchor="middle" font-size="8" fill="#F57C00" font-family="system-ui" font-style="italic">bootstrap</text>
   <g id="node-ssm-ep" onclick="selectVpcNode('ssm-ep')" style="cursor:pointer;">
     <circle cx="412" cy="110" r="11" fill="#7B1FA2" stroke="#fff" stroke-width="2.5"/>
     <text x="412" y="134" text-anchor="middle" font-size="8" fill="#7B1FA2" font-family="system-ui" font-weight="600">SSM ep.</text>
@@ -565,7 +569,7 @@ h1 {
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>4. How it works — request walkthrough</h2>
+<h2>4. How a request flows</h2>
 
 <p>From the moment a user opens the Photo Viewer to the moment photos appear on screen — every component plays a role.</p>
 
@@ -580,13 +584,13 @@ h1 {
   <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
     <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 2</div>
     <div><strong>JavaScript requests the photo list</strong>
-    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> makes a <code>fetch('/photos')</code> call. CloudFront has a cache behavior for this path — it routes the request to the ALB origin, not S3.</p></div>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;"><code>app.js</code> makes a <code>fetch('/photos')</code> call. CloudFront has a dedicated cache behavior for this exact path — it routes the request to the ALB origin, not S3. Caching is <strong>disabled</strong> for this behavior, so every request goes all the way through to EC2. This is essential: if CloudFront cached the photo list, users would see a stale list after new photos are added — defeating the entire point of switching from a static JSON file to a dynamic backend.</p></div>
   </div>
 
   <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
     <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 3</div>
     <div><strong>CloudFront forwards to the ALB</strong>
-    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">CloudFront connects directly to the ALB's public DNS over AWS's backbone — not through the IGW. The ALB sits in the public subnet and accepts HTTP on port 80.</p></div>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">CloudFront reaches the ALB via AWS's backbone network rather than the open public internet. Inbound traffic to the ALB's public IP still passes through the IGW — but it arrives over AWS's internal network, not from the internet the way a browser request would.</p></div>
   </div>
 
   <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
@@ -620,7 +624,9 @@ h1 {
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Key Concepts in This Solution</h2>
+<h2>5. Key concepts</h2>
+
+<div class="accordion">
 
 <div class="ac-item" onclick="toggleAc('ac-vpc')">
     <div class="ac-left"><span class="ac-icon">🏗</span><span class="ac-name">VPC</span><span class="ac-sub">photoviewer-vpc · 10.0.0.0/16</span></div>
@@ -659,7 +665,7 @@ h1 {
     <span class="ac-chevron" id="ac-igw-chev">›</span>
   </div>
   <div class="ac-body" id="ac-igw">
-    <p>The IGW is attached to the VPC and provides the internet connection for public subnets. The public route table has one key rule: <code>0.0.0.0/0 → IGW</code>. This is what makes a subnet "public." Private subnets have no such route — they cannot initiate or receive internet connections directly. <strong>CloudFront does not go through the IGW</strong> — it connects directly to the ALB's public DNS over AWS's own backbone network.</p>
+    <p>The IGW is attached to the VPC and provides the internet connection for public subnets. The public route table has one key rule: <code>0.0.0.0/0 → IGW</code>. This is what makes a subnet "public." Private subnets have no such route — they cannot initiate or receive internet connections directly. <strong>CloudFront reaches the ALB via AWS's backbone network rather than the open public internet</strong> — so it doesn't traverse the internet the way a browser request would. However, inbound traffic to the ALB's public IP still passes through the IGW, because the IGW is what allows inbound connections to reach resources in public subnets.</p>
     <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
       <p style="margin:0;font-size:13px;line-height:1.6;">The IGW was created automatically by the VPC wizard. It enables the NAT Gateway (in the public subnet) to reach PyPI and Amazon Linux repos during EC2 bootstrap. After the NAT Gateway was deleted, the IGW is still there — ALB still needs the public subnet's internet-facing route to receive CloudFront requests.</p>
@@ -868,7 +874,7 @@ h1 {
 
 </div><!-- end security controls accordion -->
 
-<h2>6. Problems with this solution</h2>
+<h2>6. What's still missing</h2>
 
 <p class="hint">Click each problem to see the impact and fix. 🔶 marks deliberate lab simplifications — known tradeoffs, not oversights.</p>
 
@@ -1017,7 +1023,7 @@ const vpcData = {
   igw: {
     title: '🔗 Internet Gateway (IGW)',
     color: '#1F4E79',
-    text: 'The IGW is attached to the VPC and provides <b>outbound</b> internet access for resources in public subnets. In our setup, the NAT Gateway uses it during bootstrap to reach PyPI and Amazon Linux repos. <b>CloudFront does NOT go through the IGW</b> — CloudFront connects directly to the ALB\'s public DNS name over AWS\'s backbone network. The IGW is not involved in the CloudFront → ALB → App Server request path at runtime.'
+    text: 'The IGW is attached to the VPC and enables internet connectivity — both inbound and outbound — for resources in public subnets. In our setup, the NAT Gateway uses it during bootstrap to reach PyPI and Amazon Linux repos. <b>CloudFront reaches the ALB via AWS\'s backbone network rather than the open public internet</b> — so it doesn\'t traverse the internet the way a browser request would. However, inbound traffic to the ALB\'s public IP still passes through the IGW, because the IGW is what allows inbound connections to reach resources in the public subnet.'
   },
   alb: {
     title: '⚖️ ALB — Application Load Balancer',
