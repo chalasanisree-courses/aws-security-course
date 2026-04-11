@@ -180,22 +180,30 @@ Browser → CloudFront → ALB (public subnet) → EC2 Flask (private subnet) �
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Create security groups</span></div>
-  <p>Create 3 security groups in <code>photoviewer-vpc</code>. Create them in this order — SG 2 references SG 1, SG 3 references SG 2.</p>
+  <p>Create 3 security groups in <code>photoviewer-vpc</code>. Because SG 1's outbound rule references SG 2 and SG 2's inbound references SG 1, you need to create all 3 SGs with names only first, then go back and add the rules.</p>
 
-  <h3>SG 1 — <code>photoviewer-alb-sg</code></h3>
+  <h3>Step A — Create all 3 SGs with names only (no rules yet)</h3>
+  <p>Go to <strong>VPC → Security Groups → Create security group</strong> three times. Each time: set the name, set VPC to <code>photoviewer-vpc</code>, and click <strong>Create</strong> — do not add any inbound or outbound rules yet.</p>
+  <ul>
+    <li><code>photoviewer-alb-sg</code></li>
+    <li><code>photoviewer-ec2-sg</code></li>
+    <li><code>photoviewer-endpoint-sg</code></li>
+  </ul>
+
+  <h3>Step B — Add rules to <code>photoviewer-alb-sg</code></h3>
   <ul>
     <li>Inbound: HTTP port 80 from <code>0.0.0.0/0</code></li>
     <li>Outbound: delete the default allow-all rule. Add: Custom TCP port 8000, destination: <code>photoviewer-ec2-sg</code></li>
   </ul>
 
-  <h3>SG 2 — <code>photoviewer-ec2-sg</code></h3>
+  <h3>Step C — Add rules to <code>photoviewer-ec2-sg</code></h3>
   <ul>
     <li>Inbound: Custom TCP port 8000 from <code>photoviewer-alb-sg</code></li>
     <li>Outbound: leave default allow-all</li>
     <li>No port 22 — SSM Session Manager handles all remote access</li>
   </ul>
 
-  <h3>SG 3 — <code>photoviewer-endpoint-sg</code></h3>
+  <h3>Step D — Add rules to <code>photoviewer-endpoint-sg</code></h3>
   <ul>
     <li>Inbound: HTTPS port 443 from <code>photoviewer-ec2-sg</code></li>
     <li>Outbound: leave default allow-all</li>
