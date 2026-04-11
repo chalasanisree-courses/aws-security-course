@@ -78,9 +78,10 @@
 </div>
 
 <div class="arch">
-Browser → CloudFront → WAF → API Gateway → Lambda → DynamoDB
-                    ↘ S3 (static files via OAC — unchanged)
+Browser → WAF/CloudFront → API Gateway → Lambda → DynamoDB
+                         ↘ S3 (static files via OAC — unchanged)
 </div>
+<div class="info">WAF runs at the CloudFront edge POP, evaluating requests before CloudFront routes to any origin. A WAF-blocked request never reaches API Gateway or Lambda.</div>
 
 <div class="note"><strong>Before you start:</strong> Your Week 4 CloudFront distribution must be working. Have your CloudFront distribution ID and domain name ready — you will need them for the API Gateway resource policy and WAF configuration. Your DynamoDB table <code>photoviewer-photos</code> must still have the 5 photo items seeded in Week 4.</div>
 
@@ -328,7 +329,7 @@ Browser → CloudFront → WAF → API Gateway → Lambda → DynamoDB
   <p>Answer all three questions in 2–3 sentences each.</p>
 
   <h3>Question 1</h3>
-  <p>In Week 4, the ALB security group used the CloudFront managed prefix list to restrict which IP addresses could reach the ALB. In Week 5, the API Gateway resource policy uses <code>aws:SourceArn</code> to restrict access to your specific CloudFront distribution ARN. Explain why the <code>aws:SourceArn</code> approach is more secure than the IP prefix list approach.</p>
+  <p>In Week 4, the ALB security group allowed inbound HTTP on port 80 from <code>0.0.0.0/0</code> — any IP could reach it directly, bypassing CloudFront entirely. In Week 5, the API Gateway resource policy uses <code>aws:SourceArn</code> to restrict access to your specific CloudFront distribution ARN. Explain why the <code>aws:SourceArn</code> approach is more secure than the open security group, and why even a CloudFront IP prefix list on the ALB security group would still be weaker than the resource policy approach.</p>
 
   <h3>Question 2</h3>
   <p>Week 4 required a NAT Gateway so EC2 could download packages from the internet during bootstrap. Week 5 has no NAT Gateway and no package installation step. Explain why Lambda eliminates the need for a NAT Gateway and what security benefit this provides — specifically in terms of supply chain risk.</p>
@@ -348,7 +349,7 @@ Browser → CloudFront → WAF → API Gateway → Lambda → DynamoDB
   <tr><td>WAF Web ACL with rate-based rule</td><td>15</td><td>Web ACL shows photos-rate-limit rule scoped to /photos URI path. CloudFront distribution listed as associated resource.</td></tr>
   <tr><td>End-to-end browser verification</td><td>20</td><td>Photo Viewer loads correctly. DevTools shows Via: CloudFront header and no Server: Werkzeug header on the /photos request.</td></tr>
   <tr><td>CloudWatch Logs verification</td><td>8</td><td>Log group /aws/lambda/photoviewer-lambda shows START/END/REPORT entries corresponding to page loads.</td></tr>
-  <tr><td>Reflection Q1</td><td>4</td><td>Correctly explains that SourceArn is tied to a specific distribution ARN (not just any CloudFront IP), making it IAM-enforced and unforgeable.</td></tr>
+  <tr><td>Reflection Q1</td><td>4</td><td>Correctly explains that SourceArn is tied to a specific distribution ARN (not just any CloudFront IP), making it IAM-enforced and unforgeable — and that an IP prefix list can be spoofed by any CloudFront distribution, not just yours.</td></tr>
   <tr><td>Reflection Q2</td><td>3</td><td>Correctly identifies that Lambda provides boto3 natively with no install step, eliminating the NAT Gateway and the supply chain risk of pulling packages from the internet.</td></tr>
   <tr><td>Reflection Q3</td><td>3</td><td>Correctly identifies that WAF rate limits traffic volume (including from CloudFront) while the resource policy blocks requests not originating from CloudFront entirely — complementary controls at different layers.</td></tr>
   <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>

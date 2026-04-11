@@ -162,7 +162,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>1. Problems with Week 4</h2>
+<h2>1. Where we left off</h2>
 
 <p>Week 4 introduced a working dynamic backend — EC2, ALB, DynamoDB. But the architecture had six problems. Five are resolved by moving to Lambda and API Gateway. The sixth — no WAF — is added this week as a distinct step.</p>
 
@@ -227,7 +227,41 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>2. The solution — Lambda, API Gateway, and WAF</h2>
+<h2>2. This week's solution</h2>
+
+<h3>What serverless means</h3>
+<p>In Week 4, the backend ran on EC2 — a virtual server that ran continuously whether or not requests were coming in. You were responsible for the OS, the Python runtime, patching, and keeping the process alive via systemd. <strong>Serverless flips this model.</strong> You provide only the function code; AWS handles everything below it — the servers, OS, runtime, scaling, and availability. The function runs only when invoked and stops when it returns. There is no persistent process, no idle cost, and no infrastructure to maintain.</p>
+
+<svg width="100%" viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:1.2rem 0;border-radius:8px;border:1px solid #e0e0e0;">
+  <text x="210" y="28" text-anchor="middle" font-size="14" font-weight="600" fill="#111" font-family="system-ui">EC2</text>
+  <text x="210" y="44" text-anchor="middle" font-size="12" fill="#888" font-family="system-ui">server-based</text>
+  <text x="470" y="28" text-anchor="middle" font-size="14" font-weight="600" fill="#111" font-family="system-ui">Lambda</text>
+  <text x="470" y="44" text-anchor="middle" font-size="12" fill="#888" font-family="system-ui">serverless</text>
+  <rect x="90" y="58" width="240" height="75" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="210" y="87" text-anchor="middle" font-size="14" font-weight="600" fill="#712B13" font-family="system-ui" dominant-baseline="central">Application</text>
+  <text x="210" y="107" text-anchor="middle" font-size="12" fill="#993C1D" font-family="system-ui" dominant-baseline="central">your code — you manage</text>
+  <rect x="90" y="143" width="240" height="75" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="210" y="172" text-anchor="middle" font-size="14" font-weight="600" fill="#712B13" font-family="system-ui" dominant-baseline="central">Virtual server</text>
+  <text x="210" y="192" text-anchor="middle" font-size="12" fill="#993C1D" font-family="system-ui" dominant-baseline="central">OS + runtime — you manage</text>
+  <rect x="90" y="228" width="240" height="60" rx="6" fill="#f5f5f5" stroke="#ccc" stroke-width="0.5" stroke-dasharray="5 3"/>
+  <text x="210" y="252" text-anchor="middle" font-size="12" fill="#bbb" font-family="system-ui" dominant-baseline="central">Physical server</text>
+  <text x="210" y="270" text-anchor="middle" font-size="12" fill="#bbb" font-family="system-ui" dominant-baseline="central">not your concern</text>
+  <rect x="350" y="58" width="240" height="75" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="470" y="87" text-anchor="middle" font-size="14" font-weight="600" fill="#712B13" font-family="system-ui" dominant-baseline="central">Application</text>
+  <text x="470" y="107" text-anchor="middle" font-size="12" fill="#993C1D" font-family="system-ui" dominant-baseline="central">function code — you manage</text>
+  <rect x="350" y="143" width="240" height="145" rx="6" fill="#f5f5f5" stroke="#ccc" stroke-width="0.5" stroke-dasharray="5 3"/>
+  <text x="470" y="195" text-anchor="middle" font-size="12" fill="#bbb" font-family="system-ui" dominant-baseline="central">Virtual server + physical server</text>
+  <text x="470" y="215" text-anchor="middle" font-size="12" fill="#bbb" font-family="system-ui" dominant-baseline="central">not your concern</text>
+  <line x1="340" y1="58" x2="340" y2="298" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="4 3"/>
+  <rect x="166" y="322" width="14" height="14" rx="3" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="186" y="329" font-size="12" fill="#555" font-family="system-ui" dominant-baseline="central">you manage</text>
+  <rect x="300" y="322" width="14" height="14" rx="3" fill="#f5f5f5" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4 2"/>
+  <text x="320" y="329" font-size="12" fill="#555" font-family="system-ui" dominant-baseline="central">not your concern</text>
+</svg>
+
+<div class="callout success">
+  <p><strong>Security benefits of serverless:</strong> No OS to patch — no CVE exposure from an unpatched Amazon Linux instance. No runtime to install — no supply chain risk from pip or npm. No persistent process — no long-lived server to compromise. Automatic CloudWatch Logs on every invocation — a full audit trail with zero configuration. Five of the six Week 4 vulnerabilities are resolved by this single architectural shift.</p>
+</div>
 
 <p>Two changes this week: replace the EC2/ALB backend with Lambda and API Gateway, and attach WAF to CloudFront. The DynamoDB table and CloudFront distribution from Week 4 are reused unchanged.</p>
 
@@ -322,7 +356,7 @@
   <tr><td><strong>Compute</strong></td><td>EC2 (always running)</td><td>Lambda (runs on invocation only)</td></tr>
   <tr><td><strong>HTTP layer</strong></td><td>ALB — internet-facing, public DNS</td><td>API Gateway — resource policy, CloudFront-only</td></tr>
   <tr><td><strong>CF → origin protocol</strong></td><td>HTTP (port 80)</td><td>HTTPS — API Gateway enforces it</td></tr>
-  <tr><td><strong>Origin restriction</strong></td><td>CloudFront IP prefix list on ALB SG</td><td>IAM resource policy tied to your distribution ARN</td></tr>
+  <tr><td><strong>Origin restriction</strong></td><td>None — ALB SG inbound was 0.0.0.0/0, reachable by any IP</td><td>IAM resource policy tied to your distribution ARN</td></tr>
   <tr><td><strong>Rate limiting</strong></td><td>None</td><td>WAF rate-based rule on CloudFront</td></tr>
   <tr><td><strong>Package installation</strong></td><td>pip3 install at boot via NAT GW</td><td>None — boto3 provided by Lambda runtime</td></tr>
   <tr><td><strong>OS patching</strong></td><td>Your responsibility</td><td>AWS manages the runtime</td></tr>
@@ -535,7 +569,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Key Concepts in This Solution</h2>
+<h2>5. Key concepts</h2>
 
 <p class="hint">Click any row to expand</p>
 
@@ -662,7 +696,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>6. Problems with this solution</h2>
+<h2>6. What's still missing</h2>
 
 <p class="hint">Click each problem to see the impact and what comes next.</p>
 
