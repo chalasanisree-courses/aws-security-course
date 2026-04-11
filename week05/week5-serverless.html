@@ -366,7 +366,7 @@
 </table>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. Architecture — AWS service boundary</h2>
+<h2>3. Architecture</h2>
 
 <p>All services this week are fully managed — there is no VPC. The diagram shows the AWS global service boundary and contrasts it with the VPC infrastructure Week 4 required. Click any service to learn more.</p>
 <p class="hint">Click any component to explore</p>
@@ -508,7 +508,7 @@
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>4. How it works — request walkthrough</h2>
+<h2>4. How a request flows</h2>
 
 <p>From the moment a user opens the Photo Viewer to the moment photos appear on screen — every component plays a role.</p>
 
@@ -581,7 +581,7 @@
   </div>
   <div class="ac-body" id="ac-lambda">
     <p>Lambda is a serverless compute service — you provide a function, AWS provides everything else: servers, OS, runtime, scaling, patching, availability. You are billed only for the time your code actually runs — idle cost is zero. There is no persistent process: each invocation gets its own isolated execution environment, which is discarded after the function returns.</p>
-    <p><strong>Execution model:</strong> When a request arrives, AWS either reuses a warm environment or creates a new one — a <strong>cold start</strong> (typically 100–500ms for Python). After the function returns the environment is held briefly for possible reuse, then discarded.</p>
+    <p><strong>Execution model:</strong> When a request arrives, AWS either reuses a warm environment or creates a new one — a <strong>cold start</strong> (typically 100–300ms for Python). After the function returns the environment is held briefly for possible reuse, then discarded.</p>
     <p><strong>Key parameters:</strong></p>
     <ul>
       <li><strong>Timeout</strong> — maximum execution time (default 3 seconds, max 15 minutes). Function exceeds timeout → Lambda terminates it and returns 504.</li>
@@ -636,7 +636,7 @@
     <p>Every Lambda function has an <strong>execution role</strong> — an IAM role that AWS assumes on the function's behalf for each invocation. Lambda automatically injects temporary credentials (access key, secret key, session token) into the execution environment. These credentials expire and rotate automatically. There are no long-lived access keys to store, rotate, or accidentally leak.</p>
     <p><strong>Our role — least privilege:</strong></p>
     <ul>
-      <li><code>dynamodb:Scan</code> on <code>arn:aws:dynamodb:us-east-1:644094189785:table/photoviewer-photos</code> only — no other tables, no writes</li>
+      <li><code>dynamodb:Scan</code> on <code>arn:aws:dynamodb:us-east-1:[your-account-id]:table/photoviewer-photos</code> only — no other tables, no writes</li>
       <li><code>logs:CreateLogGroup</code>, <code>logs:CreateLogStream</code>, <code>logs:PutLogEvents</code> — required for CloudWatch Logs</li>
     </ul>
     <p>No <code>dynamodb:*</code>, no S3, no IAM. If the function is compromised, the blast radius is one table scan. Notice that <code>lambda_function.py</code> contains no credentials — the execution role handles all authentication to AWS services automatically.</p>
@@ -652,7 +652,7 @@
     <ul>
       <li><strong>Custom headers</strong> are string matching — any caller who knows the secret passes. The secret lives in CloudFront's origin config in plaintext and must be manually rotated.</li>
       <li><strong>Resource policy</strong> uses IAM conditions — enforced cryptographically by AWS's authorization layer before the request reaches your API. There is no secret to discover or leak.</li>
-      <li>The <code>aws:SourceArn</code> condition ties to <em>your</em> specific distribution ARN — not just "any CloudFront IP," which is what the ALB security group prefix list gave us.</li>
+      <li>The <code>aws:SourceArn</code> condition ties to <em>your</em> specific distribution ARN — not just "any CloudFront IP," which is all that an ALB security group with <code>0.0.0.0/0</code> gives you.</li>
     </ul>
   </div>
 
