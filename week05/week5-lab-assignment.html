@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 5 Lab — Serverless Backend</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.7; color: #1a1a1a; max-width: 780px; margin: 0 auto; padding: 1.5rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; color: #111; }
+  h2 { font-size: 1.15rem; font-weight: 700; margin: 2rem 0 0.5rem; color: #111; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.4rem; }
+  h3 { font-size: 0.97rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #222; }
+  p { margin-bottom: 0.8rem; color: #333; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+  li { margin-bottom: 0.4rem; color: #333; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem 1.2rem; border-radius: 8px; font-size: 0.83rem; overflow-x: auto; margin: 0.8rem 0 1rem; line-height: 1.6; }
+  .meta { color: #666; font-size: 0.88rem; margin-bottom: 1.5rem; }
+  .objective { background: #f0f6ff; border-left: 4px solid #0066cc; padding: 1rem 1.2rem; border-radius: 0 6px 6px 0; margin-bottom: 1.5rem; }
+  .objective p { margin-bottom: 0; }
+  .arch { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem 1.2rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; margin: 0.8rem 0; color: #333; }
+  .part { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+  .part-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem; }
+  .part-num { background: #1F4E79; color: white; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 5px; white-space: nowrap; }
+  .part-title { font-weight: 700; font-size: 1rem; color: #111; }
+  .deliverable { background: #fff8e6; border-left: 3px solid #f0a500; padding: 0.5rem 0.8rem; margin-top: 0.8rem; border-radius: 0 4px 4px 0; font-size: 0.88rem; color: #555; }
+  .deliverable strong { color: #333; }
+  .note { background: #fff5f5; border-left: 3px solid #dc3545; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .info { background: #f0f6ff; border-left: 3px solid #0066cc; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .success { background: #f0fff4; border-left: 3px solid #28a745; padding: 0.6rem 0.9rem; font-size: 0.88rem; color: #555; margin: 0.8rem 0; border-radius: 0 4px 4px 0; }
+  .reflection { background: #f0fff4; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; }
+  .rubric { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 1rem; }
+  .rubric th { background: #f0f4f8; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  .rubric td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #eee; color: #444; vertical-align: top; }
+  .rubric tr:last-child td { border-bottom: none; font-weight: 700; background: #f8f8f8; }
+
+  /* ── Course nav ── */
+  .course-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #163756;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .course-nav a {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: rgba(255,255,255,0.85);
+    text-decoration: none;
+  }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+  }
+</style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6BVW2TTTLE');
+</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="../index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 5 Lab — Serverless Backend</h1>
+<p class="meta">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 100 pts</p>
+
+<div class="objective">
+  <p><strong>Objective:</strong> Replace the EC2 and ALB backend from Week 4 with AWS Lambda and API Gateway. Add AWS WAF to protect the <code>/photos</code> endpoint. By the end of this lab, the Photo Viewer backend is fully serverless — no servers to patch, no ALB to misconfigure, end-to-end HTTPS, and WAF rate limiting at the edge.</p>
+</div>
+
+<div class="arch">
+Browser → CloudFront → WAF → API Gateway → Lambda → DynamoDB
+                    ↘ S3 (static files via OAC — unchanged)
+</div>
+
+<div class="note"><strong>Before you start:</strong> Your Week 4 CloudFront distribution must be working. Have your CloudFront distribution ID and domain name ready — you will need them for the API Gateway resource policy and WAF configuration. Your DynamoDB table <code>photoviewer-photos</code> must still have the 5 photo items seeded in Week 4.</div>
+
+<div class="info">
+  <strong>Files for this lab:</strong> Get all files from the course GitHub repository →
+  <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week05" target="_blank">photoviewer/week05</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Part 1 — Lambda Function</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 1</span><span class="part-title">Create the Lambda function</span></div>
+  <p>Go to <strong>Lambda → Create function → Author from scratch:</strong></p>
+  <ul>
+    <li>Function name: <code>photoviewer-lambda</code></li>
+    <li>Runtime: <strong>Python 3.12</strong></li>
+    <li>Architecture: <strong>x86_64</strong></li>
+    <li>Execution role: <strong>Create a new role with basic Lambda permissions</strong></li>
+    <li>Click <strong>Create function</strong></li>
+  </ul>
+  <div class="info">AWS creates the function and an IAM role named <code>photoviewer-lambda-role-XXXXXXXX</code>. The auto-created role includes CloudWatch Logs permissions only — you will add DynamoDB access in the next step.</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 2</span><span class="part-title">Add DynamoDB permission to the execution role</span></div>
+  <p>Go to <strong>Configuration tab → Permissions → click the role name</strong> to open it in IAM.</p>
+  <p>Click <strong>Add permissions → Create inline policy → JSON tab</strong> and paste:</p>
+  <pre>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["dynamodb:Scan"],
+    "Resource": "arn:aws:dynamodb:us-east-1:<strong>[your-account-id]</strong>:table/photoviewer-photos"
+  }]
+}</pre>
+  <p>Policy name: <code>photoviewer-dynamodb-read</code> → <strong>Create policy</strong></p>
+  <p>Verify the role now shows two policies:</p>
+  <ul>
+    <li><code>AWSLambdaBasicExecutionRole</code> — CloudWatch Logs (auto-created)</li>
+    <li><code>photoviewer-dynamodb-read</code> — DynamoDB Scan on one table</li>
+  </ul>
+  <div class="deliverable"><strong>Screenshot:</strong> IAM role showing both policies — AWSLambdaBasicExecutionRole and photoviewer-dynamodb-read — with the DynamoDB policy expanded to show the Scan action on the correct table ARN</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 3</span><span class="part-title">Deploy lambda_function.py</span></div>
+  <p>Go back to your Lambda function → <strong>Code tab.</strong> You will see a default <code>lambda_function.py</code> with a placeholder. Replace the entire contents with the code from the Week 5 GitHub repo.</p>
+  <p>Click <strong>Deploy</strong> to save and activate the new code.</p>
+  <div class="info">The function uses <code>Attr('is_public').eq(True)</code> to filter the DynamoDB scan — the same logic as <code>app.py</code> in Week 4 but without Flask, ports, or a server process. No packages need to be installed — <code>boto3</code> is provided by the Lambda runtime automatically.</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Test the Lambda function in isolation</span></div>
+  <p>Go to <strong>Test tab → Create new test event:</strong></p>
+  <ul>
+    <li>Event name: <code>test-photos</code></li>
+    <li>Template: <strong>API Gateway HTTP API</strong> (or leave as hello-world — Lambda ignores the event body for this function)</li>
+    <li>Click <strong>Test</strong></li>
+  </ul>
+  <p>The execution result should show:</p>
+  <ul>
+    <li>Status code: <strong>200</strong></li>
+    <li>Body: a JSON array of 5 photo objects from DynamoDB</li>
+  </ul>
+  <div class="note"><strong>If you see an error:</strong> Check the execution role has <code>dynamodb:Scan</code> on the correct table ARN with your account ID. Check that the DynamoDB table <code>photoviewer-photos</code> exists in <code>us-east-1</code>.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Lambda test result showing status 200 and the JSON array of photos in the response body</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Part 2 — API Gateway</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 5</span><span class="part-title">Create HTTP API with Lambda integration</span></div>
+  <p>Go to <strong>API Gateway → Create API → HTTP API → Build:</strong></p>
+  <ul>
+    <li>Click <strong>Add integration</strong> → select <strong>Lambda</strong> → select <code>photoviewer-lambda</code></li>
+    <li>API name: <code>photoviewer-api</code></li>
+    <li>Click <strong>Next</strong></li>
+  </ul>
+  <p>On the <strong>Configure routes</strong> screen:</p>
+  <ul>
+    <li>Method: <strong>GET</strong></li>
+    <li>Resource path: <code>/photos</code></li>
+    <li>Integration target: <code>photoviewer-lambda</code></li>
+    <li>Click <strong>Next</strong></li>
+  </ul>
+  <p>On the <strong>Define stages</strong> screen: leave <code>$default</code> with <strong>Auto-deploy</strong> enabled → <strong>Next → Create.</strong></p>
+  <p>Copy the <strong>Invoke URL</strong> — it looks like <code>https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com</code>. You will need the hostname (without <code>https://</code>) for the CloudFront origin.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> API Gateway showing the GET /photos route and the Invoke URL</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 6</span><span class="part-title">Add resource policy — restrict to CloudFront only</span></div>
+  <p>Go to your API → <strong>Settings (left menu) → Resource policy.</strong> Paste the following, replacing both placeholders with your values:</p>
+  <pre>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "execute-api:Invoke",
+      "Resource": "arn:aws:execute-api:us-east-1:<strong>[your-account-id]</strong>:*/*/GET/photos",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceArn": "arn:aws:cloudfront::<strong>[your-account-id]</strong>:distribution/<strong>[your-distribution-id]</strong>"
+        }
+      }
+    }
+  ]
+}</pre>
+  <p>Click <strong>Save.</strong> Then go to <strong>Deploy</strong> (top right) to redeploy the API with the policy active.</p>
+  <div class="info">Your CloudFront distribution ID is on the CloudFront console — it looks like <code>EXXXXXXXXXXXXXXXXX</code>. The resource policy enforces that only requests originating from your specific CloudFront distribution can invoke the API. Direct calls to the execute-api URL will return 403.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Resource policy JSON showing your CloudFront distribution ARN in the aws:SourceArn condition</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Verify resource policy is enforced</span></div>
+  <p>Open a new browser tab and navigate directly to your API Gateway invoke URL:</p>
+  <pre>https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos</pre>
+  <p>You should receive a <strong>403 Forbidden</strong> response — confirming the resource policy is blocking direct access. The API will only respond to requests arriving through your CloudFront distribution.</p>
+  <div class="deliverable"><strong>Screenshot:</strong> Browser showing 403 response when accessing the API Gateway URL directly</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Part 3 — Update CloudFront</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Add API Gateway as a CloudFront origin</span></div>
+  <p>Go to <strong>CloudFront → your distribution → Origins tab → Create origin:</strong></p>
+  <ul>
+    <li>Origin domain: paste the API Gateway hostname only — <code>XXXXXXXXXX.execute-api.us-east-1.amazonaws.com</code> (no <code>https://</code>, no path)</li>
+    <li>Protocol: <strong>HTTPS only</strong></li>
+    <li>Origin name: <code>photoviewer-apigw-origin</code></li>
+    <li>Click <strong>Create origin</strong></li>
+  </ul>
+  <div class="info">Unlike Week 4 where the CloudFront → ALB hop was HTTP (port 80), this origin uses HTTPS only. API Gateway only exposes HTTPS — there is no HTTP endpoint to configure. End-to-end encryption is automatic.</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Update the /photos cache behavior</span></div>
+  <p>Go to <strong>Behaviors tab → find the <code>/photos</code> behavior → Edit:</strong></p>
+  <ul>
+    <li>Origin and origin groups: change from <code>photoviewer-alb-origin</code> to <code>photoviewer-apigw-origin</code></li>
+    <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+    <li>Cache policy: <strong>CachingDisabled</strong></li>
+    <li>Click <strong>Save changes</strong></li>
+  </ul>
+  <p>Go to <strong>Invalidations tab → Create invalidation</strong> → path: <code>/*</code> → <strong>Create invalidation.</strong> Wait for status: <strong>Completed.</strong></p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Part 4 — Clean Up Week 4 Infrastructure</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 10</span><span class="part-title">Delete ALB and EC2</span></div>
+  <div class="note"><strong>Do this before verifying.</strong> The ALB and EC2 are no longer needed — Lambda handles all backend requests. If left running, the old /photos behavior may still route to the ALB while you update CloudFront. ALB costs ~$16/month; EC2 costs ~$8/month at idle.</div>
+  <ol>
+    <li><strong>Delete ALB:</strong> EC2 → Load Balancers → select <code>photoviewer-alb</code> → Actions → Delete load balancer → confirm</li>
+    <li><strong>Terminate EC2:</strong> EC2 → Instances → select <code>photoviewer-ec2</code> → Instance state → Terminate instance → confirm</li>
+    <li><strong>Delete target group:</strong> EC2 → Target Groups → select <code>photoviewer-tg</code> → Actions → Delete</li>
+  </ol>
+  <div class="info">Keep the VPC, DynamoDB table, S3 bucket, CloudFront distribution, and IAM roles — these are still needed. The EC2 IAM role (<code>photoviewer-ec2-role</code>) can be kept for reference or deleted.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> EC2 instances list showing photoviewer-ec2 in terminated state, and Load Balancers list showing no active load balancers</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Part 5 — WAF</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 11</span><span class="part-title">Create WAF Web ACL</span></div>
+  <div class="note"><strong>Region matters:</strong> WAF for CloudFront must be created in <strong>us-east-1 (N. Virginia)</strong>. Verify the region selector in the top right of the AWS console shows N. Virginia before proceeding. If you create WAF in another region, it will not be available to associate with CloudFront.</div>
+  <p>Go to <strong>WAF &amp; Shield → Web ACLs → Create web ACL:</strong></p>
+  <ul>
+    <li>Resource type: <strong>Amazon CloudFront distributions</strong></li>
+    <li>Name: <code>photoviewer-waf</code></li>
+    <li>Associated AWS resources: click <strong>Add AWS resources</strong> → select your CloudFront distribution → <strong>Add</strong></li>
+    <li>Click <strong>Next</strong></li>
+  </ul>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 12</span><span class="part-title">Add rate-based rule</span></div>
+  <p>On the <strong>Add rules and rule groups</strong> screen:</p>
+  <ul>
+    <li>Click <strong>Add rules → Add my own rules and rule groups → Rule builder</strong></li>
+    <li>Rule type: <strong>Rate-based rule</strong></li>
+    <li>Name: <code>photos-rate-limit</code></li>
+    <li>Rate limit: <code>100</code></li>
+    <li>Evaluation window: <strong>5 minutes</strong></li>
+    <li>Scope of inspection: <strong>Only consider requests that match the criteria below</strong></li>
+    <li>Criteria: <strong>URI path</strong> → <strong>starts with</strong> → <code>/photos</code></li>
+    <li>Action: <strong>Block</strong></li>
+    <li>Click <strong>Add rule</strong></li>
+  </ul>
+  <p>On the <strong>Set rule priority</strong> screen: leave the default order → <strong>Next.</strong></p>
+  <p>On <strong>Configure metrics</strong>: leave defaults → <strong>Next.</strong></p>
+  <p>On <strong>Review and create</strong>: verify the rule and associated CloudFront distribution → <strong>Create web ACL.</strong></p>
+  <div class="info">A rate of 100 requests per 5 minutes is appropriate for a lab. In production you would set this based on expected legitimate traffic patterns — typically 1,000–10,000 per 5 minutes for a public API.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> WAF Web ACL showing the photos-rate-limit rule and the associated CloudFront distribution</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Part 6 — Verify End to End</h2>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 13</span><span class="part-title">Test in browser</span></div>
+  <p>Open your Photo Viewer site using your CloudFront domain name (e.g. <code>https://d1kbm2nphud61r.cloudfront.net</code>). The photos should load exactly as in Week 4 — the user experience is unchanged.</p>
+  <p>Press <strong>F12</strong> to open DevTools → go to the <strong>Network tab</strong> → reload the page → click the <code>/photos</code> request.</p>
+  <p>In the <strong>Response Headers</strong> panel confirm:</p>
+  <ul>
+    <li><code>Via: 1.1 XXXXXXXXXX.cloudfront.net (CloudFront)</code> — request went through CloudFront ✓</li>
+    <li><strong>No</strong> <code>Server: Werkzeug</code> header — Flask on EC2 is gone ✓</li>
+    <li><code>x-amzn-requestid</code> — present, confirming the response came from API Gateway / Lambda ✓</li>
+  </ul>
+  <div class="success"><strong>Expected result:</strong> Photos load correctly and DevTools confirms the response is no longer coming from Flask/EC2.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading in browser + DevTools Network tab showing the /photos request with Via: CloudFront header and no Server: Werkzeug header</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 14</span><span class="part-title">Verify Lambda invocations in CloudWatch Logs</span></div>
+  <p>Go to <strong>CloudWatch → Log groups → /aws/lambda/photoviewer-lambda.</strong></p>
+  <p>Click the most recent log stream. You should see entries for each invocation including:</p>
+  <ul>
+    <li><strong>START</strong> — invocation ID and runtime version</li>
+    <li><strong>END</strong> — invocation ID</li>
+    <li><strong>REPORT</strong> — duration in ms, billed duration, memory used</li>
+  </ul>
+  <p>Count the log entries — they should correspond to the number of times you loaded the Photo Viewer.</p>
+  <div class="info">Every <code>/photos</code> request that reaches Lambda is automatically logged here — no configuration required. This is your audit trail for the API. Note that WAF-blocked requests never reach Lambda and will not appear in these logs — they are captured in WAF logs instead.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudWatch log stream showing START / END / REPORT entries for Lambda invocations</div>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Step 15</span><span class="part-title">Verify WAF is attached</span></div>
+  <p>Go to <strong>WAF &amp; Shield → Web ACLs → photoviewer-waf → Associated AWS resources tab.</strong></p>
+  <p>Confirm your CloudFront distribution is listed as an associated resource.</p>
+  <p>Go to the <strong>Overview tab</strong> — after loading the Photo Viewer a few times you should see allow counts appearing in the traffic overview chart (it may take 1–2 minutes to update).</p>
+  <div class="deliverable"><strong>Screenshot:</strong> WAF Web ACL Associated AWS resources tab showing your CloudFront distribution, and the Overview tab showing allow counts</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="reflection">
+  <h2>Reflection</h2>
+  <p>Answer all three questions in 2–3 sentences each.</p>
+
+  <h3>Question 1</h3>
+  <p>In Week 4, the ALB security group used the CloudFront managed prefix list to restrict which IP addresses could reach the ALB. In Week 5, the API Gateway resource policy uses <code>aws:SourceArn</code> to restrict access to your specific CloudFront distribution ARN. Explain why the <code>aws:SourceArn</code> approach is more secure than the IP prefix list approach.</p>
+
+  <h3>Question 2</h3>
+  <p>Week 4 required a NAT Gateway so EC2 could download packages from the internet during bootstrap. Week 5 has no NAT Gateway and no package installation step. Explain why Lambda eliminates the need for a NAT Gateway and what security benefit this provides — specifically in terms of supply chain risk.</p>
+
+  <h3>Question 3</h3>
+  <p>The WAF rate-based rule and the API Gateway resource policy both protect the <code>/photos</code> endpoint, but they protect against different threats. Explain what each one does and why both are necessary — what does WAF stop that the resource policy does not, and vice versa?</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Grading rubric</h2>
+<table class="rubric">
+  <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
+  <tr><td>Lambda function + execution role</td><td>15</td><td>Screenshot shows both policies on the role: AWSLambdaBasicExecutionRole and photoviewer-dynamodb-read scoped to the correct table ARN. Test result shows 200 with photo JSON.</td></tr>
+  <tr><td>API Gateway route + resource policy</td><td>20</td><td>GET /photos route visible. Resource policy JSON shows correct CloudFront distribution ARN in aws:SourceArn. Screenshot shows 403 when accessing API Gateway URL directly.</td></tr>
+  <tr><td>CloudFront origin updated to API Gateway</td><td>10</td><td>Origins tab shows photoviewer-apigw-origin with HTTPS-only protocol. /photos behavior routes to the new origin.</td></tr>
+  <tr><td>ALB and EC2 deleted</td><td>5</td><td>EC2 in terminated state, no active load balancers visible.</td></tr>
+  <tr><td>WAF Web ACL with rate-based rule</td><td>15</td><td>Web ACL shows photos-rate-limit rule scoped to /photos URI path. CloudFront distribution listed as associated resource.</td></tr>
+  <tr><td>End-to-end browser verification</td><td>20</td><td>Photo Viewer loads correctly. DevTools shows Via: CloudFront header and no Server: Werkzeug header on the /photos request.</td></tr>
+  <tr><td>CloudWatch Logs verification</td><td>8</td><td>Log group /aws/lambda/photoviewer-lambda shows START/END/REPORT entries corresponding to page loads.</td></tr>
+  <tr><td>Reflection Q1</td><td>4</td><td>Correctly explains that SourceArn is tied to a specific distribution ARN (not just any CloudFront IP), making it IAM-enforced and unforgeable.</td></tr>
+  <tr><td>Reflection Q2</td><td>3</td><td>Correctly identifies that Lambda provides boto3 natively with no install step, eliminating the NAT Gateway and the supply chain risk of pulling packages from the internet.</td></tr>
+  <tr><td>Reflection Q3</td><td>3</td><td>Correctly identifies that WAF rate limits traffic volume (including from CloudFront) while the resource policy blocks requests not originating from CloudFront entirely — complementary controls at different layers.</td></tr>
+  <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+</table>
+
+</body>
+</html>
