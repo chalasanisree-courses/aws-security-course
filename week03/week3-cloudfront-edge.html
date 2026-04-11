@@ -440,7 +440,7 @@
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>1. Problems with Week 2</h2>
+<h2>1. Where we left off</h2>
 
 <p>Week 2 hosted the Photo Viewer directly from S3 static website hosting. It worked — but introduced three security and performance problems that make it unsuitable for a real application.</p>
 <p class="hint">Click each issue to expand</p>
@@ -476,7 +476,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>2. The solution — CloudFront + edge security</h2>
+<h2>2. This week's solution</h2>
 
 <p>We place CloudFront — Amazon's global CDN — in front of S3. This single change addresses all three Week 2 problems simultaneously, and adds several additional security controls at the edge.</p>
 
@@ -541,7 +541,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>4. How it works — request walkthrough</h2>
+<h2>4. How a request flows</h2>
 
 <p>Click each step to see what CloudFront does at that point in the request.</p>
 
@@ -581,7 +581,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Key Concepts in This Solution</h2>
+<h2>5. Key concepts</h2>
 
 <div class="accordion">
 
@@ -724,7 +724,7 @@
 </div><!-- end accordion -->
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>6. Problems with this solution</h2>
+<h2>6. What's still missing</h2>
 
 <p>Week 3 resolves all three Week 2 problems. For a static site, this architecture has no significant remaining security gaps — CloudFront with OAC, HTTPS enforcement, response security headers, and a CF Function allowlist is a solid, well-layered setup.</p>
 
