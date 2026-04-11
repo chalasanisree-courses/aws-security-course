@@ -499,9 +499,15 @@
       <span class="week-chevron" id="w5-chev">▶</span>
     </div>
     <div class="week-body" id="w5">
-      <p class="week-desc">EC2 and ALB replaced with Lambda and API Gateway. Same DynamoDB table, same CloudFront distribution. Eliminates the EC2 attack surface — no OS patching, no SSH, no server management.</p>
+      <p class="week-desc">EC2 and ALB replaced with Lambda and API Gateway. WAF rate-based rule added to CloudFront. Eliminates the EC2 attack surface — no OS patching, no SSH, no server management, no supply chain risk. API Gateway resource policy restricts invocations to CloudFront only via aws:SourceArn.</p>
       <div class="resource-list">
-        <span class="coming-soon">▸ Videos &amp; Labs — see Canvas LMS</span>
+        <a class="resource-link" href="week05/week5-serverless.html">
+          <span class="icon">◈</span> Serverless Backend — Lambda and API Gateway — concept notes
+        </a>
+        <a class="resource-link" href="week05/week5-lab-assignment.html">
+          <span class="icon">◈</span> Week 5 Lab — Serverless Backend
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
     </div>
   </div>
@@ -624,13 +630,13 @@
               <td><span class="scope-pill scope-global">Global</span></td>
               <td>DNS service. Routes internet traffic to your application. Health checks enable automatic failover.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/lambda/" target="_blank">Lambda</a></div><span class="svc-abbr"> · AWS Lambda</span><br><span class="special-pill free-tier">free tier</span></td>
+            <tr data-scope="regional" data-week="5">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/lambda/" target="_blank">Lambda</a></div><span class="svc-abbr"> · AWS Lambda</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 5</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Run code without managing servers. AWS runs functions across AZs automatically. PaaS — you manage code only.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/api-gateway/" target="_blank">API Gateway</a></div><span class="svc-abbr"> · Amazon API Gateway</span><br><span class="special-pill free-tier">free tier</span></td>
+            <tr data-scope="regional" data-week="5">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/api-gateway/" target="_blank">API Gateway</a></div><span class="svc-abbr"> · Amazon API Gateway</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 5</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Creates and secures REST APIs. Handles throttling, JWT authentication, and usage plans.</td>
             </tr>
@@ -639,8 +645,8 @@
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Automated CVE scanning for EC2 instances. References NIST NVD. Requires SSM Agent.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><span class="svc-abbr"> · AWS Web Application Firewall</span><br><span class="special-pill paid-only">paid</span></td>
+            <tr data-scope="regional" data-week="5">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><span class="svc-abbr"> · AWS Web Application Firewall</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 5</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Filters web traffic. Blocks SQLi, XSS, and rate-based attacks. Must be us-east-1 for CloudFront.</td>
             </tr>
@@ -721,7 +727,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 4;
+const currentWeek = 5;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }
