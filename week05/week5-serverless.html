@@ -154,7 +154,7 @@
     <li>Explain why Lambda eliminates supply chain risk compared to EC2 with pip</li>
     <li>Describe the Lambda execution model — invocation, cold start, timeout, and concurrency</li>
     <li>Explain what a Lambda execution role is and how least-privilege applies to serverless functions</li>
-    <li>Describe what an API Gateway resource policy does and why it is stronger than the ALB custom header pattern</li>
+    <li>Describe what a Lambda authorizer does and how it restricts API Gateway invocations to CloudFront only</li>
     <li>Explain where WAF sits in the request path and how a rate-based rule works</li>
     <li>Describe what CloudWatch Logs captures automatically for every Lambda invocation</li>
     <li>Explain why API Gateway is HTTPS-only and what that means for end-to-end encryption</li>
@@ -207,7 +207,7 @@
 </div>
 <div class="issue-panel" id="issue-2">
   <h4>Issue 2 — ALB directly reachable</h4>
-  <p>The ALB had a public DNS name reachable by any IP — not just CloudFront. An attacker who found the ALB DNS name could call <code>/photos</code> directly, bypassing CloudFront's WAF, geo-restrictions, and edge controls. <strong>Fixed this week</strong> by replacing the ALB with API Gateway, which supports a resource policy restricting invocation to your specific CloudFront distribution ARN — IAM-enforced, not header-matching.</p>
+  <p>The ALB had a public DNS name reachable by any IP — not just CloudFront. An attacker who found the ALB DNS name could call <code>/photos</code> directly, bypassing CloudFront's WAF, geo-restrictions, and edge controls. <strong>Fixed this week</strong> by replacing the ALB with API Gateway, which supports a Lambda authorizer that checks that requests are coming from CloudFront — so the API cannot be called directly by anyone who discovers the URL.</p>
 </div>
 <div class="issue-panel" id="issue-3">
   <h4>Issue 3 — Supply chain risk</h4>
@@ -323,7 +323,7 @@
       <rect x="278" y="50" width="110" height="70" rx="8" fill="#fff" stroke="#6A1B9A" stroke-width="2"/>
       <text x="333" y="76" text-anchor="middle" font-size="18" font-family="system-ui">&#x1F50C;</text>
       <text x="333" y="98" text-anchor="middle" font-size="11" font-weight="600" fill="#4A148C" font-family="system-ui">API Gateway</text>
-      <text x="333" y="112" text-anchor="middle" font-size="8" fill="#666" font-family="system-ui">resource policy</text>
+      <text x="333" y="112" text-anchor="middle" font-size="8" fill="#666" font-family="system-ui">Lambda authorizer</text>
     </g>
     <line x1="388" y1="85" x2="410" y2="85" stroke="#6A1B9A" stroke-width="2" marker-end="url(#arrow-purple)"/>
     <!-- Lambda -->
@@ -354,9 +354,9 @@
 <table class="comparison-table">
   <tr><th></th><th>Week 4</th><th>Week 5</th></tr>
   <tr><td><strong>Compute</strong></td><td>EC2 (always running)</td><td>Lambda (runs on invocation only)</td></tr>
-  <tr><td><strong>HTTP layer</strong></td><td>ALB — internet-facing, public DNS</td><td>API Gateway — resource policy, CloudFront-only</td></tr>
+  <tr><td><strong>HTTP layer</strong></td><td>ALB — internet-facing, public DNS</td><td>API Gateway — Lambda authorizer, CloudFront-only</td></tr>
   <tr><td><strong>CF → origin protocol</strong></td><td>HTTP (port 80)</td><td>HTTPS — API Gateway enforces it</td></tr>
-  <tr><td><strong>Origin restriction</strong></td><td>None — ALB SG inbound was 0.0.0.0/0, reachable by any IP</td><td>IAM resource policy tied to your distribution ARN</td></tr>
+  <tr><td><strong>Origin restriction</strong></td><td>None — ALB SG inbound was 0.0.0.0/0, reachable by any IP</td><td>Lambda authorizer checks CloudFront secret header</td></tr>
   <tr><td><strong>Rate limiting</strong></td><td>None</td><td>WAF rate-based rule on CloudFront</td></tr>
   <tr><td><strong>Package installation</strong></td><td>pip3 install at boot via NAT GW</td><td>None — boto3 provided by Lambda runtime</td></tr>
   <tr><td><strong>OS patching</strong></td><td>Your responsibility</td><td>AWS manages the runtime</td></tr>
@@ -438,7 +438,7 @@
     <rect x="386" y="68" width="112" height="90" rx="8" fill="#EDE7F6" stroke="#6A1B9A" stroke-width="2"/>
     <text x="442" y="104" text-anchor="middle" font-size="20" font-family="system-ui">&#x1F50C;</text>
     <text x="442" y="128" text-anchor="middle" font-size="10" font-weight="600" fill="#4A148C" font-family="system-ui">API Gateway</text>
-    <text x="442" y="143" text-anchor="middle" font-size="8" fill="#6A1B9A" font-family="system-ui">Resource policy</text>
+    <text x="442" y="143" text-anchor="middle" font-size="8" fill="#6A1B9A" font-family="system-ui">Lambda authorizer</text>
   </g>
 
   <line x1="498" y1="108" x2="526" y2="108" stroke="#E65100" stroke-width="2" marker-end="url(#arr2-ora)"/>
@@ -501,8 +501,8 @@
     <p style="margin:0; font-size:0.9rem; color:#333;">Every hop is encrypted. Browser &#x2192; CloudFront &#x2192; API Gateway &#x2014; all HTTPS. Unlike Week 4 where the CloudFront &#x2192; ALB hop was HTTP, API Gateway only exposes HTTPS endpoints. No certificate management required.</p>
   </div>
   <div style="border-left:3px solid #2E7D32; padding:0.6rem 0.9rem; background:#f6fbf6; border-radius:0 6px 6px 0;">
-    <div style="font-weight:600; font-size:0.9rem; color:#1B5E20; margin-bottom:0.2rem;">IAM enforcement</div>
-    <p style="margin:0; font-size:0.9rem; color:#333;">The API Gateway resource policy uses <code>aws:SourceArn</code> to restrict invocations to our specific CloudFront distribution. IAM-enforced, not header matching. DynamoDB is reached over AWS&#x27;s private network &#x2014; no internet path.</p>
+    <div style="font-weight:600; font-size:0.9rem; color:#1B5E20; margin-bottom:0.2rem;">CloudFront-only access</div>
+    <p style="margin:0; font-size:0.9rem; color:#333;">A Lambda authorizer on the API Gateway checks that every request includes a secret header that CloudFront adds to all origin requests. Requests arriving directly at the API Gateway URL — without that header — are rejected with 403. DynamoDB is reached over AWS's private network — no internet path.</p>
   </div>
 </div>
 
@@ -540,8 +540,8 @@
 
   <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
     <div style="background:#1F4E79; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:5px; white-space:nowrap; flex-shrink:0; margin-top:2px;">Step 5</div>
-    <div><strong>API Gateway checks the resource policy</strong>
-    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">API Gateway evaluates the resource policy. It checks <code>aws:SourceArn</code> — the request must originate from our specific CloudFront distribution ARN. Match → Lambda is invoked. No match (e.g. a direct call to the execute-api URL) → 403 Forbidden, Lambda is never invoked.</p></div>
+    <div><strong>Lambda authorizer checks the request</strong>
+    <p style="margin:0.3rem 0 0; color:#555; font-size:0.93rem;">Before routing to the Lambda function, API Gateway invokes the Lambda authorizer. The authorizer checks for a secret header that CloudFront adds to every origin request. Header matches → the main Lambda function is invoked. Header missing or wrong (e.g. a direct call to the execute-api URL) → 403 Forbidden, the function is never invoked.</p></div>
   </div>
 
   <div style="display:flex; gap:1rem; margin-bottom:1.2rem; align-items:flex-start;">
@@ -600,7 +600,7 @@
     <p><strong>HTTP API vs REST API:</strong> API Gateway offers two types. REST API has more features (usage plans, API keys, per-method throttling). HTTP API is simpler, cheaper, and lower latency — sufficient for our use case. We use HTTP API.</p>
     <p><strong>Built-in throttling:</strong> API Gateway enforces default account-level throttling (10,000 requests/second burst, 5,000 requests/second steady-state) independently of WAF. This is a backstop against runaway traffic even before WAF rate rules activate.</p>
     <p><strong>HTTPS only:</strong> API Gateway exposes HTTPS endpoints exclusively. There is no HTTP option — TLS is enforced by the service, not by configuration.</p>
-    <p><strong>In the demo:</strong> HTTP API with one route: <code>GET /photos → lambda_function</code>. Resource policy restricts invocations to our CloudFront distribution ARN.</p>
+    <p><strong>In the demo:</strong> HTTP API with one route: <code>GET /photos → lambda_function</code>. A Lambda authorizer restricts invocations to requests from CloudFront.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-waf-comp')">
@@ -643,17 +643,14 @@
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-apigw')">
-    <div class="ac-left"><span class="ac-icon">📜</span><span class="ac-name">API Gateway resource policy</span><span class="ac-sub">IAM-enforced · restricts to CloudFront ARN · stronger than custom headers</span></div>
+    <div class="ac-left"><span class="ac-icon">📜</span><span class="ac-name">Lambda authorizer — restricts to CloudFront only</span><span class="ac-sub">Secret header · CloudFront adds it · direct calls rejected · better than open ALB</span></div>
     <span class="ac-chevron" id="ac-apigw-chev">›</span>
   </div>
   <div class="ac-body" id="ac-apigw">
-    <p>A <strong>resource policy</strong> is an IAM policy attached directly to the API. It controls who can call <code>execute-api:Invoke</code>. We use the <code>aws:SourceArn</code> condition key to restrict invocations to our specific CloudFront distribution ARN — so only requests originating from our distribution are allowed through.</p>
-    <p><strong>Why this is stronger than the ALB custom header pattern:</strong></p>
-    <ul>
-      <li><strong>Custom headers</strong> are string matching — any caller who knows the secret passes. The secret lives in CloudFront's origin config in plaintext and must be manually rotated.</li>
-      <li><strong>Resource policy</strong> uses IAM conditions — enforced cryptographically by AWS's authorization layer before the request reaches your API. There is no secret to discover or leak.</li>
-      <li>The <code>aws:SourceArn</code> condition ties to <em>your</em> specific distribution ARN — not just "any CloudFront IP," which is all that an ALB security group with <code>0.0.0.0/0</code> gives you.</li>
-    </ul>
+    <p>A <strong>Lambda authorizer</strong> is a Lambda function that API Gateway invokes before routing a request to your main function. It acts as a gatekeeper — it can allow or deny the request based on whatever logic you write.</p>
+    <p>Our authorizer does one thing: check that the incoming request includes a secret header that CloudFront is configured to add to every request it sends to the API Gateway origin. If the header is present and matches → allow. If missing or wrong → return 403, the main Lambda function is never invoked.</p>
+    <p><strong>Why this is better than Week 4:</strong> The Week 4 ALB had <code>0.0.0.0/0</code> on its security group — any IP could call it directly. Now any direct call to the API Gateway URL without the correct header is rejected.</p>
+    <p><strong>Acknowledged limitation:</strong> The secret header is a shared secret. Anyone who discovers its value can call the API directly by adding that header. This is weaker than an IAM-enforced mechanism, but sufficient for a public read-only endpoint that returns only public photo metadata. The secret should be stored in AWS Secrets Manager and rotated periodically.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-waf')">
@@ -720,9 +717,9 @@
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v2">
-    <p><strong>The limitation:</strong> The API Gateway endpoint (<code>https://XXXXXX.execute-api.us-east-1.amazonaws.com/photos</code>) has a publicly resolvable URL. The resource policy restricts invocations to our CloudFront distribution ARN — so a direct call without the correct CloudFront origin is denied at the IAM layer. But the URL is discoverable, and any misconfiguration of the resource policy would immediately expose the API.</p>
-    <p><strong>The distinction from Week 4:</strong> The ALB was reachable by any IP that knew the DNS name — no policy enforcement. API Gateway with a resource policy requires the request to originate from our specific CloudFront distribution, enforced by IAM. The exposure surface is much smaller — but the URL being public is worth noting.</p>
-    <p><strong>Production hardening:</strong> In production, you can attach a second WAF Web ACL directly to the API Gateway stage (Regional WAF, separate from the CloudFront WAF). This means even direct calls to the execute-api URL — which the resource policy rejects — are rate-limited before consuming API Gateway capacity. Two WAF layers: one at the CloudFront edge catching floods early, one at API Gateway as a backstop if CloudFront is misconfigured or bypassed. For this course, the CloudFront WAF combined with the resource policy is the correct and sufficient posture.</p>
+    <p><strong>The limitation:</strong> The API Gateway endpoint (<code>https://XXXXXX.execute-api.us-east-1.amazonaws.com/photos</code>) has a publicly resolvable URL. The Lambda authorizer rejects requests that don't include the correct secret header — so a direct call without that header returns 403. But the URL is discoverable, and anyone who learns the secret header value can bypass the restriction.</p>
+    <p><strong>The distinction from Week 4:</strong> The Week 4 ALB was reachable by any IP with no restriction at all. Now any direct call must include the correct secret header — a meaningful improvement. The remaining weakness is that the secret header is a shared value rather than an unforgeable identity.</p>
+    <p><strong>Production hardening:</strong> Store the secret in AWS Secrets Manager and rotate it periodically. For stronger enforcement, REST API Gateway supports resource policies with <code>aws:SourceArn</code> — an IAM-enforced mechanism that ties access to your specific CloudFront distribution ARN with no shared secret involved.</p>
   </div>
 </div>
 
@@ -762,7 +759,7 @@ const archData = {
   waf:     { title: 'AWS WAF — Web Application Firewall', color: '#C62828', text: 'A WAF operates at Layer 7 — the application layer — inspecting the content of HTTP requests rather than just IP addresses and ports. This is important because application-layer attacks (request floods, SQL injection, bot traffic) look like legitimate traffic at the network layer and are invisible to firewalls and Shield Standard. AWS WAF lets you define rules — rate limits, geographic restrictions, string match conditions — that evaluate every request before it reaches your application. Here we use a rate-based rule to cap requests per IP on the /photos path, blocking floods before Lambda ever runs.' },
   cf:      { title: 'Amazon CloudFront — Content Delivery Network', color: '#2E7D32', text: 'CloudFront is a global CDN that caches content at 400+ edge locations worldwide. Beyond performance, it\'s a critical security boundary: it enforces HTTPS, runs WAF rules, provides Shield Standard DDoS protection automatically, and lets you attach CloudFront Functions for request inspection at the edge. In this architecture it serves as the single ingress point for all traffic — static files route to S3 via OAC, API requests route to API Gateway. Nothing reaches the backend directly.' },
   s3:      { title: 'Amazon S3 — Simple Storage Service', color: '#2E7D32', text: 'S3 is object storage — it stores files as objects in buckets. Any type of file can be stored: HTML, CSS, JavaScript, images, backups, logs. S3 is not a web server — it does not execute code. In this architecture it stores the static frontend (index.html, app.js, style.css) and the photo images. The bucket is fully private with Block Public Access enabled. Origin Access Control (OAC) gives CloudFront a signed identity that S3\'s bucket policy recognizes — so only CloudFront can read objects, and the bucket URL is completely inaccessible to anyone else.' },
-  apigw:   { title: 'Amazon API Gateway — Managed API Layer', color: '#6A1B9A', text: 'API Gateway is a fully managed service that handles the HTTP layer for your backend — routing, throttling, authentication, and access control — so your Lambda function only has to handle business logic. It\'s IAM-aware, which means you can attach a resource policy that restricts who can invoke the API. We use aws:SourceArn to restrict invocations to our specific CloudFront distribution — a much stronger control than the custom header pattern used with ALB, which relied on a shared secret in plaintext. API Gateway exposes HTTPS only; there is no HTTP endpoint to misconfigure.' },
+  apigw:   { title: 'Amazon API Gateway — Managed API Layer', color: '#6A1B9A', text: 'API Gateway is a fully managed service that handles the HTTP layer for your backend — routing, throttling, authentication, and access control — so your Lambda function only handles business logic. A Lambda authorizer restricts invocations to requests coming from CloudFront by checking a secret header that CloudFront adds to every origin request. Direct calls to the execute-api URL without that header are rejected with 403. API Gateway exposes HTTPS only; there is no HTTP endpoint to misconfigure.' },
   lambda:  { title: 'AWS Lambda — Serverless Compute', color: '#E65100', text: 'Lambda is a serverless compute service — you provide a function, AWS handles everything else: servers, OS, runtime, patching, scaling, availability. Functions run only when invoked and stop when they return — there is no idle cost and no persistent process to compromise. Lambda integrates natively with IAM: every function has an execution role that defines exactly what AWS resources it can access. Temporary credentials are injected automatically for each invocation — no access keys to store or rotate. Every invocation is automatically logged to CloudWatch, giving you a full audit trail with no configuration.' },
   dynamo:  { title: 'Amazon DynamoDB — Managed NoSQL Database', color: '#2E7D32', text: 'DynamoDB is a fully managed, serverless key-value and document database. You define a table with a partition key — DynamoDB handles storage, replication across multiple AZs, scaling, and patching entirely. There are no servers to manage, no connection pools to configure, no OS to patch. Unlike a relational database, DynamoDB does not require a VPC or a network path — Lambda reaches it directly over AWS\'s private network using the SDK. Access is controlled entirely by IAM: the Lambda execution role has only dynamodb:Scan on this one table. No other function, user, or service can access it without an explicit IAM grant.' }
 };
@@ -782,7 +779,7 @@ const tierData = {
   waf:     { title: '&#x1F6E1;&#xFE0F; WAF', color: '#C62828', text: 'AWS WAF Web ACL attached to the CloudFront distribution. Evaluates every request before CloudFront routes it. A rate-based rule counts requests per source IP on the /photos path over a rolling 5-minute window. Requests exceeding the threshold are blocked with a 429 response.' },
   cf:      { title: '&#x2601;&#xFE0F; CloudFront', color: '#2E7D32', text: 'The CDN and HTTPS termination point. All requests \u2014 static and dynamic \u2014 enter through CloudFront. The CF Function runs an allowlist check at the viewer request stage. Static files (/, app.js, photos/*.jpg) are served from S3 via OAC. API requests (/photos) are routed to API Gateway with CachingDisabled.' },
   s3:      { title: '&#x1FAA3; S3 (private bucket)', color: '#2E7D32', text: 'Stores all static files: index.html, style.css, app.js, and the photo images. Block Public Access is fully enabled. Only CloudFront can read it via OAC. The browser never contacts S3 directly.' },
-  apigw:   { title: '&#x1F50C; API Gateway', color: '#6A1B9A', text: 'HTTP API with a single GET /photos route wired to the Lambda function. A resource policy restricts invocations to our specific CloudFront distribution ARN using aws:SourceArn \u2014 IAM-enforced, not header-matching. Exposes HTTPS only \u2014 there is no HTTP endpoint.' },
+  apigw:   { title: '&#x1F50C; API Gateway', color: '#6A1B9A', text: 'HTTP API with a single GET /photos route wired to the Lambda function. A Lambda authorizer checks that every request includes the secret header CloudFront adds to all origin requests — rejecting direct calls with 403. Exposes HTTPS only \u2014 there is no HTTP endpoint.' },
   lambda:  { title: '&#x03BB; Lambda', color: '#E65100', text: 'Runs lambda_function.py on invocation. The handler calls table.scan() on the photoviewer-photos table filtering for is_public = true and returns the result as JSON. Execution role is least-privilege: dynamodb:Scan on one table, plus CloudWatch Logs permissions. Every invocation is logged automatically.' },
   dynamo:  { title: '&#x1F5C4;&#xFE0F; DynamoDB', color: '#E65100', text: 'Stores photo metadata in the photoviewer-photos table. Each item has: photo_id (partition key), s3_key (path to photo in S3), is_public (true/false), owner (username), uploaded_at (timestamp). Lambda queries with is_public = true. Accessed over AWS private network \u2014 no internet path.' }
 };
@@ -819,7 +816,7 @@ const flowText = {
   1: 'The browser sends an HTTPS GET request to /photos. CloudFront\'s domain resolves to the nearest edge POP — the request never goes directly to API Gateway or Lambda.',
   2: 'WAF evaluates the request before CloudFront routes it. The rate-based rule checks how many requests this source IP has made to /photos in the last 5 minutes. Exceeds the threshold → 429, blocked. Within limit → passes to CloudFront.',
   3: 'CloudFront receives the request. The CF Function checks the URL path allowlist. /photos is an API call — CloudFront routes it to the API Gateway origin using the CachingDisabled policy, so every request passes through to API Gateway.',
-  4: 'API Gateway evaluates the resource policy. It checks aws:SourceArn — the request must originate from our specific CloudFront distribution ARN. Match → Lambda is invoked. No match (e.g. a direct call to the execute-api URL) → 403 Forbidden.',
+  4: 'The Lambda authorizer runs before the main function. It checks for the secret header that CloudFront adds to every origin request. Header present and correct → the main Lambda function is invoked. Header missing or wrong → 403 Forbidden, the function never runs.',
   5: 'Lambda is invoked with the API Gateway event object. If the execution environment is cold, AWS initializes the Python runtime (~100–300ms). The handler runs: boto3 scans the DynamoDB table filtering for is_public = true and returns a JSON response. The invocation is logged to CloudWatch automatically.',
   6: 'Lambda calls DynamoDB via the AWS SDK. The request stays on AWS\'s private network — no internet path. DynamoDB returns matching items. Lambda serializes them to JSON and returns the response up through API Gateway → CloudFront → browser.'
 };

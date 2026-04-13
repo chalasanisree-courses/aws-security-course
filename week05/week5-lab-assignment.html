@@ -154,7 +154,8 @@ Browser → WAF/CloudFront → API Gateway → Lambda → DynamoDB
 <div class="part">
   <div class="part-header"><span class="part-num">Step 4</span><span class="part-title">Deploy lambda_function.py</span></div>
   <p>Go back to your Lambda function → <strong>Code tab.</strong> You will see a default <code>lambda_function.py</code> with a placeholder. Replace the entire contents with the code from the Week 5 GitHub repo.</p>
-  <p>Click <strong>Deploy</strong> to save and activate the new code.</p>
+  <div class="note"><strong>You must click Deploy after pasting.</strong> The Lambda code editor is just a text editor — the running function does not update until you explicitly click <strong>Deploy</strong>. This is different from API Gateway's Auto-deploy, which applies only to route and integration changes, not to Lambda function code. If you skip Deploy, the old hello-world placeholder keeps running and every request will fail.</div>
+  <p>Click <strong>Deploy</strong> — wait for the green "Changes deployed" confirmation before moving on.</p>
   <div class="info">The function uses <code>Attr('is_public').eq(True)</code> to filter the DynamoDB scan — the same logic as <code>app.py</code> in Week 4 but without Flask, ports, or a server process. No packages need to be installed — <code>boto3</code> is provided by the Lambda runtime automatically.</div>
 </div>
 
@@ -330,7 +331,8 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 13</span><span class="part-title">Create WAF Web ACL</span></div>
-  <div class="note"><strong>Region matters:</strong> WAF for CloudFront must be created in <strong>us-east-1 (N. Virginia)</strong>. Verify the region selector in the top right of the AWS console shows N. Virginia before proceeding. If you create WAF in another region, it will not be available to associate with CloudFront.</div>
+  <div class="note"><strong>Region matters:</strong> WAF for CloudFront must be created in <strong>us-east-1 (N. Virginia)</strong>. Verify the region selector in the top right of the AWS console shows N. Virginia before proceeding.</div>
+  <div class="note"><strong>Use the old WAF console:</strong> AWS has introduced a new "Protection packs" interface as the default landing page. Scroll to the bottom of the left navigation panel and click <strong>"Switch to the old WAF console"</strong> — the lab instructions match the classic Web ACLs interface, not the new Protection packs wizard.</div>
   <p>Go to <strong>WAF &amp; Shield → Web ACLs → Create web ACL:</strong></p>
   <ul>
     <li>Resource type: <strong>Amazon CloudFront distributions</strong></li>
@@ -348,12 +350,17 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
     <li>Rule type: <strong>Rate-based rule</strong></li>
     <li>Name: <code>photos-rate-limit</code></li>
     <li>Rate limit: <code>100</code></li>
-    <li>Evaluation window: <strong>5 minutes</strong></li>
-    <li>Scope of inspection: <strong>Only consider requests that match the criteria below</strong></li>
-    <li>Criteria: <strong>URI path</strong> → <strong>starts with</strong> → <code>/photos</code></li>
-    <li>Action: <strong>Block</strong></li>
-    <li>Click <strong>Add rule</strong></li>
+    <li>Evaluation window: <strong>5 minutes (300 seconds)</strong></li>
+    <li>Request aggregation: <strong>Source IP address</strong></li>
+    <li>Scope of inspection: <strong>Only consider requests that match the criteria in a rule statement</strong></li>
   </ul>
+  <p>In the <strong>Statement</strong> section that appears below:</p>
+  <ul>
+    <li>Inspect: <strong>URI path</strong></li>
+    <li>Match type: <strong>Starts with string</strong></li>
+    <li>String to match: <code>/photos</code></li>
+  </ul>
+  <p>Action: <strong>Block</strong> → click <strong>Add rule.</strong></p>
   <p>On the <strong>Set rule priority</strong> screen: leave the default order → <strong>Next.</strong></p>
   <p>On <strong>Configure metrics</strong>: leave defaults → <strong>Next.</strong></p>
   <p>On <strong>Review and create</strong>: verify the rule and associated CloudFront distribution → <strong>Create web ACL.</strong></p>
