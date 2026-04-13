@@ -128,9 +128,17 @@ echo ""
 echo "[ CloudFront distribution ]"
 if [ -n "$BUCKET" ]; then
   CF_DOMAIN=$(aws cloudfront list-distributions \
-    --query "DistributionList.Items[?contains(Origins.Items[].DomainName,'$BUCKET')].DomainName | [0]" \
-    --output text 2>/dev/null)
-  if [ -n "$CF_DOMAIN" ] && [ "$CF_DOMAIN" != "None" ]; then
+    --query "DistributionList.Items[].{Domain:DomainName,Origins:Origins.Items[].DomainName}" \
+    --output json 2>/dev/null | \
+    python3 -c "
+import json,sys
+items=json.load(sys.stdin)
+for i in items:
+    if any('$BUCKET' in o for o in i.get('Origins',[])):
+        print(i['Domain'])
+        break
+")
+  if [ -n "$CF_DOMAIN" ]; then
     green "Distribution found: $CF_DOMAIN"
     echo "     Use this domain to access your Photo Viewer throughout the lab."
   else
