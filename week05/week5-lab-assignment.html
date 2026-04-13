@@ -85,11 +85,11 @@ Browser → WAF/CloudFront → API Gateway → Lambda → DynamoDB
 
 
 <h2>Pre-flight checklist</h2>
-<p>Before building anything, run the pre-flight script from the course repo to verify your Week 4 environment is in the correct state. Open <strong>CloudShell</strong> (top nav in the AWS console) and run:</p>
+<p>Before building anything, run the pre-flight script from the course repo to verify your Week 4 environment is in the correct state. Open <strong>CloudShell</strong> (top nav in the AWS console) and run these three commands in order:</p>
 
-<pre>git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || \
-  git -C aws-security-course pull
-bash aws-security-course/photoviewer/week05/week5-preflight.sh</pre>
+<pre>cd ~</pre>
+<pre>git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || git -C aws-security-course pull</pre>
+<pre>bash aws-security-course/photoviewer/week05/week5-preflight.sh</pre>
 
 <div class="info">The script checks five things: EC2 and ALB are gone, DynamoDB table exists with 5 items (creates and seeds automatically if missing), S3 bucket has photo files, and CloudFront distribution is found. It prints your CloudFront domain name — keep that handy. Address any warnings before proceeding.</div>
 

@@ -76,6 +76,15 @@
   <p><strong>Objective:</strong> Fix all three Week 2 vulnerabilities by placing CloudFront in front of S3. The bucket goes fully private. HTTPS is enforced. A CloudFront Function blocks non-web files at the edge. Security response headers are added to every response.</p>
 </div>
 
+<h2>Pre-flight checklist</h2>
+<p>Before building anything, run the pre-flight script to verify your Week 2 environment is in the correct state. Open <strong>CloudShell</strong> and run these three commands in order:</p>
+
+<pre>cd ~</pre>
+<pre>git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || git -C aws-security-course pull</pre>
+<pre>bash aws-security-course/photoviewer/week03/week3-preflight.sh</pre>
+
+<div class="info">The script confirms your S3 bucket from Week 2 exists with 5 photo files, and checks whether a CloudFront distribution already exists. Address any errors before proceeding.</div>
+
 <div class="info">
   <strong>Files for this lab:</strong> Get all files from the course GitHub repository →
   <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week03" target="_blank">photoviewer/week03</a>

@@ -82,12 +82,11 @@ Browser → CloudFront → ALB (public subnet) → EC2 Flask (private subnet) �
 </div>
 
 <h2>Pre-flight checklist</h2>
-<p>Before building anything, run the pre-flight script from the course repo to verify your Week 3 environment is in the correct state. Open <strong>CloudShell</strong> (top nav in the AWS console) and run:</p>
+<p>Before building anything, run the pre-flight script from the course repo to verify your Week 3 environment is in the correct state. Open <strong>CloudShell</strong> (top nav in the AWS console) and run these three commands in order:</p>
 
-<pre>cd ~
-git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || \
-  git -C aws-security-course pull
-bash aws-security-course/photoviewer/week04/week4-preflight.sh</pre>
+<pre>cd ~</pre>
+<pre>git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || git -C aws-security-course pull</pre>
+<pre>bash aws-security-course/photoviewer/week04/week4-preflight.sh</pre>
 
 <div class="info">The script checks that your S3 bucket and CloudFront distribution from Week 3 are still in place, and prints your CloudFront domain name. It also checks for any leftover expensive resources (NAT Gateway, EC2, ALB) from a prior attempt. Address any warnings before proceeding.</div>
 
