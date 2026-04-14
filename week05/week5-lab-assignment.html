@@ -404,6 +404,16 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <div class="deliverable"><strong>Screenshot:</strong> WAF Web ACL Associated AWS resources tab showing your CloudFront distribution, and the Overview tab showing allow counts</div>
 </div>
 
+<div class="part">
+  <div class="part-header"><span class="part-num">Optional</span><span class="part-title">Enable WAF logging and observe a blocked request</span></div>
+  <p>The Overview tab shows aggregate allow/block counts, but WAF can also write a full log of every evaluated request — including blocked ones — to CloudWatch Logs. Lambda logs (Step 16) only capture requests that reach Lambda; WAF-blocked requests never get that far and only appear here.</p>
+  <p><strong>Enable WAF logging:</strong> Go to <strong>WAF &amp; Shield → Web ACLs → photoviewer-waf → Logging and metrics tab → Enable logging.</strong> Choose <strong>CloudWatch Logs log group</strong> as the destination and create a new log group named <code>aws-waf-logs-photoviewer</code> (the <code>aws-waf-logs-</code> prefix is required by WAF). Click <strong>Enable logging</strong>.</p>
+  <p><strong>Trigger the rate limit:</strong> In CloudShell, run a loop that exceeds the 100-request threshold:</p>
+  <pre><code>for i in {1..110}; do curl -s https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/photos -o /dev/null; done</code></pre>
+  <p>After the loop completes, go to <strong>CloudWatch → Log groups → aws-waf-logs-photoviewer</strong> and open the most recent log stream. Look for entries where <code>"action":"BLOCK"</code> — these are requests WAF stopped before they ever reached API Gateway or Lambda. Compare with the Lambda log group from Step 16: you will see no corresponding Lambda invocations for the blocked requests.</p>
+  <div class="info"><strong>Why this matters:</strong> This is the detective control gap between WAF and Lambda logs. CloudWatch captures what Lambda did; WAF logs capture what never reached Lambda. A complete security picture requires both. In production, both log streams would feed into a SIEM or CloudWatch Insights for correlation.</div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>Troubleshooting — CloudShell debug commands</h2>
 
