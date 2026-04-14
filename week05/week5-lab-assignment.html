@@ -499,5 +499,31 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
 </table>
 
+<h2>Clean Up — Avoid Ongoing Charges</h2>
+<div class="note"><strong>Do this after submitting your lab.</strong> WAF costs $5/month per Web ACL plus $1/month per rule — resources left running will appear on your AWS bill. The resources below are not needed for Week 6.</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">Delete WAF Web ACL</span></div>
+  <p>Go to <strong>WAF &amp; Shield → Web ACLs</strong> (region: us-east-1). Select <code>photoviewer-waf</code> → <strong>Delete</strong>. You must first disassociate the CloudFront distribution: click the ACL → <strong>Associated AWS resources</strong> tab → select the distribution → <strong>Disassociate</strong> — then delete the ACL.</p>
+  <p><strong>Cost if left running:</strong> ~$6/month (1 Web ACL + 1 rule).</p>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Cleanup 2</span><span class="part-title">Delete API Gateway</span></div>
+  <p>Go to <strong>API Gateway → APIs</strong>. Select <code>photoviewer-api</code> → <strong>Actions → Delete</strong> → confirm. This removes the HTTP API and all its routes, integrations, and authorizer attachments. It does not delete the Lambda functions.</p>
+</div>
+
+<div class="part">
+  <div class="part-header"><span class="part-num">Cleanup 3</span><span class="part-title">Delete Lambda functions</span></div>
+  <p>Go to <strong>Lambda → Functions</strong>. Delete both:</p>
+  <ul>
+    <li><code>photoviewer-lambda</code> — select → <strong>Actions → Delete</strong></li>
+    <li><code>photoviewer-authorizer</code> — select → <strong>Actions → Delete</strong></li>
+  </ul>
+  <p>The auto-created IAM roles (<code>photoviewer-lambda-role-XXXXXXXX</code> and the authorizer role) are not deleted automatically — go to <strong>IAM → Roles</strong> and delete them if you want a clean account.</p>
+</div>
+
+<div class="info"><strong>Keep for Week 6:</strong> DynamoDB table (<code>photoviewer-photos</code>), S3 bucket, CloudFront distribution, and VPC are all reused next week. Do not delete them.</div>
+
 </body>
 </html>
