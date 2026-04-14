@@ -604,20 +604,52 @@
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-waf-comp')">
-    <div class="ac-left"><span class="ac-icon">🛡️</span><span class="ac-name">AWS WAF — Web Application Firewall</span><span class="ac-sub">L7 inspection · Web ACL · rules and rule groups · attached to CloudFront</span></div>
+    <div class="ac-left"><span class="ac-icon">🛡️</span><span class="ac-name">AWS WAF — Web Application Firewall</span><span class="ac-sub">L7 inspection · Web ACL · rule sources · Shield tiers</span></div>
     <span class="ac-chevron" id="ac-waf-comp-chev">›</span>
   </div>
   <div class="ac-body" id="ac-waf-comp">
     <p>AWS WAF is a web application firewall that inspects HTTP requests at Layer 7 — the application layer. Unlike network firewalls that filter by IP and port, WAF reads the content of requests: the path, headers, query strings, and body. This lets it detect and block attacks that look like legitimate traffic at the network layer.</p>
-    <p><strong>Web ACL:</strong> A Web Access Control List is the top-level WAF resource. You attach it to a CloudFront distribution (or an API Gateway stage, ALB, or AppSync API). The ACL contains an ordered list of rules evaluated against every request.</p>
-    <p><strong>Rule types:</strong></p>
+    <p><strong>Web ACL:</strong> A Web Access Control List is the top-level WAF resource. You attach it to a CloudFront distribution (or an API Gateway stage, ALB, or AppSync API). The ACL contains an ordered list of rules evaluated against every request — first match wins.</p>
+
+    <p><strong>Four sources of WAF rules:</strong></p>
     <ul>
-      <li><strong>Rate-based rules</strong> — count requests per IP over a time window, block when a threshold is exceeded</li>
-      <li><strong>Managed rule groups</strong> — curated rule sets maintained by AWS or third parties: Core Rule Set (OWASP Top 10), Known Bad Inputs, SQL injection, XSS, Bot Control. Many are free; some are paid.</li>
-      <li><strong>Custom rules</strong> — match on specific strings, IP sets, geo conditions, or combinations using AND/OR logic</li>
+      <li><strong>Custom rules</strong> — you write these. Rate limits, geo-blocks, IP allow/deny lists, URI path conditions. This is what we did in the lab.</li>
+      <li><strong>AWS managed rule groups</strong> — curated rule sets maintained by AWS and continuously updated as new threats emerge. Core Rule Set (OWASP Top 10), Known Bad Inputs, SQL injection, XSS, Bot Control. Many are free; some are paid. You subscribe and AWS keeps them current — no action needed on your part.</li>
+      <li><strong>Third-party managed rules</strong> — vendor-curated rule sets available in AWS Marketplace from companies like F5, Fortinet, and Cloudbric. Paid subscription.</li>
+      <li><strong>Shield Advanced (automatic)</strong> — the dynamic tier. Monitors your traffic baseline and automatically pushes WAF rules into your Web ACL during a live attack. Described below.</li>
     </ul>
-    <p><strong>WAF vs Shield Standard:</strong> Shield Standard (free, automatic) protects against L3/L4 volumetric attacks — SYN floods, UDP reflection. WAF operates at L7 and catches application-layer abuse that Shield cannot see. They complement each other.</p>
-    <p><strong>In the demo:</strong> Web ACL attached to our CloudFront distribution with one rate-based rule scoped to the <code>/photos</code> path.</p>
+
+    <p><strong>Shield Standard vs Shield Advanced:</strong></p>
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;margin:0.8rem 0;">
+      <tr style="background:#f0f4f8;">
+        <th style="padding:8px;text-align:left;border-bottom:2px solid #d0d8e0;">Layer</th>
+        <th style="padding:8px;text-align:left;border-bottom:2px solid #d0d8e0;">Threat</th>
+        <th style="padding:8px;text-align:left;border-bottom:2px solid #d0d8e0;">Protection</th>
+        <th style="padding:8px;text-align:left;border-bottom:2px solid #d0d8e0;">Cost</th>
+      </tr>
+      <tr>
+        <td style="padding:8px;border-bottom:1px solid #eee;">L3/L4</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">SYN floods, UDP reflection, bandwidth exhaustion</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">Shield Standard — automatic, always on</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">Free</td>
+      </tr>
+      <tr>
+        <td style="padding:8px;border-bottom:1px solid #eee;">L7</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">HTTP floods, bot traffic, application abuse</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">WAF with rules you configure or subscribe to</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">WAF pricing</td>
+      </tr>
+      <tr>
+        <td style="padding:8px;">L7 dynamic</td>
+        <td style="padding:8px;">Novel L7 attacks during a live incident</td>
+        <td style="padding:8px;">Shield Advanced — monitors baseline, auto-pushes WAF rules</td>
+        <td style="padding:8px;">~$3,000/month</td>
+      </tr>
+    </table>
+
+    <p><strong>Shield Advanced</strong> is the dynamic tier. When it detects an active DDoS attack at Layer 7, it analyzes the attack traffic pattern in real time, generates WAF rules that match the specific attack characteristics, and deploys them into your Web ACL automatically — without any action from you. It can handle novel attacks that no pre-written rule group has seen before because it's reacting to your specific traffic, not matching a static signature. It also gives you access to the AWS DDoS Response Team (real humans) and provides cost protection — AWS credits scaling costs incurred during an attack.</p>
+
+    <p><strong>In the demo:</strong> We use Shield Standard (free, always on) for L3/L4, and a custom rate-based WAF rule for L7. Shield Advanced is the enterprise production tier — not needed for this course.</p>
   </div>
 
 </div>

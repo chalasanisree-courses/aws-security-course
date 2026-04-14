@@ -101,6 +101,31 @@ aws cloudfront list-distributions \
   --query 'DistributionList.Items[].[Id,DomainName,Status]' \
   --output table 2>/dev/null || echo "  (none)"
 
+# ── WAF Web ACLs ───────────────────────────────────────────
+echo ""
+echo "[ WAF Web ACLs ] (~\$5/month each — delete after Week 5 lab)"
+aws wafv2 list-web-acls \
+  --scope CLOUDFRONT \
+  --region us-east-1 \
+  --query 'WebACLs[].[Name,Id]' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── Lambda Functions ───────────────────────────────────────
+echo ""
+echo "[ Lambda Functions ] (free tier covers course usage)"
+aws lambda list-functions \
+  --region $REGION \
+  --query 'Functions[].[FunctionName,Runtime,LastModified]' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── API Gateway HTTP APIs ──────────────────────────────────
+echo ""
+echo "[ API Gateway HTTP APIs ] (free tier covers course usage)"
+aws apigatewayv2 list-apis \
+  --region $REGION \
+  --query 'Items[].[Name,ApiId,ProtocolType]' \
+  --output table 2>/dev/null || echo "  (none)"
+
 # ── CloudTrail ─────────────────────────────────────────────
 echo ""
 echo "[ CloudTrail Trails ]"
@@ -117,10 +142,12 @@ echo "   NAT Gateway       ~\$32/month"
 echo "   ALB               ~\$16/month"
 echo "   Interface VPC ep  ~\$7/month each"
 echo "   EC2 t3.micro      ~\$8/month (outside free tier)"
+echo "   WAF Web ACL       ~\$5/month — delete after Week 5"
 echo "   Elastic IP        ~\$4/month if unattached"
 echo ""
 echo " Safe to leave running (free tier):"
 echo "   VPC, subnets, route tables, IGW, security groups"
 echo "   S3, DynamoDB, CloudFront, IAM, Gateway endpoints"
+echo "   Lambda, API Gateway, CloudTrail"
 echo "=============================================="
 echo ""
