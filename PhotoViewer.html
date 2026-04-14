@@ -560,7 +560,7 @@
           <div class="arch-row">
             <span class="arch-pill">Browser</span>
             <span class="arch-arrow">→ HTTPS →</span>
-            <span class="arch-pill">CloudFront</span>
+            <span class="arch-pill">WAF + CloudFront</span>
             <span class="arch-arrow">→</span>
             <span class="arch-pill">API Gateway</span>
             <span class="arch-arrow">→</span>
@@ -568,12 +568,27 @@
             <span class="arch-arrow">→</span>
             <span class="arch-pill">DynamoDB</span>
           </div>
-          <div class="ac-section-text" style="margin-top:8px;">EC2 and ALB are replaced by Lambda and API Gateway. The same DynamoDB table and CloudFront distribution from Week 4 are reused unchanged. API Gateway handles HTTPS natively — no certificate management needed. Lambda runs only when a request arrives — no idle cost, no OS to patch, no SSH surface.</div>
+          <div class="ac-section-text" style="margin-top:8px;">EC2 and ALB are replaced by Lambda and API Gateway. The same DynamoDB table and CloudFront distribution from Week 4 are reused unchanged. API Gateway handles HTTPS natively — no certificate management needed. Lambda runs only when a request arrives — no idle cost, no OS to patch, no SSH surface. A Lambda authorizer on API Gateway checks a secret header that CloudFront adds to every origin request, ensuring the API cannot be reached directly. WAF adds a rate-based rule on <code>/photos</code> to block flooding.</div>
         </div>
 
         <div class="ac-section">
-          <div class="ac-section-label">Coming</div>
-          <div class="ac-section-text">Week 5 content is being built. Code and lab instructions will appear here when ready.</div>
+          <div class="ac-section-label">Limitations of this solution</div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Security</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Functionality</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Performance</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Operability</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#888780"></span>Reliability</span>
+          </div>
+          <ul class="issue-list">
+            <li><span class="dot dot-security"></span><span class="text">Lambda authorizer uses a shared secret header — anyone who discovers the value can call the API directly. An IAM-enforced mechanism like <code>aws:SourceArn</code> would be stronger, but requires a REST API instead of HTTP API. Sufficient for a public read-only endpoint.</span></li>
+            <li><span class="dot dot-functional"></span><span class="text">No user accounts — the platform still cannot distinguish visitors, offer a free tier, or support premium features like upload, search, or delete. Authentication is added in Week 6.</span></li>
+          </ul>
+        </div>
+
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-serverless.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week05" target="_blank">⌥ View Week 5 code on GitHub</a>
         </div>
 
       </div>
@@ -598,6 +613,8 @@
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 3</button>
         <button class="pent-btn" data-week="4" onclick="pentSelectWeek('4')"
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 4</button>
+        <button class="pent-btn" data-week="5" onclick="pentSelectWeek('5')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 5</button>
       </div>
 
       <!-- Pentagon SVG -->
@@ -715,6 +732,18 @@
         ]},
         functional: { title:'Functionality issues in Week 4', bullets:[
           'No user accounts — the platform cannot distinguish visitors, offer a free tier, or support premium features like upload or delete.'
+        ]}
+      }
+    },
+    '5': {
+      active: ['security','functional'],
+      issues: {
+        security: { title:'Security issues in Week 5', bullets:[
+          'Lambda authorizer uses a shared secret header — anyone who discovers the value can call the API directly. An IAM-enforced mechanism like aws:SourceArn would be stronger but requires a REST API.'
+        ]},
+        functional: { title:'Functionality issues in Week 5', bullets:[
+          'No user accounts — the platform still cannot distinguish visitors, offer a free tier, or support premium features like upload, search, or delete.',
+          'Authentication is added in Week 6.'
         ]}
       }
     }
