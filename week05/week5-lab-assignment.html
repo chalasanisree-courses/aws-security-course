@@ -258,15 +258,12 @@ def lambda_handler(event, context):
   <div class="part-header"><span class="part-num">Step 9</span><span class="part-title">Verify the authorizer is enforced</span></div>
   <p>Open a new browser tab and navigate directly to your API Gateway invoke URL with the <code>/photos</code> path:</p>
   <pre>https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos</pre>
-  <p>You should see <code>{"message":"Unauthorized"}</code> — the Lambda authorizer ran, found no <code>x-origin-verify</code> header, and blocked the request. The main Lambda function was never invoked.</p>
-  <div class="info"><strong>✓ CloudShell verify:</strong> Confirm the authorizer blocks requests without the header, and passes with it:
-  <pre># Should return Unauthorized
-curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos
-
-# Should return 5 photos
+  <p>You should see <code>{"message":"Unauthorized"}</code> — API Gateway saw the <code>x-origin-verify</code> header was missing and returned 401 immediately. The authorizer Lambda was never invoked. The main Lambda function was never invoked.</p>
+  <div class="info"><strong>✓ CloudShell verify:</strong> Confirm the authorizer passes with the correct header — you can't easily add custom headers in a browser, so use CloudShell:
+  <pre># Should return 5 photos
 curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   -H "x-origin-verify: YOUR_SECRET"</pre>
-  If the second command returns <code>{"message":"Unauthorized"}</code>, the secret doesn't match — recheck the <code>ORIGIN_SECRET</code> environment variable and that you clicked <strong>Deploy</strong> after updating the code.</div>
+  If this returns <code>{"message":"Unauthorized"}</code>, the secret doesn't match — recheck the <code>ORIGIN_SECRET</code> environment variable and that you clicked <strong>Deploy</strong> after updating the code.</div>
   <div class="deliverable"><strong>Screenshot:</strong> Browser showing <code>{"message":"Unauthorized"}</code> when accessing the API Gateway URL directly</div>
 </div>
 
@@ -421,7 +418,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="part">
   <div class="part-header"><span class="part-num">Check 2</span><span class="part-title">API Gateway + Lambda (no authorizer)</span></div>
-  <p>Tests that API Gateway routes correctly to Lambda. Temporarily detach the authorizer first.</p>
+  <p>Tests that API Gateway routes correctly to Lambda. Temporarily detach the authorizer first: go to <strong>API Gateway → photoviewer-api → Authorization → Attach authorizers to routes → GET /photos → Detach.</strong></p>
   <pre>curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos</pre>
   <p>Expected: JSON array of 5 photos. If this fails with 403, check that the Host header isn't the issue:</p>
   <pre>curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
