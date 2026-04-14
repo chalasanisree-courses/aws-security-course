@@ -201,9 +201,17 @@
   <p>Now access <code>confidential.txt</code> using the <strong>S3 REST endpoint</strong> — a different URL from the website URL you used in Step 6. In your browser, open:</p>
   <pre>https://photoviewer-[your-account-id].s3.amazonaws.com/confidential.txt</pre>
   <div class="info"><strong>Why a different URL?</strong> S3 gives you two ways to access objects. The <strong>website endpoint</strong> (<code>s3-website-...amazonaws.com</code>) serves files like a web server — it bypasses the S3 API entirely, so CloudTrail never sees it. The <strong>REST endpoint</strong> (<code>s3.amazonaws.com</code>) is the actual S3 API — every request through it is an API call that CloudTrail can log. To generate a <code>GetObject</code> data event, you must use the REST endpoint.</div>
-  <p>Wait <strong>5–15 minutes</strong>, then go back to <strong>CloudTrail → Event history</strong> and filter by your bucket name. You should now see a <code>GetObject</code> event for <code>confidential.txt</code>.</p>
+  <div class="note"><strong>Important:</strong> Data events do <em>not</em> appear in <strong>CloudTrail → Event history.</strong> Event History only shows management events — this is an AWS platform constraint, not a configuration problem. Even with data events enabled and a GetObject logged, you will never see it there.</div>
+  <p>Wait <strong>5–15 minutes</strong>, then find the log in your trail's S3 bucket. In CloudShell, run:</p>
+  <pre># List today's log files (replace [account-id] and [yyyy]/[mm]/[dd])
+aws s3 ls s3://aws-cloudtrail-logs-[account-id]/AWSLogs/[account-id]/CloudTrail/us-east-1/[yyyy]/[mm]/[dd]/
+
+# Download and search a log file for your GetObject event
+aws s3 cp s3://aws-cloudtrail-logs-[account-id]/AWSLogs/[account-id]/CloudTrail/us-east-1/[yyyy]/[mm]/[dd]/[logfile].json.gz - \
+  | gunzip | python3 -m json.tool | grep -A 10 '"eventName": "GetObject"'</pre>
+  <p>You should see a record with <code>"eventName": "GetObject"</code>, your bucket name, and <code>"key": "confidential.txt"</code>. The raw JSON log file <em>is</em> the authoritative record — this is what a security team would actually query in a real investigation.</p>
   <p><strong>After verifying, disable data events immediately:</strong> CloudTrail → Trails → photoviewer-trail → Edit → remove the S3 data event → Save changes.</p>
-  <div class="deliverable"><strong>Screenshot:</strong> CloudTrail event history showing GetObject event for confidential.txt</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudShell output or raw JSON log showing GetObject event for confidential.txt (from the trail's S3 log bucket — Event History will not show this)</div>
 </div>
 
 <h2>Part 7 — Run the audit script</h2>
@@ -233,7 +241,7 @@ bash photoviewer/audit-aws-resources.sh</pre>
   <tr><td>Photo Viewer loads in browser over HTTP</td><td>8</td><td>Screenshot shows Photo Viewer loading with http:// in address bar</td></tr>
   <tr><td>Vulnerability demo — confidential.txt accessible</td><td>6</td><td>Screenshot shows file contents readable in browser</td></tr>
   <tr><td>Vulnerability demo — bucket enumeration</td><td>6</td><td>Screenshot shows --no-sign-request listing all files</td></tr>
-  <tr><td>CloudTrail data events — GetObject logged</td><td>10</td><td>Screenshot shows GetObject event for confidential.txt in CloudTrail</td></tr>
+  <tr><td>CloudTrail data events — GetObject logged</td><td>10</td><td>Screenshot shows GetObject event for confidential.txt in CloudShell output or raw JSON log from trail's S3 bucket — Event History will not show data events</td></tr>
   <tr><td>Reflection Q1</td><td>2</td><td>Correctly identifies Block Public Access off + bucket policy Principal: *</td></tr>
   <tr><td>Reflection Q2</td><td>2</td><td>Identifies credential interception risk for future login/upload features</td></tr>
   <tr><td><strong>Total</strong></td><td><strong>50</strong></td><td></td></tr>
