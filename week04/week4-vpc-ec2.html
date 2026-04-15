@@ -679,7 +679,7 @@ h1 {
   <div class="ac-body" id="ac-alb">
     <p>EC2 is in a private subnet with no public IP. CloudFront can only reach internet-routable endpoints. The ALB solves this — it sits in the public subnet with a public DNS name, receives requests from CloudFront, and forwards them to EC2's private IP inside the VPC.</p>
     <p>The ALB also performs <strong>health checks</strong> — sending <code>GET /health</code> to port 8000 every 30 seconds. If the app server fails two consecutive checks, the ALB stops routing to it. This is why <code>app.py</code> has a <code>/health</code> endpoint returning 200.</p>
-    <p><strong>Vulnerability:</strong> The ALB's DNS name is public — anyone who discovers it can call <code>/photos</code> directly, bypassing CloudFront and any WAF rules. Fix in Week 9: add a secret custom header that CloudFront sends, and configure the ALB to reject requests missing it.</p>
+    <p><strong>Vulnerability:</strong> The ALB's DNS name is public — anyone who discovers it can call <code>/photos</code> directly, bypassing CloudFront and any WAF rules. Fix in Week 5: add a secret custom header that CloudFront sends, and configure the ALB to reject requests missing it.</p>
     <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
       <p style="margin:0;font-size:13px;line-height:1.6;">Created <code>photoviewer-alb</code> in the public subnets across both AZs. Added a second CloudFront origin pointing to the ALB DNS name, with a cache behavior routing <code>/photos</code> requests to it. The ALB listener forwards to a target group containing the EC2 instance on port 8000.</p>
@@ -818,7 +818,7 @@ h1 {
   <div class="ac-body" id="ac-nacl">
     <p>Network ACLs (NACLs) are stateless packet filters that apply at the subnet boundary — before traffic even reaches a resource's security group. Unlike security groups, NACLs are stateless: you must explicitly allow both inbound <em>and</em> the return traffic outbound.</p>
     <p>In Week 4 we use the <strong>default NACL</strong> which allows all inbound and outbound traffic. This is intentional — our security groups handle access control with more precision (by SG ID, not by IP). Adding custom NACL rules on top would add complexity without adding meaningful security for our architecture.</p>
-    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet (e.g. blocking a country's IP range before it hits the ALB). Security groups cannot block by IP range at scale — NACLs can. This is a Week 9 topic when we add WAF and geo-restriction.</p>
+    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet (e.g. blocking a country's IP range before it hits the ALB). Security groups cannot block by IP range at scale — NACLs can. This is a Week 5 topic when we add WAF and geo-restriction.</p>
     <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
       <p style="margin:0;font-size:13px;line-height:1.6;">We left NACLs at the default (allow all inbound and outbound) for all four subnets. This was deliberate — adding custom NACL rules requires allowing return traffic explicitly for every rule (because NACLs are stateless), which adds complexity without meaningful additional security when security groups are already tightly chained by SG ID. All access control in Week 4 is handled by the three security groups.</p>
@@ -951,6 +951,16 @@ h1 {
     <p><strong>What failure looks like:</strong> If the instance crashes, hits a memory limit, or reboots for OS patching, the API goes offline completely. Recovery requires a manual restart via SSM, then waiting for the ALB health check to pass (typically 30–90 seconds). During that window every <code>/photos</code> request returns a 502. Static content continues from CloudFront — only the dynamic API is affected.</p>
     <p><strong>The production fix:</strong> An Auto Scaling Group with a minimum of 2 instances across 2 AZs eliminates the single point of failure. Replacing EC2 with Lambda resolves this differently — Lambda is inherently multi-AZ and scales automatically. There is no instance to crash.</p>
   </div>
+</div>
+
+<div class="callout info">
+  <h4>📹 If you wanted to stay server-based: potential fixes and their gaps</h4>
+  <p>The problems above motivate the Week 5 serverless migration. But if you needed to keep a server-based design, two solutions would partially address them:</p>
+  <ul>
+    <li><strong>WAF on ALB</strong> — blocks L7 attacks (SQLi, XSS, rate abuse) on the <code>/photos</code> endpoint. However, rate limiting is unreliable: WAF on ALB sees CloudFront's IP, not the real client IP, because CloudFront proxies requests. An attacker can also spoof <code>X-Forwarded-For</code> to rotate apparent IPs and defeat rate rules. The stronger fix is to move WAF to CloudFront and lock the ALB security group to only accept traffic from CloudFront's managed prefix list — so the ALB is never directly reachable.</li>
+    <li><strong>Network Firewall on the egress path</strong> — sits inside the VPC between the NAT Gateway and the IGW, and restricts outbound connections to allowed domains only (e.g. pypi.org). Prevents a compromised EC2 instance from phoning home to an attacker's server. Does <em>not</em> inspect the content of HTTPS responses — a malicious package downloaded from pypi.org would still pass through. For content-level protection, pin package versions and use a private package mirror (AWS CodeArtifact).</li>
+  </ul>
+  <p>Week 5 resolves both cleanly: WAF moves to CloudFront, the ALB is locked to only accept traffic from CloudFront, and the serverless migration eliminates the EC2 egress path entirely — no NAT Gateway, no package fetching, no exfiltration risk.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
