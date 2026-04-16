@@ -155,7 +155,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <p><strong>Add a return URL</strong></p>
     <ul>
       <li>Return URL: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback</code></li>
-      <li>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code> with your actual CloudFront domain from the pre-flight output (e.g. <code>d1kbm2nphud61r.cloudfront.net</code>)</li>
+      <li>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code> with your actual CloudFront domain from the pre-flight output (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>)</li>
       <li>This is the URL Cognito is allowed to redirect back to after a successful login. Cognito enforces this as an allowlist — if app.js sends a redirect_uri that doesn't exactly match this value, Cognito rejects the login attempt. This prevents an attacker from redirecting the auth code to their own server.</li>
     </ul>
 
@@ -494,7 +494,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
     </ul>
     <p>Before uploading, edit <code>app.js</code> and replace these placeholders with your actual values:</p>
     <ul>
-      <li><code>YOUR_COGNITO_DOMAIN</code> → your Cognito domain prefix (e.g. <code>photoviewer-644094189785</code>)</li>
+      <li><code>YOUR_COGNITO_DOMAIN</code> → your Cognito domain prefix (e.g. <code>photoviewer-XXXXXXXXXX</code>)</li>
       <li><code>YOUR_APP_CLIENT_ID</code> → your App client ID from Step 1</li>
       <li><code>YOUR_CLOUDFRONT_DOMAIN</code> → your CloudFront domain name</li>
     </ul>
