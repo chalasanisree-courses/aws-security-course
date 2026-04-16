@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 6 Lab — User Identity · CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1.2rem 1.4rem; border-radius: 8px; font-size: 0.84rem; overflow-x: auto; margin: 0.8rem 0 1.2rem; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* Step cards */
+  .step { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+  .step-header { display: flex; align-items: baseline; gap: 1rem; padding: 0.9rem 1.2rem; background: #f5f8fc; border-bottom: 1px solid #d0dce8; }
+  .step-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1F4E79; background: #dce8f5; padding: 0.2em 0.6em; border-radius: 4px; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; color: #111; }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+
+  /* Verify block */
+  .verify { background: #f0fff4; border: 1px solid #a5d6a7; border-radius: 8px; padding: 0.9rem 1.2rem; margin: 1rem 0; }
+  .verify-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #155724; margin-bottom: 0.4rem; }
+  .verify p:last-child { margin-bottom: 0; }
+
+  /* Screenshot block */
+  .screenshot { background: #f8f5ff; border: 1px solid #c8b8e8; border-radius: 8px; padding: 0.8rem 1.2rem; margin: 1rem 0; font-size: 0.9rem; color: #4a148c; }
+  .screenshot::before { content: "📸 Screenshot required: "; font-weight: 600; }
+
+  /* Pre-flight */
+  .preflight { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .preflight h3 { color: #e65100; margin-top: 0; }
+
+  /* Part header */
+  .part-header { background: #1F4E79; color: #fff; border-radius: 8px; padding: 0.7rem 1.2rem; margin: 2rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .part-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+  .part-title { font-size: 1.05rem; font-weight: 600; }
+
+  /* Rubric */
+  .rubric-table th { background: #1F4E79; color: #fff; }
+  .rubric-table td:nth-child(2) { text-align: center; font-weight: 600; color: #1F4E79; }
+  .rubric-total td { font-weight: 700; background: #f0f4f8; }
+
+  /* Nav */
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .download-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .download-btn:hover { background: #B5D4F4; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6BVW2TTTLE');
+</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 6 Lab — User Identity and Authentication</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 100 pts</p>
+
+<p><strong>Objective:</strong> Add login to the Photo Viewer using Amazon Cognito with Google as a federated identity provider. Move the origin secret from a Lambda environment variable to AWS Secrets Manager. Update the Lambda authorizer to validate JWTs and fetch the secret at runtime. By the end of this lab, the Photo Viewer will have three distinct experiences: unauthenticated visitors see public photos only, free users and premium users see all photos after logging in with Google.</p>
+
+<div class="callout info">
+  <p><strong>Architecture after this lab:</strong> Browser → WAF/CloudFront → API Gateway → Lambda authorizer (checks origin secret from Secrets Manager + validates JWT from Cognito) → main Lambda (filters by group) → DynamoDB</p>
+</div>
+
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Before building anything, verify your Week 5 environment is intact. Open <strong>CloudShell</strong> and run:</p>
+  <pre>cd ~
+git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || git -C aws-security-course pull
+bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
+  <p>The script checks: Lambda function exists and returns photos, Lambda authorizer is attached, CloudFront routes <code>/photos</code> correctly, WAF Web ACL is attached, and DynamoDB has at least 5 items. Address any failures before proceeding.</p>
+</div>
+
+<p><strong>Files for this lab:</strong> <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week06" target="_blank">photoviewer/week06 on GitHub →</a></p>
+
+
+<!-- ═══════════════ PART 1 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">Cognito User Pool</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 1</span>
+    <span class="step-title">Create the Cognito User Pool</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Cognito → Create user pool.</strong> On the first screen:</p>
+    <ul>
+      <li>Sign-in options: select <strong>Email</strong> only (Google will handle authentication — Cognito just needs an identifier)</li>
+      <li>Click <strong>Next</strong></li>
+    </ul>
+    <p>On the <strong>Configure security requirements</strong> screen: leave defaults → <strong>Next.</strong></p>
+    <p>On the <strong>Configure sign-up experience</strong> screen: leave defaults → <strong>Next.</strong></p>
+    <p>On the <strong>Configure message delivery</strong> screen: select <strong>Send email with Cognito</strong> (free tier) → <strong>Next.</strong></p>
+    <p>On the <strong>Integrate your app</strong> screen:</p>
+    <ul>
+      <li>User pool name: <code>photoviewer-users</code></li>
+      <li>Check <strong>Use the Cognito Hosted UI</strong></li>
+      <li>Cognito domain: enter a unique prefix — e.g. <code>photoviewer-[your-account-id]</code> → <strong>Use this domain</strong></li>
+      <li>App client name: <code>photoviewer-web-client</code></li>
+      <li>Client secret: <strong>Generate a client secret</strong> (required for Authorization Code flow)</li>
+      <li>Allowed callback URLs: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback</code> (replace with your actual CloudFront domain from the pre-flight output)</li>
+      <li>Allowed sign-out URLs: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code></li>
+      <li>OAuth 2.0 grant types: ensure <strong>Authorization code grant</strong> is checked</li>
+      <li>OpenID Connect scopes: <strong>Email, OpenID, Profile</strong></li>
+    </ul>
+    <p>Click <strong>Next → Create user pool.</strong></p>
+    <p>After creation, note your <strong>User Pool ID</strong> (e.g. <code>us-east-1_XXXXXXXXX</code>) and your <strong>App client ID</strong> — you will need both later.</p>
+    <div class="screenshot">Cognito User Pool overview page showing User Pool ID, and the App client page showing the App client ID</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 2</span>
+    <span class="step-title">Create user groups — free and premium</span>
+  </div>
+  <div class="step-body">
+    <p>Go to your new User Pool → <strong>Groups tab → Create group:</strong></p>
+    <ul>
+      <li>Group name: <code>free</code> → <strong>Create group</strong></li>
+    </ul>
+    <p>Create a second group:</p>
+    <ul>
+      <li>Group name: <code>premium</code> → <strong>Create group</strong></li>
+    </ul>
+    <p>These group names must match exactly — the Lambda authorizer reads the <code>cognito:groups</code> claim from the JWT and your Lambda function checks membership by name.</p>
+    <div class="screenshot">Cognito Groups tab showing both <code>free</code> and <code>premium</code> groups listed</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 3</span>
+    <span class="step-title">Create a test user and assign to a group</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Users tab → Create user:</strong></p>
+    <ul>
+      <li>Invitation message: <strong>Don't send an invitation</strong></li>
+      <li>Email address: use your own email</li>
+      <li>Temporary password: set one (you'll reset it on first login)</li>
+      <li>Click <strong>Create user</strong></li>
+    </ul>
+    <p>Click on the new user → <strong>Add user to group</strong> → select <code>free</code> → <strong>Add.</strong></p>
+    <p>You now have a test user in the free group. After Google federation is configured, you'll test with Google login instead — but this user lets you verify group assignment is working.</p>
+    <div class="screenshot">User detail page showing the user assigned to the <code>free</code> group</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 2 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">Google Federation</span>
+</div>
+
+<div class="callout info">
+  <p><strong>What this part does:</strong> You will configure Google as an identity provider in Cognito. When a user clicks "Login with Google", Cognito redirects them to Google, which authenticates them and returns an auth code directly to Cognito. Cognito exchanges the code using the client secret you generate here, then issues its own JWT to the browser.</p>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 4</span>
+    <span class="step-title">Create OAuth 2.0 credentials in Google Cloud Console</span>
+  </div>
+  <div class="step-body">
+    <p>Open a new browser tab and go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>. Sign in with your Google account.</p>
+    <ol>
+      <li><strong>Create or select a project:</strong> Click the project selector at the top → <strong>New Project</strong> → name it <code>photoviewer</code> → <strong>Create.</strong> Select the project.</li>
+      <li><strong>Enable the OAuth consent screen:</strong> Go to <strong>APIs &amp; Services → OAuth consent screen.</strong>
+        <ul>
+          <li>User type: <strong>External</strong> → <strong>Create</strong></li>
+          <li>App name: <code>PhotoViewer</code></li>
+          <li>User support email: your email</li>
+          <li>Developer contact email: your email</li>
+          <li>Click <strong>Save and Continue</strong> through the Scopes and Test users screens (leave defaults)</li>
+        </ul>
+      </li>
+      <li><strong>Create OAuth 2.0 credentials:</strong> Go to <strong>APIs &amp; Services → Credentials → Create Credentials → OAuth client ID.</strong>
+        <ul>
+          <li>Application type: <strong>Web application</strong></li>
+          <li>Name: <code>photoviewer-cognito</code></li>
+          <li>Authorized redirect URIs — click <strong>Add URI</strong> and enter your Cognito domain callback URL:<br/>
+          <code>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</code><br/>
+          (Replace <code>YOUR_COGNITO_DOMAIN</code> with the domain prefix you set in Step 1)</li>
+          <li>Click <strong>Create</strong></li>
+        </ul>
+      </li>
+    </ol>
+    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in the next step. <strong>Do not close this dialog until you have copied both values.</strong></p>
+    <div class="screenshot">Google Cloud Console showing the OAuth client ID and client secret dialog</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 5</span>
+    <span class="step-title">Add Google as an identity provider in Cognito</span>
+  </div>
+  <div class="step-body">
+    <p>Back in the AWS Console, go to your Cognito User Pool → <strong>Sign-in experience tab → Add identity provider → Google.</strong></p>
+    <ul>
+      <li>Client ID: paste from Google Cloud Console</li>
+      <li>Client secret: paste from Google Cloud Console</li>
+      <li>Authorized scopes: <code>profile email openid</code></li>
+      <li>Map attributes — under <strong>User pool attribute</strong>, map:
+        <ul>
+          <li><code>email</code> → <code>email</code></li>
+          <li><code>name</code> → <code>name</code></li>
+        </ul>
+      </li>
+      <li>Click <strong>Add identity provider</strong></li>
+    </ul>
+    <p>Now go to <strong>App integration tab → App clients → your photoviewer-web-client → Hosted UI → Edit.</strong> Under <strong>Identity providers</strong>, enable <strong>Google</strong>. Click <strong>Save changes.</strong></p>
+    <div class="screenshot">Cognito Hosted UI settings showing Google listed as an enabled identity provider</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 6</span>
+    <span class="step-title">Test the Hosted UI login flow</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>App integration → App clients → photoviewer-web-client → View Hosted UI.</strong> A login page opens with a "Continue with Google" button.</p>
+    <p>Click <strong>Continue with Google</strong> and sign in with your Google account. After authentication, your browser will be redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. The page will show an error or blank page — that's expected because <code>app.js</code> doesn't handle the callback yet. What matters is the redirect succeeded.</p>
+    <p>Check the URL in your browser — it should contain a <code>code</code> parameter, confirming Google authenticated you and Cognito is handling the exchange.</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Browser URL after login contains <code>?code=</code> — confirming the Authorization Code flow is working.</p>
+    </div>
+    <div class="screenshot">Browser address bar showing the callback URL with the <code>?code=</code> parameter</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 3 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Move the Origin Secret to Secrets Manager</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 7</span>
+    <span class="step-title">Create the secret in Secrets Manager</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>AWS Secrets Manager → Store a new secret.</strong></p>
+    <ul>
+      <li>Secret type: <strong>Other type of secret</strong></li>
+      <li>Key/value pairs: Key = <code>value</code>, Value = the same secret you generated in Week 5 for <code>ORIGIN_SECRET</code> (retrieve it from your Lambda authorizer's environment variables before deleting it)</li>
+      <li>Click <strong>Next</strong></li>
+      <li>Secret name: <code>photoviewer/origin-verify-secret</code></li>
+      <li>Description: <code>CloudFront origin verification secret for API Gateway</code></li>
+      <li>Click <strong>Next → Next → Store</strong></li>
+    </ul>
+    <p>Note the full <strong>Secret ARN</strong> — you will need it for the IAM policy in the next step.</p>
+    <div class="screenshot">Secrets Manager showing <code>photoviewer/origin-verify-secret</code> created with the secret ARN visible</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 8</span>
+    <span class="step-title">Grant the Lambda authorizer permission to read the secret</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Lambda → photoviewer-authorizer → Configuration → Permissions → click the execution role name</strong> to open it in IAM.</p>
+    <p>Click <strong>Add permissions → Create inline policy → JSON tab</strong> and paste:</p>
+    <pre>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "secretsmanager:GetSecretValue",
+    "Resource": "arn:aws:secretsmanager:us-east-1:[your-account-id]:secret:photoviewer/origin-verify-secret-*"
+  }]
+}</pre>
+    <p>Replace <code>[your-account-id]</code> with your AWS account ID (available in the top-right of the console). The trailing <code>-*</code> accounts for the random suffix Secrets Manager appends to ARNs.</p>
+    <p>Policy name: <code>photoviewer-secrets-read</code> → <strong>Create policy.</strong></p>
+    <div class="callout info">
+      <p><strong>Why scope to the specific ARN?</strong> <code>secretsmanager:GetSecretValue</code> on <code>*</code> would let the function read any secret in your account. Scoping to the specific ARN means a compromised function can only read the one secret it actually needs.</p>
+    </div>
+    <div class="screenshot">IAM role for photoviewer-authorizer showing the new <code>photoviewer-secrets-read</code> inline policy with the GetSecretValue action scoped to the specific secret ARN</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 9</span>
+    <span class="step-title">Remove ORIGIN_SECRET from the Lambda environment variable</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Lambda → photoviewer-authorizer → Configuration → Environment variables → Edit.</strong> Delete the <code>ORIGIN_SECRET</code> entry → <strong>Save.</strong></p>
+    <p>The secret is no longer visible in the Lambda console. Any developer with <code>lambda:GetFunction</code> permission can no longer see it.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 4 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 4</span>
+  <span class="part-title">Update the Lambda Authorizer</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 10</span>
+    <span class="step-title">Deploy the updated authorizer code</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Lambda → photoviewer-authorizer → Code tab.</strong> Replace the entire contents with the code from <code>photoviewer/week06/authorizer.py</code> in the GitHub repo.</p>
+    <p>The updated authorizer does two things in sequence:</p>
+    <ol>
+      <li><strong>Origin secret check (required):</strong> fetches <code>photoviewer/origin-verify-secret</code> from Secrets Manager and checks the <code>x-origin-verify</code> header. If missing or wrong → <code>isAuthorized: False</code> immediately.</li>
+      <li><strong>JWT validation (optional):</strong> if an <code>Authorization: Bearer</code> header is present, fetches Cognito's JWKS public keys, verifies the JWT signature, checks expiry, and extracts the <code>cognito:groups</code> claim. If the JWT is invalid → <code>isAuthorized: False</code>. If no JWT → passes through as unauthenticated.</li>
+    </ol>
+    <p>You also need to add two environment variables to the authorizer. Go to <strong>Configuration → Environment variables → Edit → Add:</strong></p>
+    <ul>
+      <li>Key: <code>COGNITO_USER_POOL_ID</code> — Value: your User Pool ID (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
+      <li>Key: <code>COGNITO_APP_CLIENT_ID</code> — Value: your App client ID</li>
+    </ul>
+    <p>Click <strong>Save.</strong> Then go back to the Code tab and click <strong>Deploy.</strong></p>
+    <div class="callout warn">
+      <p><strong>Click Deploy.</strong> The Lambda console is an editor — changes are not live until you deploy. If you skip this step the old code keeps running and the authorizer will fail.</p>
+    </div>
+    <div class="screenshot">Lambda authorizer Code tab showing the new authorizer code deployed, and the Configuration tab showing the two Cognito environment variables</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 11</span>
+    <span class="step-title">Update the main Lambda to filter by group</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Lambda → photoviewer-lambda → Code tab.</strong> Replace the contents with <code>photoviewer/week06/lambda_function.py</code> from the GitHub repo.</p>
+    <p>The updated function reads the <code>groups</code> context passed by the authorizer:</p>
+    <ul>
+      <li>If <code>groups</code> is non-empty (any authenticated user) → returns all photos, no <code>is_public</code> filter</li>
+      <li>If <code>groups</code> is empty (unauthenticated) → returns only <code>is_public = true</code> photos</li>
+    </ul>
+    <p>Click <strong>Deploy.</strong></p>
+    <div class="screenshot">Lambda function Code tab showing the updated code deployed</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 12</span>
+    <span class="step-title">Verify the authorizer still works with no JWT</span>
+  </div>
+  <div class="step-body">
+    <p>Test that the unauthenticated path still works after the authorizer update:</p>
+    <div class="verify">
+      <div class="verify-label">✓ CloudShell verify</div>
+      <pre># Should still return Unauthorized (no origin secret)
+curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos
+
+# Should return public photos (origin secret present, no JWT)
+curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
+  -H "x-origin-verify: YOUR_SECRET"</pre>
+      <p>Expected: first command returns <code>{"message":"Unauthorized"}</code>. Second returns a JSON array of photos. If the second fails, the authorizer is rejecting the request — check that you deployed the updated code and that the Secrets Manager secret value matches what CloudFront is configured to send.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 5 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 5</span>
+  <span class="part-title">Seed a Private Photo</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 13</span>
+    <span class="step-title">Add a private photo to DynamoDB</span>
+  </div>
+  <div class="step-body">
+    <p>The meaningful test for Week 6 is unauthenticated vs authenticated — not free vs premium. You need at least one item with <code>is_public = false</code> so you can verify that unauthenticated visitors don't see it but logged-in users do.</p>
+    <p>Open <strong>CloudShell</strong> and run:</p>
+    <pre>aws dynamodb put-item \
+  --region us-east-1 \
+  --table-name photoviewer-photos \
+  --item '{
+    "photo_id":    {"S": "photo-private-001"},
+    "s3_key":      {"S": "photos/photo1.jpg"},
+    "is_public":   {"BOOL": false},
+    "owner":       {"S": "premium-user"},
+    "uploaded_at": {"S": "2024-06-01"}
+  }'</pre>
+    <p>This reuses an existing S3 key — the test is about the <code>is_public</code> flag, not about a new photo file. The item will appear in the authenticated view but not the unauthenticated view.</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify — confirm 6 items in DynamoDB</div>
+      <pre>aws dynamodb scan --region us-east-1 --table-name photoviewer-photos --select COUNT</pre>
+      <p>Expected: <code>"Count": 6</code></p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 6 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 6</span>
+  <span class="part-title">Update app.js</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 14</span>
+    <span class="step-title">Deploy the updated app.js to S3</span>
+  </div>
+  <div class="step-body">
+    <p>The updated <code>app.js</code> from <code>photoviewer/week06/app.js</code> adds:</p>
+    <ul>
+      <li>A <strong>Login / Logout button</strong> in the UI</li>
+      <li>On login click: redirects the browser to the Cognito Hosted UI</li>
+      <li>On page load: checks for a <code>?code=</code> parameter in the URL — if present, exchanges the auth code with Cognito for a JWT (ID token), stores the JWT in <code>sessionStorage</code>, and reloads the page</li>
+      <li>On every <code>/photos</code> call: if a JWT is stored, sends it as <code>Authorization: Bearer &lt;token&gt;</code></li>
+      <li>Checks the JWT <code>exp</code> claim before each call and refreshes silently if expired</li>
+    </ul>
+    <p>Before uploading, edit <code>app.js</code> and replace these placeholders with your actual values:</p>
+    <ul>
+      <li><code>YOUR_COGNITO_DOMAIN</code> → your Cognito domain prefix (e.g. <code>photoviewer-644094189785</code>)</li>
+      <li><code>YOUR_APP_CLIENT_ID</code> → your App client ID from Step 1</li>
+      <li><code>YOUR_CLOUDFRONT_DOMAIN</code> → your CloudFront domain name</li>
+    </ul>
+    <p>Upload to S3:</p>
+    <pre>aws s3 cp app.js s3://photoviewer-9876543210/app.js \
+  --content-type "application/javascript" \
+  --region us-east-1</pre>
+    <p>Then invalidate the CloudFront cache so the browser gets the new file:</p>
+    <pre>aws cloudfront create-invalidation \
+  --distribution-id YOUR_DISTRIBUTION_ID \
+  --paths "/app.js" "/callback"</pre>
+    <p>Wait for the invalidation to complete — check status in <strong>CloudFront → Invalidations tab</strong>.</p>
+    <div class="screenshot">CloudFront Invalidations tab showing the invalidation completed</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 7 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 7</span>
+  <span class="part-title">Verify End-to-End</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 15</span>
+    <span class="step-title">Test unauthenticated — public photos only</span>
+  </div>
+  <div class="step-body">
+    <p>Open your CloudFront URL in a browser (use a fresh incognito window to ensure no cached JWT). The Photo Viewer should load and display <strong>5 photos</strong> — the 5 public ones. The private photo you added in Step 13 should <strong>not</strong> appear.</p>
+    <p>Open <strong>DevTools → Network tab</strong>, reload, and click the <code>/photos</code> request. Confirm:</p>
+    <ul>
+      <li>Status: <strong>200</strong></li>
+      <li>Request headers: <strong>no</strong> <code>Authorization</code> header</li>
+      <li>Response: JSON array with <strong>5 items</strong>, all with <code>is_public: true</code></li>
+    </ul>
+    <div class="screenshot">Photo Viewer showing 5 photos in unauthenticated state, with DevTools Network tab confirming no Authorization header and 5 items in the response</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 16</span>
+    <span class="step-title">Test authenticated — all photos visible after login</span>
+  </div>
+  <div class="step-body">
+    <p>Click the <strong>Login</strong> button in the Photo Viewer. You should be redirected to the Cognito Hosted UI with a "Continue with Google" button. Sign in with your Google account.</p>
+    <p>After login, you're redirected back to the Photo Viewer. The page should now show <strong>6 photos</strong> — the 5 public ones plus the private one you added.</p>
+    <p>Open <strong>DevTools → Network tab</strong> and click the <code>/photos</code> request. Confirm:</p>
+    <ul>
+      <li>Status: <strong>200</strong></li>
+      <li>Request headers: <strong>Authorization: Bearer [JWT]</strong> is present</li>
+      <li>Response: JSON array with <strong>6 items</strong> including the private one</li>
+      <li>The Login button should now show your email or a Logout button</li>
+    </ul>
+    <div class="screenshot">Photo Viewer showing 6 photos after login, with DevTools confirming the Authorization: Bearer header is present and the response contains 6 items</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 17</span>
+    <span class="step-title">Verify the JWT in CloudWatch Logs</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudWatch → Log groups → /aws/lambda/photoviewer-authorizer.</strong> Click the most recent log stream. You should see invocations corresponding to your login test — look for log entries showing:</p>
+    <ul>
+      <li>The origin secret check passing</li>
+      <li>A JWT being validated</li>
+      <li>The <code>cognito:groups</code> claim extracted</li>
+    </ul>
+    <p>This confirms the full authorizer flow is running and being logged.</p>
+    <div class="screenshot">CloudWatch log stream for photoviewer-authorizer showing an invocation with JWT validation and group extraction logged</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ TROUBLESHOOTING ═══════════════ -->
+<h2>Troubleshooting</h2>
+
+<p>If something isn't working, work through these checks in order. Each one isolates a specific layer.</p>
+
+<h3>Check 1 — Authorizer rejects all requests (401 after update)</h3>
+<p>If the authorizer is rejecting every request including ones with the correct origin secret, the most likely cause is that the Secrets Manager fetch is failing.</p>
+<pre># Test the authorizer directly with just the origin secret
+curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
+  -H "x-origin-verify: YOUR_SECRET"</pre>
+<p>If this returns <code>{"message":"Unauthorized"}</code>, check: the IAM policy on the authorizer role includes <code>secretsmanager:GetSecretValue</code> on the correct ARN; the secret name in the code matches <code>photoviewer/origin-verify-secret</code>; you clicked Deploy after updating the code.</p>
+
+<h3>Check 2 — Google login fails with redirect_uri_mismatch</h3>
+<p>This means the redirect URI you entered in Google Cloud Console doesn't match what Cognito is sending. The Cognito redirect URI must be exactly: <code>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</code>. Check the Google Cloud Console → Credentials → your OAuth client → Authorized redirect URIs and confirm it matches exactly, including the protocol and path.</p>
+
+<h3>Check 3 — Callback URL returns a browser error after login</h3>
+<p>After Google authentication, the browser is redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. If you see a 403 or the page doesn't load the app, check: the callback URL in Cognito App client settings matches your CloudFront domain exactly; CloudFront serves <code>index.html</code> for the <code>/callback</code> path (check the default root object is set).</p>
+
+<h3>Check 4 — JWT present but still seeing only 5 photos</h3>
+<p>If the Authorization header is being sent but Lambda is still filtering to public photos, check the authorizer is passing group context correctly. Go to <strong>CloudWatch → /aws/lambda/photoviewer-authorizer</strong> and look for log entries. If you see the JWT being validated but no group context, check that the user is actually in a Cognito group — go to Cognito → Users → your user → Groups tab.</p>
+
+<h3>Check 5 — JWT validation fails (invalid signature)</h3>
+<p>This usually means the <code>COGNITO_USER_POOL_ID</code> or <code>COGNITO_APP_CLIENT_ID</code> environment variable in the authorizer is wrong. The JWKS endpoint the authorizer fetches is derived from the User Pool ID — a wrong ID means the wrong public keys are used for verification. Double-check both values match exactly what's shown in the Cognito console.</p>
+
+<h3>Check 6 — Full end-to-end via CloudFront</h3>
+<pre>curl -s https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/photos</pre>
+<p>Expected: JSON array of 5 public photos. If this fails but the direct API Gateway call works, the issue is in CloudFront — verify the <code>/photos</code> behavior is still using the <code>photoviewer-apigw-origin</code> and has <code>AllViewerExceptHostHeader</code> as the origin request policy.</p>
+
+
+<!-- ═══════════════ REFLECTION ═══════════════ -->
+<h2>Reflection</h2>
+<p>Answer all three questions in 2–3 sentences each.</p>
+
+<h3>Question 1</h3>
+<p>In Week 5, the <code>ORIGIN_SECRET</code> was stored as a Lambda environment variable. In Week 6, it is fetched from AWS Secrets Manager at runtime. Explain three specific security improvements this change provides, and describe one scenario where a secret in an environment variable could be exposed that Secrets Manager prevents.</p>
+
+<h3>Question 2</h3>
+<p>The Photo Viewer uses Cognito as a broker rather than trusting Google JWTs directly. The Lambda authorizer validates Cognito's JWT — not Google's. Explain what problem this design solves, and what would break if you added a second identity provider (e.g. Facebook) to a system that validated each IdP's JWT directly.</p>
+
+<h3>Question 3</h3>
+<p>The Lambda authorizer performs two checks on every <code>/photos</code> request: the origin secret check and the JWT validation. One check is required for every request; the other is optional. Explain which is which, why unauthenticated requests must be allowed through, and what security property each check provides independently.</p>
+
+
+<!-- ═══════════════ RUBRIC ═══════════════ -->
+<h2>Grading rubric</h2>
+
+<table class="rubric-table">
+  <thead>
+    <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Cognito User Pool + groups</strong></td>
+      <td>15</td>
+      <td>Screenshot shows User Pool with Hosted UI configured and callback URL set. Groups tab shows both <code>free</code> and <code>premium</code> groups.</td>
+    </tr>
+    <tr>
+      <td><strong>Google federation</strong></td>
+      <td>15</td>
+      <td>Cognito Sign-in experience tab shows Google as an identity provider. Hosted UI settings show Google enabled. Screenshot of callback URL with <code>?code=</code> parameter after Google login.</td>
+    </tr>
+    <tr>
+      <td><strong>Secrets Manager — secret created + IAM policy</strong></td>
+      <td>15</td>
+      <td>Screenshot shows <code>photoviewer/origin-verify-secret</code> in Secrets Manager. IAM role for authorizer shows <code>photoviewer-secrets-read</code> policy scoped to specific secret ARN. <code>ORIGIN_SECRET</code> is gone from Lambda environment variables.</td>
+    </tr>
+    <tr>
+      <td><strong>Updated Lambda authorizer deployed</strong></td>
+      <td>15</td>
+      <td>CloudShell verify: direct API Gateway call without header returns 401; with correct origin secret but no JWT returns 5 photos; with JWT returns 6 photos.</td>
+    </tr>
+    <tr>
+      <td><strong>Unauthenticated verification</strong></td>
+      <td>10</td>
+      <td>Screenshot of Photo Viewer showing 5 photos with DevTools confirming no Authorization header and 5 items in the response body.</td>
+    </tr>
+    <tr>
+      <td><strong>Authenticated verification</strong></td>
+      <td>15</td>
+      <td>Screenshot of Photo Viewer showing 6 photos after Google login, with DevTools confirming Authorization: Bearer header is present and 6 items in the response body.</td>
+    </tr>
+    <tr>
+      <td><strong>CloudWatch Logs — authorizer invocation</strong></td>
+      <td>5</td>
+      <td>Screenshot of CloudWatch log stream for photoviewer-authorizer showing a successful JWT validation invocation.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q1</strong></td>
+      <td>5</td>
+      <td>Correctly identifies: not visible in console, CloudTrail audit trail, rotation without redeployment. Describes a concrete exposure scenario (e.g. <code>lambda:GetFunction</code> permission, accidental print to logs).</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q2</strong></td>
+      <td>3</td>
+      <td>Correctly explains the broker pattern normalizes token format — adding a second IdP to Cognito requires no code changes. Direct IdP trust would require each IdP's JWKS endpoint, claim format, and validation logic to be handled separately.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q3</strong></td>
+      <td>2</td>
+      <td>Correctly identifies origin secret as required (rejects direct calls), JWT as optional (unauthenticated path must work). Each check provides a different property: origin secret = request came from CloudFront; JWT = establishes who is calling.</td>
+    </tr>
+    <tr class="rubric-total">
+      <td><strong>Total</strong></td>
+      <td><strong>100</strong></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 1rem;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week06" target="_blank">⌥ View Week 6 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week06/week6-cognito.html">📖 Week 6 Concept Notes</a>
+</div>
+
+<div class="page-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-lab-assignment.html">← Week 5 Lab</a>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">Course home</a>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-lab-assignment.html">Week 7 Lab →</a>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>
