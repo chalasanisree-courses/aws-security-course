@@ -499,7 +499,7 @@
       <span class="week-chevron" id="w5-chev">▶</span>
     </div>
     <div class="week-body" id="w5">
-      <p class="week-desc">EC2 and ALB replaced with Lambda and API Gateway. WAF rate-based rule added to CloudFront. Eliminates the EC2 attack surface — no OS patching, no SSH, no server management, no supply chain risk. API Gateway resource policy restricts invocations to CloudFront only via aws:SourceArn.</p>
+      <p class="week-desc">EC2 and ALB replaced with Lambda and API Gateway. WAF rate-based rule added to CloudFront. Eliminates the EC2 attack surface — no OS patching, no SSH, no server management, no supply chain risk. A Lambda authorizer restricts API Gateway invocations to CloudFront only by checking a shared secret header. Origin secret stored in a Lambda environment variable — a gap fixed in Week 6.</p>
       <div class="resource-list">
         <a class="resource-link" href="week05/week5-serverless.html">
           <span class="icon">◈</span> Serverless Backend — Lambda and API Gateway — concept notes
@@ -516,12 +516,165 @@
     <span>Phase 3</span><hr>
   </div>
 
-  <!-- Weeks 6–12 placeholder -->
+  <!-- Week 6 -->
   <div class="week-card">
-    <div class="week-header" style="cursor:default;">
-      <span class="week-num" style="background:#B4B2A9;">Weeks 6–12</span>
-      <span class="week-title">Coming — content added week by week as the course progresses</span>
+    <div class="week-header" onclick="toggle('w6')">
+      <span class="week-num">Week 6</span>
+      <span class="week-title">User Identity — Cognito + Google Federation</span>
       <span class="week-domain"></span>
+      <span class="week-chevron" id="w6-chev">▶</span>
+    </div>
+    <div class="week-body" id="w6">
+      <p class="week-desc">Add login to the Photo Viewer using Cognito User Pool with Google as a federated identity provider via OIDC/OAuth2 Authorization Code flow. Cognito acts as broker — holds client secret, exchanges auth code server-to-server, issues its own JWT. Lambda authorizer extended to validate JWT and extract Cognito groups claim. Origin secret moved from Lambda environment variable to Secrets Manager. Unauthenticated users see public photos; any logged-in user sees all photos.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week06/week6-cognito.html">
+          <span class="icon">◈</span> User Identity and Authentication — concept notes
+        </a>
+        <a class="resource-link" href="week06/week6-lab-assignment.html">
+          <span class="icon">◈</span> Week 6 Lab — Cognito + Google Login
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 7 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w7')">
+      <span class="week-num">Week 7</span>
+      <span class="week-title">Premium Capabilities — Presigned Uploads + Rekognition</span>
+      <span class="week-domain"></span>
+      <span class="week-chevron" id="w7-chev">▶</span>
+    </div>
+    <div class="week-body" id="w7">
+      <p class="week-desc">RBAC takes effect — Cognito groups from Week 6 now drive capability differences. Premium users get S3 presigned URLs to upload photos directly from the browser without routing through Lambda. S3 event trigger invokes a Lambda function that calls Rekognition to auto-tag uploaded photos and writes metadata to DynamoDB. Free users can search by auto-generated tags.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week07/week7-upload.html">
+          <span class="icon">◈</span> Premium Capabilities — concept notes
+        </a>
+        <a class="resource-link" href="week07/week7-lab-assignment.html">
+          <span class="icon">◈</span> Week 7 Lab — Presigned Uploads + Auto-tagging
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-divider">
+    <span>Phase 4</span><hr>
+  </div>
+
+  <!-- Week 8 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w8')">
+      <span class="week-num">Week 8</span>
+      <span class="week-title">Encryption at Rest — KMS Customer-Managed Keys</span>
+      <span class="week-domain"></span>
+      <span class="week-chevron" id="w8-chev">▶</span>
+    </div>
+    <div class="week-body" id="w8">
+      <p class="week-desc">Replace AWS-managed encryption with customer-managed KMS keys for S3, DynamoDB, and Secrets Manager. Key policies scope usage to the Lambda execution role. Every key use is logged in CloudTrail. CloudHSM covered as a lecture topic for hardware-backed key storage.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week08/week8-kms.html">
+          <span class="icon">◈</span> Encryption at Rest — concept notes
+        </a>
+        <a class="resource-link" href="week08/week8-lab-assignment.html">
+          <span class="icon">◈</span> Week 8 Lab — KMS Encryption
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 9 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w9')">
+      <span class="week-num">Week 9</span>
+      <span class="week-title">Multi-Account Governance — Identity Center + Organizations</span>
+      <span class="week-domain"></span>
+      <span class="week-chevron" id="w9-chev">▶</span>
+    </div>
+    <div class="week-body" id="w9">
+      <p class="week-desc">IAM Identity Center replaces individual IAM users — developers log in via SSO with permission sets scoped to accounts. AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone enforces these automatically on new accounts.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week09/week9-identity-center.html">
+          <span class="icon">◈</span> Multi-Account Governance — concept notes
+        </a>
+        <a class="resource-link" href="week09/week9-lab-assignment.html">
+          <span class="icon">◈</span> Week 9 Lab — Identity Center + SCPs
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-divider">
+    <span>Phase 5</span><hr>
+  </div>
+
+  <!-- Week 10 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w10')">
+      <span class="week-num">Week 10</span>
+      <span class="week-title">Visibility + Compliance — CloudWatch, Config, Inspector, Macie</span>
+      <span class="week-domain"></span>
+      <span class="week-chevron" id="w10-chev">▶</span>
+    </div>
+    <div class="week-body" id="w10">
+      <p class="week-desc">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce desired security posture — S3 public access block, KMS encryption, CloudTrail enabled. Inspector scans the Lambda function for known CVEs. Macie monitors S3 for PII in user-uploaded photos. CVE and NIST frameworks covered as lecture.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week10/week10-monitoring.html">
+          <span class="icon">◈</span> Visibility and Compliance — concept notes
+        </a>
+        <a class="resource-link" href="week10/week10-lab-assignment.html">
+          <span class="icon">◈</span> Week 10 Lab — Config + Inspector + Macie
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 11 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w11')">
+      <span class="week-num">Week 11</span>
+      <span class="week-title">Threat Detection — GuardDuty + Security Hub + EventBridge</span>
+      <span class="week-domain"></span>
+      <span class="week-chevron" id="w11-chev">▶</span>
+    </div>
+    <div class="week-body" id="w11">
+      <p class="week-desc">GuardDuty enabled — continuously analyzes CloudTrail events and DNS logs for threat indicators including credential exfiltration and unusual API calls. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie. EventBridge rule matches high-severity findings and invokes a Lambda remediation function. CloudTrail deep dive: management vs data events, multi-region trails, log integrity.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week11/week11-guardduty.html">
+          <span class="icon">◈</span> Threat Detection and Response — concept notes
+        </a>
+        <a class="resource-link" href="week11/week11-lab-assignment.html">
+          <span class="icon">◈</span> Week 11 Lab — GuardDuty + EventBridge Remediation
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week 12 -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('w12')">
+      <span class="week-num">Week 12</span>
+      <span class="week-title">Capstone — Route 53 + Firewall Manager + Full-Stack Review</span>
+      <span class="week-domain"></span>
+      <span class="week-chevron" id="w12-chev">▶</span>
+    </div>
+    <div class="week-body" id="w12">
+      <p class="week-desc">Route 53 custom domain with health checks and DNS failover. Firewall Manager enforces WAF Web ACL across all CloudFront distributions in the organization automatically. Capstone lab: identify and remediate intentionally introduced security misconfigurations across the full 12-week stack.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="week12/week12-capstone.html">
+          <span class="icon">◈</span> Global Resilience and Capstone — concept notes
+        </a>
+        <a class="resource-link" href="week12/week12-lab-assignment.html">
+          <span class="icon">◈</span> Week 12 Lab — Capstone
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
     </div>
   </div>
 
@@ -626,7 +779,7 @@
               <td>Fully managed NoSQL database. AWS distributes across AZs automatically. TTL expires old records.</td>
             </tr>
             <tr data-scope="global">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/route53/" target="_blank">Route 53</a></div><span class="svc-abbr"> · Amazon Route 53</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/route53/" target="_blank">Route 53</a></div><span class="svc-abbr"> · Amazon Route 53</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 12</span></td>
               <td><span class="scope-pill scope-global">Global</span></td>
               <td>DNS service. Routes internet traffic to your application. Health checks enable automatic failover.</td>
             </tr>
@@ -641,9 +794,9 @@
               <td>Creates and secures REST APIs. Handles throttling, JWT authentication, and usage plans.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><span class="svc-abbr"> · Amazon Inspector</span><br><span class="special-pill free-tier">free tier</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><span class="svc-abbr"> · Amazon Inspector</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
-              <td>Automated CVE scanning for EC2 instances. References NIST NVD. Requires SSM Agent.</td>
+              <td>Automated CVE scanning for EC2 instances and Lambda functions. References NIST NVD for known vulnerabilities.</td>
             </tr>
             <tr data-scope="regional" data-week="5">
               <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><span class="svc-abbr"> · AWS Web Application Firewall</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 5</span></td>
@@ -651,32 +804,32 @@
               <td>Filters web traffic. Blocks SQLi, XSS, and rate-based attacks. Must be us-east-1 for CloudFront.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/cognito/" target="_blank">Cognito</a></div><span class="svc-abbr"> · Amazon Cognito</span><br><span class="special-pill free-tier">free tier</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/cognito/" target="_blank">Cognito</a></div><span class="svc-abbr"> · Amazon Cognito</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 6</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
-              <td>User authentication. Supports Google, Apple, Facebook via Authorization Code + PKCE flow.</td>
+              <td>User authentication and identity federation. User Pool manages app users and issues JWTs. Supports Google, Facebook, and other OIDC providers via Authorization Code flow.</td>
             </tr>
             <tr data-scope="global">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><span class="svc-abbr"> · AWS SSO</span><br><span class="special-pill free-tier">free tier</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><span class="svc-abbr"> · AWS SSO</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 9</span></td>
               <td><span class="scope-pill scope-global">Global</span></td>
               <td>Single sign-on for employee access. Centralizes identity for multiple roles and accounts.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/guardduty/" target="_blank">GuardDuty</a></div><span class="svc-abbr"> · Amazon GuardDuty</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/guardduty/" target="_blank">GuardDuty</a></div><span class="svc-abbr"> · Amazon GuardDuty</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 11</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
-              <td>Threat detection. Analyzes CloudTrail, VPC Flow Logs, and DNS logs for malicious activity.</td>
+              <td>Threat detection. Analyzes CloudTrail events and DNS logs for malicious activity and credential exfiltration.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/security-hub/" target="_blank">Security Hub</a></div><span class="svc-abbr"> · AWS Security Hub</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/security-hub/" target="_blank">Security Hub</a></div><span class="svc-abbr"> · AWS Security Hub</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 11</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Unified security dashboard. Aggregates findings from GuardDuty, Inspector, Config, and Macie.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/secrets-manager/" target="_blank">Secrets Manager</a></div><span class="svc-abbr"> · AWS Secrets Manager</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/secrets-manager/" target="_blank">Secrets Manager</a></div><span class="svc-abbr"> · AWS Secrets Manager</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 6</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Stores and rotates credentials and API keys. Replaces hardcoded values in application code.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/config/" target="_blank">AWS Config</a></div><span class="svc-abbr"> · AWS Config</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/config/" target="_blank">AWS Config</a></div><span class="svc-abbr"> · AWS Config</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Continuously monitors resource configurations. Alerts when they drift from your security baseline.</td>
             </tr>
@@ -686,22 +839,22 @@
               <td>Inspects your account for security, cost, and performance improvements.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/kms/" target="_blank">KMS</a></div><span class="svc-abbr"> · Key Management Service</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/kms/" target="_blank">KMS</a></div><span class="svc-abbr"> · Key Management Service</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 8</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Creates and manages encryption keys for S3, DynamoDB, EBS, and other services.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><span class="svc-abbr"> · Amazon Macie</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><span class="svc-abbr"> · Amazon Macie</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Machine learning discovery of PII and sensitive data in S3 buckets.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/rekognition/" target="_blank">Rekognition</a></div><span class="svc-abbr"> · Amazon Rekognition</span><br><span class="special-pill paid-only">paid</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/rekognition/" target="_blank">Rekognition</a></div><span class="svc-abbr"> · Amazon Rekognition</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 7</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
-              <td>AI image analysis. Detects unsafe content in photos. Runs in a separate account governed by SCP.</td>
+              <td>AI image analysis. Detects objects, scenes, and labels in photos. Used to auto-tag premium user uploads.</td>
             </tr>
             <tr data-scope="global">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/organizations/" target="_blank">AWS Organizations</a></div><span class="svc-abbr"> · AWS Organizations</span><br><span class="special-pill free-tier">free tier</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/organizations/" target="_blank">AWS Organizations</a></div><span class="svc-abbr"> · AWS Organizations</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 9</span></td>
               <td><span class="scope-pill scope-global">Global</span></td>
               <td>Manages multiple AWS accounts centrally. Service Control Policies restrict what accounts can do.</td>
             </tr>
@@ -727,7 +880,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 5;
+const currentWeek = 6;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }
