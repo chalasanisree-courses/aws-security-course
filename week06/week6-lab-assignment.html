@@ -152,7 +152,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <p>Click <strong>Create user directory.</strong></p>
 
     <div class="callout info">
-      <p><strong>After creation you will land on the User Pool overview page.</strong> Note down two values — you need them in Step 9:</p>
+      <p><strong>After creation you will land on the User Pool overview page.</strong> Note down two values — you need them in Step 10:</p>
       <ul>
         <li><strong>User Pool ID</strong> — shown on the overview page (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
         <li><strong>App client ID</strong> — go to <strong>App integration → App clients → photoviewer-web-client</strong></li>
@@ -207,18 +207,26 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 3</span>
-    <span class="step-title">Start Google federation in Cognito — get the redirect URI</span>
+    <span class="step-title">Get your Cognito redirect URI</span>
   </div>
   <div class="step-body">
-    <p>Before going to Google Cloud Console, open the Cognito IdP form first — it shows you the exact redirect URI you need to register with Google.</p>
-    <p>Go to your Cognito User Pool → <strong>Authentication → Social and external providers → Add identity provider → Google.</strong></p>
-    <p>Before filling in the form, note the redirect URI you need to give Google — it's your Cognito domain (from <strong>Branding → Domain</strong>) with <code>/oauth2/idpresponse</code> appended:</p>
+    <p>Go to your Cognito User Pool → <strong>Branding → Domain</strong> in the left nav. You will see your Cognito domain listed under "Cognito domain", e.g.:</p>
+    <pre>https://us-east-1xxxxxxxxx.auth.us-east-1.amazoncognito.com</pre>
+    <p>The redirect URI you need to register with Google is your Cognito domain with <code>/oauth2/idpresponse</code> appended. Construct it now and copy it:</p>
     <pre>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</pre>
-    <p><strong>Copy this URI and keep this browser tab open.</strong> You will paste it into Google Cloud Console in the next step, then come back here to complete the form.</p>
     <div class="callout info">
-      <p><strong>Why this URI?</strong> After the user signs in with Google, Google needs to redirect somewhere with the auth code. That destination is Cognito's <code>/oauth2/idpresponse</code> endpoint — not your CloudFront URL. Cognito sits between Google and your app, handling the code exchange on your behalf. You're registering this URI with Google so it knows where to send the auth code.</p>
+      <p><strong>Why this URI?</strong> After the user signs in with Google, Google redirects back with an auth code. The destination is Cognito's <code>/oauth2/idpresponse</code> endpoint — not your CloudFront URL. Cognito sits between Google and your app: it receives the auth code from Google, exchanges it server-to-server using the Google client secret, then issues its own JWT to your browser. You're registering this URI with Google so it knows where to send the auth code.</p>
     </div>
-    <p>Now open a new browser tab and go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 4</span>
+    <span class="step-title">Create OAuth 2.0 credentials in Google Cloud Console</span>
+  </div>
+  <div class="step-body">
+    <p>Open a new browser tab and go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>. Sign in with your Google account.</p>
     <ol>
       <li><strong>Create or select a project:</strong> Click the project selector at the top → <strong>New Project</strong> → name it <code>photoviewer</code> → <strong>Create.</strong> Select the project.</li>
       <li><strong>Configure the Google Auth Platform:</strong> In the left nav go to <strong>APIs &amp; Services → Google Auth Platform.</strong> You will see a "Project configuration" wizard with four sections.
@@ -233,23 +241,23 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
         <ul>
           <li>Application type: <strong>Web application</strong></li>
           <li>Name: <code>photoviewer-cognito</code></li>
-          <li>Authorized redirect URIs — click <strong>Add URI</strong> and paste the Cognito redirect URI you copied above</li>
+          <li>Authorized redirect URIs — click <strong>Add URI</strong> and paste the redirect URI you constructed in Step 3</li>
           <li>Click <strong>Create</strong></li>
         </ul>
       </li>
     </ol>
-    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in the next step. <strong>Do not close this dialog until you have copied both values.</strong></p>
+    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in Step 5. <strong>Do not close this dialog until you have copied both values.</strong></p>
     <div class="screenshot">Google Cloud Console showing the OAuth client ID and client secret dialog</div>
   </div>
 </div>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 4</span>
-    <span class="step-title">Complete Google federation in Cognito</span>
+    <span class="step-num">Step 5</span>
+    <span class="step-title">Add Google as an identity provider in Cognito</span>
   </div>
   <div class="step-body">
-    <p>Switch back to the AWS Console tab where you left the Cognito Google IdP form open. Paste the credentials from Google:</p>
+    <p>Back in the AWS Console, go to your Cognito User Pool → <strong>Authentication → Social and external providers → Add identity provider → Google.</strong></p>
     <ul>
       <li>Client ID: paste from Google Cloud Console</li>
       <li>Client secret: paste from Google Cloud Console</li>
@@ -262,18 +270,21 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
       </li>
       <li>Click <strong>Add identity provider</strong></li>
     </ul>
-    <p>Now enable Google on your app client. Go to <strong>Applications → App clients → your app client → Login pages tab → Managed login pages configuration → Edit.</strong> Under <strong>Identity providers</strong>, check <strong>Google</strong>. Click <strong>Save changes.</strong></p>
+    <p>Now enable Google on your app client. Go to <strong>Applications → App clients → your app client → Login pages tab → Managed login pages configuration → Edit.</strong> This is the same form you configured in Step 1 — scroll down to <strong>Identity providers</strong>, click the dropdown and select <strong>Google</strong>. It will appear as a tag alongside "Cognito user pool". Click <strong>Save changes.</strong></p>
+    <div class="callout info">
+      <p>If Google doesn't appear in the dropdown, the identity provider wasn't saved correctly in the first part of this step — go back to <strong>Authentication → Social and external providers</strong> and verify Google is listed there before continuing.</p>
+    </div>
     <div class="screenshot">Cognito Login pages tab showing Google listed as an enabled identity provider</div>
   </div>
 </div>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 5</span>
+    <span class="step-num">Step 6</span>
     <span class="step-title">Test the Hosted UI login flow</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>App integration → App clients → photoviewer-web-client → View Hosted UI.</strong> A login page opens with a "Continue with Google" button.</p>
+    <p>Go to <strong>Applications → App clients → your app client.</strong> Click the <strong>"View login page"</strong> button at the top right of the page. A login page opens — you should see a "Continue with Google" button since you enabled Google as an identity provider in Step 5.</p>
     <p>Click <strong>Continue with Google</strong> and sign in with your Google account. After authentication, your browser will be redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. The page will show an error or blank page — that's expected because <code>app.js</code> doesn't handle the callback yet. What matters is the redirect succeeded.</p>
     <p>Check the URL in your browser — it should contain a <code>code</code> parameter, confirming Google authenticated you and Cognito is handling the exchange.</p>
     <div class="verify">
@@ -293,7 +304,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 6</span>
+    <span class="step-num">Step 7</span>
     <span class="step-title">Create the secret in Secrets Manager</span>
   </div>
   <div class="step-body">
@@ -313,7 +324,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 7</span>
+    <span class="step-num">Step 8</span>
     <span class="step-title">Grant the Lambda authorizer permission to read the secret</span>
   </div>
   <div class="step-body">
@@ -338,7 +349,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 8</span>
+    <span class="step-num">Step 9</span>
     <span class="step-title">Remove ORIGIN_SECRET from the Lambda environment variable</span>
   </div>
   <div class="step-body">
@@ -356,7 +367,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 9</span>
+    <span class="step-num">Step 10</span>
     <span class="step-title">Deploy the updated authorizer code</span>
   </div>
   <div class="step-body">
@@ -381,7 +392,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 10</span>
+    <span class="step-num">Step 11</span>
     <span class="step-title">Update the main Lambda to filter by group</span>
   </div>
   <div class="step-body">
@@ -398,7 +409,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 11</span>
+    <span class="step-num">Step 12</span>
     <span class="step-title">Verify the authorizer still works with no JWT</span>
   </div>
   <div class="step-body">
@@ -425,7 +436,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 12</span>
+    <span class="step-num">Step 13</span>
     <span class="step-title">Add a private photo to DynamoDB</span>
   </div>
   <div class="step-body">
@@ -459,7 +470,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 13</span>
+    <span class="step-num">Step 14</span>
     <span class="step-title">Deploy the updated app.js to S3</span>
   </div>
   <div class="step-body">
@@ -499,11 +510,11 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 14</span>
+    <span class="step-num">Step 15</span>
     <span class="step-title">Test unauthenticated — public photos only</span>
   </div>
   <div class="step-body">
-    <p>Open your CloudFront URL in a browser (use a fresh incognito window to ensure no cached JWT). The Photo Viewer should load and display <strong>5 photos</strong> — the 5 public ones. The private photo you added in Step 12 should <strong>not</strong> appear.</p>
+    <p>Open your CloudFront URL in a browser (use a fresh incognito window to ensure no cached JWT). The Photo Viewer should load and display <strong>5 photos</strong> — the 5 public ones. The private photo you added in Step 13 should <strong>not</strong> appear.</p>
     <p>Open <strong>DevTools → Network tab</strong>, reload, and click the <code>/photos</code> request. Confirm:</p>
     <ul>
       <li>Status: <strong>200</strong></li>
@@ -516,7 +527,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 15</span>
+    <span class="step-num">Step 16</span>
     <span class="step-title">Test authenticated — all photos visible after login</span>
   </div>
   <div class="step-body">
@@ -535,7 +546,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 16</span>
+    <span class="step-num">Step 17</span>
     <span class="step-title">Verify the JWT in CloudWatch Logs</span>
   </div>
   <div class="step-body">
