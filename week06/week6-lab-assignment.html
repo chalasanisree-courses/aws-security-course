@@ -104,7 +104,17 @@
   <pre>cd ~
 git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || git -C aws-security-course pull
 bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
-  <p>The script checks: Lambda function exists and returns photos, Lambda authorizer is attached, CloudFront routes <code>/photos</code> correctly, WAF Web ACL is attached, and DynamoDB has at least 5 items. Address any failures before proceeding.</p>
+
+  <p>The script checks six things. <strong>The first five must pass before you continue:</strong></p>
+  <ul>
+    <li><strong>Required:</strong> <code>photoviewer-lambda</code> exists and is Active</li>
+    <li><strong>Required:</strong> <code>photoviewer-authorizer</code> exists and is Active</li>
+    <li><strong>Required:</strong> DynamoDB table <code>photoviewer-photos</code> exists with ≥5 items</li>
+    <li><strong>Required:</strong> S3 bucket <code>photoviewer-9876543210</code> has ≥5 photo files</li>
+    <li><strong>Required:</strong> CloudFront distribution pointing to your S3 bucket — the script prints your CloudFront domain, keep it handy</li>
+    <li><strong>Optional:</strong> WAF Web ACL — the lab works without it. WAF costs $5/month so it is fine to have deleted it after Week 5. The script will note it is missing but will not block you.</li>
+  </ul>
+  <p>Address any <strong>required</strong> failures before proceeding. If the CloudFront check fails, verify your Week 3 distribution still exists.</p>
 </div>
 
 <p><strong>Files for this lab:</strong> <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week06" target="_blank">photoviewer/week06 on GitHub →</a></p>

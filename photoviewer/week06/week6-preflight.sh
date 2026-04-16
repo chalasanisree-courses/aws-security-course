@@ -118,7 +118,7 @@ WAF_COUNT=$(aws wafv2 list-web-acls \
 if [ "$WAF_COUNT" -ge 1 ] 2>/dev/null; then
   green "WAF Web ACL found (CLOUDFRONT scope)"
 else
-  warn "No WAF Web ACL found — complete Week 5 Step 13 before continuing"
+  echo "  -  No WAF Web ACL found — /photos has no rate limiting but lab will still work"
 fi
 echo ""
 
