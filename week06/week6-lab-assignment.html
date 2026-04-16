@@ -321,7 +321,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <p>Go to <strong>AWS Secrets Manager → Store a new secret.</strong></p>
     <ul>
       <li>Secret type: <strong>Other type of secret</strong></li>
-      <li>Key/value pairs: Key = <code>value</code>, Value = the same secret you generated in Week 5 for <code>ORIGIN_SECRET</code> (retrieve it from your Lambda authorizer's environment variables before deleting it)</li>
+      <li>Key/value pairs: Key = <code>ORIGIN_SECRET</code>, Value = the same secret you generated in Week 5 (retrieve it from your Lambda authorizer's environment variables before deleting it). The secret will be stored as <code>{"ORIGIN_SECRET": "your-secret-here"}</code> — the same name as the environment variable it replaces, making the migration easy to follow.</li>
       <li>Click <strong>Next</strong></li>
       <li>Secret name: <code>photoviewer/origin-verify-secret</code></li>
       <li>Description: <code>CloudFront origin verification secret for API Gateway</code></li>

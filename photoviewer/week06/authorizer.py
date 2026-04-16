@@ -59,7 +59,7 @@ def get_origin_secret():
     global _origin_secret
     if _origin_secret is None:
         resp = secrets_client.get_secret_value(SecretId=SECRET_NAME)
-        _origin_secret = json.loads(resp['SecretString'])['value']
+        _origin_secret = json.loads(resp['SecretString'])['ORIGIN_SECRET']
     return _origin_secret
 
 
