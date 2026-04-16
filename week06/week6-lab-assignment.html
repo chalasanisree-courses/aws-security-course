@@ -126,18 +126,19 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
     <p><strong>Application type</strong></p>
     <ul>
-      <li>Select <strong>Single-page application (SPA)</strong> — this is a JavaScript app running in the browser. This setting tells Cognito not to generate a client secret, which is correct: browser apps cannot keep a secret safe.</li>
+      <li>Select <strong>Single-page application (SPA)</strong> — this is a JavaScript app running in the browser. This setting tells Cognito not to generate a client secret, which is correct: browser apps cannot keep a secret safe because anyone can view the source.</li>
     </ul>
 
     <p><strong>Name your application</strong></p>
     <ul>
       <li>Application name: <code>photoviewer-web-client</code></li>
+      <li>This name identifies the app client — the record Cognito uses to know which application is allowed to request tokens. Each application that integrates with Cognito gets its own app client with its own settings.</li>
     </ul>
 
     <p><strong>Configure options</strong></p>
     <ul>
-      <li>Sign-in identifiers: check <strong>Email</strong> only</li>
-      <li>Self-registration: <strong>uncheck</strong> "Enable self-registration" — we want Google federation only, not open sign-up with email/password</li>
+      <li>Sign-in identifiers: check <strong>Email</strong> only — this is the attribute Cognito uses to identify a user in the User Pool. Even though Google handles the actual authentication, Cognito still stores a local user record keyed by email.</li>
+      <li>Self-registration: <strong>uncheck</strong> "Enable self-registration" — we want Google federation only. If left enabled, anyone could create a Cognito account directly with email and password, bypassing Google entirely.</li>
       <li>Required attributes: leave empty</li>
     </ul>
 
@@ -145,6 +146,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <ul>
       <li>Return URL: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback</code></li>
       <li>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code> with your actual CloudFront domain from the pre-flight output (e.g. <code>d1kbm2nphud61r.cloudfront.net</code>)</li>
+      <li>This is the URL Cognito is allowed to redirect back to after a successful login. Cognito enforces this as an allowlist — if app.js sends a redirect_uri that doesn't exactly match this value, Cognito rejects the login attempt. This prevents an attacker from redirecting the auth code to their own server.</li>
     </ul>
 
     <p>Click <strong>Create user directory.</strong></p>
@@ -158,11 +160,11 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
       <p>Also note your <strong>Cognito domain</strong> — go to <strong>App integration → Domain</strong>. It will look like <code>photoviewer-web-client-XXXXXXXX.auth.us-east-1.amazoncognito.com</code>. You need the full domain for Step 4 (Google redirect URI) and the prefix for app.js in Step 14.</p>
     </div>
 
-    <p>Next, set a sign-out URL. Go to <strong>App integration → App clients → photoviewer-web-client → Edit Hosted UI:</strong></p>
+    <p>Next, set a sign-out URL and fix the scopes. Go to <strong>App integration → App clients → photoviewer-web-client → Login pages tab → Managed login pages configuration → Edit:</strong></p>
     <ul>
-      <li>Sign-out URLs: add <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code></li>
-      <li>OAuth 2.0 grant types: confirm <strong>Authorization code grant</strong> is checked</li>
-      <li>OpenID Connect scopes: confirm <strong>Email, OpenID, Profile</strong> are checked</li>
+      <li>Sign-out URLs: add <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code> — this is where Cognito redirects the browser after logout. Same allowlist enforcement as the callback URL.</li>
+      <li>OAuth 2.0 grant types: confirm <strong>Authorization code grant</strong> is checked — this is the flow where Cognito returns a short-lived auth code to the browser, which app.js then exchanges for tokens. The alternative (Implicit grant) returns tokens directly in the URL, which is less secure and deprecated.</li>
+      <li>OpenID Connect scopes: the defaults include <code>phone</code> which we don't need. <strong>Uncheck phone, and check Profile</strong> — so the final set is <strong>Email, OpenID, Profile</strong>. <code>openid</code> is required to get an ID token at all. <code>email</code> gives the user's email address. <code>profile</code> adds the user's name to the token claims.</li>
       <li>Click <strong>Save changes</strong></li>
     </ul>
 
