@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Identity and Authentication — CS 55D Week 6</title>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#f8f9fa;padding:0 1rem 4rem;}
+    .page-wrap{max-width:860px;margin:0 auto;}
+    nav{font-size:0.85rem;color:#666;padding:1.2rem 0 0.5rem;}
+    nav a{color:#1F4E79;text-decoration:none;}
+    nav a:hover{text-decoration:underline;}
+    h1{font-size:2rem;font-weight:700;color:#1a1a1a;margin:0.5rem 0 0.3rem;}
+    .subtitle{color:#555;font-size:1.05rem;margin-bottom:1.5rem;line-height:1.5;}
+    h2{font-size:1.35rem;font-weight:600;color:#1F4E79;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:2px solid #e0eaf4;}
+    h3{font-size:1.1rem;font-weight:600;color:#1a1a1a;margin:1.5rem 0 0.5rem;}
+    h4{font-size:1rem;font-weight:600;color:#1a1a1a;margin:1rem 0 0.4rem;}
+    p{margin-bottom:1rem;}
+    ul,ol{margin:0.5rem 0 1rem 1.5rem;}
+    li{margin-bottom:0.3rem;}
+    code{background:#f0f4f8;border:1px solid #d0dce8;border-radius:3px;padding:1px 5px;font-size:0.88em;font-family:'SF Mono',Monaco,monospace;}
+    pre{background:#1e2d3d;color:#e8f0f8;padding:1rem 1.2rem;border-radius:6px;overflow-x:auto;font-size:0.88em;margin:1rem 0;}
+    pre code{background:none;border:none;color:inherit;padding:0;}
+    .callout{border-left:4px solid;padding:1rem 1.2rem;margin:1.2rem 0;border-radius:0 6px 6px 0;}
+    .callout.info{border-color:#1F4E79;background:#f0f6ff;}
+    .callout.warn{border-color:#dc3545;background:#fff5f5;}
+    .callout.success{border-color:#155724;background:#f0fff4;}
+    .callout h4{margin:0 0 0.4rem;color:#1F4E79;}
+    .callout.warn h4{color:#dc3545;}
+    .callout p:last-child{margin-bottom:0;}
+    .objectives{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem 1.5rem;margin:1rem 0 1.5rem;}
+    .objectives ul{margin:0.5rem 0 0 1.2rem;}
+    .objectives li{margin-bottom:0.4rem;color:#333;}
+
+    /* Issue cards — where we left off */
+    .issues-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin:1rem 0;}
+    .issue-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1rem;cursor:pointer;transition:box-shadow 0.15s;}
+    .issue-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+    .issue-card .icon{font-size:1.4rem;margin-bottom:0.4rem;}
+    .issue-card .label{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em;}
+    .issue-card .title{font-size:0.9rem;font-weight:600;color:#1a1a1a;margin:0.2rem 0;}
+    .issue-card .desc{font-size:0.8rem;color:#666;}
+    .issue-detail{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem 1.5rem;margin:0.5rem 0 1rem;display:none;}
+    .issue-detail.active{display:block;}
+    .issue-detail h4{margin:0 0 0.5rem;color:#1F4E79;}
+    .fixed-badge{display:inline-block;background:#d4edda;color:#155724;font-size:0.75rem;padding:2px 8px;border-radius:12px;font-weight:600;margin-left:0.5rem;}
+
+    /* Comparison table */
+    .compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;}
+    .compare-table th{background:#1F4E79;color:#fff;padding:8px 12px;text-align:left;font-weight:500;}
+    .compare-table td{padding:8px 12px;border-bottom:1px solid #e0eaf4;vertical-align:top;}
+    .compare-table tr:nth-child(even) td{background:#f8fafc;}
+    .compare-table tr:last-child td{border-bottom:none;}
+
+    /* Architecture diagram */
+    .arch-diagram{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.5rem;margin:1rem 0;overflow-x:auto;}
+    .arch-flow{display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;margin:0.5rem 0;}
+    .arch-node{background:#e8f0f8;border:1.5px solid #1F4E79;border-radius:6px;padding:0.5rem 0.8rem;font-size:0.85rem;font-weight:500;color:#1F4E79;text-align:center;min-width:80px;}
+    .arch-node.cognito{background:#fef3e2;border-color:#e67e22;color:#a04000;}
+    .arch-node.google{background:#fce8e8;border-color:#c0392b;color:#c0392b;}
+    .arch-node.lambda{background:#e8f8e8;border-color:#27ae60;color:#1a5e2a;}
+    .arch-node.dynamo{background:#f3e8ff;border-color:#7d3c98;color:#512e5f;}
+    .arch-node.waf{background:#ffe8e8;border-color:#dc3545;color:#8b0000;}
+    .arch-node.sm{background:#fff3e0;border-color:#e67e22;color:#784212;}
+    .arch-arrow{color:#888;font-size:1.1rem;flex-shrink:0;}
+    .arch-label{font-size:0.72rem;color:#666;text-align:center;margin-top:0.2rem;}
+
+    /* Request flow steps */
+    .flow-steps{margin:1rem 0;}
+    .flow-step{display:flex;gap:1rem;margin-bottom:1.2rem;align-items:flex-start;}
+    .step-num{background:#1F4E79;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;margin-top:2px;}
+    .step-num.auth{background:#e67e22;}
+    .step-num.auth2{background:#27ae60;}
+    .step-body{}
+    .step-body strong{display:block;margin-bottom:0.2rem;}
+    .step-body p{margin:0;font-size:0.92rem;color:#333;}
+
+    /* Concept cards */
+    .concept-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;margin:0.8rem 0;overflow:hidden;}
+    .concept-header{display:flex;align-items:center;gap:0.8rem;padding:1rem 1.2rem;cursor:pointer;user-select:none;}
+    .concept-header:hover{background:#f5f8fc;}
+    .concept-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0;}
+    .concept-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+    .concept-subtitle{font-size:0.8rem;color:#888;}
+    .concept-chevron{color:#888;font-size:0.8rem;transition:transform 0.2s;}
+    .concept-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #e0eaf4;}
+    .concept-body.open{display:block;}
+    .concept-body p:first-child{margin-top:1rem;}
+
+    /* Vuln cards — what's still missing */
+    .vuln-card{background:#fff;border:1px solid #d0dce8;border-left:4px solid #dc3545;border-radius:0 8px 8px 0;margin:0.8rem 0;overflow:hidden;}
+    .vuln-header{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.2rem;cursor:pointer;user-select:none;}
+    .vuln-header:hover{background:#fff8f8;}
+    .vuln-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+    .vuln-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #f0d0d0;}
+    .vuln-body.open{display:block;}
+    .vuln-body p:first-child{margin-top:1rem;}
+
+    /* JWT diagram */
+    .jwt-parts{display:flex;gap:0.5rem;margin:1rem 0;flex-wrap:wrap;}
+    .jwt-part{flex:1;min-width:140px;padding:0.8rem;border-radius:6px;font-size:0.82rem;}
+    .jwt-header{background:#fff3cd;border:1px solid #ffc107;}
+    .jwt-payload{background:#d4edda;border:1px solid #28a745;}
+    .jwt-sig{background:#f8d7da;border:1px solid #dc3545;}
+    .jwt-part strong{display:block;margin-bottom:0.4rem;font-size:0.85rem;}
+
+    /* Tier comparison */
+    .tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;margin:1rem 0;}
+    .tier-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1rem;}
+    .tier-card h4{font-size:0.9rem;color:#1F4E79;margin-bottom:0.5rem;}
+    .tier-card ul{margin:0 0 0 1rem;font-size:0.85rem;}
+    .tier-card li{margin-bottom:0.2rem;}
+    .tier-tag{display:inline-block;font-size:0.72rem;padding:1px 7px;border-radius:10px;font-weight:600;margin-bottom:0.5rem;}
+    .tag-unauth{background:#e0e0e0;color:#444;}
+    .tag-free{background:#d4edda;color:#155724;}
+    .tag-premium{background:#cce5ff;color:#004085;}
+
+    /* Download btn */
+    .download-btn{display:inline-block;background:#1F4E79;color:#fff;padding:0.6rem 1.2rem;border-radius:6px;text-decoration:none;font-size:0.9rem;margin:0.3rem 0.3rem 0.3rem 0;}
+    .download-btn:hover{background:#163d5f;}
+
+    /* Footer nav */
+    .footer-nav{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid #d0dce8;font-size:0.9rem;}
+    .footer-nav a{color:#1F4E79;text-decoration:none;}
+    .footer-nav a:hover{text-decoration:underline;}
+    .footer-meta{text-align:center;font-size:0.8rem;color:#888;margin-top:1rem;}
+    .cs-badge{font-size:0.8rem;color:#888;margin-bottom:0.3rem;}
+
+    @media(max-width:600px){
+      .tier-grid{grid-template-columns:1fr;}
+      .issues-grid{grid-template-columns:1fr;}
+      .jwt-parts{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+<nav>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">CS 55D Home</a> ›
+  Week 6 › User Identity and Authentication
+</nav>
+
+<div class="cs-badge">CS 55D · Foothill College</div>
+<h1>User Identity and Authentication</h1>
+<p class="subtitle">Adding login to the Photo Viewer — federated identity with Google, JWT-based authorization, free vs premium tiers, and moving secrets out of environment variables.</p>
+
+<div class="objectives">
+  <strong>Learning objectives</strong>
+  <ul>
+    <li>Explain the difference between authentication and authorization, and how Cognito handles each</li>
+    <li>Describe what a Cognito User Pool is, what it manages, and how it differs from IAM in purpose</li>
+    <li>Explain how federated identity works — Google authenticates, Cognito brokers, your app trusts Cognito</li>
+    <li>Describe what a JWT is, what claims it contains, and how the Lambda authorizer validates it</li>
+    <li>Explain how Cognito groups implement role-based access control at the application layer</li>
+    <li>Explain why storing secrets in Lambda environment variables is a security risk and how Secrets Manager addresses it</li>
+    <li>Describe how the Lambda authorizer is extended to handle both origin verification and identity in a single function</li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. Where we left off</h2>
+
+<p>Week 5 delivered a fully serverless backend — Lambda, API Gateway, WAF, no servers to patch. But the Photo Viewer still has no concept of identity. Every visitor sees exactly the same thing. The DynamoDB table already has <code>is_public</code> and <code>owner</code> fields — the data model has always supported private photos and per-user access. What's been missing is knowing <em>who</em> is asking.</p>
+
+<p>Two gaps from Week 5 are addressed this week. Click each to expand.</p>
+
+<div class="issues-grid">
+  <div class="issue-card" onclick="toggleIssue('i1')">
+    <div class="icon">🔓</div>
+    <div class="label">Issue 1</div>
+    <div class="title">No authentication</div>
+    <div class="desc">/photos returns the same data to everyone</div>
+  </div>
+  <div class="issue-card" onclick="toggleIssue('i2')">
+    <div class="icon">🔑</div>
+    <div class="label">Issue 2</div>
+    <div class="title">Secret in environment variable</div>
+    <div class="desc">x-origin-verify stored where it shouldn't be</div>
+  </div>
+</div>
+
+<div class="issue-detail" id="i1">
+  <h4>No authentication — /photos treats everyone the same <span class="fixed-badge">Fixed this week</span></h4>
+  <p><strong>The limitation:</strong> Any request to <code>/photos</code> returns all public photos regardless of who is asking. API Gateway passes every request to Lambda without any identity context. The WAF rate-based rule limits flooding but has no concept of identity — it cannot distinguish a free user from a premium user.</p>
+  <p><strong>Why it matters:</strong> The DynamoDB table already has <code>is_public</code> and <code>owner</code> fields. Private photos exist in the data model but Lambda always filters <code>is_public = true</code> because it has no way to know if the caller is entitled to see more. There is no login, no session, no way to build a premium tier.</p>
+  <p><strong>Fixed this week:</strong> Amazon Cognito adds a User Pool with Google as a federated identity provider. Users log in via Google through the Cognito Hosted UI. Cognito issues a JWT. The Lambda authorizer validates the JWT on every request and passes the user's group membership to the main Lambda function. Lambda now knows who is asking and filters DynamoDB accordingly.</p>
+</div>
+
+<div class="issue-detail" id="i2">
+  <h4>x-origin-verify secret in a Lambda environment variable <span class="fixed-badge">Fixed this week</span></h4>
+  <p><strong>The vulnerability:</strong> The <code>x-origin-verify</code> secret — the value CloudFront adds to every origin request so the Lambda authorizer can reject direct calls — is currently stored as a Lambda environment variable. Environment variables in Lambda are:</p>
+  <ul>
+    <li>Visible in plaintext in the AWS console to anyone with <code>lambda:GetFunction</code> permission</li>
+    <li>Potentially logged if a function accidentally prints its environment</li>
+    <li>Statically configured — rotation requires a function update and redeployment</li>
+    <li>Not audited — no CloudTrail event when the value is read by the function</li>
+  </ul>
+  <p><strong>Fixed this week:</strong> The secret is moved to AWS Secrets Manager. The Lambda authorizer fetches it at runtime using <code>secretsmanager:GetSecretValue</code>. The secret is no longer visible in the Lambda console, can be rotated without touching the function code, and every retrieval is logged in CloudTrail.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. This week's solution</h2>
+
+<p>Week 6 adds identity to the Photo Viewer in two layers — who you are (authentication via Cognito + Google) and what you can see (authorization via Cognito groups). The Lambda authorizer is extended to handle both origin verification and identity validation in a single function. The origin secret moves to Secrets Manager.</p>
+
+<h3>User tiers</h3>
+
+<div class="tier-grid">
+  <div class="tier-card">
+    <span class="tier-tag tag-unauth">Unauthenticated</span>
+    <h4>Any visitor</h4>
+    <ul>
+      <li>No login required</li>
+      <li>Sees public photos only (<code>is_public = true</code>)</li>
+      <li>Same experience as Weeks 2–5</li>
+    </ul>
+  </div>
+  <div class="tier-card">
+    <span class="tier-tag tag-free">Free user</span>
+    <h4>Logged in — free group</h4>
+    <ul>
+      <li>Login with Google</li>
+      <li>Sees <strong>all</strong> photos — public and private</li>
+      <li>Browse only — no upload or CRUD</li>
+    </ul>
+  </div>
+  <div class="tier-card">
+    <span class="tier-tag tag-premium">Premium user</span>
+    <h4>Logged in — premium group</h4>
+    <ul>
+      <li>Login with Google</li>
+      <li>Sees <strong>all</strong> photos — same as free</li>
+      <li>Upload + CRUD coming in Week 7</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout info">
+  <p><strong>Week 6 vs Week 7 distinction:</strong> In Week 6, free and premium users see identical data — all photos. The group distinction has no visible effect yet. Week 7 adds authorization: premium users gain upload and CRUD capabilities. Free users remain browse-only. The Cognito groups infrastructure set up this week is what Week 7 builds on.</p>
+</div>
+
+<h3>What changes this week</h3>
+
+<table class="compare-table">
+  <thead><tr><th>Component</th><th>Week 5</th><th>Week 6</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Authentication</strong></td><td>None — all requests anonymous</td><td>Cognito User Pool + Google federation</td></tr>
+    <tr><td><strong>Login UI</strong></td><td>None</td><td>Cognito Hosted UI — Google login button</td></tr>
+    <tr><td><strong>Lambda authorizer</strong></td><td>Checks x-origin-verify header only</td><td>Checks origin secret (from Secrets Manager) + optionally validates JWT</td></tr>
+    <tr><td><strong>Main Lambda</strong></td><td>Always returns is_public = true photos</td><td>Unauthenticated → public photos only; any logged-in user (free or premium) → all photos</td></tr>
+    <tr><td><strong>Origin secret storage</strong></td><td>Lambda environment variable</td><td>AWS Secrets Manager</td></tr>
+  </tbody>
+</table>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. Architecture</h2>
+
+<p>Week 6 adds Cognito alongside the existing stack. The core request path — CloudFront → API Gateway → Lambda → DynamoDB — is unchanged. Cognito sits to the side: it handles the login flow separately and issues a JWT that the browser then uses on subsequent API requests.</p>
+
+<!-- LOGIN FLOW DIAGRAM -->
+<div class="arch-diagram">
+  <h4 style="margin-bottom:1.2rem;color:#1F4E79;">Login flow — Authorization Code via Cognito Hosted UI (one time)</h4>
+  <svg viewBox="0 0 660 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:660px;display:block;">
+    <defs>
+      <marker id="lf-bl" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#1F4E79"/></marker>
+      <marker id="lf-or" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e67e22"/></marker>
+      <marker id="lf-rd" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#c0392b"/></marker>
+      <marker id="lf-gn" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#27ae60"/></marker>
+      <marker id="lf-gn-l" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto"><polygon points="8 0,0 3,8 6" fill="#27ae60"/></marker>
+    </defs>
+
+    <!-- Browser -->
+    <rect x="20" y="55" width="100" height="60" rx="6" fill="#e8f0f8" stroke="#1F4E79" stroke-width="1.5"/>
+    <text x="70" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="#1F4E79" font-family="system-ui">Browser</text>
+    <text x="70" y="94" text-anchor="middle" font-size="9" fill="#555" font-family="system-ui">App Client</text>
+    <text x="70" y="130" text-anchor="middle" font-size="9" fill="#888" font-family="system-ui">① clicks Login</text>
+
+    <!-- → Cognito (forward, top) -->
+    <line x1="120" y1="75" x2="228" y2="75" stroke="#e67e22" stroke-width="1.5" marker-end="url(#lf-or)"/>
+    <text x="174" y="67" text-anchor="middle" font-size="8" fill="#e67e22" font-family="system-ui">redirects to Cognito</text>
+
+    <!-- Cognito — single box -->
+    <rect x="230" y="35" width="130" height="100" rx="6" fill="#fef3e2" stroke="#e67e22" stroke-width="2"/>
+    <text x="295" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#a04000" font-family="system-ui">Cognito</text>
+    <text x="295" y="76" text-anchor="middle" font-size="9" fill="#a04000" font-family="system-ui">Hosted UI</text>
+    <text x="295" y="90" text-anchor="middle" font-size="8" fill="#784212" font-family="system-ui">holds client secret</text>
+    <text x="295" y="104" text-anchor="middle" font-size="8" fill="#784212" font-family="system-ui">exchanges auth code</text>
+
+    <!-- → Google (forward, top) -->
+    <line x1="360" y1="75" x2="468" y2="75" stroke="#c0392b" stroke-width="1.5" marker-end="url(#lf-rd)"/>
+    <text x="414" y="67" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">② redirects to Google</text>
+
+    <!-- Google -->
+    <rect x="470" y="55" width="120" height="60" rx="6" fill="#fce8e8" stroke="#c0392b" stroke-width="1.5"/>
+    <text x="530" y="80" text-anchor="middle" font-size="11" font-weight="600" fill="#c0392b" font-family="system-ui">Google</text>
+    <text x="530" y="94" text-anchor="middle" font-size="9" fill="#c0392b" font-family="system-ui">user authenticates</text>
+    <text x="530" y="130" text-anchor="middle" font-size="9" fill="#888" font-family="system-ui">③ user signs in</text>
+
+    <!-- Google → Cognito (return, bottom) — auth code -->
+    <line x1="468" y1="108" x2="362" y2="108" stroke="#c0392b" stroke-width="1.5" marker-end="url(#lf-rd)"/>
+    <text x="415" y="122" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">④ auth code → Cognito directly</text>
+    <text x="415" y="133" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">(browser not involved)</text>
+
+    <!-- Cognito → Browser (return, bottom) — JWT -->
+    <line x1="228" y1="108" x2="122" y2="108" stroke="#27ae60" stroke-width="2" marker-end="url(#lf-gn)"/>
+    <text x="175" y="122" text-anchor="middle" font-size="8" fill="#27ae60" font-weight="600" font-family="system-ui">⑤ JWT → browser</text>
+    <text x="175" y="133" text-anchor="middle" font-size="8" fill="#27ae60" font-family="system-ui">stores JWT</text>
+
+  </svg>
+</div>
+
+<!-- API REQUEST FLOW DIAGRAM -->
+<div class="arch-diagram" style="margin-top:1.5rem;">
+  <h4 style="margin-bottom:1.2rem;color:#1F4E79;">API request flow — every /photos call</h4>
+  <svg viewBox="0 0 820 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;">
+    <defs>
+      <marker id="arr2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#1F4E79"/>
+      </marker>
+      <marker id="arr2-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#27ae60"/>
+      </marker>
+      <marker id="arr2-sm" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0,8 3,0 6" fill="#e67e22"/>
+      </marker>
+    </defs>
+
+    <!-- Browser -->
+    <rect x="10" y="100" width="85" height="60" rx="6" fill="#e8f0f8" stroke="#1F4E79" stroke-width="1.5"/>
+    <text x="52" y="126" text-anchor="middle" font-size="11" font-weight="600" fill="#1F4E79" font-family="system-ui">Browser</text>
+    <text x="52" y="140" text-anchor="middle" font-size="9" fill="#555" font-family="system-ui">+ JWT if logged in</text>
+
+    <!-- Arrow: Browser → WAF+CF -->
+    <line x1="95" y1="130" x2="143" y2="130" stroke="#1F4E79" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- WAF + CloudFront combined -->
+    <rect x="145" y="90" width="115" height="80" rx="6" fill="#e8f0f8" stroke="#1F4E79" stroke-width="1.5"/>
+    <rect x="145" y="90" width="40" height="80" rx="6" fill="#ffe8e8" stroke="#dc3545" stroke-width="1.5"/>
+    <text x="165" y="126" text-anchor="middle" font-size="10" font-weight="600" fill="#8b0000" font-family="system-ui">WAF</text>
+    <text x="165" y="139" text-anchor="middle" font-size="8" fill="#8b0000" font-family="system-ui">rate</text>
+    <text x="165" y="149" text-anchor="middle" font-size="8" fill="#8b0000" font-family="system-ui">check</text>
+    <text x="215" y="122" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79" font-family="system-ui">Cloud</text>
+    <text x="215" y="134" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79" font-family="system-ui">Front</text>
+    <text x="215" y="148" text-anchor="middle" font-size="8" fill="#555" font-family="system-ui">adds origin</text>
+    <text x="215" y="158" text-anchor="middle" font-size="8" fill="#555" font-family="system-ui">secret header</text>
+
+    <!-- Arrow: CF → API GW -->
+    <line x1="260" y1="130" x2="308" y2="130" stroke="#1F4E79" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- API Gateway box — contains authorizer label -->
+    <rect x="310" y="80" width="115" height="100" rx="6" fill="#ede7f6" stroke="#6A1B9A" stroke-width="1.5"/>
+    <text x="367" y="105" text-anchor="middle" font-size="11" font-weight="600" fill="#4a148c" font-family="system-ui">API Gateway</text>
+    <!-- Authorizer inside API GW -->
+    <rect x="320" y="113" width="95" height="52" rx="4" fill="#d1c4e9" stroke="#6A1B9A" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="367" y="131" text-anchor="middle" font-size="9" font-weight="600" fill="#4a148c" font-family="system-ui">Lambda Authorizer</text>
+    <text x="367" y="143" text-anchor="middle" font-size="8" fill="#4a148c" font-family="system-ui">① verify origin secret</text>
+    <text x="367" y="154" text-anchor="middle" font-size="8" fill="#4a148c" font-family="system-ui">② validate JWT + groups</text>
+
+    <!-- Arrow: API GW → Lambda -->
+    <line x1="425" y1="130" x2="473" y2="130" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arr2-g)"/>
+    <text x="449" y="122" text-anchor="middle" font-size="8" fill="#27ae60" font-family="system-ui">if authorized</text>
+
+    <!-- Lambda -->
+    <rect x="475" y="90" width="100" height="80" rx="6" fill="#e8f8e8" stroke="#27ae60" stroke-width="1.5"/>
+    <text x="525" y="122" text-anchor="middle" font-size="11" font-weight="600" fill="#1a5e2a" font-family="system-ui">Lambda</text>
+    <text x="525" y="136" text-anchor="middle" font-size="9" fill="#2e7d32" font-family="system-ui">reads groups claim</text>
+    <text x="525" y="148" text-anchor="middle" font-size="9" fill="#2e7d32" font-family="system-ui">filters DynamoDB</text>
+    <text x="525" y="162" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">IAM execution role</text>
+
+    <!-- Arrow: Lambda → DynamoDB -->
+    <line x1="575" y1="130" x2="623" y2="130" stroke="#1F4E79" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- DynamoDB -->
+    <rect x="625" y="90" width="100" height="80" rx="6" fill="#f3e8ff" stroke="#7d3c98" stroke-width="1.5"/>
+    <text x="675" y="122" text-anchor="middle" font-size="11" font-weight="600" fill="#512e5f" font-family="system-ui">DynamoDB</text>
+    <text x="675" y="138" text-anchor="middle" font-size="9" fill="#6c3483" font-family="system-ui">unauthed: public</text>
+    <text x="675" y="150" text-anchor="middle" font-size="9" fill="#6c3483" font-family="system-ui">authed: all photos</text>
+
+    <!-- Secrets Manager below API GW -->
+    <rect x="310" y="215" width="115" height="50" rx="6" fill="#fff3e0" stroke="#e67e22" stroke-width="1.5"/>
+    <text x="367" y="237" text-anchor="middle" font-size="11" font-weight="600" fill="#784212" font-family="system-ui">Secrets</text>
+    <text x="367" y="251" text-anchor="middle" font-size="11" font-weight="600" fill="#784212" font-family="system-ui">Manager</text>
+
+    <!-- Arrow: API GW authorizer ↔ Secrets Manager -->
+    <line x1="367" y1="180" x2="367" y2="213" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr2-sm)"/>
+    <text x="390" y="200" text-anchor="start" font-size="8" fill="#e67e22" font-family="system-ui">fetches origin</text>
+    <text x="390" y="210" text-anchor="start" font-size="8" fill="#e67e22" font-family="system-ui">secret at runtime</text>
+  </svg>
+</div>
+
+<div class="callout info">
+  <h4>Key architectural point — Cognito is not in the request path</h4>
+  <p>Cognito handles the <em>login flow</em> — it issues the JWT. But Cognito is not involved in validating every API request. The Lambda authorizer validates the JWT directly using Cognito's published public keys (JWKS endpoint). This means API Gateway does not need to call Cognito on every request — validation happens locally in the authorizer function. This is why JWTs scale well: the issuer (Cognito) doesn't need to be consulted every time.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. How a request flows</h2>
+
+<p>There are three flows in sequence. When the page first loads, <code>app.js</code> executes the unauthenticated API request. If the user clicks Login, the login flow runs once and a JWT is stored. From that point on, every <code>/photos</code> call follows the authenticated API request flow. Click each to see the steps.</p>
+
+<style>
+  .flow-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;margin:1rem 0 0;}
+  .flow-tab{background:#fff;border:2px solid #d0dce8;border-radius:8px;padding:1rem 1.2rem;cursor:pointer;transition:all 0.15s;user-select:none;}
+  .flow-tab:hover{border-color:#1F4E79;background:#f5f8fc;}
+  .flow-tab.active-blue{border-color:#1F4E79;background:#e8f0f8;}
+  .flow-tab.active-orange{border-color:#e67e22;background:#fef3e2;}
+  .flow-tab.active-green{border-color:#27ae60;background:#e8f8e8;}
+  .flow-tab-badge{display:inline-block;font-size:1rem;font-weight:700;margin-bottom:0.3rem;}
+  .flow-tab-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;margin-bottom:0.2rem;}
+  .flow-tab-sub{font-size:0.8rem;color:#666;line-height:1.4;}
+  .flow-panel{display:none;background:#fff;border:1px solid #d0dce8;border-radius:0 0 8px 8px;padding:1.2rem 1.5rem;margin-top:-1px;}
+  .flow-panel.active{display:block;}
+  .flow-panel.panel-orange{border-color:#e67e22;}
+  .flow-panel.panel-green{border-color:#27ae60;}
+</style>
+
+<div class="flow-tabs">
+  <div class="flow-tab active-blue" id="tab-f1" onclick="showFlow('f1')">
+    <div class="flow-tab-badge" style="color:#1F4E79;">①</div>
+    <div class="flow-tab-title">Unauthenticated user — API request flow</div>
+    <div class="flow-tab-sub">Page loads — no login — public photos returned</div>
+  </div>
+  <div class="flow-tab" id="tab-f2" onclick="showFlow('f2')">
+    <div class="flow-tab-badge" style="color:#e67e22;">②</div>
+    <div class="flow-tab-title">Login flow</div>
+    <div class="flow-tab-sub">User clicks Login — Google authenticates — JWT stored</div>
+  </div>
+  <div class="flow-tab" id="tab-f3" onclick="showFlow('f3')">
+    <div class="flow-tab-badge" style="color:#27ae60;">③</div>
+    <div class="flow-tab-title">Authenticated user — API request flow</div>
+    <div class="flow-tab-sub">JWT sent with every /photos call — all photos returned</div>
+  </div>
+</div>
+
+<!-- Panel 1: Unauthenticated -->
+<div class="flow-panel active" id="panel-f1">
+  <div class="flow-step">
+    <div class="step-num">1</div>
+    <div class="step-body"><strong>app.js calls /photos with no token</strong><p>Page loads. <code>app.js</code> immediately calls <code>GET /photos</code> — no Authorization header. No login has happened.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">2</div>
+    <div class="step-body"><strong>WAF rate check at edge POP</strong><p>Rate-based rule evaluated. CloudFront adds <code>x-origin-verify</code> header and forwards to API Gateway.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">3</div>
+    <div class="step-body"><strong>Lambda authorizer — no JWT</strong><p>Fetches origin secret from Secrets Manager. Checks <code>x-origin-verify</code> — matches. No Authorization header present — passes through as unauthenticated with no group context.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">4</div>
+    <div class="step-body"><strong>Main Lambda — public photos only</strong><p>No group context → <code>is_public = true</code> filter applied. Returns public photos only.</p></div>
+  </div>
+</div>
+
+<!-- Panel 2: Login flow -->
+<div class="flow-panel panel-orange" id="panel-f2" style="display:none;">
+  <div class="flow-step">
+    <div class="step-num auth">1</div>
+    <div class="step-body"><strong>User clicks Login</strong><p>The app redirects the browser to the Cognito Hosted UI — a login page hosted on Cognito's own domain. The user sees a "Login with Google" button.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">2</div>
+    <div class="step-body"><strong>Cognito redirects to Google</strong><p>User authenticates with their Google account and grants permission.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">3</div>
+    <div class="step-body"><strong>Auth code → Cognito directly</strong><p>Google sends the authorization code to Cognito's callback URL — server-to-server. The browser never sees the auth code.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">4</div>
+    <div class="step-body"><strong>Cognito exchanges using client secret</strong><p>Cognito holds the Google OAuth2 client secret. It exchanges the auth code with Google server-to-server. The client secret never leaves Cognito.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">5</div>
+    <div class="step-body"><strong>Cognito issues JWT — app.js stores it</strong><p>Cognito issues its own JWT (ID token) and redirects the browser back to the app. <code>app.js</code> stores the JWT. All subsequent <code>/photos</code> calls will include it.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">6</div>
+    <div class="step-body"><strong>JWT expires — app.js silently refreshes</strong><p>The ID token expires after 1 hour. <code>app.js</code> checks the <code>exp</code> claim before each <code>/photos</code> call. If expired, it sends the refresh token to Cognito to get a new ID token — silently, without requiring the user to log in again. The refresh token expires after 30 days, at which point the user must log in again.</p></div>
+  </div>
+</div>
+
+<!-- Panel 3: Authenticated -->
+<div class="flow-panel panel-green" id="panel-f3" style="display:none;">
+  <div class="flow-step">
+    <div class="step-num auth2">1</div>
+    <div class="step-body"><strong>app.js calls /photos with JWT</strong><p>Login flow has completed. <code>app.js</code> checks the JWT is not expired, then sends <code>GET /photos</code> with <code>Authorization: Bearer &lt;token&gt;</code>.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth2">2</div>
+    <div class="step-body"><strong>WAF rate check at edge POP</strong><p>Same as unauthenticated — rate-based rule evaluated. CloudFront adds <code>x-origin-verify</code> header and forwards to API Gateway.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth2">3</div>
+    <div class="step-body"><strong>Lambda authorizer — two checks</strong><p><strong>First:</strong> fetches origin secret from Secrets Manager, checks <code>x-origin-verify</code> header — same as unauthenticated. <strong>Then:</strong> sees Authorization header — fetches Cognito's JWKS public keys, verifies JWT signature, checks expiry, extracts <code>cognito:groups</code> claim. Passes group context to main Lambda.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth2">4</div>
+    <div class="step-body"><strong>Main Lambda — all photos</strong><p>Group context present → no <code>is_public</code> filter. Returns all photos including private ones. Free and premium see the same data this week — CRUD distinction comes in Week 7.</p></div>
+  </div>
+  <div class="callout info" style="margin-top:1rem;">
+    <p><strong>Why one Lambda authorizer handles both checks:</strong> HTTP API Gateway supports only one authorizer per route. Rather than choosing between origin verification and JWT validation, the authorizer does both — first checks <code>x-origin-verify</code> (required, rejects if missing), then optionally validates the JWT if an Authorization header is present. Three outcomes: no origin secret → rejected; origin secret ✓ + no JWT → unauthenticated; origin secret ✓ + valid JWT → authenticated with group context.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. Key concepts</h2>
+
+<h3>Components</h3>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c1')">
+    <div class="concept-icon">🏛</div>
+    <div>
+      <div class="concept-title">Amazon Cognito</div>
+      <div class="concept-subtitle">Managed user directory · federated identity · groups · issues JWTs</div>
+    </div>
+    <div class="concept-chevron" id="chev-c1">▼</div>
+  </div>
+  <div class="concept-body" id="c1">
+
+    <p>Amazon Cognito is AWS's managed identity service for application users — it handles who can access your application, not who can access your AWS account. Cognito has two distinct components that serve different purposes.</p>
+
+    <h4>User Pool vs Identity Pool</h4>
+
+    <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:1rem 0;">
+      <defs>
+        <marker id="up-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#1F4E79"/></marker>
+        <marker id="ip-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#0077b6"/></marker>
+      </defs>
+
+      <!-- ══ LEFT COLUMN: User Pool ══ -->
+      <text x="165" y="18" text-anchor="middle" font-size="11" font-weight="600" fill="#1F4E79" font-family="system-ui">Cognito User Pool</text>
+      <text x="165" y="30" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">authentication — who you are</text>
+
+      <!-- Customer -->
+      <rect x="110" y="40" width="110" height="36" rx="6" fill="#fce8e8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="165" y="58" text-anchor="middle" font-size="10" font-weight="600" fill="#c0392b" font-family="system-ui">Customer</text>
+      <text x="165" y="70" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">clicks Login</text>
+
+      <!-- Customer → Cognito -->
+      <line x1="165" y1="76" x2="165" y2="98" stroke="#1F4E79" stroke-width="1.5" marker-end="url(#up-arr)"/>
+      <text x="180" y="91" text-anchor="start" font-size="8" fill="#1F4E79" font-family="system-ui">logs in</text>
+
+      <!-- Cognito User Pool box -->
+      <rect x="80" y="100" width="170" height="44" rx="6" fill="#e8f0f8" stroke="#1F4E79" stroke-width="1.5"/>
+      <text x="165" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#1F4E79" font-family="system-ui">Cognito User Pool</text>
+      <text x="165" y="132" text-anchor="middle" font-size="8" fill="#555" font-family="system-ui">authenticates · issues JWT</text>
+
+      <!-- Cognito → Application -->
+      <line x1="165" y1="144" x2="165" y2="166" stroke="#1F4E79" stroke-width="1.5" marker-end="url(#up-arr)"/>
+      <text x="180" y="159" text-anchor="start" font-size="8" fill="#1F4E79" font-family="system-ui">JWT</text>
+
+      <!-- Application -->
+      <rect x="80" y="168" width="170" height="40" rx="6" fill="#fde8d0" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="165" y="188" text-anchor="middle" font-size="11" font-weight="600" fill="#7a3a00" font-family="system-ui">Application</text>
+      <text x="165" y="201" text-anchor="middle" font-size="8" fill="#a04000" font-family="system-ui">API Gateway · Lambda</text>
+
+      <!-- Application → Infrastructure -->
+      <line x1="165" y1="208" x2="165" y2="230" stroke="#888" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#up-arr)"/>
+      <text x="180" y="223" text-anchor="start" font-size="8" fill="#888" font-family="system-ui">calls</text>
+
+      <!-- Infrastructure -->
+      <rect x="80" y="232" width="170" height="40" rx="6" fill="#cce5ff" stroke="#0077b6" stroke-width="1.5"/>
+      <text x="165" y="252" text-anchor="middle" font-size="11" font-weight="600" fill="#003d70" font-family="system-ui">AWS Infrastructure</text>
+      <text x="165" y="265" text-anchor="middle" font-size="8" fill="#005080" font-family="system-ui">S3 · DynamoDB</text>
+
+      <!-- "we use this" label -->
+      <text x="165" y="290" text-anchor="middle" font-size="9" font-weight="600" fill="#155724" font-family="system-ui">✓ Photo Viewer uses this</text>
+
+      <!-- Divider -->
+      <line x1="340" y1="10" x2="340" y2="285" stroke="#d0dce8" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- ══ RIGHT COLUMN: Identity Pool ══ -->
+      <text x="510" y="18" text-anchor="middle" font-size="11" font-weight="600" fill="#003d70" font-family="system-ui">Cognito Identity Pool</text>
+      <text x="510" y="30" text-anchor="middle" font-size="9" fill="#666" font-family="system-ui">authorization — direct AWS access</text>
+
+      <!-- Customer -->
+      <rect x="455" y="40" width="110" height="36" rx="6" fill="#fce8e8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="510" y="58" text-anchor="middle" font-size="10" font-weight="600" fill="#c0392b" font-family="system-ui">Customer</text>
+      <text x="510" y="70" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">already has JWT</text>
+
+      <!-- Customer → Identity Pool -->
+      <line x1="510" y1="76" x2="510" y2="98" stroke="#0077b6" stroke-width="1.5" marker-end="url(#ip-arr)"/>
+      <text x="525" y="91" text-anchor="start" font-size="8" fill="#0077b6" font-family="system-ui">JWT</text>
+
+      <!-- Identity Pool box -->
+      <rect x="425" y="100" width="170" height="44" rx="6" fill="#d0eaff" stroke="#0077b6" stroke-width="1.5"/>
+      <text x="510" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#003d70" font-family="system-ui">Identity Pool</text>
+      <text x="510" y="132" text-anchor="middle" font-size="8" fill="#005080" font-family="system-ui">exchanges JWT → temp AWS creds</text>
+
+      <!-- Identity Pool → Application (bypassed) -->
+      <line x1="510" y1="144" x2="510" y2="166" stroke="#ccc" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#ip-arr)"/>
+
+      <!-- Application (grayed out) -->
+      <rect x="425" y="168" width="170" height="40" rx="6" fill="#f5f5f5" stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="510" y="188" text-anchor="middle" font-size="11" fill="#bbb" font-family="system-ui">Application</text>
+      <text x="510" y="201" text-anchor="middle" font-size="8" fill="#ccc" font-family="system-ui">bypassed entirely</text>
+      <line x1="430" y1="172" x2="590" y2="204" stroke="#ccc" stroke-width="1.5"/>
+
+      <!-- → Infrastructure directly -->
+      <line x1="510" y1="208" x2="510" y2="230" stroke="#0077b6" stroke-width="1.5" marker-end="url(#ip-arr)"/>
+      <text x="525" y="223" text-anchor="start" font-size="8" fill="#0077b6" font-family="system-ui">calls AWS directly</text>
+
+      <!-- Infrastructure -->
+      <rect x="425" y="232" width="170" height="40" rx="6" fill="#cce5ff" stroke="#0077b6" stroke-width="1.5"/>
+      <text x="510" y="252" text-anchor="middle" font-size="11" font-weight="600" fill="#003d70" font-family="system-ui">AWS Infrastructure</text>
+      <text x="510" y="265" text-anchor="middle" font-size="8" fill="#005080" font-family="system-ui">S3 · DynamoDB</text>
+
+    </svg>
+    <p><strong>User Pool</strong> — a managed user directory. Handles login, registration, and token issuance. Users authenticate and receive a JWT that your application validates. This is the right tool when users need to access <em>your application</em>.</p>
+    <p><strong>Identity Pool</strong> (now called <strong>Cognito Federated Identities</strong>) — exchanges an identity token (from a User Pool, Google, or other IdP) for temporary AWS credentials via STS. Those credentials let the client call AWS services directly — S3, DynamoDB — without going through your backend. This is the right tool when the client needs <em>direct access to AWS resources</em>.</p>
+
+    <h4>Cognito User Pool — details</h4>
+    <p>A User Pool stores user accounts and handles the authentication flow. It supports two ways to manage users:</p>
+    <ul>
+      <li><strong>Native users</strong> — username/password accounts created and managed directly in Cognito</li>
+      <li><strong>Federated identity providers</strong> — users log in via Google, Facebook, Apple, or any SAML/OIDC provider. Cognito acts as the broker and issues its own JWT regardless of which provider was used</li>
+    </ul>
+
+    <h4>User Pool groups</h4>
+    <p>Users within a User Pool can be assigned to groups. When a user is in a group, their JWT includes a <code>cognito:groups</code> claim listing their memberships. Your Lambda reads this claim and decides what the user can do — no additional database lookup needed.</p>
+    <p>Groups are managed in the Cognito console. Changes take effect on the user's next login — the new membership is reflected in the next JWT issued.</p>
+
+    <h4>How the Photo Viewer uses Cognito</h4>
+    <p>The Photo Viewer uses a Cognito User Pool with Google as a federated identity provider. Cognito handles the full OAuth2 Authorization Code flow — holding the client secret and exchanging the auth code with Google server-to-server. The browser only ever receives Cognito's own JWT.</p>
+    <p>The User Pool has two groups — <code>free</code> and <code>premium</code>. The Lambda authorizer extracts the <code>cognito:groups</code> claim and passes it to the main Lambda, which uses it to filter DynamoDB results:</p>
+
+    <svg viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:520px;display:block;margin:1rem 0;">
+      <defs>
+        <marker id="tr-arr" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#555"/></marker>
+      </defs>
+
+      <!-- Root: /photos request -->
+      <rect x="170" y="10" width="180" height="36" rx="6" fill="#e8f0f8" stroke="#1F4E79" stroke-width="1.5"/>
+      <text x="260" y="26" text-anchor="middle" font-size="11" font-weight="600" fill="#1F4E79" font-family="system-ui">GET /photos request</text>
+      <text x="260" y="38" text-anchor="middle" font-size="9" fill="#555" font-family="system-ui">Lambda authorizer extracts groups claim</text>
+
+      <!-- Branch left: no JWT -->
+      <line x1="220" y1="46" x2="120" y2="90" stroke="#555" stroke-width="1.5" marker-end="url(#tr-arr)"/>
+      <text x="148" y="72" text-anchor="middle" font-size="8" fill="#555" font-family="system-ui">no JWT</text>
+
+      <!-- Branch right: JWT present -->
+      <line x1="300" y1="46" x2="390" y2="90" stroke="#555" stroke-width="1.5" marker-end="url(#tr-arr)"/>
+      <text x="372" y="72" text-anchor="middle" font-size="8" fill="#555" font-family="system-ui">JWT present</text>
+
+      <!-- Left leaf: unauthenticated -->
+      <rect x="30" y="92" width="175" height="50" rx="6" fill="#fff8e1" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="117" y="112" text-anchor="middle" font-size="10" font-weight="600" fill="#7a3a00" font-family="system-ui">Unauthenticated</text>
+      <text x="117" y="126" text-anchor="middle" font-size="9" fill="#a04000" font-family="system-ui">groups = []</text>
+      <text x="117" y="138" text-anchor="middle" font-size="8" fill="#a04000" font-family="system-ui">→ filter is_public = true</text>
+
+      <!-- Right node: authenticated — branch further -->
+      <rect x="305" y="92" width="175" height="50" rx="6" fill="#e8f5e9" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="392" y="112" text-anchor="middle" font-size="10" font-weight="600" fill="#155724" font-family="system-ui">Authenticated</text>
+      <text x="392" y="126" text-anchor="middle" font-size="9" fill="#155724" font-family="system-ui">groups = ["free"] or ["premium"]</text>
+      <text x="392" y="138" text-anchor="middle" font-size="8" fill="#155724" font-family="system-ui">→ no filter — all photos returned</text>
+
+      <!-- Bottom note -->
+      <text x="260" y="175" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">free vs premium distinction has no effect on data this week — CRUD capabilities added in Week 7</text>
+    </svg>
+
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c2')">
+    <div class="concept-icon">🔐</div>
+    <div>
+      <div class="concept-title">AWS Secrets Manager</div>
+      <div class="concept-subtitle">Centralized secret storage · rotation · CloudTrail audit · never in env vars</div>
+    </div>
+    <div class="concept-chevron" id="chev-c2">▼</div>
+  </div>
+  <div class="concept-body" id="c2">
+    <p>AWS Secrets Manager is a managed service for storing, retrieving, and rotating secrets — API keys, database credentials, OAuth tokens, and custom values. Unlike environment variables which are baked into the Lambda function configuration, Secrets Manager stores secrets externally and provides them on demand at runtime. Access is controlled by IAM and every retrieval is logged in CloudTrail.</p>
+
+    <h4>Environment variables vs Secrets Manager</h4>
+
+    <svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:1rem 0;">
+      <defs>
+        <marker id="sm-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#27ae60"/></marker>
+        <marker id="sm-arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#dc3545"/></marker>
+      </defs>
+
+      <!-- LEFT: Lambda with env var (bad) -->
+      <text x="160" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="#dc3545" font-family="system-ui">❌ Environment Variable</text>
+      <text x="160" y="36" text-anchor="middle" font-size="9" fill="#dc3545" font-family="system-ui">secret baked into function config</text>
+
+      <!-- Lambda box with env var inside -->
+      <rect x="40" y="60" width="240" height="120" rx="8" fill="#fde8d0" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="160" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="#7a3a00" font-family="system-ui">Lambda Authorizer</text>
+      <!-- env var section inside lambda -->
+      <rect x="55" y="90" width="210" height="50" rx="4" fill="#fff5f5" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="160" y="108" text-anchor="middle" font-size="9" font-weight="600" fill="#dc3545" font-family="system-ui">Environment Variables</text>
+      <text x="160" y="121" text-anchor="middle" font-size="9" fill="#c0392b" font-family="system-ui">ORIGIN_SECRET = abc123xyz</text>
+      <text x="160" y="133" text-anchor="middle" font-size="8" fill="#e74c3c" font-family="system-ui">⚠ visible in console · not audited</text>
+      <text x="160" y="168" text-anchor="middle" font-size="8" fill="#a04000" font-family="system-ui">reads secret directly from process env</text>
+
+      <!-- Divider -->
+      <line x1="340" y1="10" x2="340" y2="210" stroke="#d0dce8" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- RIGHT: Lambda + Secrets Manager (good) -->
+      <text x="510" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="#155724" font-family="system-ui">✓ Secrets Manager</text>
+      <text x="510" y="36" text-anchor="middle" font-size="9" fill="#155724" font-family="system-ui">secret stored externally, fetched at runtime</text>
+
+      <!-- Lambda box — no secret inside -->
+      <rect x="370" y="60" width="180" height="120" rx="8" fill="#fde8d0" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="460" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="#7a3a00" font-family="system-ui">Lambda Authorizer</text>
+      <rect x="385" y="90" width="150" height="50" rx="4" fill="#f5f5f5" stroke="#ccc" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="460" y="108" text-anchor="middle" font-size="9" fill="#aaa" font-family="system-ui">Environment Variables</text>
+      <text x="460" y="122" text-anchor="middle" font-size="9" fill="#bbb" font-family="system-ui">(no secret here)</text>
+      <text x="460" y="168" text-anchor="middle" font-size="8" fill="#a04000" font-family="system-ui">calls GetSecretValue at runtime</text>
+
+      <!-- Arrow: Lambda → Secrets Manager -->
+      <line x1="550" y1="120" x2="620" y2="120" stroke="#27ae60" stroke-width="1.5" marker-end="url(#sm-arr)"/>
+      <text x="585" y="113" text-anchor="middle" font-size="7" fill="#27ae60" font-family="system-ui">IAM auth</text>
+
+      <!-- Secrets Manager box -->
+      <rect x="622" y="90" width="50" height="60" rx="6" fill="#d4edda" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="647" y="115" text-anchor="middle" font-size="8" font-weight="600" fill="#155724" font-family="system-ui">Secrets</text>
+      <text x="647" y="127" text-anchor="middle" font-size="8" font-weight="600" fill="#155724" font-family="system-ui">Mgr</text>
+      <text x="647" y="143" text-anchor="middle" font-size="7" fill="#155724" font-family="system-ui">🔒</text>
+
+      <!-- Return arrow -->
+      <line x1="620" y1="130" x2="552" y2="130" stroke="#27ae60" stroke-width="1.5" marker-end="url(#sm-arr)"/>
+      <text x="585" y="143" text-anchor="middle" font-size="7" fill="#27ae60" font-family="system-ui">secret value</text>
+    </svg>
+
+    <table class="compare-table">
+      <thead><tr><th></th><th>Lambda env variable</th><th>Secrets Manager</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Visibility</strong></td><td>Plaintext in Lambda console — visible to anyone with <code>lambda:GetFunction</code></td><td>Not visible in console — requires <code>secretsmanager:GetSecretValue</code></td></tr>
+        <tr><td><strong>Rotation</strong></td><td>Manual — update env var, redeploy function</td><td>Fetch latest value at runtime — no redeployment needed</td></tr>
+        <tr><td><strong>Audit trail</strong></td><td>No CloudTrail event when function reads it</td><td>Every GetSecretValue call logged in CloudTrail</td></tr>
+        <tr><td><strong>Encryption</strong></td><td>AWS-managed key</td><td>KMS — you control the key</td></tr>
+        <tr><td><strong>Cost</strong></td><td>Free</td><td>$0.40/secret/month + $0.05 per 10,000 API calls</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>IAM permission required:</strong> The Lambda authorizer execution role needs <code>secretsmanager:GetSecretValue</code> scoped to the specific secret ARN — not <code>secretsmanager:*</code>. Least privilege applies here exactly as it does to DynamoDB access.</p>
+  </div>
+</div>
+
+<h3 style="margin-top:2rem;">Security concepts</h3>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c1b')">
+    <div class="concept-icon">🔗</div>
+    <div>
+      <div class="concept-title">OAuth 2.0 and OIDC</div>
+      <div class="concept-subtitle">Authorization framework · identity layer · Authorization Code flow · three-party model</div>
+    </div>
+    <div class="concept-chevron" id="chev-c1b">▼</div>
+  </div>
+  <div class="concept-body" id="c1b">
+    <p><strong>OAuth 2.0</strong> is an authorization framework — it defines how one application can grant another limited access to resources on a user's behalf, without sharing passwords. It defines several flows (grant types) for different scenarios. The Photo Viewer uses the <strong>Authorization Code flow</strong> — the most secure option for server-side applications.</p>
+    <p><strong>OIDC (OpenID Connect)</strong> is an identity layer built on top of OAuth 2.0. OAuth 2.0 alone only handles authorization (what you can access) — it says nothing about who you are. OIDC adds authentication by defining a standardized ID token (a JWT) that carries identity claims. Google implements OIDC, which is what makes it suitable as a Cognito identity provider.</p>
+
+    <h4>Three parties</h4>
+    <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:0.8rem 0;">
+      <defs>
+        <marker id="oidc-arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#555"/></marker>
+        <marker id="oidc-gn" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#27ae60"/></marker>
+        <marker id="oidc-rd" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#c0392b"/></marker>
+        <marker id="oidc-bl" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#1F4E79"/></marker>
+      </defs>
+      <rect x="20" y="70" width="140" height="60" rx="6" fill="#fce8e8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="90" y="94" text-anchor="middle" font-size="11" font-weight="600" fill="#c0392b" font-family="system-ui">Identity Provider</text>
+      <text x="90" y="108" text-anchor="middle" font-size="10" font-weight="600" fill="#c0392b" font-family="system-ui">Google</text>
+      <text x="90" y="120" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">verifies the user's identity</text>
+      <text x="90" y="148" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">issues auth code → Cognito</text>
+      <line x1="160" y1="100" x2="228" y2="100" stroke="#c0392b" stroke-width="1.5" marker-end="url(#oidc-rd)"/>
+      <text x="194" y="93" text-anchor="middle" font-size="8" fill="#c0392b" font-family="system-ui">auth code</text>
+      <text x="194" y="114" text-anchor="middle" font-size="7" fill="#888" font-family="system-ui">server-to-server</text>
+      <rect x="230" y="55" width="180" height="90" rx="6" fill="#fef3e2" stroke="#e67e22" stroke-width="2"/>
+      <text x="320" y="78" text-anchor="middle" font-size="11" font-weight="600" fill="#a04000" font-family="system-ui">Broker</text>
+      <text x="320" y="92" text-anchor="middle" font-size="10" font-weight="600" fill="#a04000" font-family="system-ui">Cognito User Pool</text>
+      <text x="320" y="106" text-anchor="middle" font-size="8" fill="#784212" font-family="system-ui">holds client secret</text>
+      <text x="320" y="118" text-anchor="middle" font-size="8" fill="#784212" font-family="system-ui">exchanges auth code with Google</text>
+      <text x="320" y="130" text-anchor="middle" font-size="8" fill="#784212" font-family="system-ui">issues its own JWT to app</text>
+      <text x="320" y="162" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">app only ever sees Cognito's JWT</text>
+      <line x1="410" y1="100" x2="478" y2="100" stroke="#27ae60" stroke-width="1.5" marker-end="url(#oidc-gn)"/>
+      <text x="444" y="93" text-anchor="middle" font-size="8" fill="#27ae60" font-family="system-ui">JWT</text>
+      <text x="444" y="114" text-anchor="middle" font-size="7" fill="#888" font-family="system-ui">to browser</text>
+      <rect x="480" y="70" width="140" height="60" rx="6" fill="#e8f0f8" stroke="#1F4E79" stroke-width="1.5"/>
+      <text x="550" y="94" text-anchor="middle" font-size="11" font-weight="600" fill="#1F4E79" font-family="system-ui">Relying Party</text>
+      <text x="550" y="108" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79" font-family="system-ui">Photo Viewer</text>
+      <text x="550" y="120" text-anchor="middle" font-size="8" fill="#1F4E79" font-family="system-ui">trusts Cognito's JWT</text>
+      <text x="550" y="148" text-anchor="middle" font-size="8" fill="#888" font-family="system-ui">validates signature via JWKS</text>
+    </svg>
+
+    <p><strong>Identity Provider (IdP) — Google:</strong> Verifies the user's identity via their Google account. Issues a short-lived authorization code directly to Cognito's callback URL — the browser never sees it.</p>
+    <p><strong>Broker — Cognito:</strong> Holds the Google OAuth2 client secret. Exchanges the auth code with Google server-to-server, receives Google's tokens, then issues its own JWT to the browser. Your app never talks to Google directly.</p>
+    <p><strong>Relying Party — Photo Viewer:</strong> Trusts Cognito's JWT. Validates the signature using Cognito's published public keys (JWKS endpoint). Never sees the auth code, the client secret, or Google's tokens.</p>
+    <div class="callout info">
+      <p><strong>Why broker through Cognito rather than trusting Google directly?</strong> If you trusted Google JWTs directly, adding a second identity provider would require changes throughout your application. With Cognito as the broker, your Lambda authorizer always validates the same Cognito JWT format — regardless of whether the user signed in with Google, Facebook, or a native Cognito account.</p>
+    </div>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c3')">
+    <div class="concept-icon">🎫</div>
+    <div>
+      <div class="concept-title">JSON Web Token (JWT) — identity mechanism</div>
+      <div class="concept-subtitle">Header · payload · signature · self-contained · stateless · expiry</div>
+    </div>
+    <div class="concept-chevron" id="chev-c3">▼</div>
+  </div>
+  <div class="concept-body" id="c3">
+    <p>A JWT is a compact, self-contained token that carries claims about a user. It has three parts separated by dots: <code>header.payload.signature</code>. Each part is Base64URL-encoded.</p>
+    <div class="jwt-parts">
+      <div class="jwt-part jwt-header">
+        <strong>Header</strong>
+        Algorithm and token type<br/>
+        <code>{"alg": "RS256", "typ": "JWT"}</code>
+      </div>
+      <div class="jwt-part jwt-payload">
+        <strong>Payload — claims</strong>
+        <code>sub</code>: unique user ID<br/>
+        <code>email</code>: user's email<br/>
+        <code>cognito:groups</code>: ["premium"]<br/>
+        <code>exp</code>: expiry timestamp<br/>
+        <code>iss</code>: issuer (Cognito pool URL)
+      </div>
+      <div class="jwt-part jwt-sig">
+        <strong>Signature</strong>
+        Signed with Cognito's private key.<br/>
+        Verified using Cognito's public key (JWKS endpoint).
+      </div>
+    </div>
+    <p><strong>Self-contained:</strong> The Lambda authorizer verifies the JWT locally using Cognito's published public keys — Cognito is not called on every request. This is why JWT-based auth scales well.</p>
+    <p><strong>Stateless:</strong> No session is stored server-side. Any Lambda instance can validate any JWT independently.</p>
+    <div class="callout warn">
+      <h4>JWTs are not encrypted — only signed</h4>
+      <p>The payload is Base64URL-encoded, not encrypted. Anyone with the JWT can read its claims. Never put sensitive data in a JWT payload — the signature only guarantees the claims have not been tampered with.</p>
+    </div>
+    <h4>Three tokens Cognito issues at login</h4>
+    <table class="compare-table">
+      <thead><tr><th>Token</th><th>Expiry</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ID token</strong></td><td>1 hour</td><td>Contains identity claims — what your Lambda authorizer validates</td></tr>
+        <tr><td><strong>Access token</strong></td><td>1 hour</td><td>Used to call Cognito APIs — not used by your authorizer</td></tr>
+        <tr><td><strong>Refresh token</strong></td><td>30 days</td><td>Used to silently get new ID and access tokens — never sent to your API</td></tr>
+      </tbody>
+    </table>
+    <p>When the ID token expires, <code>app.js</code> uses the refresh token to get a new one from Cognito silently — no user interaction needed. When the refresh token expires after 30 days, the user must log in again. Cognito manages its own session independently of Google's — it does not go back to Google for token refresh.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>6. What's still missing</h2>
+
+<p>Click to expand.</p>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v1')">
+    <div class="vuln-title">Premium user's functionality not yet implemented</div>
+    <span style="color:#aaa;font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v1">
+    <p><strong>The limitation:</strong> Cognito groups are fully configured and the JWT groups claim is read by the Lambda authorizer — but free and premium users currently see the same data, and premium users have no upload capability. The group infrastructure is in place but has no visible effect beyond unauthenticated vs authenticated.</p>
+    <p><strong>What's next:</strong> Week 7 adds the capability layer. Premium users gain S3 presigned URL uploads. When a premium user uploads a photo, an S3 event triggers a Lambda function that calls Rekognition to auto-tag the image and writes metadata to DynamoDB. Free users can search by those auto-generated tags. The <code>cognito:groups</code> claim set up this week is exactly what Week 7's authorization checks will use.</p>
+    <p><strong>How to verify groups are working in the lab:</strong> The meaningful test in Week 6 is unauthenticated vs authenticated. Seed one or two DynamoDB items with <code>is_public = false</code> — unauthenticated users should not see them, any logged-in user should.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Lab files</h2>
+<p>All lab files for this week are in the course GitHub repository.</p>
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week06" target="_blank">⌥ View Week 6 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week06/week6-lab-assignment.html">📋 Week 6 Lab Assignment</a>
+</div>
+
+<div class="footer-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-serverless.html">← Week 5: Serverless Backend</a>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-upload.html">Week 7: Upload + Auto-tagging →</a>
+</div>
+
+<p class="footer-meta">CS 55D: Security in Amazon Web Services · Foothill College · <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">Course home</a></p>
+
+</div><!-- end page-wrap -->
+
+<script>
+function showFlow(id) {
+  ['f1','f2','f3'].forEach(function(f) {
+    document.getElementById('panel-' + f).style.display = 'none';
+    var tab = document.getElementById('tab-' + f);
+    tab.className = 'flow-tab';
+  });
+  document.getElementById('panel-' + id).style.display = 'block';
+  var colors = {f1:'active-blue', f2:'active-orange', f3:'active-green'};
+  document.getElementById('tab-' + id).className = 'flow-tab ' + colors[id];
+}
+
+function toggleIssue(id) {
+  var el = document.getElementById(id);
+  var isOpen = el.style.display === 'block';
+  document.querySelectorAll('.issue-detail').forEach(function(d){ d.style.display='none'; });
+  if (!isOpen) el.style.display = 'block';
+}
+
+function toggleConcept(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.textContent = isOpen ? '▼' : '▲';
+}
+
+function toggleVuln(id) {
+  var body = document.getElementById(id);
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>
