@@ -20,7 +20,7 @@
  * BEFORE DEPLOYING — replace these three placeholders:
  *   YOUR_COGNITO_DOMAIN    e.g. photoviewer-web-client-a1b2c3d4
  *   YOUR_APP_CLIENT_ID     e.g. 1abc2defg3hijklmno4pqrst
- *   YOUR_CLOUDFRONT_DOMAIN e.g. d1kbm2nphud61r.cloudfront.net
+ *   YOUR_CLOUDFRONT_DOMAIN e.g. dXXXXXXXXXXXXX.cloudfront.net
  */
 
 // ── Configuration ─────────────────────────────────────────────────────────────
