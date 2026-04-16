@@ -157,7 +157,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
         <li><strong>User Pool ID</strong> — shown on the overview page (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
         <li><strong>App client ID</strong> — go to <strong>App integration → App clients → photoviewer-web-client</strong></li>
       </ul>
-      <p>Also note your <strong>Cognito domain</strong> — go to <strong>App integration → Domain</strong>. It will look like <code>photoviewer-web-client-XXXXXXXX.auth.us-east-1.amazoncognito.com</code>. You need the full domain for Step 3 (Google redirect URI) and the prefix for app.js in Step 13.</p>
+      <p>Also note your <strong>Cognito domain</strong> — go to <strong>Branding → Domain</strong> in the left nav. The full domain is shown there (e.g. <code>https://us-east-1xxxxxxxxx.auth.us-east-1.amazoncognito.com</code>). You need this for Step 3 — add <code>/oauth2/idpresponse</code> to the end of it to get the redirect URI you register with Google.</p>
     </div>
 
     <p>Next, set a sign-out URL and fix the scopes. Go to <strong>App integration → App clients → photoviewer-web-client → Login pages tab → Managed login pages configuration → Edit:</strong></p>
@@ -207,13 +207,21 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 3</span>
-    <span class="step-title">Create OAuth 2.0 credentials in Google Cloud Console</span>
+    <span class="step-title">Start Google federation in Cognito — get the redirect URI</span>
   </div>
   <div class="step-body">
-    <p>Open a new browser tab and go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>. Sign in with your Google account.</p>
+    <p>Before going to Google Cloud Console, open the Cognito IdP form first — it shows you the exact redirect URI you need to register with Google.</p>
+    <p>Go to your Cognito User Pool → <strong>Authentication → Social and external providers → Add identity provider → Google.</strong></p>
+    <p>Before filling in the form, note the redirect URI you need to give Google — it's your Cognito domain (from <strong>Branding → Domain</strong>) with <code>/oauth2/idpresponse</code> appended:</p>
+    <pre>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</pre>
+    <p><strong>Copy this URI and keep this browser tab open.</strong> You will paste it into Google Cloud Console in the next step, then come back here to complete the form.</p>
+    <div class="callout info">
+      <p><strong>Why this URI?</strong> After the user signs in with Google, Google needs to redirect somewhere with the auth code. That destination is Cognito's <code>/oauth2/idpresponse</code> endpoint — not your CloudFront URL. Cognito sits between Google and your app, handling the code exchange on your behalf. You're registering this URI with Google so it knows where to send the auth code.</p>
+    </div>
+    <p>Now open a new browser tab and go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>.</p>
     <ol>
       <li><strong>Create or select a project:</strong> Click the project selector at the top → <strong>New Project</strong> → name it <code>photoviewer</code> → <strong>Create.</strong> Select the project.</li>
-      <li><strong>Configure the OAuth consent screen (now called Google Auth Platform):</strong> In the left nav go to <strong>APIs &amp; Services → Google Auth Platform.</strong> You will see a "Project configuration" wizard with four sections: App Information, Audience, Contact Information, Finish.
+      <li><strong>Configure the Google Auth Platform:</strong> In the left nav go to <strong>APIs &amp; Services → Google Auth Platform.</strong> You will see a "Project configuration" wizard with four sections.
         <ul>
           <li><strong>App Information:</strong> App name: <code>PhotoViewer</code> · User support email: your email → click <strong>Next</strong></li>
           <li><strong>Audience:</strong> select <strong>External</strong> → click <strong>Next</strong></li>
@@ -221,18 +229,16 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
           <li><strong>Finish:</strong> click <strong>Create</strong></li>
         </ul>
       </li>
-      <li><strong>Create OAuth 2.0 credentials:</strong> In the left nav go to <strong>Clients → Create client</strong> (or go to <strong>APIs &amp; Services → Credentials → Create Credentials → OAuth client ID</strong>).
+      <li><strong>Create OAuth 2.0 credentials:</strong> In the left nav go to <strong>Clients → Create client.</strong>
         <ul>
           <li>Application type: <strong>Web application</strong></li>
           <li>Name: <code>photoviewer-cognito</code></li>
-          <li>Authorized redirect URIs — click <strong>Add URI</strong> and enter your Cognito domain callback URL:<br/>
-          <code>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</code><br/>
-          (Replace <code>YOUR_COGNITO_DOMAIN</code> with the full domain from Step 1, e.g. <code>photoviewer-web-client-a1b2c3d4</code>)</li>
+          <li>Authorized redirect URIs — click <strong>Add URI</strong> and paste the Cognito redirect URI you copied above</li>
           <li>Click <strong>Create</strong></li>
         </ul>
       </li>
     </ol>
-    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in Step 4. <strong>Do not close this dialog until you have copied both values.</strong></p>
+    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in the next step. <strong>Do not close this dialog until you have copied both values.</strong></p>
     <div class="screenshot">Google Cloud Console showing the OAuth client ID and client secret dialog</div>
   </div>
 </div>
@@ -240,10 +246,10 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 4</span>
-    <span class="step-title">Add Google as an identity provider in Cognito</span>
+    <span class="step-title">Complete Google federation in Cognito</span>
   </div>
   <div class="step-body">
-    <p>Back in the AWS Console, go to your Cognito User Pool → <strong>Sign-in experience tab → Add identity provider → Google.</strong></p>
+    <p>Switch back to the AWS Console tab where you left the Cognito Google IdP form open. Paste the credentials from Google:</p>
     <ul>
       <li>Client ID: paste from Google Cloud Console</li>
       <li>Client secret: paste from Google Cloud Console</li>
@@ -256,8 +262,8 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
       </li>
       <li>Click <strong>Add identity provider</strong></li>
     </ul>
-    <p>Now go to <strong>App integration tab → App clients → your photoviewer-web-client → Hosted UI → Edit.</strong> Under <strong>Identity providers</strong>, enable <strong>Google</strong>. Click <strong>Save changes.</strong></p>
-    <div class="screenshot">Cognito Hosted UI settings showing Google listed as an enabled identity provider</div>
+    <p>Now enable Google on your app client. Go to <strong>Applications → App clients → your app client → Login pages tab → Managed login pages configuration → Edit.</strong> Under <strong>Identity providers</strong>, check <strong>Google</strong>. Click <strong>Save changes.</strong></p>
+    <div class="screenshot">Cognito Login pages tab showing Google listed as an enabled identity provider</div>
   </div>
 </div>
 
