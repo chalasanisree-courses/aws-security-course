@@ -122,29 +122,51 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <span class="step-title">Create the Cognito User Pool</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>Cognito → Create user pool.</strong> On the first screen:</p>
+    <p>Go to <strong>Cognito → Create user pool.</strong> AWS now shows a single-page setup wizard. Fill it in as follows:</p>
+
+    <p><strong>Application type</strong></p>
     <ul>
-      <li>Sign-in options: select <strong>Email</strong> only (Google will handle authentication — Cognito just needs an identifier)</li>
-      <li>Click <strong>Next</strong></li>
+      <li>Select <strong>Single-page application (SPA)</strong> — this is a JavaScript app running in the browser. This setting tells Cognito not to generate a client secret, which is correct: browser apps cannot keep a secret safe.</li>
     </ul>
-    <p>On the <strong>Configure security requirements</strong> screen: leave defaults → <strong>Next.</strong></p>
-    <p>On the <strong>Configure sign-up experience</strong> screen: leave defaults → <strong>Next.</strong></p>
-    <p>On the <strong>Configure message delivery</strong> screen: select <strong>Send email with Cognito</strong> (free tier) → <strong>Next.</strong></p>
-    <p>On the <strong>Integrate your app</strong> screen:</p>
+
+    <p><strong>Name your application</strong></p>
     <ul>
-      <li>User pool name: <code>photoviewer-users</code></li>
-      <li>Check <strong>Use the Cognito Hosted UI</strong></li>
-      <li>Cognito domain: enter a unique prefix — e.g. <code>photoviewer-[your-account-id]</code> → <strong>Use this domain</strong></li>
-      <li>App client name: <code>photoviewer-web-client</code></li>
-      <li>Client secret: <strong>Generate a client secret</strong> (required for Authorization Code flow)</li>
-      <li>Allowed callback URLs: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback</code> (replace with your actual CloudFront domain from the pre-flight output)</li>
-      <li>Allowed sign-out URLs: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code></li>
-      <li>OAuth 2.0 grant types: ensure <strong>Authorization code grant</strong> is checked</li>
-      <li>OpenID Connect scopes: <strong>Email, OpenID, Profile</strong></li>
+      <li>Application name: <code>photoviewer-web-client</code></li>
     </ul>
-    <p>Click <strong>Next → Create user pool.</strong></p>
-    <p>After creation, note your <strong>User Pool ID</strong> (e.g. <code>us-east-1_XXXXXXXXX</code>) and your <strong>App client ID</strong> — you will need both later.</p>
-    <div class="screenshot">Cognito User Pool overview page showing User Pool ID, and the App client page showing the App client ID</div>
+
+    <p><strong>Configure options</strong></p>
+    <ul>
+      <li>Sign-in identifiers: check <strong>Email</strong> only</li>
+      <li>Self-registration: <strong>uncheck</strong> "Enable self-registration" — we want Google federation only, not open sign-up with email/password</li>
+      <li>Required attributes: leave empty</li>
+    </ul>
+
+    <p><strong>Add a return URL</strong></p>
+    <ul>
+      <li>Return URL: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback</code></li>
+      <li>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code> with your actual CloudFront domain from the pre-flight output (e.g. <code>d1kbm2nphud61r.cloudfront.net</code>)</li>
+    </ul>
+
+    <p>Click <strong>Create user directory.</strong></p>
+
+    <div class="callout info">
+      <p><strong>After creation you will land on the User Pool overview page.</strong> Note down two values — you need them in Step 10:</p>
+      <ul>
+        <li><strong>User Pool ID</strong> — shown on the overview page (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
+        <li><strong>App client ID</strong> — go to <strong>App integration → App clients → photoviewer-web-client</strong></li>
+      </ul>
+      <p>Also note your <strong>Cognito domain</strong> — go to <strong>App integration → Domain</strong>. It will look like <code>photoviewer-web-client-XXXXXXXX.auth.us-east-1.amazoncognito.com</code>. You need the full domain for Step 4 (Google redirect URI) and the prefix for app.js in Step 14.</p>
+    </div>
+
+    <p>Next, set a sign-out URL. Go to <strong>App integration → App clients → photoviewer-web-client → Edit Hosted UI:</strong></p>
+    <ul>
+      <li>Sign-out URLs: add <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code></li>
+      <li>OAuth 2.0 grant types: confirm <strong>Authorization code grant</strong> is checked</li>
+      <li>OpenID Connect scopes: confirm <strong>Email, OpenID, Profile</strong> are checked</li>
+      <li>Click <strong>Save changes</strong></li>
+    </ul>
+
+    <div class="screenshot">Cognito App client page showing App client ID, Hosted UI settings with callback URL and sign-out URL configured, and no client secret present</div>
   </div>
 </div>
 
