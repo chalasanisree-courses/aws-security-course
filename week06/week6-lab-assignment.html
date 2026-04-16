@@ -152,12 +152,12 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <p>Click <strong>Create user directory.</strong></p>
 
     <div class="callout info">
-      <p><strong>After creation you will land on the User Pool overview page.</strong> Note down two values — you need them in Step 10:</p>
+      <p><strong>After creation you will land on the User Pool overview page.</strong> Note down two values — you need them in Step 9:</p>
       <ul>
         <li><strong>User Pool ID</strong> — shown on the overview page (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
         <li><strong>App client ID</strong> — go to <strong>App integration → App clients → photoviewer-web-client</strong></li>
       </ul>
-      <p>Also note your <strong>Cognito domain</strong> — go to <strong>App integration → Domain</strong>. It will look like <code>photoviewer-web-client-XXXXXXXX.auth.us-east-1.amazoncognito.com</code>. You need the full domain for Step 4 (Google redirect URI) and the prefix for app.js in Step 14.</p>
+      <p>Also note your <strong>Cognito domain</strong> — go to <strong>App integration → Domain</strong>. It will look like <code>photoviewer-web-client-XXXXXXXX.auth.us-east-1.amazoncognito.com</code>. You need the full domain for Step 3 (Google redirect URI) and the prefix for app.js in Step 13.</p>
     </div>
 
     <p>Next, set a sign-out URL and fix the scopes. Go to <strong>App integration → App clients → photoviewer-web-client → Login pages tab → Managed login pages configuration → Edit:</strong></p>
@@ -191,24 +191,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
   </div>
 </div>
 
-<div class="step">
-  <div class="step-header">
-    <span class="step-num">Step 3</span>
-    <span class="step-title">Create a test user and assign to a group</span>
-  </div>
-  <div class="step-body">
-    <p>Go to <strong>Users tab → Create user:</strong></p>
-    <ul>
-      <li>Invitation message: <strong>Don't send an invitation</strong></li>
-      <li>Email address: use your own email</li>
-      <li>Temporary password: set one (you'll reset it on first login)</li>
-      <li>Click <strong>Create user</strong></li>
-    </ul>
-    <p>Click on the new user → <strong>Add user to group</strong> → select <code>free</code> → <strong>Add.</strong></p>
-    <p>You now have a test user in the free group. After Google federation is configured, you'll test with Google login instead — but this user lets you verify group assignment is working.</p>
-    <div class="screenshot">User detail page showing the user assigned to the <code>free</code> group</div>
-  </div>
-</div>
+
 
 
 <!-- ═══════════════ PART 2 ═══════════════ -->
@@ -223,7 +206,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 4</span>
+    <span class="step-num">Step 3</span>
     <span class="step-title">Create OAuth 2.0 credentials in Google Cloud Console</span>
   </div>
   <div class="step-body">
@@ -257,7 +240,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 5</span>
+    <span class="step-num">Step 4</span>
     <span class="step-title">Add Google as an identity provider in Cognito</span>
   </div>
   <div class="step-body">
@@ -281,7 +264,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 6</span>
+    <span class="step-num">Step 5</span>
     <span class="step-title">Test the Hosted UI login flow</span>
   </div>
   <div class="step-body">
@@ -305,7 +288,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 7</span>
+    <span class="step-num">Step 6</span>
     <span class="step-title">Create the secret in Secrets Manager</span>
   </div>
   <div class="step-body">
@@ -325,7 +308,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 8</span>
+    <span class="step-num">Step 7</span>
     <span class="step-title">Grant the Lambda authorizer permission to read the secret</span>
   </div>
   <div class="step-body">
@@ -350,7 +333,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 9</span>
+    <span class="step-num">Step 8</span>
     <span class="step-title">Remove ORIGIN_SECRET from the Lambda environment variable</span>
   </div>
   <div class="step-body">
@@ -368,7 +351,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 10</span>
+    <span class="step-num">Step 9</span>
     <span class="step-title">Deploy the updated authorizer code</span>
   </div>
   <div class="step-body">
@@ -393,7 +376,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 11</span>
+    <span class="step-num">Step 10</span>
     <span class="step-title">Update the main Lambda to filter by group</span>
   </div>
   <div class="step-body">
@@ -410,7 +393,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 12</span>
+    <span class="step-num">Step 11</span>
     <span class="step-title">Verify the authorizer still works with no JWT</span>
   </div>
   <div class="step-body">
@@ -437,7 +420,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 13</span>
+    <span class="step-num">Step 12</span>
     <span class="step-title">Add a private photo to DynamoDB</span>
   </div>
   <div class="step-body">
@@ -471,7 +454,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 14</span>
+    <span class="step-num">Step 13</span>
     <span class="step-title">Deploy the updated app.js to S3</span>
   </div>
   <div class="step-body">
@@ -511,11 +494,11 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 15</span>
+    <span class="step-num">Step 14</span>
     <span class="step-title">Test unauthenticated — public photos only</span>
   </div>
   <div class="step-body">
-    <p>Open your CloudFront URL in a browser (use a fresh incognito window to ensure no cached JWT). The Photo Viewer should load and display <strong>5 photos</strong> — the 5 public ones. The private photo you added in Step 13 should <strong>not</strong> appear.</p>
+    <p>Open your CloudFront URL in a browser (use a fresh incognito window to ensure no cached JWT). The Photo Viewer should load and display <strong>5 photos</strong> — the 5 public ones. The private photo you added in Step 12 should <strong>not</strong> appear.</p>
     <p>Open <strong>DevTools → Network tab</strong>, reload, and click the <code>/photos</code> request. Confirm:</p>
     <ul>
       <li>Status: <strong>200</strong></li>
@@ -528,7 +511,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 16</span>
+    <span class="step-num">Step 15</span>
     <span class="step-title">Test authenticated — all photos visible after login</span>
   </div>
   <div class="step-body">
@@ -547,7 +530,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 17</span>
+    <span class="step-num">Step 16</span>
     <span class="step-title">Verify the JWT in CloudWatch Logs</span>
   </div>
   <div class="step-body">
