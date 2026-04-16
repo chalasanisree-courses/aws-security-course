@@ -758,7 +758,7 @@
     <p>A <strong>Lambda authorizer</strong> is a Lambda function that API Gateway invokes before routing a request to your main function. It acts as a gatekeeper — it can allow or deny the request based on whatever logic you write.</p>
     <p>Our authorizer does one thing: check that the incoming request includes a secret header that CloudFront is configured to add to every request it sends to the API Gateway origin. If the header is present and matches → allow. If missing or wrong → return 403, the main Lambda function is never invoked.</p>
     <p><strong>Why this is better than Week 4:</strong> The Week 4 ALB had <code>0.0.0.0/0</code> on its security group — any IP could call it directly. Now any direct call to the API Gateway URL without the correct header is rejected.</p>
-    <p><strong>Acknowledged limitation:</strong> The secret header is a shared secret. Anyone who discovers its value can call the API directly by adding that header. This is weaker than an IAM-enforced mechanism, but sufficient for a public read-only endpoint that returns only public photo metadata. The secret should be stored in AWS Secrets Manager and rotated periodically.</p>
+    <p><strong>Acknowledged limitation:</strong> The secret header is a shared secret. Anyone who discovers its value can call the API directly by adding that header. This is weaker than an IAM-enforced mechanism, but sufficient for a public read-only endpoint that returns only public photo metadata. The secret is currently stored in a Lambda environment variable — Week 6 moves it to AWS Secrets Manager where it is not visible in the console, every retrieval is logged in CloudTrail, and it can be rotated without redeploying the function.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-waf')">
@@ -821,13 +821,13 @@
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v2')">
     <div class="vuln-dot dot-orange"></div>
-    <div class="vuln-title">API Gateway endpoint has a public URL</div>
+    <div class="vuln-title">Secret used to restrict API Gateway access to CloudFront is stored in a Lambda environment variable</div>
     <span style="color:#aaa; font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v2">
-    <p><strong>The limitation:</strong> The API Gateway endpoint (<code>https://XXXXXX.execute-api.us-east-1.amazonaws.com/photos</code>) has a publicly resolvable URL. The Lambda authorizer rejects requests that don't include the correct secret header — so a direct call without that header returns 403. But the URL is discoverable, and anyone who learns the secret header value can bypass the restriction.</p>
-    <p><strong>The distinction from Week 4:</strong> The Week 4 ALB was reachable by any IP with no restriction at all. Now any direct call must include the correct secret header — a meaningful improvement. The remaining weakness is that the secret header is a shared value rather than an unforgeable identity.</p>
-    <p><strong>Production hardening:</strong> Store the secret in AWS Secrets Manager and rotate it periodically. For stronger enforcement, REST API Gateway supports resource policies with <code>aws:SourceArn</code> — an IAM-enforced mechanism that ties access to your specific CloudFront distribution ARN with no shared secret involved.</p>
+    <p><strong>The limitation:</strong> The <code>ORIGIN_SECRET</code> value — the secret CloudFront adds to every origin request so the Lambda authorizer can reject direct calls — is stored as a Lambda environment variable. Environment variables in Lambda are visible in plaintext in the AWS console to anyone with <code>lambda:GetFunction</code> permission, are not audited when read, and require a function redeployment to rotate. Secrets do not belong in environment variables.</p>
+    <p><strong>Why it matters:</strong> If the secret leaks — from the console, from logs, from a developer with access — anyone can call the API Gateway URL directly by adding that header, bypassing CloudFront and WAF entirely. The Lambda authorizer is only as strong as the secrecy of the secret it checks.</p>
+    <p><strong>What's next:</strong> Week 6 moves <code>ORIGIN_SECRET</code> into AWS Secrets Manager. The Lambda authorizer fetches it at runtime — the secret is no longer visible in the console, every retrieval is logged in CloudTrail, and it can be rotated without touching the function code.</p>
   </div>
 </div>
 
