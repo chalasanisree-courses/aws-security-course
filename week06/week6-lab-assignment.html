@@ -213,27 +213,26 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <p>Open a new browser tab and go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>. Sign in with your Google account.</p>
     <ol>
       <li><strong>Create or select a project:</strong> Click the project selector at the top → <strong>New Project</strong> → name it <code>photoviewer</code> → <strong>Create.</strong> Select the project.</li>
-      <li><strong>Enable the OAuth consent screen:</strong> Go to <strong>APIs &amp; Services → OAuth consent screen.</strong>
+      <li><strong>Configure the OAuth consent screen (now called Google Auth Platform):</strong> In the left nav go to <strong>APIs &amp; Services → Google Auth Platform.</strong> You will see a "Project configuration" wizard with four sections: App Information, Audience, Contact Information, Finish.
         <ul>
-          <li>User type: <strong>External</strong> → <strong>Create</strong></li>
-          <li>App name: <code>PhotoViewer</code></li>
-          <li>User support email: your email</li>
-          <li>Developer contact email: your email</li>
-          <li>Click <strong>Save and Continue</strong> through the Scopes and Test users screens (leave defaults)</li>
+          <li><strong>App Information:</strong> App name: <code>PhotoViewer</code> · User support email: your email → click <strong>Next</strong></li>
+          <li><strong>Audience:</strong> select <strong>External</strong> → click <strong>Next</strong></li>
+          <li><strong>Contact Information:</strong> Developer contact email: your email → click <strong>Next</strong></li>
+          <li><strong>Finish:</strong> click <strong>Create</strong></li>
         </ul>
       </li>
-      <li><strong>Create OAuth 2.0 credentials:</strong> Go to <strong>APIs &amp; Services → Credentials → Create Credentials → OAuth client ID.</strong>
+      <li><strong>Create OAuth 2.0 credentials:</strong> In the left nav go to <strong>Clients → Create client</strong> (or go to <strong>APIs &amp; Services → Credentials → Create Credentials → OAuth client ID</strong>).
         <ul>
           <li>Application type: <strong>Web application</strong></li>
           <li>Name: <code>photoviewer-cognito</code></li>
           <li>Authorized redirect URIs — click <strong>Add URI</strong> and enter your Cognito domain callback URL:<br/>
           <code>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</code><br/>
-          (Replace <code>YOUR_COGNITO_DOMAIN</code> with the domain prefix you set in Step 1)</li>
+          (Replace <code>YOUR_COGNITO_DOMAIN</code> with the full domain from Step 1, e.g. <code>photoviewer-web-client-a1b2c3d4</code>)</li>
           <li>Click <strong>Create</strong></li>
         </ul>
       </li>
     </ol>
-    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in the next step. <strong>Do not close this dialog until you have copied both values.</strong></p>
+    <p>A dialog shows your <strong>Client ID</strong> and <strong>Client Secret</strong>. Copy both — you need them in Step 4. <strong>Do not close this dialog until you have copied both values.</strong></p>
     <div class="screenshot">Google Cloud Console showing the OAuth client ID and client secret dialog</div>
   </div>
 </div>
