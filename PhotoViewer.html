@@ -219,6 +219,40 @@
   }
   .code-link:hover { background: #B5D4F4; }
 
+  /* Week circle badge */
+  .week-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .wc-foundation { background: #d4edda; color: #155724; }
+  .wc-building   { background: #dce8f5; color: #1F4E79; }
+  .wc-disabled   { background: #F1EFE8; color: #888780; }
+
+  /* Topic tag pills */
+  .topic-tag {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 3px 9px; border-radius: 4px; white-space: nowrap;
+    background: #F1EFE8; color: #5f5e5a; border: 0.5px solid #D3D1C7;
+  }
+  .tags-wrap { display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; }
+
+  /* Stage group divider */
+  .stage-group-label {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #B4B2A9;
+    padding: 10px 20px 6px;
+    border-top: 0.5px solid #e8e7e0;
+    margin-top: 2px;
+  }
+
+  /* Redesigned ac-header for tag layout */
+  .ac-header-inner {
+    display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0;
+  }
+  .ac-header-left { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+  .ac-header-right { flex-shrink: 0; max-width: 55%; }
+
   footer {
     text-align: center; font-size: 11px; color: #aaa9a4;
     padding: 24px 0 32px;
@@ -367,32 +401,48 @@
 
     <!-- Week 1 — non-clickable -->
     <div class="ac-row">
-      <div class="ac-header disabled">
-        <span class="ac-week-badge badge-1">Week 1</span>
-        <div class="ac-title-group">
-          <div class="ac-title">AWS account baseline</div>
-          <div class="ac-subtitle">MFA on root, IAM admin user, CloudTrail, billing alarm, Cost Anomaly Detection — no application yet</div>
+      <div class="ac-header disabled" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-disabled">1</div>
+            <div class="ac-title-group">
+              <div class="ac-title">AWS account baseline</div>
+              <div class="ac-subtitle">MFA on root, IAM admin user, CloudTrail, billing alarm — no application yet</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
+    <div class="stage-group-label">Infrastructure foundation</div>
+
     <!-- Week 2 -->
     <div class="ac-row">
-      <div class="ac-header" onclick="toggle('w2')">
-        <span class="ac-week-badge badge-2">Week 2</span>
-        <div class="ac-title-group">
-          <div class="ac-title">Photo browsing — public, unauthenticated, no login required</div>
-          <div class="ac-subtitle">Any visitor can click through photos. No account needed.</div>
+      <div class="ac-header" onclick="toggle('w2')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-foundation">2</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Public photo browsing</div>
+              <div class="ac-subtitle">Static, no login</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">S3 static hosting</span>
+              <span class="topic-tag">Bucket policies</span>
+              <span class="topic-tag">HTTP vs HTTPS</span>
+              <span class="topic-tag">ACLs</span>
+            </div>
+          </div>
         </div>
         <span class="ac-chevron" id="w2-chev">›</span>
       </div>
       <div class="ac-body" id="w2">
-
         <div class="ac-section">
           <div class="ac-section-label">What users can do</div>
           <div class="ac-section-text">Any visitor can open the Photo Viewer and click through a set of travel photos — no login, no account. The photo list is fixed at five photos. There is no search, no upload, no user accounts.</div>
         </div>
-
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
           <div class="arch-row">
@@ -402,48 +452,43 @@
           </div>
           <div class="ac-section-text" style="margin-top:8px;">HTML, CSS, JavaScript, and a static <code>photos.json</code> file all live in a single public S3 bucket. The browser fetches <code>photos.json</code> to get the photo list, then requests each image. S3 serves everything. There is no backend server — all logic runs in the browser.</div>
         </div>
-
-        <div class="ac-section">
-          <div class="ac-section-label">Limitations of this solution</div>
-          <div class="legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Security</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Functionality</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Performance</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Operability</span>
-          </div>
-          <ul class="issue-list">
-            <li><span class="dot dot-security"></span><span class="text">HTTP only — no TLS. Traffic between the browser and S3 is unencrypted. A man-in-the-middle can read or inject content into any response.</span></li>
-            <li><span class="dot dot-security"></span><span class="text">Public bucket — the entire bucket is publicly readable. Any file, including <code>confidential.txt</code>, is accessible to anyone who knows the URL. Bucket contents are enumerable.</span></li>
-            <li><span class="dot dot-performance"></span><span class="text">No edge caching — every request travels all the way to us-east-1 regardless of where the user is. Slow for users outside the US.</span></li>
-            <li><span class="dot dot-functional"></span><span class="text">Photo list is static — adding a photo means manually editing <code>photos.json</code> and redeploying. Not scalable.</span></li>
-          </ul>
-        </div>
-
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week02/week2-s3-security.html" target="_blank">📄 Concept notes</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week02" target="_blank">⌥ View Week 2 code on GitHub</a>
         </div>
-
       </div>
     </div>
 
     <!-- Week 3 -->
     <div class="ac-row">
-      <div class="ac-header" onclick="toggle('w3')">
-        <span class="ac-week-badge badge-3">Week 3</span>
-        <div class="ac-title-group">
-          <div class="ac-title">Photo browsing — now secure and globally fast</div>
-          <div class="ac-subtitle">Same unauthenticated experience. HTTPS enforced. S3 bucket privatized. Content delivered from edge locations worldwide.</div>
+      <div class="ac-header" onclick="toggle('w3')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-foundation">3</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Same browsing — secure + fast</div>
+              <div class="ac-subtitle">HTTPS enforced, globally cached</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">CloudFront</span>
+              <span class="topic-tag">OAC</span>
+              <span class="topic-tag">Edge security</span>
+              <span class="topic-tag">CF Functions</span>
+              <span class="topic-tag">Security headers</span>
+              <span class="topic-tag">Shield Standard</span>
+              <span class="topic-tag">WAF intro</span>
+            </div>
+          </div>
         </div>
         <span class="ac-chevron" id="w3-chev">›</span>
       </div>
       <div class="ac-body" id="w3">
-
         <div class="ac-section">
           <div class="ac-section-label">What users can do</div>
           <div class="ac-section-text">The experience is identical to Week 2 — visitors click through photos without logging in. The improvements are entirely infrastructure: the app is now served over HTTPS, loads faster globally, and the S3 bucket is no longer publicly accessible.</div>
         </div>
-
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
           <div class="arch-row">
@@ -453,47 +498,48 @@
             <span class="arch-arrow">→ OAC →</span>
             <span class="arch-pill">S3 (private bucket)</span>
           </div>
-          <div class="ac-section-text" style="margin-top:8px;">CloudFront sits in front of S3. Origin Access Control (OAC) makes the S3 bucket fully private — only CloudFront can read from it. HTTPS is enforced at the edge; HTTP requests are automatically redirected. A CloudFront Function blocks non-web file types at the viewer request stage. Response headers add HSTS, X-Frame-Options, and X-Content-Type-Options.</div>
+          <div class="ac-section-text" style="margin-top:8px;">CloudFront sits in front of S3. Origin Access Control (OAC) makes the S3 bucket fully private — only CloudFront can read from it. HTTPS is enforced at the edge; HTTP requests are automatically redirected. A CloudFront Function blocks non-web file types. Response headers add HSTS, X-Frame-Options, and X-Content-Type-Options.</div>
         </div>
-
-        <div class="ac-section">
-          <div class="ac-section-label">Limitations of this solution</div>
-          <div class="legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Security</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Functionality</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Performance</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Operability</span>
-          </div>
-          <ul class="issue-list">
-            <li><span class="dot dot-functional"></span><span class="text">Photo list is still static — <code>photos.json</code> is still a file deployed with the application. Adding or removing photos requires a redeployment. A real photo-sharing platform needs a database.</span></li>
-          </ul>
-        </div>
-
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week03/week3-cloudfront-edge.html" target="_blank">📄 Concept notes</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week03" target="_blank">⌥ View Week 3 code on GitHub</a>
         </div>
-
       </div>
     </div>
 
     <!-- Week 4 -->
     <div class="ac-row">
-      <div class="ac-header" onclick="toggle('w4')">
-        <span class="ac-week-badge badge-4">Week 4</span>
-        <div class="ac-title-group">
-          <div class="ac-title">Photo catalog becomes dynamic — photos managed in a database</div>
-          <div class="ac-subtitle">Still unauthenticated browsing. Photo list now served from DynamoDB — no redeployment needed to add photos.</div>
+      <div class="ac-header" onclick="toggle('w4')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-foundation">4</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Dynamic photo catalog</div>
+              <div class="ac-subtitle">Photos from DynamoDB, server-based</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">VPC</span>
+              <span class="topic-tag">Subnets</span>
+              <span class="topic-tag">Security groups</span>
+              <span class="topic-tag">NACLs</span>
+              <span class="topic-tag">ALB</span>
+              <span class="topic-tag">EC2</span>
+              <span class="topic-tag">SSM</span>
+              <span class="topic-tag">NAT GW</span>
+              <span class="topic-tag">VPC endpoints</span>
+              <span class="topic-tag">IAM roles</span>
+            </div>
+          </div>
         </div>
         <span class="ac-chevron" id="w4-chev">›</span>
       </div>
       <div class="ac-body" id="w4">
-
         <div class="ac-section">
           <div class="ac-section-label">What users can do</div>
           <div class="ac-section-text">Visitors still browse photos without logging in — the user-facing experience is unchanged. The difference is architectural: the photo catalog is now stored in DynamoDB. Add a row to the database and it appears to all visitors immediately, with no redeployment.</div>
         </div>
-
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
           <div class="arch-row">
@@ -503,58 +549,48 @@
             <span class="arch-arrow">→</span>
             <span class="arch-pill">ALB (public subnet)</span>
             <span class="arch-arrow">→</span>
-            <span class="arch-pill">EC2 app server (private subnet)</span>
+            <span class="arch-pill">EC2 (private subnet)</span>
             <span class="arch-arrow">→</span>
             <span class="arch-pill">DynamoDB</span>
           </div>
-          <div class="ac-section-text" style="margin-top:8px;">CloudFront now has two origins: S3 for static files (HTML, CSS, JS, images) and an ALB for the <code>/photos</code> API endpoint. The ALB forwards <code>/photos</code> requests to an EC2 application server running in a private VPC subnet — no public IP, no SSH. SSM Session Manager handles all remote access. The app server queries DynamoDB via a VPC Gateway endpoint and returns the photo list as JSON.</div>
+          <div class="ac-section-text" style="margin-top:8px;">CloudFront routes <code>/photos</code> requests to an ALB, which forwards to an EC2 app server in a private VPC subnet — no public IP, no SSH. SSM Session Manager handles remote access. DynamoDB is accessed via a VPC Gateway endpoint, never over the internet.</div>
         </div>
-
-        <div class="ac-section">
-          <div class="ac-section-label">Limitations of this solution</div>
-          <div class="legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Security</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Functionality</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Performance</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Operability</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#888780"></span>Reliability</span>
-          </div>
-          <ul class="issue-list">
-            <li><span class="dot dot-security"></span><span class="text">ALB is internet-facing — its public DNS name is reachable directly, bypassing CloudFront and all edge security controls.</span></li>
-            <li><span class="dot dot-security"></span><span class="text">Supply chain risk — the EC2 bootstrap script installs packages from the public internet. A compromised package would run as root, inherit the instance role, and could exfiltrate data.</span></li>
-            <li><span class="dot dot-security"></span><span class="text">No rate limiting on <code>/photos</code> — even legitimate traffic through CloudFront hits EC2 unthrottled. A flood of valid requests consumes resources with no protection.</span></li>
-            <li><span class="dot dot-security"></span><span class="text">CloudFront → ALB hop is HTTP — traffic between CloudFront and the ALB is unencrypted. Production requires an HTTPS listener on the ALB.</span></li>
-            <li><span class="dot dot-operability"></span><span class="text">EC2 requires ongoing maintenance — OS patching, SSM agent updates, capacity management. Every hour the instance runs costs money even during idle periods.</span></li>
-            <li><span class="dot dot-reliability"></span><span class="text">Single EC2 instance in one AZ — no failover. If the instance crashes or reboots for patching, <code>/photos</code> goes offline. Production requires an Auto Scaling Group across multiple AZs.</span></li>
-            <li><span class="dot dot-functional"></span><span class="text">No user accounts — the platform still cannot distinguish visitors, offer a free tier, or support premium features.</span></li>
-          </ul>
-        </div>
-
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week04/week4-vpc-ec2.html" target="_blank">📄 Concept notes</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week04" target="_blank">⌥ View Week 4 code on GitHub</a>
         </div>
-
       </div>
     </div>
 
     <!-- Week 5 -->
     <div class="ac-row">
-      <div class="ac-header" onclick="toggle('w5')">
-        <span class="ac-week-badge badge-5">Week 5</span>
-        <div class="ac-title-group">
-          <div class="ac-title">Serverless backend — same experience, better architecture</div>
-          <div class="ac-subtitle">EC2 and ALB replaced with Lambda and API Gateway. No servers to patch or manage.</div>
+      <div class="ac-header" onclick="toggle('w5')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-foundation">5</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Serverless backend</div>
+              <div class="ac-subtitle">WAF rate limiting added</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">Lambda</span>
+              <span class="topic-tag">API Gateway</span>
+              <span class="topic-tag">Lambda authorizer</span>
+              <span class="topic-tag">WAF + Web ACL</span>
+              <span class="topic-tag">CloudWatch Logs</span>
+              <span class="topic-tag">HTTPS end-to-end</span>
+            </div>
+          </div>
         </div>
         <span class="ac-chevron" id="w5-chev">›</span>
       </div>
       <div class="ac-body" id="w5">
-
         <div class="ac-section">
           <div class="ac-section-label">What users can do</div>
-          <div class="ac-section-text">The user-facing experience is identical to Week 4 — unauthenticated visitors browse photos served from DynamoDB. The change is entirely architectural: the backend is now serverless.</div>
+          <div class="ac-section-text">The user-facing experience is identical to Week 4 — unauthenticated visitors browse photos served from DynamoDB. The change is entirely architectural: the backend is now serverless. No EC2, no ALB, no OS to patch.</div>
         </div>
-
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
           <div class="arch-row">
@@ -568,29 +604,320 @@
             <span class="arch-arrow">→</span>
             <span class="arch-pill">DynamoDB</span>
           </div>
-          <div class="ac-section-text" style="margin-top:8px;">EC2 and ALB are replaced by Lambda and API Gateway. The same DynamoDB table and CloudFront distribution from Week 4 are reused unchanged. API Gateway handles HTTPS natively — no certificate management needed. Lambda runs only when a request arrives — no idle cost, no OS to patch, no SSH surface. A Lambda authorizer on API Gateway checks a secret header that CloudFront adds to every origin request, ensuring the API cannot be reached directly. WAF adds a rate-based rule on <code>/photos</code> to block flooding.</div>
+          <div class="ac-section-text" style="margin-top:8px;">EC2 and ALB are replaced by Lambda and API Gateway. A Lambda authorizer checks a secret header CloudFront adds to every origin request — direct calls to the API Gateway URL are rejected. WAF adds a rate-based rule on <code>/photos</code>. API Gateway enforces HTTPS natively — no certificate needed.</div>
         </div>
-
-        <div class="ac-section">
-          <div class="ac-section-label">Limitations of this solution</div>
-          <div class="legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#E24B4A"></span>Security</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#185FA5"></span>Functionality</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#3B6D11"></span>Performance</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#BA7517"></span>Operability</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#888780"></span>Reliability</span>
-          </div>
-          <ul class="issue-list">
-            <li><span class="dot dot-security"></span><span class="text">Lambda authorizer uses a shared secret header — anyone who discovers the value can call the API directly. An IAM-enforced mechanism like <code>aws:SourceArn</code> would be stronger, but requires a REST API instead of HTTP API. Sufficient for a public read-only endpoint.</span></li>
-            <li><span class="dot dot-functional"></span><span class="text">No user accounts — the platform still cannot distinguish visitors, offer a free tier, or support premium features like upload, search, or delete. Authentication is added in Week 6.</span></li>
-          </ul>
-        </div>
-
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-serverless.html" target="_blank">📄 Concept notes</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week05" target="_blank">⌥ View Week 5 code on GitHub</a>
         </div>
+      </div>
+    </div>
 
+    <div class="stage-group-label">Application features — building</div>
+
+    <!-- Week 6 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w6')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">6</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Login with Google</div>
+              <div class="ac-subtitle">Unauthenticated: public photos · Logged in (free or premium): all photos</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">Cognito User Pool</span>
+              <span class="topic-tag">Google federation</span>
+              <span class="topic-tag">Hosted UI</span>
+              <span class="topic-tag">OAuth 2.0 / OIDC</span>
+              <span class="topic-tag">JWT + claims</span>
+              <span class="topic-tag">Cognito groups</span>
+              <span class="topic-tag">Extended Lambda authorizer</span>
+              <span class="topic-tag">Secrets Manager</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w6-chev">›</span>
+      </div>
+      <div class="ac-body" id="w6">
+        <div class="ac-section">
+          <div class="ac-section-label">What users can do</div>
+          <div class="ac-section-text">Visitors can click Login and authenticate with their Google account via Cognito. Unauthenticated visitors see public photos only. Any logged-in user — free or premium — sees all photos including private ones. Free and premium groups are set up but the capability distinction takes effect in Week 7.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="arch-row">
+            <span class="arch-pill">Browser</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">Cognito Hosted UI</span>
+            <span class="arch-arrow">↔</span>
+            <span class="arch-pill">Google (OIDC)</span>
+          </div>
+          <div class="arch-row" style="margin-top:6px;">
+            <span class="arch-pill">Browser + JWT</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">WAF + CloudFront</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">API Gateway</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">Lambda authorizer</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">Lambda + DynamoDB</span>
+          </div>
+          <div class="ac-section-text" style="margin-top:8px;">Cognito User Pool with Google as a federated IdP handles login via the Authorization Code flow. Cognito holds the Google client secret and issues its own JWT. The Lambda authorizer is extended to fetch the origin secret from Secrets Manager and optionally validate the JWT — passing group context to the main Lambda, which filters DynamoDB results accordingly.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week06/week6-cognito.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week06" target="_blank">⌥ View Week 6 code on GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 7 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w7')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">7</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Premium upload + auto-tagging</div>
+              <div class="ac-subtitle">Free: search by tag · Premium: upload photos</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">S3 presigned URLs</span>
+              <span class="topic-tag">S3 event triggers</span>
+              <span class="topic-tag">Rekognition</span>
+              <span class="topic-tag">Event-driven Lambda</span>
+              <span class="topic-tag">DynamoDB query</span>
+              <span class="topic-tag">IAM for ML services</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w7-chev">›</span>
+      </div>
+      <div class="ac-body" id="w7">
+        <div class="ac-section">
+          <div class="ac-section-label">What users can do</div>
+          <div class="ac-section-text">Premium users can upload photos directly from the browser. When a photo lands in S3, Rekognition automatically generates tags (objects, scenes, labels). Free users can search the catalog by those auto-generated tags. Premium users manage their own uploads.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="arch-row">
+            <span class="arch-pill">Browser (premium)</span>
+            <span class="arch-arrow">→ presigned URL →</span>
+            <span class="arch-pill">S3</span>
+            <span class="arch-arrow">→ event →</span>
+            <span class="arch-pill">Lambda</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">Rekognition</span>
+          </div>
+          <div class="ac-section-text" style="margin-top:8px;">API Gateway issues S3 presigned URLs to premium users — the browser uploads directly to S3 without routing through Lambda. An S3 event trigger invokes a separate Lambda function that calls Rekognition to detect labels, then writes the photo metadata and tags to DynamoDB. Free users can search by tag via a DynamoDB query.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-upload.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week07" target="_blank">⌥ View Week 7 code on GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-group-label">Application features — hardening</div>
+
+    <!-- Week 8 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w8')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">8</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Encryption at rest</div>
+              <div class="ac-subtitle">Customer-managed keys for S3, DynamoDB, and Secrets Manager</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">KMS</span>
+              <span class="topic-tag">S3 SSE-KMS</span>
+              <span class="topic-tag">DynamoDB encryption</span>
+              <span class="topic-tag">Key policies</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w8-chev">›</span>
+      </div>
+      <div class="ac-body" id="w8">
+        <div class="ac-section">
+          <div class="ac-section-label">What changes</div>
+          <div class="ac-section-text">User-facing experience is unchanged. S3 photos and DynamoDB records are now encrypted with customer-managed KMS keys — you control who can use the key, every use is logged in CloudTrail, and keys can be rotated independently of the application.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="ac-section-text">A KMS customer-managed key (CMK) is created with a key policy scoping usage to the Lambda execution role and Secrets Manager. S3 default encryption is updated to SSE-KMS. DynamoDB table encryption is switched to the CMK. The Secrets Manager secret is re-encrypted with the same key. All key usage is logged in CloudTrail automatically.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week08" target="_blank">⌥ View Week 8 code on GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 9 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w9')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">9</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Multi-account governance</div>
+              <div class="ac-subtitle">Employee SSO, organization-wide guardrails, Control Tower</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">IAM Identity Center</span>
+              <span class="topic-tag">AWS Organizations</span>
+              <span class="topic-tag">SCPs</span>
+              <span class="topic-tag">Control Tower</span>
+              <span class="topic-tag">Permission sets</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w9-chev">›</span>
+      </div>
+      <div class="ac-body" id="w9">
+        <div class="ac-section">
+          <div class="ac-section-label">What changes</div>
+          <div class="ac-section-text">App users (Cognito) and employee users (IAM Identity Center) are now managed separately. Developers log into the AWS console via SSO — no long-lived IAM users. Service Control Policies enforce guardrails across all accounts in the organization.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="ac-section-text">IAM Identity Center replaces individual IAM users for developer access — single sign-on with permission sets mapped to AWS accounts. AWS Organizations groups accounts into OUs. SCPs prevent any account from disabling CloudTrail, leaving a specific region, or creating public S3 buckets. Control Tower Landing Zone enforces these guardrails at the organization level.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week09/week9-identity-center.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week09" target="_blank">⌥ View Week 9 code on GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-group-label">Detect and respond</div>
+
+    <!-- Week 10 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w10')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">10</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Visibility and compliance</div>
+              <div class="ac-subtitle">Monitoring, vulnerability scanning, sensitive data discovery</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">CloudWatch</span>
+              <span class="topic-tag">AWS Config</span>
+              <span class="topic-tag">Inspector (Lambda)</span>
+              <span class="topic-tag">Macie</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w10-chev">›</span>
+      </div>
+      <div class="ac-body" id="w10">
+        <div class="ac-section">
+          <div class="ac-section-label">What changes</div>
+          <div class="ac-section-text">Automated compliance checks, vulnerability scanning on the Lambda function, and sensitive data detection on the S3 bucket. Config rules alert on drift from the desired security posture. Macie scans S3 for personally identifiable information in user-uploaded photos.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce S3 public access block, KMS encryption on DynamoDB, and CloudTrail enabled. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Macie monitors the S3 bucket and generates findings when it detects PII.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week10" target="_blank">⌥ View Week 10 code on GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 11 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w11')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">11</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Threat detection and automated response</div>
+              <div class="ac-subtitle">GuardDuty findings trigger automated remediation via EventBridge</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">GuardDuty</span>
+              <span class="topic-tag">Security Hub</span>
+              <span class="topic-tag">CloudTrail deep dive</span>
+              <span class="topic-tag">EventBridge</span>
+              <span class="topic-tag">Automated remediation</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w11-chev">›</span>
+      </div>
+      <div class="ac-body" id="w11">
+        <div class="ac-section">
+          <div class="ac-section-label">What changes</div>
+          <div class="ac-section-text">GuardDuty continuously analyzes CloudTrail events and DNS logs for threat indicators. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into a single dashboard. EventBridge rules trigger Lambda remediation functions automatically when high-severity findings are raised.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="ac-section-text">GuardDuty enabled on the account — detects credential exfiltration, unusual API calls, and S3 data exposure. Security Hub with AWS Foundational Security Best Practices standard. EventBridge rule matches GuardDuty HIGH severity findings and invokes a Lambda function that revokes IAM credentials, isolates resources, or sends notifications via SNS.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-guardduty.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week11" target="_blank">⌥ View Week 11 code on GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 12 -->
+    <div class="ac-row">
+      <div class="ac-header" onclick="toggle('w12')" style="gap:0;">
+        <div class="ac-header-inner">
+          <div class="ac-header-left">
+            <div class="week-circle wc-building">12</div>
+            <div class="ac-title-group">
+              <div class="ac-title">Global resilience and capstone</div>
+              <div class="ac-subtitle">DNS failover, Firewall Manager, full-stack security review</div>
+            </div>
+          </div>
+          <div class="ac-header-right">
+            <div class="tags-wrap">
+              <span class="topic-tag">Route 53</span>
+              <span class="topic-tag">Health checks</span>
+              <span class="topic-tag">Firewall Manager</span>
+              <span class="topic-tag">WAF policy (org-wide)</span>
+              <span class="topic-tag">Capstone review</span>
+            </div>
+          </div>
+        </div>
+        <span class="ac-chevron" id="w12-chev">›</span>
+      </div>
+      <div class="ac-body" id="w12">
+        <div class="ac-section">
+          <div class="ac-section-label">What changes</div>
+          <div class="ac-section-text">The Photo Viewer gets a custom domain with Route 53 and DNS failover. Firewall Manager enforces the WAF Web ACL and Shield Advanced across all accounts in the organization — any new CloudFront distribution automatically gets the security policy applied. The capstone reviews the full 12-week security posture.</div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-section-label">How it is built on AWS</div>
+          <div class="ac-section-text">Route 53 alias record points to CloudFront. Health checks monitor the <code>/photos</code> endpoint and trigger DNS failover if it goes unhealthy. Firewall Manager security policies apply the WAF Web ACL to all CloudFront distributions in the organization automatically. The capstone lab requires students to identify and remediate a set of intentionally introduced security misconfigurations across the full stack.</div>
+        </div>
+        <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-capstone.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week12" target="_blank">⌥ View Week 12 code on GitHub</a>
+        </div>
       </div>
     </div>
 
@@ -615,6 +942,8 @@
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 4</button>
         <button class="pent-btn" data-week="5" onclick="pentSelectWeek('5')"
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 5</button>
+        <button class="pent-btn" data-week="6" onclick="pentSelectWeek('6')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 6</button>
       </div>
 
       <!-- Pentagon SVG -->
@@ -739,11 +1068,24 @@
       active: ['security','functional'],
       issues: {
         security: { title:'Security issues in Week 5', bullets:[
-          'Lambda authorizer uses a shared secret header — anyone who discovers the value can call the API directly. An IAM-enforced mechanism like aws:SourceArn would be stronger but requires a REST API.'
+          'Lambda authorizer uses a shared secret header — anyone who discovers the value can call the API directly. An IAM-enforced mechanism like aws:SourceArn would be stronger but requires a REST API.',
+          'Origin secret stored in a Lambda environment variable — visible in the console to anyone with lambda:GetFunction, not audited when read, requires redeployment to rotate. Should be moved to Secrets Manager.'
         ]},
         functional: { title:'Functionality issues in Week 5', bullets:[
           'No user accounts — the platform still cannot distinguish visitors, offer a free tier, or support premium features like upload, search, or delete.',
           'Authentication is added in Week 6.'
+        ]}
+      }
+    },
+    '6': {
+      active: ['security','functional'],
+      issues: {
+        security: { title:'Security issues in Week 6', bullets:[
+          'Origin secret is still a shared secret — now stored securely in Secrets Manager (better than an env var), but the fundamental mechanism remains a shared value. Anyone who obtains it can call the API Gateway URL directly by adding the header.',
+          'JWT tokens are stored in sessionStorage — accessible to JavaScript running in the same origin. A stronger approach uses HttpOnly cookies, which are not accessible to JavaScript at all.'
+        ]},
+        functional: { title:'Functionality issues in Week 6', bullets:[
+          'Premium user group is introduced but premium user functionality is not yet implemented — Cognito groups are set up and the JWT groups claim is validated, but free and premium users see identical data. Upload, delete, and CRUD operations are added in Week 7.'
         ]}
       }
     }
