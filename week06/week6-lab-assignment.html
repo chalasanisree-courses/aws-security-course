@@ -285,8 +285,8 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
   </div>
   <div class="step-body">
     <p>Go to <strong>Applications → App clients → your app client.</strong> Click the <strong>"View login page"</strong> button at the top right of the page. A login page opens — you should see a "Continue with Google" button since you enabled Google as an identity provider in Step 5.</p>
-    <p>Click <strong>Continue with Google</strong> and sign in with your Google account. After authentication, your browser will be redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. The page will show an error or blank page — that's expected because <code>app.js</code> doesn't handle the callback yet. What matters is the redirect succeeded.</p>
-    <p>Check the URL in your browser — it should contain a <code>code</code> parameter, confirming Google authenticated you and Cognito is handling the exchange.</p>
+    <p>Click <strong>Continue with Google</strong> and sign in with your Google account. After authentication, your browser will be redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. You will see a <strong>403 Access Denied</strong> error from CloudFront — that is expected at this point. CloudFront is looking for a file called <code>callback</code> in S3 and there isn't one. Once <code>app.js</code> is deployed in Step 14, it handles the callback entirely in the browser — <code>index.html</code> loads, app.js sees the <code>?code=</code> parameter and does the token exchange automatically.</p>
+    <p>What matters right now is the URL — it should contain a <code>code</code> parameter, confirming the full login chain worked: Google authenticated you, sent the auth code to Cognito, and Cognito redirected your browser back to your app.</p>
     <div class="verify">
       <div class="verify-label">✓ Verify</div>
       <p>Browser URL after login contains <code>?code=</code> — confirming the Authorization Code flow is working.</p>
