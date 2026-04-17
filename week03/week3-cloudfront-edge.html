@@ -654,7 +654,7 @@
     <p>Runs at the <strong>Viewer Request</strong> stage — before cache lookup or origin contact. Returns 403 immediately for blocked files, without ever touching S3.</p>
     <pre><code>function handler(event) {
     var uri = event.request.uri;
-    var allowed = /\.(html|js|css|jpg)$/i;
+    var allowed = /\.(html|js|css|jpg|json)$/i;
     if (uri === '/' || allowed.test(uri)) return event.request;
     return { statusCode: 403, statusDescription: 'Forbidden' };
 }</code></pre>
