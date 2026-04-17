@@ -1,10 +1,7 @@
 """
 photoviewer-authorizer — Week 6
 
-No third-party packages required. Uses only:
-  - boto3         (Lambda runtime)
-  - cryptography  (Lambda runtime)
-  - urllib, json  (stdlib)
+No third-party packages required. Uses only Python stdlib + boto3 (Lambda runtime).
 
 Two jobs:
   1. Verify origin secret (required) — ensures request came from CloudFront
@@ -15,20 +12,17 @@ Environment variables required:
   COGNITO_APP_CLIENT_ID e.g. 1abc2defg3hijklmno4pqrst
 
 Secret in Secrets Manager:
-  photoviewer/origin-verify-secret  (key: "value")
+  photoviewer/origin-verify-secret  (key: "ORIGIN_SECRET")
 """
 
 import base64
+import hashlib
 import json
 import os
 import time
 import urllib.request
 
 import boto3
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +39,13 @@ JWKS_URL      = (
 secrets_client = boto3.client('secretsmanager', region_name=REGION)
 _origin_secret = None
 _jwks          = None
+
+# SHA-256 DigestInfo prefix used in PKCS#1 v1.5 signatures (RFC 3447)
+_SHA256_DIGEST_INFO = bytes([
+    0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
+    0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
+    0x00, 0x04, 0x20
+])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -71,6 +72,42 @@ def get_jwks():
     return _jwks
 
 
+def verify_rs256(message, signature, n, e):
+    """
+    Verify an RS256 (PKCS#1 v1.5 + SHA-256) signature using only Python builtins.
+
+    RS256 works like this:
+      - The signer computes: SHA-256(message), wraps it in PKCS#1 v1.5 padding,
+        then encrypts with their RSA private key -> signature
+      - We verify by decrypting with the public key (sig^e mod n) and checking
+        that the result has the correct padding and contains SHA-256(message)
+
+    Python's built-in pow(x, e, n) handles the big-integer math efficiently.
+    """
+    # Step 1: RSA public key operation — decrypt the signature
+    k      = (n.bit_length() + 7) // 8   # modulus length in bytes
+    em_int = pow(int.from_bytes(signature, 'big'), e, n)
+    em     = em_int.to_bytes(k, 'big')
+
+    # Step 2: Check PKCS#1 v1.5 padding structure: 0x00 0x01 [0xFF...] 0x00
+    if len(em) < 11 or em[0] != 0x00 or em[1] != 0x01:
+        raise ValueError('Invalid PKCS#1 v1.5 padding')
+
+    i = 2
+    while i < len(em) and em[i] == 0xFF:
+        i += 1
+
+    if i == 2 or i >= len(em) or em[i] != 0x00:
+        raise ValueError('Invalid PKCS#1 v1.5 padding structure')
+
+    # Step 3: Check DigestInfo prefix + SHA-256 hash of the message
+    body     = em[i + 1:]
+    expected = _SHA256_DIGEST_INFO + hashlib.sha256(message).digest()
+
+    if body != expected:
+        raise ValueError('Signature verification failed')
+
+
 # ── JWT validation ────────────────────────────────────────────────────────────
 
 def validate_jwt(token):
@@ -84,7 +121,6 @@ def validate_jwt(token):
 
     header_b64, payload_b64, sig_b64 = parts
 
-    # Decode header and payload
     header  = json.loads(b64url_decode(header_b64))
     payload = json.loads(b64url_decode(payload_b64))
 
@@ -99,15 +135,14 @@ def validate_jwt(token):
     if key is None:
         raise ValueError(f'No matching public key for kid: {kid}')
 
-    # Construct RSA public key from JWK n and e
-    n       = int.from_bytes(b64url_decode(key['n']), 'big')
-    e       = int.from_bytes(b64url_decode(key['e']), 'big')
-    pub_key = RSAPublicNumbers(e, n).public_key(default_backend())
+    # Extract RSA public key components from JWK
+    n = int.from_bytes(b64url_decode(key['n']), 'big')
+    e = int.from_bytes(b64url_decode(key['e']), 'big')
 
-    # Verify RS256 signature
+    # Verify RS256 signature — pure Python, no third-party libraries
     message   = f'{header_b64}.{payload_b64}'.encode()
     signature = b64url_decode(sig_b64)
-    pub_key.verify(signature, message, padding.PKCS1v15(), hashes.SHA256())
+    verify_rs256(message, signature, n, e)
 
     # Verify expiry
     if time.time() > payload.get('exp', 0):
