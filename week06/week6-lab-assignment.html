@@ -25,7 +25,7 @@
 
   .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
   .callout.info { border-color: #0066cc; background: #f0f6ff; }
-  .callout.warn { border-color: #dc3545; background: #fff5f5; }
+  .callout.warn, .callout.warning { border-color: #dc3545; background: #fff5f5; }
   .callout.success { border-color: #28a745; background: #f0fff4; }
   .callout p:last-child { margin-bottom: 0; }
 
@@ -132,53 +132,37 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <span class="step-title">Create the Cognito User Pool</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>Cognito → Create user pool.</strong> AWS now shows a single-page setup wizard. Fill it in as follows:</p>
-
-    <p><strong>Application type</strong></p>
+    <p>Go to <strong>Cognito → Create user pool.</strong> Fill in the single-page wizard:</p>
     <ul>
-      <li>Select <strong>Single-page application (SPA)</strong> — this is a JavaScript app running in the browser. This setting tells Cognito not to generate a client secret, which is correct: browser apps cannot keep a secret safe because anyone can view the source.</li>
-    </ul>
-
-    <p><strong>Name your application</strong></p>
-    <ul>
+      <li>Application type: <strong>Single-page application (SPA)</strong></li>
       <li>Application name: <code>photoviewer-web-client</code></li>
-      <li>This name identifies the app client — the record Cognito uses to know which application is allowed to request tokens. Each application that integrates with Cognito gets its own app client with its own settings.</li>
-    </ul>
-
-    <p><strong>Configure options</strong></p>
-    <ul>
-      <li>Sign-in identifiers: check <strong>Email</strong> only — this is the attribute Cognito uses to identify a user in the User Pool. Even though Google handles the actual authentication, Cognito still stores a local user record keyed by email.</li>
-      <li>Self-registration: <strong>uncheck</strong> "Enable self-registration" — we want Google federation only. If left enabled, anyone could create a Cognito account directly with email and password, bypassing Google entirely.</li>
+      <li>Sign-in identifiers: <strong>Email</strong></li>
+      <li>Self-registration: <strong>uncheck</strong> "Enable self-registration"</li>
       <li>Required attributes: leave empty</li>
-    </ul>
-
-    <p><strong>Add a return URL</strong></p>
-    <ul>
       <li>Return URL: <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback</code></li>
-      <li>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code> with your actual CloudFront domain from the pre-flight output (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>)</li>
-      <li>This is the URL Cognito is allowed to redirect back to after a successful login. Cognito enforces this as an allowlist — if app.js sends a redirect_uri that doesn't exactly match this value, Cognito rejects the login attempt. This prevents an attacker from redirecting the auth code to their own server.</li>
     </ul>
-
     <p>Click <strong>Create user directory.</strong></p>
 
     <div class="callout info">
-      <p><strong>After creation you will land on the User Pool overview page.</strong> Note down two values — you need them in Step 10:</p>
+      <p>Note down these three values — you need them later:</p>
       <ul>
-        <li><strong>User Pool ID</strong> — shown on the overview page (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
-        <li><strong>App client ID</strong> — go to <strong>App integration → App clients → photoviewer-web-client</strong></li>
+        <li><strong>User Pool ID</strong> — on the overview page (e.g. <code>us-east-1_XXXXXXXXX</code>)</li>
+        <li><strong>App client ID</strong> — go to <strong>Applications → App clients → photoviewer-web-client</strong></li>
+        <li><strong>Cognito domain</strong> — go to <strong>Branding → Domain</strong> (e.g. <code>https://us-east-1xxxxxxxxx.auth.us-east-1.amazoncognito.com</code>)</li>
       </ul>
-      <p>Also note your <strong>Cognito domain</strong> — go to <strong>Branding → Domain</strong> in the left nav. The full domain is shown there (e.g. <code>https://us-east-1xxxxxxxxx.auth.us-east-1.amazoncognito.com</code>). You need this for Step 3 — add <code>/oauth2/idpresponse</code> to the end of it to get the redirect URI you register with Google.</p>
     </div>
 
-    <p>Next, set a sign-out URL and fix the scopes. Go to <strong>App integration → App clients → photoviewer-web-client → Login pages tab → Managed login pages configuration → Edit:</strong></p>
+    <p>Go to <strong>Applications → App clients → your app client → Login pages tab → Managed login pages configuration → Edit:</strong></p>
+    <div class="callout warning">
+      <p><strong>Do not skip this.</strong> If the sign-out URL is not registered, clicking Sign out will show an "Invalid Request" error from Cognito.</p>
+    </div>
     <ul>
-      <li>Sign-out URLs: add <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code> — this is where Cognito redirects the browser after logout. Same allowlist enforcement as the callback URL.</li>
-      <li>OAuth 2.0 grant types: confirm <strong>Authorization code grant</strong> is checked — this is the flow where Cognito returns a short-lived auth code to the browser, which app.js then exchanges for tokens. The alternative (Implicit grant) returns tokens directly in the URL, which is less secure and deprecated.</li>
-      <li>OpenID Connect scopes: the defaults include <code>phone</code> which we don't need. <strong>Uncheck phone, and check Profile</strong> — so the final set is <strong>Email, OpenID, Profile</strong>. <code>openid</code> is required to get an ID token at all. <code>email</code> gives the user's email address. <code>profile</code> adds the user's name to the token claims.</li>
+      <li>Sign-out URLs: add <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code></li>
+      <li>OAuth 2.0 grant types: confirm <strong>Authorization code grant</strong> is checked</li>
+      <li>OpenID Connect scopes: <strong>uncheck phone, check Profile</strong> — final set should be Email, OpenID, Profile</li>
       <li>Click <strong>Save changes</strong></li>
     </ul>
-
-    <div class="screenshot">Cognito App client page showing App client ID, Hosted UI settings with callback URL and sign-out URL configured, and no client secret present</div>
+    <div class="screenshot">Cognito App client page showing App client ID, callback URL, sign-out URL, and no client secret</div>
   </div>
 </div>
 
@@ -247,10 +231,10 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
           <li><strong>Finish:</strong> click <strong>Create</strong></li>
         </ul>
       </li>
-      <li><strong>Create OAuth 2.0 credentials:</strong> In the left nav go to <strong>Clients → Create client.</strong>
+      <li><strong>Create OAuth 2.0 credentials:</strong> In the left nav go to <strong>Clients → Create client.</strong> This opens a form with an "Application type" dropdown — make sure <strong>Web application</strong> is selected (not Single-page application — that one doesn't generate a client secret, which Cognito needs).
         <ul>
-          <li>Application type: <strong>Web application</strong></li>
           <li>Name: <code>photoviewer-cognito</code></li>
+          <li>Authorized JavaScript origins — leave empty</li>
           <li>Authorized redirect URIs — click <strong>Add URI</strong> and paste the redirect URI you constructed in Step 3</li>
           <li>Click <strong>Create</strong></li>
         </ul>
@@ -291,11 +275,11 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 6</span>
-    <span class="step-title">Test the Hosted UI login flow</span>
+    <span class="step-title">Test the Google login flow</span>
   </div>
   <div class="step-body">
     <p>Go to <strong>Applications → App clients → your app client.</strong> Click the <strong>"View login page"</strong> button at the top right of the page. A login page opens — you should see a "Continue with Google" button since you enabled Google as an identity provider in Step 5.</p>
-    <p>Click <strong>Continue with Google</strong> and sign in with your Google account. After authentication, your browser will be redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. You will see a <strong>403 Access Denied</strong> error from CloudFront — that is expected at this point. CloudFront is looking for a file called <code>callback</code> in S3 and there isn't one. Once <code>app.js</code> is deployed in Step 14, it handles the callback entirely in the browser — <code>index.html</code> loads, app.js sees the <code>?code=</code> parameter and does the token exchange automatically.</p>
+    <p>Click <strong>Continue with Google</strong> and sign in with your Google account. After authentication, your browser will be redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. You will see a <strong>403 Access Denied</strong> error from CloudFront — that is expected at this point. The 403 is generated by the CloudFront Function from Week 5 which rejects any request without the <code>x-origin-verify</code> header. You will fix this in Steps 15 and 16 after deploying app.js.</p>
     <p>What matters right now is the URL — it should contain a <code>code</code> parameter, confirming the full login chain worked: Google authenticated you, sent the auth code to Cognito, and Cognito redirected your browser back to your app.</p>
     <div class="verify">
       <div class="verify-label">✓ Verify</div>
@@ -327,7 +311,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
       <li>Description: <code>CloudFront origin verification secret for API Gateway</code></li>
       <li>Click <strong>Next → Next → Store</strong></li>
     </ul>
-    <p>Note the full <strong>Secret ARN</strong> — you will need it for the IAM policy in the next step.</p>
+    <p>Note your <strong>AWS account ID</strong> — you need it for the IAM policy in the next step. It's visible in the top-right of the AWS console (12-digit number).</p>
     <div class="screenshot">Secrets Manager showing <code>photoviewer/origin-verify-secret</code> created with the secret ARN visible</div>
   </div>
 </div>
@@ -348,7 +332,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     "Resource": "arn:aws:secretsmanager:us-east-1:[your-account-id]:secret:photoviewer/origin-verify-secret-*"
   }]
 }</pre>
-    <p>Replace <code>[your-account-id]</code> with your AWS account ID (available in the top-right of the console). The trailing <code>-*</code> accounts for the random suffix Secrets Manager appends to ARNs.</p>
+    <p>Replace <code>[your-account-id]</code> with your 12-digit AWS account ID and leave everything else exactly as shown — in particular do not replace the <code>-*</code> at the end. Secrets Manager appends a random suffix to every secret ARN, and the <code>-*</code> wildcard covers that suffix without you needing to know what it is.</p>
     <p>Policy name: <code>photoviewer-secrets-read</code> → <strong>Create policy.</strong></p>
     <div class="callout info">
       <p><strong>Why scope to the specific ARN?</strong> <code>secretsmanager:GetSecretValue</code> on <code>*</code> would let the function read any secret in your account. Scoping to the specific ARN means a compromised function can only read the one secret it actually needs.</p>
@@ -487,27 +471,30 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
     <p>The updated <code>app.js</code> from <code>photoviewer/week06/app.js</code> adds:</p>
     <ul>
       <li>A <strong>Login / Logout button</strong> in the UI</li>
-      <li>On login click: redirects the browser to the Cognito Hosted UI</li>
+      <li>On login click: redirects the browser to the Cognito managed login page</li>
       <li>On page load: checks for a <code>?code=</code> parameter in the URL — if present, exchanges the auth code with Cognito for a JWT (ID token), stores the JWT in <code>sessionStorage</code>, and reloads the page</li>
       <li>On every <code>/photos</code> call: if a JWT is stored, sends it as <code>Authorization: Bearer &lt;token&gt;</code></li>
       <li>Checks the JWT <code>exp</code> claim before each call and refreshes silently if expired</li>
     </ul>
-    <p>Before uploading, edit <code>app.js</code> and replace these placeholders with your actual values:</p>
+    <p>Before uploading, edit <code>app.js</code> and replace these three placeholders with your actual values:</p>
     <ul>
-      <li><code>YOUR_COGNITO_DOMAIN</code> → your Cognito domain prefix (e.g. <code>photoviewer-XXXXXXXXXX</code>)</li>
-      <li><code>YOUR_APP_CLIENT_ID</code> → your App client ID from Step 1</li>
-      <li><code>YOUR_CLOUDFRONT_DOMAIN</code> → your CloudFront domain name</li>
+      <li><code>YOUR_COGNITO_DOMAIN</code> → the domain <strong>prefix only</strong> — just the part before <code>.auth.us-east-1.amazoncognito.com</code> (e.g. <code>us-east-1xxxxxxxxx</code>). Find it at <strong>Branding → Domain</strong>. Do not include <code>https://</code> or the full hostname.</li>
+      <li><code>YOUR_APP_CLIENT_ID</code> → your App client ID from Step 1 (found at <strong>Applications → App clients → your app client</strong>)</li>
+      <li><code>YOUR_CLOUDFRONT_DOMAIN</code> → your CloudFront domain <strong>without <code>https://</code></strong> (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>). The code adds <code>https://</code> itself when constructing URLs.</li>
     </ul>
-    <p>Upload to S3:</p>
+    <p>Upload all three files to S3:</p>
     <pre>aws s3 cp app.js s3://photoviewer-9876543210/app.js \
   --content-type "application/javascript" \
+  --region us-east-1
+
+aws s3 cp index.html s3://photoviewer-9876543210/index.html \
+  --content-type "text/html" \
+  --region us-east-1
+
+aws s3 cp style.css s3://photoviewer-9876543210/style.css \
+  --content-type "text/css" \
   --region us-east-1</pre>
-    <p>Then invalidate the CloudFront cache so the browser gets the new file:</p>
-    <pre>aws cloudfront create-invalidation \
-  --distribution-id YOUR_DISTRIBUTION_ID \
-  --paths "/app.js" "/callback"</pre>
-    <p>Wait for the invalidation to complete — check status in <strong>CloudFront → Invalidations tab</strong>.</p>
-    <div class="screenshot">CloudFront Invalidations tab showing the invalidation completed</div>
+    <div class="screenshot">S3 bucket showing app.js, index.html, and style.css uploaded</div>
   </div>
 </div>
 
@@ -521,6 +508,53 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 15</span>
+    <span class="step-title">Configure CloudFront to serve index.html for /callback</span>
+  </div>
+  <div class="step-body">
+    <p>When Cognito redirects the browser to <code>/callback?code=XXXX</code> after login, CloudFront looks for a file called <code>callback</code> in S3 — it doesn't exist, so CloudFront returns a 403. The fix is a custom error response that serves <code>index.html</code> instead. Once <code>app.js</code> loads on that page it sees the <code>?code=</code> in the URL and handles the token exchange automatically.</p>
+    <p>Go to <strong>CloudFront → your distribution → Error pages tab → Create custom error response:</strong></p>
+    <ul>
+      <li>HTTP error code: <strong>403</strong></li>
+      <li>Customize error response: <strong>Yes</strong></li>
+      <li>Response page path: <code>/index.html</code></li>
+      <li>HTTP response code: <strong>200</strong></li>
+      <li>Click <strong>Create custom error response</strong></li>
+    </ul>
+    <p>Wait for the distribution status to return to <strong>Deployed</strong> before continuing.</p>
+    <div class="callout info">
+      <p><strong>Why 403 and not 404?</strong> CloudFront with OAC returns 403 (not 404) when a requested path doesn't exist in S3 — S3 treats a missing object as access denied when accessed through OAC. Both 403 and 404 can be configured this way, but 403 is what CloudFront actually returns here.</p>
+    </div>
+    <div class="screenshot">CloudFront Error pages tab showing the custom 403 error response configured to return index.html with a 200 status</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 16</span>
+    <span class="step-title">Add a CloudFront behavior to bypass the origin check for /callback</span>
+  </div>
+  <div class="step-body">
+    <p>The default CloudFront behavior has a CloudFront Function that checks the <code>x-origin-verify</code> header on every request — this is the Week 5 origin secret check. When Cognito redirects the browser to <code>/callback</code>, the browser doesn't send that header, so CloudFront rejects the request with a 403 before it even reaches S3. The custom error page never fires because the error is generated by the CloudFront Function, not the origin.</p>
+    <p>The fix is a separate behavior for <code>/callback</code> that has no function associations, letting the request pass through to S3 (which returns a 403 for the missing file), triggering the custom error page, which serves <code>index.html</code>.</p>
+    <p>Go to <strong>CloudFront → your distribution → Behaviors tab → Create behavior:</strong></p>
+    <ul>
+      <li>Path pattern: <code>/callback</code></li>
+      <li>Origin: your S3 bucket</li>
+      <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+      <li>Function associations: leave all as <strong>No association</strong></li>
+      <li>Click <strong>Create behavior</strong></li>
+    </ul>
+    <p>Wait for the distribution to deploy, then invalidate:</p>
+    <pre>aws cloudfront create-invalidation \
+  --distribution-id YOUR_DISTRIBUTION_ID \
+  --paths "/*"</pre>
+    <div class="screenshot">CloudFront Behaviors tab showing the /callback behavior with no function associations</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 17</span>
     <span class="step-title">Test unauthenticated — public photos only</span>
   </div>
   <div class="step-body">
@@ -537,11 +571,11 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 16</span>
+    <span class="step-num">Step 18</span>
     <span class="step-title">Test authenticated — all photos visible after login</span>
   </div>
   <div class="step-body">
-    <p>Click the <strong>Login</strong> button in the Photo Viewer. You should be redirected to the Cognito Hosted UI with a "Continue with Google" button. Sign in with your Google account.</p>
+    <p>Click the <strong>Sign in with Google</strong> button in the Photo Viewer. You should be redirected to the Cognito managed login page with a "Continue with Google" button. Sign in with your Google account.</p>
     <p>After login, you're redirected back to the Photo Viewer. The page should now show <strong>6 photos</strong> — the 5 public ones plus the private one you added.</p>
     <p>Open <strong>DevTools → Network tab</strong> and click the <code>/photos</code> request. Confirm:</p>
     <ul>
@@ -556,7 +590,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 17</span>
+    <span class="step-num">Step 19</span>
     <span class="step-title">Verify the JWT in CloudWatch Logs</span>
   </div>
   <div class="step-body">
@@ -587,8 +621,8 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 <h3>Check 2 — Google login fails with redirect_uri_mismatch</h3>
 <p>This means the redirect URI you entered in Google Cloud Console doesn't match what Cognito is sending. The Cognito redirect URI must be exactly: <code>https://YOUR_COGNITO_DOMAIN.auth.us-east-1.amazoncognito.com/oauth2/idpresponse</code>. Check the Google Cloud Console → Credentials → your OAuth client → Authorized redirect URIs and confirm it matches exactly, including the protocol and path.</p>
 
-<h3>Check 3 — Callback URL returns a browser error after login</h3>
-<p>After Google authentication, the browser is redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. If you see a 403 or the page doesn't load the app, check: the callback URL in Cognito App client settings matches your CloudFront domain exactly; CloudFront serves <code>index.html</code> for the <code>/callback</code> path (check the default root object is set).</p>
+<h3>Check 3 — Callback URL returns 403 after login</h3>
+<p>After Google authentication, the browser is redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. If you see a persistent 403 even after completing Steps 15 and 16, there are two possible causes: (1) the CloudFront custom error response for 403 hasn't deployed yet — wait for the distribution to show <strong>Deployed</strong> status; (2) the <code>/callback</code> behavior from Step 16 is missing — the default CloudFront Function blocks requests without the <code>x-origin-verify</code> header before they reach S3, so the custom error page never fires. Verify the <code>/callback</code> behavior exists in the Behaviors tab with no function associations.</p>
 
 <h3>Check 4 — JWT present but still seeing only 5 photos</h3>
 <p>If the Authorization header is being sent but Lambda is still filtering to public photos, check the authorizer is passing group context correctly. Go to <strong>CloudWatch → /aws/lambda/photoviewer-authorizer</strong> and look for log entries. If you see the JWT being validated but no group context, check that the user is actually in a Cognito group — go to Cognito → Users → your user → Groups tab.</p>
@@ -626,12 +660,12 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
     <tr>
       <td><strong>Cognito User Pool + groups</strong></td>
       <td>15</td>
-      <td>Screenshot shows User Pool with Hosted UI configured and callback URL set. Groups tab shows both <code>free</code> and <code>premium</code> groups.</td>
+      <td>Screenshot shows User Pool with Managed login pages configured, callback URL and sign-out URL set. Groups tab shows both <code>free</code> and <code>premium</code> groups.</td>
     </tr>
     <tr>
       <td><strong>Google federation</strong></td>
       <td>15</td>
-      <td>Cognito Sign-in experience tab shows Google as an identity provider. Hosted UI settings show Google enabled. Screenshot of callback URL with <code>?code=</code> parameter after Google login.</td>
+      <td>Authentication → Social and external providers shows Google as an identity provider. Managed login pages configuration shows Google enabled. Screenshot of callback URL with <code>?code=</code> parameter after Google login.</td>
     </tr>
     <tr>
       <td><strong>Secrets Manager — secret created + IAM policy</strong></td>
