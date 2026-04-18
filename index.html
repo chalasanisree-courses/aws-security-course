@@ -520,7 +520,7 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w6')">
       <span class="week-num">Week 6</span>
-      <span class="week-title">User Identity — Cognito + Google Federation</span>
+      <span class="week-title">Authentication — Cognito + Federated Login</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w6-chev">▶</span>
     </div>
@@ -542,18 +542,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w7')">
       <span class="week-num">Week 7</span>
-      <span class="week-title">Premium Capabilities — Presigned Uploads + Rekognition</span>
+      <span class="week-title">Authorization — Upload & Delete with Access Control</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w7-chev">▶</span>
     </div>
     <div class="week-body" id="w7">
-      <p class="week-desc">RBAC takes effect — Cognito groups from Week 6 now drive capability differences. Premium users get S3 presigned URLs to upload photos directly from the browser without routing through Lambda. S3 event trigger invokes a Lambda function that calls Rekognition to auto-tag uploaded photos and writes metadata to DynamoDB. Free users can search by auto-generated tags.</p>
+      <p class="week-desc">RBAC takes effect — Cognito groups from Week 6 now drive capability differences. Premium users get S3 presigned URLs to upload photos directly from the browser. Uploaded photos are tracked by owner in DynamoDB. Users can delete their own uploads via API Gateway with Lambda validating object-level ownership. Demonstrates both endpoint-level (premium-only upload) and object-level (owner-only delete) authorization patterns.</p>
       <div class="resource-list">
-        <a class="resource-link" href="week07/week7-upload.html">
-          <span class="icon">◈</span> Premium Capabilities — concept notes
+        <a class="resource-link" href="week07/week7-authorization.html">
+          <span class="icon">◈</span> Authorization Patterns — concept notes
         </a>
         <a class="resource-link" href="week07/week7-lab-assignment.html">
-          <span class="icon">◈</span> Week 7 Lab — Presigned Uploads + Auto-tagging
+          <span class="icon">◈</span> Week 7 Lab — Upload & Delete Authorization
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -849,7 +849,7 @@
               <td>Machine learning discovery of PII and sensitive data in S3 buckets.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/rekognition/" target="_blank">Rekognition</a></div><span class="svc-abbr"> · Amazon Rekognition</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 7</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/rekognition/" target="_blank">Rekognition</a></div><span class="svc-abbr"> · Amazon Rekognition</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-optional">Optional</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>AI image analysis. Detects objects, scenes, and labels in photos. Used to auto-tag premium user uploads.</td>
             </tr>

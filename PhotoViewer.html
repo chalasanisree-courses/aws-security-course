@@ -381,12 +381,11 @@
           </div>
         </div>
         <div style="padding:9px 11px;border-top:0.5px solid rgba(0,0,0,0.08);">
-          <span style="display:inline-block;font-size:9px;background:#F1EFE8;color:#888780;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Coming — Week 7</span>
+          <span style="display:inline-block;font-size:9px;background:#F1EFE8;color:#888780;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Week 7</span>
           <ul style="list-style:none;margin:0;padding:0;">
             <li style="font-size:10px;color:#5f5e5a;padding:2px 0;display:flex;gap:5px;">– Everything in free tier</li>
             <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Upload your own photos</li>
-            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Auto-tagged by Rekognition</li>
-            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Free users can search by tag</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Delete your uploads</li>
           </ul>
         </div>
       </div>
@@ -465,7 +464,7 @@
           <div class="ac-header-left">
             <div class="week-circle wc-foundation">3</div>
             <div class="ac-title-group">
-              <div class="ac-title">Same browsing — secure + fast</div>
+              <div class="ac-title">Public photo browsing — secure + fast</div>
               <div class="ac-subtitle">HTTPS enforced, globally cached</div>
             </div>
           </div>
@@ -681,18 +680,17 @@
           <div class="ac-header-left">
             <div class="week-circle wc-building">7</div>
             <div class="ac-title-group">
-              <div class="ac-title">Premium upload + auto-tagging</div>
-              <div class="ac-subtitle">Free: search by tag · Premium: upload photos</div>
+              <div class="ac-title">Upload & delete with access control</div>
+              <div class="ac-subtitle">Premium: upload photos · All users: delete own uploads</div>
             </div>
           </div>
           <div class="ac-header-right">
             <div class="tags-wrap">
               <span class="topic-tag">S3 presigned URLs</span>
-              <span class="topic-tag">S3 event triggers</span>
-              <span class="topic-tag">Rekognition</span>
-              <span class="topic-tag">Event-driven Lambda</span>
-              <span class="topic-tag">DynamoDB query</span>
-              <span class="topic-tag">IAM for ML services</span>
+              <span class="topic-tag">Object ownership</span>
+              <span class="topic-tag">RBAC enforcement</span>
+              <span class="topic-tag">Endpoint authorization</span>
+              <span class="topic-tag">Resource authorization</span>
             </div>
           </div>
         </div>
@@ -701,23 +699,23 @@
       <div class="ac-body" id="w7">
         <div class="ac-section">
           <div class="ac-section-label">What users can do</div>
-          <div class="ac-section-text">Premium users can upload photos directly from the browser. When a photo lands in S3, Rekognition automatically generates tags (objects, scenes, labels). Free users can search the catalog by those auto-generated tags. Premium users manage their own uploads.</div>
+          <div class="ac-section-text">Premium users can upload photos directly from the browser using S3 presigned URLs. All authenticated users can delete their own uploaded photos — Lambda validates ownership before allowing deletion. Demonstrates two authorization patterns: endpoint-level (only premium users can request upload URLs) and object-level (only the owner can delete a specific photo).</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
           <div class="arch-row">
             <span class="arch-pill">Browser (premium)</span>
+            <span class="arch-arrow">→ request URL →</span>
+            <span class="arch-pill">API Gateway</span>
+            <span class="arch-arrow">→</span>
+            <span class="arch-pill">Lambda authorizer</span>
             <span class="arch-arrow">→ presigned URL →</span>
             <span class="arch-pill">S3</span>
-            <span class="arch-arrow">→ event →</span>
-            <span class="arch-pill">Lambda</span>
-            <span class="arch-arrow">→</span>
-            <span class="arch-pill">Rekognition</span>
           </div>
-          <div class="ac-section-text" style="margin-top:8px;">API Gateway issues S3 presigned URLs to premium users — the browser uploads directly to S3 without routing through Lambda. An S3 event trigger invokes a separate Lambda function that calls Rekognition to detect labels, then writes the photo metadata and tags to DynamoDB. Free users can search by tag via a DynamoDB query.</div>
+          <div class="ac-section-text" style="margin-top:8px;">API Gateway issues S3 presigned URLs only to premium users after Lambda authorizer validates group membership. Photos are uploaded directly to S3 without routing through Lambda. DynamoDB tracks photo ownership (uploadedBy = JWT sub claim). Delete endpoint validates that the requesting user owns the photo before removing from both S3 and DynamoDB.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-upload.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-authorization.html" target="_blank">📄 Concept notes</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week07" target="_blank">⌥ View Week 7 code on GitHub</a>
         </div>
       </div>
@@ -1067,7 +1065,6 @@
       active: ['security','functional'],
       issues: {
         security: { title:'Security issues in Week 5', bullets:[
-          'Lambda authorizer uses a shared secret header — anyone who discovers the value can call the API directly. An IAM-enforced mechanism like aws:SourceArn would be stronger but requires a REST API.',
           'Origin secret stored in a Lambda environment variable — visible in the console to anyone with lambda:GetFunction, not audited when read, requires redeployment to rotate. Should be moved to Secrets Manager.'
         ]},
         functional: { title:'Functionality issues in Week 5', bullets:[
@@ -1080,11 +1077,10 @@
       active: ['security','functional'],
       issues: {
         security: { title:'Security issues in Week 6', bullets:[
-          'Origin secret is still a shared secret — now stored securely in Secrets Manager (better than an env var), but the fundamental mechanism remains a shared value. Anyone who obtains it can call the API Gateway URL directly by adding the header.',
-          'JWT tokens are stored in sessionStorage — accessible to JavaScript running in the same origin. A stronger approach uses HttpOnly cookies, which are not accessible to JavaScript at all.'
+          'Origin secret is now stored securely in Secrets Manager (better than Week 5\'s environment variable), but the fundamental mechanism remains a shared value. Anyone who obtains it can call the API Gateway URL directly by adding the header.'
         ]},
         functional: { title:'Functionality issues in Week 6', bullets:[
-          'Premium user group is introduced but premium user functionality is not yet implemented — Cognito groups are set up and the JWT groups claim is validated, but free and premium users see identical data. Upload, delete, and CRUD operations are added in Week 7.'
+          'Premium user group is introduced but premium user functionality is not yet implemented — Cognito groups are set up and the JWT groups claim is validated, but free and premium users see identical data. Upload (premium-only) and delete (owner-only) authorization is added in Week 7.'
         ]}
       }
     }
