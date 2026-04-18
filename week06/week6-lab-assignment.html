@@ -98,6 +98,11 @@
   <p><strong>Architecture after this lab:</strong> Browser → WAF/CloudFront → API Gateway → Lambda authorizer (checks origin secret from Secrets Manager + validates JWT from Cognito) → main Lambda (filters by group) → DynamoDB</p>
 </div>
 
+
+<div class="callout info">
+  <p><strong>📊 Understanding the Flow:</strong> Before you start, review the <a href="week6-flow-and-urls-embedded.html" target="_blank">Week 6 Login and Logout Flows</a> to see the complete architecture and understand which URLs go where.</p>
+</div>
+
 <div class="preflight">
   <h3>Pre-flight checklist</h3>
   <p>Before building anything, verify your Week 5 environment is intact. Open <strong>CloudShell</strong> and run:</p>

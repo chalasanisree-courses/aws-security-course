@@ -407,6 +407,11 @@
 
 <p>There are three flows in sequence. When the page first loads, <code>app.js</code> executes the unauthenticated API request. If the user clicks Login, the login flow runs once and a JWT is stored. From that point on, every <code>/photos</code> call follows the authenticated API request flow. Click each to see the steps.</p>
 
+
+<div class="callout info">
+  <p><strong>📊 Visual Flow Reference:</strong> For a detailed visual walkthrough showing the complete login and logout flows with all OAuth redirect URLs clearly labeled, see <a href="week6-flow-and-urls-embedded.html" target="_blank">Week 6 Login and Logout Flows</a>.</p>
+</div>
+
 <style>
   .flow-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;margin:1rem 0 0;}
   .flow-tab{background:#fff;border:2px solid #d0dce8;border-radius:8px;padding:1rem 1.2rem;cursor:pointer;transition:all 0.15s;user-select:none;}
