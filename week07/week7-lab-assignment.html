@@ -339,12 +339,31 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
   <span class="part-title">Deploy updated Lambda code</span>
 </div>
 
-<p>The updated Lambda function handles all four routes. It checks the Cognito group on mutation routes and validates ownership on delete and toggle.</p>
+<p>Two Lambda functions need updates. The authorizer now passes the caller's identity (<code>sub</code>) alongside group membership. The main Lambda uses that identity for ownership checks on delete and toggle.</p>
 
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 9</span>
-    <span class="step-title">Update the Lambda function code</span>
+    <span class="step-title">Update the Lambda authorizer</span>
+  </div>
+  <div class="step-body">
+    <p>The authorizer from Week 6 passes only <code>groups</code> in its context. Week 7's ownership checks need the caller's <code>sub</code> (cognito:sub from the JWT) — without it, Lambda cannot verify who owns a photo. In CloudShell:</p>
+    <pre>cd ~/aws-security-course/photoviewer/week07
+zip -j authorizer.zip authorizer.py
+aws lambda update-function-code \
+    --function-name photoviewer-authorizer \
+    --zip-file fileb://authorizer.zip
+aws lambda wait function-updated-v2 --function-name photoviewer-authorizer</pre>
+    <div class="callout info">
+      <p><strong>What changed:</strong> One line in the authorizer response — <code>'sub': sub</code> is added to the context dict alongside <code>'groups'</code>. The JWT validation, origin secret check, and everything else is unchanged from Week 6.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 10</span>
+    <span class="step-title">Update the main Lambda function</span>
   </div>
   <div class="step-body">
     <p>In CloudShell, run:</p>
@@ -370,7 +389,7 @@ aws lambda update-function-code \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 10</span>
+    <span class="step-num">Step 11</span>
     <span class="step-title">Set the S3 bucket name as an environment variable</span>
   </div>
   <div class="step-body">
@@ -405,7 +424,7 @@ print(json.dumps(env))
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 11</span>
+    <span class="step-num">Step 12</span>
     <span class="step-title">Assign your Cognito user to the premium group</span>
   </div>
   <div class="step-body">
@@ -427,7 +446,7 @@ print(json.dumps(env))
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 12</span>
+    <span class="step-num">Step 13</span>
     <span class="step-title">Upload updated frontend files to S3</span>
   </div>
   <div class="step-body">
@@ -441,7 +460,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 13</span>
+    <span class="step-num">Step 14</span>
     <span class="step-title">Invalidate CloudFront cache</span>
   </div>
   <div class="step-body">
@@ -466,7 +485,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 14</span>
+    <span class="step-num">Step 15</span>
     <span class="step-title">Test unauthenticated browsing</span>
   </div>
   <div class="step-body">
@@ -477,7 +496,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 15</span>
+    <span class="step-num">Step 16</span>
     <span class="step-title">Test premium upload</span>
   </div>
   <div class="step-body">
@@ -493,7 +512,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 16</span>
+    <span class="step-num">Step 17</span>
     <span class="step-title">Test visibility toggle</span>
   </div>
   <div class="step-body">
@@ -509,7 +528,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 17</span>
+    <span class="step-num">Step 18</span>
     <span class="step-title">Test that CloudFront blocks direct upload access</span>
   </div>
   <div class="step-body">
@@ -522,7 +541,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 18</span>
+    <span class="step-num">Step 19</span>
     <span class="step-title">Test premium delete</span>
   </div>
   <div class="step-body">
@@ -540,7 +559,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 19</span>
+    <span class="step-num">Step 20</span>
     <span class="step-title">Test free user restrictions</span>
   </div>
   <div class="step-body">
@@ -559,7 +578,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 20</span>
+    <span class="step-num">Step 21</span>
     <span class="step-title">Test presigned URL conditions</span>
   </div>
   <div class="step-body">
@@ -589,7 +608,7 @@ curl -X PUT "PRESIGNED_URL_HERE" \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 21</span>
+    <span class="step-num">Step 22</span>
     <span class="step-title">Find your upload and delete events in CloudTrail</span>
   </div>
   <div class="step-body">
@@ -604,7 +623,7 @@ curl -X PUT "PRESIGNED_URL_HERE" \
       <li><strong>sourceIPAddress:</strong> This is the IP of the browser that used the presigned URL — the actual uploader.</li>
       <li><strong>requestParameters → key:</strong> The S3 key (e.g. <code>uploads/{sub}/{photoId}.jpg</code>).</li>
     </ul>
-    <p>Now filter by <code>DeleteObject</code> and find the event for the photo you deleted in Step 18. The same fields are present.</p>
+    <p>Now filter by <code>DeleteObject</code> and find the event for the photo you deleted in Step 19. The same fields are present.</p>
 
     <div class="callout info">
       <p><strong>Why this matters:</strong> "Bypassing API Gateway" sounds like it might bypass audit — it does not. Every presigned URL operation is an S3 API call, and CloudTrail logs every S3 API call. The Lambda role's identity in the event tells you which function signed the URL. The source IP tells you who used it. This is the same CloudTrail trail you created in Week 1 — it has been capturing these events all along.</p>
