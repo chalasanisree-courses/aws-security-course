@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 7 Lab — Upload &amp; Delete Authorization · CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1.2rem 1.4rem; border-radius: 8px; font-size: 0.84rem; overflow-x: auto; margin: 0.8rem 0 1.2rem; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn, .callout.warning { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .step { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+  .step-header { display: flex; align-items: baseline; gap: 1rem; padding: 0.9rem 1.2rem; background: #f5f8fc; border-bottom: 1px solid #d0dce8; }
+  .step-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1F4E79; background: #dce8f5; padding: 0.2em 0.6em; border-radius: 4px; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; color: #111; }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+
+  .verify { background: #f0fff4; border: 1px solid #a5d6a7; border-radius: 8px; padding: 0.9rem 1.2rem; margin: 1rem 0; }
+  .verify-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #155724; margin-bottom: 0.4rem; }
+  .verify p:last-child { margin-bottom: 0; }
+
+  .screenshot { background: #f8f5ff; border: 1px solid #c8b8e8; border-radius: 8px; padding: 0.8rem 1.2rem; margin: 1rem 0; font-size: 0.9rem; color: #4a148c; }
+  .screenshot::before { content: "📸 Screenshot required: "; font-weight: 600; }
+
+  .preflight { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .preflight h3 { color: #e65100; margin-top: 0; }
+
+  .part-header { background: #1F4E79; color: #fff; border-radius: 8px; padding: 0.7rem 1.2rem; margin: 2rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .part-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+  .part-title { font-size: 1.05rem; font-weight: 600; }
+
+  .rubric-table th { background: #1F4E79; color: #fff; }
+  .rubric-table td:nth-child(2) { text-align: center; font-weight: 600; color: #1F4E79; }
+  .rubric-total td { font-weight: 700; background: #f0f4f8; }
+
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .download-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .download-btn:hover { background: #B5D4F4; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6BVW2TTTLE');
+</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 7 Lab — Upload &amp; Delete with Access Control</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 125 pts</p>
+
+<p><strong>Objective:</strong> Add upload, delete, and visibility-toggle capabilities to the Photo Viewer — all restricted to premium users and scoped to their own uploads. Update photo delivery so user-uploaded photos are served via presigned GET URLs instead of static CloudFront URLs. By the end of this lab, Cognito groups will drive real capability differences: premium users can upload, delete, and control visibility of their own photos, while free users can only browse.</p>
+
+<div class="callout info">
+  <p><strong>Architecture after this lab:</strong> Browser → WAF/CloudFront → API Gateway (4 routes) → Lambda authorizer (origin secret + JWT) → main Lambda (group check + ownership check) → DynamoDB + S3 (presigned URLs for uploads)</p>
+</div>
+
+<div class="callout info">
+  <p><strong>Two authorization patterns in this lab:</strong></p>
+  <p><strong>Endpoint-level (RBAC):</strong> POST, DELETE, and PATCH routes are restricted to the <code>premium</code> Cognito group. Free users get 403.</p>
+  <p><strong>Object-level (ownership):</strong> DELETE and PATCH check that <code>item.owner === caller.sub</code> before acting. Premium users cannot modify each other's photos.</p>
+</div>
+
+
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Before building anything, verify your Week 6 environment is intact. Open <strong>CloudShell</strong> and run:</p>
+  <pre>cd ~
+git clone https://github.com/chalasanisree-courses/aws-security-course.git 2>/dev/null || git -C aws-security-course pull
+bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
+
+  <p>The script checks these requirements. <strong>All must pass before you continue:</strong></p>
+  <ul>
+    <li><code>photoviewer-lambda</code> exists and is Active</li>
+    <li><code>photoviewer-authorizer</code> exists and is Active</li>
+    <li>DynamoDB table <code>photoviewer-photos</code> exists</li>
+    <li>S3 bucket <code>photoviewer-9876543210</code> exists</li>
+    <li>CloudFront distribution exists</li>
+    <li>Cognito User Pool exists with <code>free</code> and <code>premium</code> groups</li>
+    <li>Secrets Manager secret <code>photoviewer/origin-verify-secret</code> exists</li>
+  </ul>
+  <p>Address any failures before proceeding.</p>
+</div>
+
+<p><strong>Files for this lab:</strong> <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week07" target="_blank">photoviewer/week07 on GitHub →</a></p>
+
+
+<!-- ═══════════════ PART 1 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">Block direct CloudFront access to uploads</span>
+</div>
+
+<p>User-uploaded photos will be stored under the <code>uploads/</code> prefix in S3. They should only be accessible via presigned GET URLs — not via CloudFront. You will create a new CloudFront behavior that blocks any request to the <code>/uploads/*</code> path.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 1</span>
+    <span class="step-title">Create a CloudFront Function to block uploads</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudFront → Functions → Create function</strong>. Name it <code>photoviewer-block-uploads</code>. In the <strong>Build</strong> tab, replace the default code with:</p>
+    <pre>function handler(event) {
+    return {
+        statusCode: 403,
+        statusDescription: 'Forbidden'
+    };
+}</pre>
+    <p>Click <strong>Save changes</strong>, then go to the <strong>Publish</strong> tab and click <strong>Publish function</strong>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 2</span>
+    <span class="step-title">Add a /uploads/* behavior to CloudFront</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudFront → your distribution → Behaviors tab → Create behavior</strong>.</p>
+    <ul>
+      <li>Path pattern: <code>/uploads/*</code></li>
+      <li>Origin: select your S3 origin (<code>photoviewer-9876543210.s3...</code>)</li>
+      <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+      <li>Cache policy: <strong>CachingOptimized</strong></li>
+      <li>Function associations → Viewer request: <strong>CloudFront Functions</strong> → select <code>photoviewer-block-uploads</code></li>
+    </ul>
+    <p>Click <strong>Create behavior</strong>. Your behaviors tab should now show four behaviors:</p>
+    <table>
+      <thead><tr><th>Precedence</th><th>Path pattern</th><th>Origin</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td><code>/photos</code></td><td>API Gateway</td><td>API routes (W5)</td></tr>
+        <tr><td>1</td><td><code>/callback</code></td><td>S3</td><td>OAuth redirect (W6)</td></tr>
+        <tr><td>2</td><td><code>/uploads/*</code></td><td>S3</td><td>Block direct access (W7)</td></tr>
+        <tr><td>3</td><td><code>Default (*)</code></td><td>S3</td><td>HTML/JS/CSS + pre-seeded photos</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info">
+      <p><strong>Why a separate behavior?</strong> CloudFront evaluates behaviors by path specificity. Requests to <code>/uploads/photo.jpg</code> match the <code>/uploads/*</code> behavior (which returns 403) before they reach the <code>Default (*)</code> behavior (which would serve the file from S3). The existing allowlist function on the default behavior is unchanged from Week 5 — each week's work is additive.</p>
+    </div>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Test the block by visiting <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/uploads/test.jpg</code> — you should see a 403 response.</p>
+    </div>
+    <div class="screenshot">CloudFront Behaviors tab showing four behaviors including the new <code>/uploads/*</code> path, plus browser showing 403 when accessing the uploads path</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 2 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">Configure S3 bucket — IAM permissions and CORS</span>
+</div>
+
+<p>The main Lambda needs S3 permissions to generate presigned URLs and delete objects. The bucket also needs a CORS configuration so the browser can upload directly to S3 from your CloudFront domain.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 3</span>
+    <span class="step-title">Create an inline policy for uploads</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>IAM → Roles</strong> → find the execution role for <code>photoviewer-lambda</code>. Click <strong>Add permissions → Create inline policy → JSON</strong> and paste:</p>
+    <pre>{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PhotoViewerUploads",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject"
+            ],
+            "Resource": "arn:aws:s3:::photoviewer-9876543210/uploads/*"
+        }
+    ]
+}</pre>
+    <p>Name the policy <code>photoviewer-uploads</code>. Click <strong>Create policy</strong>.</p>
+
+    <div class="callout info">
+      <p><strong>Least privilege:</strong> The <code>Resource</code> is scoped to the <code>uploads/*</code> prefix only. Lambda cannot read, write, or delete objects in the root of the bucket (where your HTML/CSS/JS live). This is the same least-privilege principle from Week 6's Secrets Manager policy — scope to the specific resource ARN, not <code>*</code>.</p>
+    </div>
+    <div class="callout">
+      <p><strong>Why does this work when the bucket policy only names CloudFront?</strong> Your Week 3 bucket policy allows <code>s3:GetObject</code> for the CloudFront service principal — it does not mention Lambda. But the policy has no explicit <code>Deny</code>. For same-account IAM principals like your Lambda role, S3 evaluates the IAM policy and the bucket policy together. If the IAM policy explicitly allows the action and the bucket policy does not explicitly deny it, access is granted. The presigned URL carries the Lambda role's SigV4 signature, so S3 treats it as an authenticated IAM request — not a public one. Block Public Access stays on and has no effect on presigned URLs.</p>
+    </div>
+    <div class="screenshot">IAM role showing the <code>photoviewer-uploads</code> inline policy attached</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 4</span>
+    <span class="step-title">Configure CORS on the S3 bucket</span>
+  </div>
+  <div class="step-body">
+    <p>When the browser uploads a file to the presigned S3 URL, it is a <strong>cross-origin request</strong> — your app runs on <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code> but the PUT goes to <code>https://photoviewer-9876543210.s3.us-east-1.amazonaws.com</code>. Without CORS, the browser blocks the upload before it starts.</p>
+    <p>Go to <strong>S3 → your bucket → Permissions tab → scroll to Cross-origin resource sharing (CORS) → Edit</strong> and paste:</p>
+    <pre>[
+    {
+        "AllowedHeaders": ["Content-Type"],
+        "AllowedMethods": ["PUT"],
+        "AllowedOrigins": ["https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net"],
+        "ExposeHeaders": ["ETag"],
+        "MaxAgeSeconds": 3600
+    }
+]</pre>
+    <p>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code> with your actual CloudFront domain. Click <strong>Save changes</strong>.</p>
+
+    <div class="callout">
+      <p><strong>Why only PUT?</strong> The CORS rule only allows the <code>PUT</code> method because that is the only cross-origin S3 operation the browser performs. GET requests for presigned photo URLs also go directly to S3, but browsers do not enforce CORS preflight for <code>&lt;img src&gt;</code> tags — image loading is exempt from the same-origin policy. Only programmatic <code>fetch()</code> or <code>XMLHttpRequest</code> calls (like the upload PUT) trigger CORS.</p>
+    </div>
+
+    <div class="callout warning">
+      <p><strong>Do not use <code>*</code> for AllowedOrigins.</strong> Wildcards allow any website to upload to your bucket using a presigned URL. Always restrict to your specific CloudFront domain.</p>
+    </div>
+    <div class="screenshot">S3 bucket Permissions tab showing the CORS configuration with your CloudFront domain</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 3 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Add API Gateway routes</span>
+</div>
+
+<p>Add three new routes to your existing HTTP API. All routes point to the same <code>photoviewer-lambda</code> function and use the same Lambda authorizer — the function handles routing internally based on the HTTP method and path.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 5</span>
+    <span class="step-title">Create the POST /photos route</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>API Gateway → your HTTP API → Routes → Create</strong>.</p>
+    <ul>
+      <li>Method: <strong>POST</strong></li>
+      <li>Path: <code>/photos</code></li>
+    </ul>
+    <p>Click <strong>Create</strong>. Then click the new route → <strong>Attach integration</strong> → select your existing <code>photoviewer-lambda</code> integration. Then click <strong>Attach authorization</strong> → select your existing Lambda authorizer.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 6</span>
+    <span class="step-title">Create the DELETE /photos/{photoId} route</span>
+  </div>
+  <div class="step-body">
+    <p>Create another route:</p>
+    <ul>
+      <li>Method: <strong>DELETE</strong></li>
+      <li>Path: <code>/photos/{photoId}</code></li>
+    </ul>
+    <p>Attach the same Lambda integration and the same authorizer.</p>
+    <div class="callout info">
+      <p><strong>Path parameter:</strong> The <code>{photoId}</code> in the path is a variable. API Gateway extracts the value and passes it to Lambda in <code>event.pathParameters.photoId</code>. This is how Lambda knows which photo the client wants to delete.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 7</span>
+    <span class="step-title">Create the PATCH /photos/{photoId} route</span>
+  </div>
+  <div class="step-body">
+    <p>Create the third route:</p>
+    <ul>
+      <li>Method: <strong>PATCH</strong></li>
+      <li>Path: <code>/photos/{photoId}</code></li>
+    </ul>
+    <p>Attach the same Lambda integration and authorizer.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 8</span>
+    <span class="step-title">Verify routes and deploy</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Routes</strong> in the left nav. You should see four routes:</p>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Integration</th><th>Authorizer</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td>/photos</td><td>photoviewer-lambda</td><td>Lambda authorizer</td></tr>
+        <tr><td>POST</td><td>/photos</td><td>photoviewer-lambda</td><td>Lambda authorizer</td></tr>
+        <tr><td>DELETE</td><td>/photos/{photoId}</td><td>photoviewer-lambda</td><td>Lambda authorizer</td></tr>
+        <tr><td>PATCH</td><td>/photos/{photoId}</td><td>photoviewer-lambda</td><td>Lambda authorizer</td></tr>
+      </tbody>
+    </table>
+    <p>Go to <strong>Deploy → Stages → $default</strong> → verify auto-deploy is enabled. If not, click <strong>Deploy</strong>.</p>
+    <div class="screenshot">API Gateway Routes page showing all four routes with integrations and authorizers attached</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 4 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 4</span>
+  <span class="part-title">Deploy updated Lambda code</span>
+</div>
+
+<p>Two Lambda functions need updates. The authorizer now passes the caller's identity (<code>sub</code>) alongside group membership. The main Lambda uses that identity for ownership checks on delete and toggle.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 9</span>
+    <span class="step-title">Update the Lambda authorizer</span>
+  </div>
+  <div class="step-body">
+    <p>The authorizer from Week 6 passes only <code>groups</code> in its context. Week 7's ownership checks need the caller's <code>sub</code> (cognito:sub from the JWT) — without it, Lambda cannot verify who owns a photo. In CloudShell:</p>
+    <pre>cd ~/aws-security-course/photoviewer/week07
+zip -j authorizer.zip authorizer.py
+aws lambda update-function-code \
+    --function-name photoviewer-authorizer \
+    --zip-file fileb://authorizer.zip
+aws lambda wait function-updated-v2 --function-name photoviewer-authorizer</pre>
+    <div class="callout info">
+      <p><strong>What changed:</strong> One line in the authorizer response — <code>'sub': sub</code> is added to the context dict alongside <code>'groups'</code>. The JWT validation, origin secret check, and everything else is unchanged from Week 6.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 10</span>
+    <span class="step-title">Update the main Lambda function</span>
+  </div>
+  <div class="step-body">
+    <p>In CloudShell, run:</p>
+    <pre>cd ~/aws-security-course/photoviewer/week07
+zip -j lambda-function.zip lambda_function.py
+aws lambda update-function-code \
+    --function-name photoviewer-lambda \
+    --zip-file fileb://lambda-function.zip</pre>
+    <p>Wait for the update to complete:</p>
+    <pre>aws lambda wait function-updated-v2 --function-name photoviewer-lambda</pre>
+
+    <div class="callout info">
+      <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for items with an <code>s3_key</code> starting with <code>uploads/</code>.</p>
+      <p><strong>Presigned URL conditions:</strong> The POST handler generates the presigned PUT URL with embedded conditions: <code>Content-Type</code> must be <code>image/jpeg</code> or <code>image/png</code>, and file size must be under 5 MB. These conditions are part of the signed policy — S3 enforces them on upload and rejects requests that violate them, even though no Lambda runs during the upload itself.</p>
+    </div>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Run <code>aws lambda get-function --function-name photoviewer-lambda --query 'Configuration.LastModified'</code> — should show a recent timestamp.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 11</span>
+    <span class="step-title">Set the S3 bucket name as an environment variable</span>
+  </div>
+  <div class="step-body">
+    <p>The Lambda function needs to know the bucket name for presigned URL generation. Add it as an environment variable. First, retrieve any existing variables so you don't overwrite them:</p>
+    <pre># Get existing environment variables
+EXISTING=$(aws lambda get-function-configuration \
+    --function-name photoviewer-lambda \
+    --query 'Environment.Variables' --output json)
+
+# Merge with the new variable and update
+aws lambda update-function-configuration \
+    --function-name photoviewer-lambda \
+    --environment "Variables=$(echo $EXISTING | python3 -c "
+import sys, json
+env = json.load(sys.stdin)
+env['PHOTO_BUCKET'] = 'photoviewer-9876543210'
+print(json.dumps(env))
+")"</pre>
+
+    <div class="callout">
+      <p><strong>Not a secret:</strong> The bucket name is not sensitive — it is a configuration value, not a credential. Environment variables are appropriate here. Secrets (like the origin-verify token) go in Secrets Manager. Configuration values (like bucket names, table names, region) go in environment variables.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 5 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 5</span>
+  <span class="part-title">Add your user to the premium group</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 12</span>
+    <span class="step-title">Assign your Cognito user to the premium group</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Cognito → your User Pool → Users</strong>. Find your user (the one you logged in with via Google in Week 6). Click on the username → <strong>Group memberships</strong> → <strong>Add user to group</strong> → select <strong>premium</strong> → <strong>Add</strong>.</p>
+
+    <div class="callout warning">
+      <p><strong>You must log out and log back in</strong> after changing group membership. The JWT is issued at login time and the <code>cognito:groups</code> claim is baked into the token. Changing the group in Cognito does not update an existing JWT — the user must get a new token by logging in again.</p>
+    </div>
+    <div class="screenshot">Cognito user details showing <code>premium</code> in the Group memberships section</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 6 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 6</span>
+  <span class="part-title">Deploy updated frontend</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 13</span>
+    <span class="step-title">Upload updated frontend files to S3</span>
+  </div>
+  <div class="step-body">
+    <p>The updated frontend adds an upload form, delete button, and visibility toggle — all shown only to premium users. In CloudShell:</p>
+    <pre>cd ~/aws-security-course/photoviewer/week07
+aws s3 cp index.html s3://photoviewer-9876543210/index.html --content-type "text/html"
+aws s3 cp app.js s3://photoviewer-9876543210/app.js --content-type "application/javascript"
+aws s3 cp style.css s3://photoviewer-9876543210/style.css --content-type "text/css"</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 14</span>
+    <span class="step-title">Invalidate CloudFront cache</span>
+  </div>
+  <div class="step-body">
+    <p>CloudFront caches the old files at edge locations. Create an invalidation so edge locations fetch the updated versions:</p>
+    <pre>aws cloudfront create-invalidation \
+    --distribution-id YOUR_DISTRIBUTION_ID \
+    --paths "/index.html" "/app.js" "/style.css"</pre>
+    <p>Replace <code>YOUR_DISTRIBUTION_ID</code> with your CloudFront distribution ID (from the preflight output or the CloudFront console).</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Open your CloudFront URL in a browser. Hard-refresh (Ctrl+Shift+R) to bypass browser cache. You should see the Photo Viewer with the login button. After logging in as a premium user, you should see upload, delete, and visibility controls.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 7 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 7</span>
+  <span class="part-title">Test all authorization flows</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 15</span>
+    <span class="step-title">Test unauthenticated browsing</span>
+  </div>
+  <div class="step-body">
+    <p>Open the Photo Viewer in an incognito window (no login). You should see only the pre-seeded public photos. No upload button, no delete, no toggle controls should be visible.</p>
+    <div class="screenshot">Photo Viewer showing public photos only, no mutation controls, DevTools confirming no Authorization header</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 16</span>
+    <span class="step-title">Test premium upload</span>
+  </div>
+  <div class="step-body">
+    <p>Log in as your premium user. Use the upload form to upload a photo (any .jpg or .png file). Set <code>is_public</code> to <strong>true</strong>.</p>
+    <p>After upload completes, the photo should appear in your photo list. Open DevTools → Network tab and inspect the <code>/photos</code> response. The uploaded photo's URL should be a presigned S3 URL (long query string with <code>X-Amz-Signature</code>), not a CloudFront URL.</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>The uploaded photo appears in the list. The response JSON shows an <code>s3_key</code> starting with <code>uploads/</code> and a <code>url</code> that is a presigned S3 URL.</p>
+    </div>
+    <div class="screenshot">Photo Viewer showing the uploaded photo with DevTools showing the presigned URL in the /photos response</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 17</span>
+    <span class="step-title">Test visibility toggle</span>
+  </div>
+  <div class="step-body">
+    <p>Click the visibility toggle on your uploaded photo to set <code>is_public = false</code>.</p>
+    <p>Open a new incognito window (unauthenticated) and load the Photo Viewer. The photo you just toggled to private should <strong>not</strong> appear.</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Photo is visible when logged in, not visible in incognito (unauthenticated).</p>
+    </div>
+    <div class="screenshot">Side-by-side: logged-in view showing the private photo vs incognito view without it</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 18</span>
+    <span class="step-title">Test that CloudFront blocks direct upload access</span>
+  </div>
+  <div class="step-body">
+    <p>From the <code>/photos</code> response, find the <code>s3_key</code> of your uploaded photo (e.g. <code>uploads/abc123-def4-5678/photo_xyz.jpg</code>). Try to access it directly via CloudFront:</p>
+    <pre>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/uploads/abc123-def4-5678/photo_xyz.jpg</pre>
+    <p>You should get <strong>403 Forbidden</strong> — the CloudFront Function you updated in Part 1 blocks this path.</p>
+    <div class="screenshot">Browser showing 403 when trying to access an uploaded photo directly via CloudFront URL</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 19</span>
+    <span class="step-title">Test premium delete</span>
+  </div>
+  <div class="step-body">
+    <p>While logged in as your premium user, click the delete button on one of your uploaded photos. Confirm the deletion. The photo should disappear from the list.</p>
+    <p>Verify the S3 object is also gone:</p>
+    <pre>aws s3 ls s3://photoviewer-9876543210/uploads/YOUR_COGNITO_SUB/</pre>
+    <p>The deleted photo should no longer appear in the listing.</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Photo removed from UI. DynamoDB record deleted. S3 object deleted.</p>
+    </div>
+    <div class="screenshot">Photo Viewer after deletion, plus CloudShell showing <code>aws s3 ls</code> output confirming the object is gone</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 20</span>
+    <span class="step-title">Test free user restrictions</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Cognito → your User Pool → Users</strong>. Remove your user from the <code>premium</code> group and add them to the <code>free</code> group. Log out and log back in.</p>
+    <p>The Photo Viewer should show all photos (public + private) but the upload form, delete buttons, and visibility toggles should not be visible. Verify this in the UI.</p>
+    <p>For a deeper check, try calling the upload endpoint directly from CloudShell using your free-user JWT:</p>
+    <pre>curl -X POST https://YOUR_API_GATEWAY_URL/photos \
+  -H "Authorization: Bearer YOUR_FREE_USER_JWT" \
+  -H "x-origin-verify: YOUR_ORIGIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"test","is_public":true}'</pre>
+    <p>You should get <strong>403 Forbidden</strong> with a message indicating the premium group is required.</p>
+    <div class="screenshot">Photo Viewer logged in as free user showing all photos but no mutation controls. CloudShell showing 403 on direct POST attempt.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 21</span>
+    <span class="step-title">Test presigned URL conditions</span>
+  </div>
+  <div class="step-body">
+    <p>Switch your user back to the <code>premium</code> group, log out, and log back in. Upload a valid JPEG — this should succeed. Then test the conditions:</p>
+    <p><strong>Test 1 — wrong Content-Type:</strong> The presigned URL has a <code>Content-Type</code> condition embedded. Test it from CloudShell using the presigned URL from a successful POST /photos response:</p>
+    <pre># Use the uploadUrl from a POST /photos response
+curl -X PUT "PRESIGNED_URL_HERE" \
+  -H "Content-Type: text/plain" \
+  --data-binary "this is not an image"</pre>
+    <p>S3 should reject with <code>403 AccessDenied</code> because the Content-Type does not match the signed condition.</p>
+    <p><strong>Test 2 — file too large:</strong> Find or create an image file larger than 5 MB. Try uploading it through the UI. The presigned URL has a <code>Content-Length-Range</code> condition (max 5,242,880 bytes). S3 should reject the upload.</p>
+    <div class="callout info">
+      <p><strong>Where is the validation happening?</strong> No Lambda runs during the upload — the browser sends the file directly to S3. S3 itself enforces the conditions that were embedded in the presigned URL at signing time. This is server-side validation without a server invocation.</p>
+    </div>
+    <div class="screenshot">DevTools Network tab showing S3 rejecting an invalid upload (403 response on the PUT request)</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 8 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 8</span>
+  <span class="part-title">CloudTrail verification</span>
+</div>
+
+<p>Presigned URL operations bypass API Gateway and Lambda, but they do not bypass CloudTrail. Every S3 operation is logged — the audit trail from Week 1 captures everything.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 22</span>
+    <span class="step-title">Find your upload and delete events in CloudTrail</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudTrail → Event history</strong>. Filter by:</p>
+    <ul>
+      <li><strong>Event source:</strong> <code>s3.amazonaws.com</code></li>
+      <li><strong>Event name:</strong> <code>PutObject</code></li>
+    </ul>
+    <p>Find the event for the photo you uploaded. Click to expand it and note:</p>
+    <ul>
+      <li><strong>userIdentity → arn:</strong> This is the Lambda execution role that generated the presigned URL — not the end user. CloudTrail records the IAM principal that signed the URL.</li>
+      <li><strong>sourceIPAddress:</strong> This is the IP of the browser that used the presigned URL — the actual uploader.</li>
+      <li><strong>requestParameters → key:</strong> The S3 key (e.g. <code>uploads/{sub}/{photoId}.jpg</code>).</li>
+    </ul>
+    <p>Now filter by <code>DeleteObject</code> and find the event for the photo you deleted in Step 19. The same fields are present.</p>
+
+    <div class="callout info">
+      <p><strong>Why this matters:</strong> "Bypassing API Gateway" sounds like it might bypass audit — it does not. Every presigned URL operation is an S3 API call, and CloudTrail logs every S3 API call. The Lambda role's identity in the event tells you which function signed the URL. The source IP tells you who used it. This is the same CloudTrail trail you created in Week 1 — it has been capturing these events all along.</p>
+    </div>
+    <div class="screenshot">CloudTrail Event history showing a PutObject event with the Lambda role ARN and the uploads/ key path</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 9 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 9</span>
+  <span class="part-title">Reflection questions</span>
+</div>
+
+<h3>Question 1</h3>
+<p>The browser uploads the photo file directly to S3 using a presigned PUT URL — it does not send the file through API Gateway or Lambda. Explain why this design is used instead of uploading through the API. Identify at least two specific technical limitations that presigned URLs avoid.</p>
+
+<h3>Question 2</h3>
+<p>A presigned GET URL is included in the <code>/photos</code> response for each uploaded photo. If a logged-in user copies that URL and shares it with someone who is not logged in, what happens? How does the TTL limit the exposure, and what is the residual risk?</p>
+
+<h3>Question 3</h3>
+<p>This lab implements two authorization checks on the DELETE endpoint: a group check (is the user premium?) and an ownership check (does the user own this photo?). Explain what attack each check prevents independently. Then explain why both checks are necessary — what would happen if you removed one but kept the other?</p>
+
+
+<!-- ═══════════════ RUBRIC ═══════════════ -->
+<h2>Grading rubric</h2>
+
+<table class="rubric-table">
+  <thead>
+    <tr><th>Component</th><th>Points</th><th>What earns full credit</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>CloudFront /uploads/* behavior</strong></td>
+      <td>10</td>
+      <td>Screenshot shows CloudFront Behaviors tab with <code>/uploads/*</code> path pattern and the <code>photoviewer-block-uploads</code> function attached. Browser shows 403 when accessing the uploads path directly.</td>
+    </tr>
+    <tr>
+      <td><strong>IAM policy for uploads</strong></td>
+      <td>8</td>
+      <td>Screenshot shows <code>photoviewer-uploads</code> policy on Lambda role scoped to <code>uploads/*</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>S3 CORS configured</strong></td>
+      <td>5</td>
+      <td>Screenshot shows CORS configuration on the S3 bucket with CloudFront domain as AllowedOrigin, PUT as AllowedMethod.</td>
+    </tr>
+    <tr>
+      <td><strong>API Gateway routes</strong></td>
+      <td>8</td>
+      <td>Screenshot shows all four routes (GET, POST, DELETE, PATCH) with integrations and authorizer attached.</td>
+    </tr>
+    <tr>
+      <td><strong>Lambda code deployed</strong></td>
+      <td>8</td>
+      <td>CloudShell verify: <code>LastModified</code> timestamp is recent.</td>
+    </tr>
+    <tr>
+      <td><strong>Premium upload works</strong></td>
+      <td>12</td>
+      <td>Screenshot of uploaded photo in Photo Viewer. DevTools showing presigned URL in <code>/photos</code> response. DynamoDB record with <code>owner</code>, <code>s3_key</code>, <code>uploaded_at</code> fields.</td>
+    </tr>
+    <tr>
+      <td><strong>Presigned URL conditions enforced</strong></td>
+      <td>5</td>
+      <td>Screenshot: S3 rejects upload of wrong Content-Type or oversized file (403 on PUT). DevTools Network tab showing the rejection.</td>
+    </tr>
+    <tr>
+      <td><strong>Visibility toggle works</strong></td>
+      <td>8</td>
+      <td>Screenshot: photo visible when logged in, hidden in incognito after toggling <code>is_public = false</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>CloudFront blocks uploads/ path</strong></td>
+      <td>5</td>
+      <td>Screenshot: direct CloudFront URL for an uploaded photo returns 403.</td>
+    </tr>
+    <tr>
+      <td><strong>Premium delete works</strong></td>
+      <td>10</td>
+      <td>Screenshot: photo removed from UI. CloudShell <code>aws s3 ls</code> confirms S3 object deleted.</td>
+    </tr>
+    <tr>
+      <td><strong>Free user correctly restricted</strong></td>
+      <td>8</td>
+      <td>Screenshot: logged in as free user, sees all photos, no mutation controls. CloudShell <code>curl</code> POST returns 403.</td>
+    </tr>
+    <tr>
+      <td><strong>CloudTrail audit trail</strong></td>
+      <td>5</td>
+      <td>Screenshot: CloudTrail Event history showing <code>PutObject</code> event with Lambda role ARN, source IP, and <code>uploads/</code> key path.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q1 — presigned upload</strong></td>
+      <td>8</td>
+      <td>Identifies API Gateway 6 MB payload limit and Lambda invocation cost/duration. Explains that presigned URLs bypass both by going directly to S3.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q2 — presigned GET sharing</strong></td>
+      <td>10</td>
+      <td>Explains the URL works for anyone within the TTL window (bearer token). TTL limits exposure duration. Residual risk: during the TTL window, the photo is accessible to anyone with the URL. Regeneration on every /photos call means the window is short.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q3 — two authorization checks</strong></td>
+      <td>15</td>
+      <td>Group check prevents free users from calling mutation endpoints. Ownership check prevents premium users from modifying each other's data (BOLA/IDOR). Without group check: free users could delete. Without ownership check: any premium user could delete anyone's photos.</td>
+    </tr>
+    <tr class="rubric-total">
+      <td><strong>Total</strong></td>
+      <td><strong>125</strong></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 1rem;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week07" target="_blank">⌥ View Week 7 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-authorization.html">📖 Week 7 Concept Notes</a>
+</div>
+
+<div class="page-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/week06/week6-lab-assignment.html">← Week 6 Lab</a>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">Course home</a>
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-lab-assignment.html">Week 8 Lab →</a>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>
