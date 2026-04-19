@@ -1074,11 +1074,8 @@
       }
     },
     '6': {
-      active: ['security','functional'],
+      active: ['functional'],
       issues: {
-        security: { title:'Security issues in Week 6', bullets:[
-          'Origin secret is now stored securely in Secrets Manager (better than Week 5\'s environment variable), but the fundamental mechanism remains a shared value. Anyone who obtains it can call the API Gateway URL directly by adding the header.'
-        ]},
         functional: { title:'Functionality issues in Week 6', bullets:[
           'Premium user group is introduced but premium user functionality is not yet implemented — Cognito groups are set up and the JWT groups claim is validated, but free and premium users see identical data. Upload (premium-only) and delete (owner-only) authorization is added in Week 7.'
         ]}
@@ -1138,6 +1135,95 @@
     detail.style.display = 'block';
   }
   </script>
+
+  <!-- Production Hardening Reference -->
+  <div class="ac-row" style="margin-top:60px;">
+    <div class="ac-header" onclick="toggle('hardening')" style="gap:0;background:#E6F1FB;border-color:#B5D4F4;">
+      <div class="ac-header-inner">
+        <div class="ac-header-left">
+          <div class="week-circle" style="background:#444441;color:#fff;font-size:10px;padding:0 12px;">REF</div>
+          <div class="ac-title-group">
+            <div class="ac-title" style="color:#0C447C;">Production Hardening Guide</div>
+            <div class="ac-subtitle" style="color:#5f5e5a;">What we could have done better — and when you'd choose it</div>
+          </div>
+        </div>
+      </div>
+      <span class="ac-chevron" id="hardening-chev">›</span>
+    </div>
+    <div class="ac-body" id="hardening">
+      <div class="ac-section">
+        <div class="ac-section-text">
+          This course prioritizes learning concepts over production perfection. Each week makes deliberate trade-offs: simpler over more secure, faster to build over fully hardened, cost-effective over enterprise-grade. Below is a week-by-week catalog of security improvements we skipped — explaining what the production alternative is, why it's better, and when the additional complexity is worth it.
+        </div>
+      </div>
+      
+      <div class="ac-section">
+        <div class="ac-section-label">Week 1: IAM + CloudTrail</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> MFA enforcement via IAM policy, password complexity requirements, least-privilege IAM user instead of AdministratorAccess, multi-region CloudTrail with log file validation, KMS-encrypted CloudTrail logs. <strong style="color:#0C447C;">Why we skipped:</strong> Week 1 is foundational setup, students need admin access for learning exercises, MFA enforcement complicates workflow. <strong style="color:#0C447C;">When you'd use it:</strong> Production accounts, compliance requirements (SOC 2, PCI-DSS), any shared team environment.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 2: S3 Static Hosting</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> S3 Versioning to protect against accidental deletion, S3 Object Lock for compliance (WORM), S3 Access Logging to audit all bucket requests, S3 Lifecycle policies to transition to cheaper storage tiers. <strong style="color:#0C447C;">Why we skipped:</strong> Focus on basic bucket security (policies, ACLs), versioning adds cost, access logging creates secondary bucket complexity. <strong style="color:#0C447C;">When you'd use it:</strong> Compliance requirements, data retention policies, audit trails for financial/healthcare data.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 3: CloudFront + Edge Security</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> CloudFront signed URLs/cookies for time-limited access to private content, field-level encryption for sensitive data (credit cards), origin failover with secondary S3 bucket in different region, AWS Managed Rules for WAF (OWASP Top 10), Shield Advanced for DDoS protection with 24/7 DRT support. <strong style="color:#0C447C;">Why we skipped:</strong> Our photos are public (no signed URLs needed), no sensitive data requiring field-level encryption, Shield Advanced costs $3,000/month. <strong style="color:#0C447C;">When you'd use it:</strong> Paid content, PII/PHI data, high-availability requirements, DDoS-prone applications.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 4: VPC + EC2 Backend</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> VPC Flow Logs to capture all network traffic, Network ACLs in addition to security groups (defense in depth), IMDSv2 enforcement to prevent SSRF attacks on instance metadata, Systems Manager Session Manager instead of SSM Run Command (no SSH keys, CloudTrail logging), HTTPS listener on ALB instead of HTTP, Auto Scaling Group across multiple AZs for high availability. <strong style="color:#0C447C;">Why we skipped:</strong> VPC Flow Logs add cost and log storage complexity, IMDSv2 requires application code changes and breaks some libraries, Session Manager requires additional SSM Agent configuration, internal ALB traffic already encrypted at CloudFront edge. <strong style="color:#0C447C;">When you'd use it:</strong> Network forensics requirements, zero-trust architecture, highly available production workloads, compliance audits.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 5: Serverless Migration</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> <span style="background:#FFF9E6;padding:2px 4px;border-radius:3px;font-weight:500;">REST API instead of HTTP API</span> — supports resource policies with aws:SourceArn condition to restrict API Gateway to ONLY accept requests from CloudFront distribution. Eliminates shared secret header entirely (IAM-enforced security), no way for attacker to bypass CloudFront even if they discover the API URL. Also: Lambda in VPC for private resource access, API Gateway access logging, request validation at API Gateway before invoking Lambda, X-Ray tracing for distributed debugging. <strong style="color:#0C447C;">Why we skipped:</strong> HTTP API is simpler to configure (no resource policy needed), lower cost ($1.00 vs $3.50 per million requests), shared secret architecture is easier to understand for students, Lambda in VPC adds cold start latency. <strong style="color:#0C447C;">When you'd use it:</strong> <span style="background:#FFF9E6;padding:2px 4px;border-radius:3px;font-weight:500;">Always use REST API in production</span> — IAM-enforced security is significantly stronger than shared secrets. Use Lambda VPC integration when accessing RDS, ElastiCache, or internal services.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 6: Authentication</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> <span style="background:#FFF9E6;padding:2px 4px;border-radius:3px;font-weight:500;">HttpOnly cookies instead of sessionStorage</span> — tokens not accessible to JavaScript (XSS protection), automatically included in requests (no manual header setting), SameSite attribute prevents CSRF attacks. Also: Cognito Advanced Security Features (adaptive authentication, compromised credentials detection), multi-factor authentication (SMS or TOTP), email verification before account activation, custom domain (auth.yourdomain.com), Lambda triggers for pre/post authentication logic. <strong style="color:#0C447C;">Why we skipped:</strong> HttpOnly cookies require CORS configuration complexity, SameSite attribute behavior differs across browsers, Week 6 already teaches Cognito + Google OAuth + Secrets Manager + extended authorizer (too much scope), Advanced Security Features cost $0.05 per monthly active user, MFA adds friction to demo. <strong style="color:#0C447C;">When you'd use it:</strong> <span style="background:#FFF9E6;padding:2px 4px;border-radius:3px;font-weight:500;">Always use HttpOnly cookies in production</span> — sessionStorage is vulnerable to XSS. Use MFA for any application handling financial or healthcare data.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 7: Authorization</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> Separate S3 bucket for user uploads (isolate untrusted content from static site assets), file type validation (verify Content-Type and magic bytes), file size limits in presigned URL, virus scanning via Lambda + ClamAV on S3 upload, content moderation using Rekognition DetectModerationLabels, image optimization (auto-generate thumbnails, convert to WebP), soft delete (mark as deleted in DynamoDB, lifecycle policy permanently deletes after 30 days), Cognito Identity Pool as alternative to presigned URLs (browser gets temporary AWS credentials via STS, direct S3 operations using AWS SDK). <strong style="color:#0C447C;">Why we skipped:</strong> Week 7 focus is authorization patterns (presigned URLs + ownership validation), file validation adds scope, virus scanning requires Lambda deployment and antivirus setup, separate buckets add complexity, soft delete complicates the "delete" concept. <strong style="color:#0C447C;">When you'd use it:</strong> User-generated content platforms, file sharing applications, compliance requirements (data retention), untrusted uploads.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 8: Encryption at Rest</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> Multi-region KMS keys (replicate across regions for disaster recovery), separate KMS keys per service (different keys for S3, DynamoDB, Secrets Manager for better blast radius control and granular audit trails), key policy conditions (restrict key usage to specific VPCs, IP ranges, time windows), encryption context in KMS API calls (additional authenticated data prevents ciphertext from being decrypted in wrong context), AWS CloudHSM for FIPS 140-2 Level 3 compliance (dedicated hardware security module in your VPC, full control over key material). <strong style="color:#0C447C;">Why we skipped:</strong> Multi-region keys add complexity, one key demonstrates encryption concepts sufficiently, encryption context is an advanced KMS feature, CloudHSM costs $1.45/hour (~$1,100/month) and requires specialized HSM administration knowledge. <strong style="color:#0C447C;">When you'd use it:</strong> Multi-region for disaster recovery, separate keys for compliance audits (PCI-DSS, HIPAA), CloudHSM for specific regulatory requirements (government, finance).</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 9: Multi-Account Governance</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> AWS Control Tower for automated multi-account setup (pre-configured landing zone, Account Factory, guardrails dashboard), deny-by-default SCPs (explicitly allow only required services instead of denying specific ones), region restrictions (deny all operations outside allowed regions for cost control), require encryption via SCP (deny S3 PutObject without encryption header), require MFA for sensitive actions (deny DeleteBucket, StopLogging without MFA), tag-based SCPs (require specific tags on all resources like CostCenter, Environment), attribute-based access control (ABAC) in Identity Center (permissions based on user attributes not just groups). <strong style="color:#0C447C;">Why we skipped:</strong> Control Tower is time-intensive to set up (lecture sufficient), deny-by-default SCPs are too restrictive for learning environment where students need to experiment, ABAC is an advanced IAM pattern beyond baseline course scope. <strong style="color:#0C447C;">When you'd use it:</strong> Control Tower for any multi-account organization, deny-by-default SCPs for highly regulated environments, ABAC for large teams with complex permission requirements.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 10: Monitoring & Compliance</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> CloudWatch Synthetics (canary monitoring with automated user journey testing), CloudWatch Contributor Insights (top talkers analysis for top IPs and error patterns), Config Conformance Packs (pre-built rule sets for PCI-DSS, HIPAA, CIS benchmarks), Config Aggregator (multi-account, multi-region aggregation), Config automatic remediation via Systems Manager Automation, Inspector continuous scanning (always-on instead of on-demand), Inspector EC2 and container image scanning (in addition to Lambda), Macie automated sensitive data discovery (scan entire S3 estate for PII/PHI). <strong style="color:#0C447C;">Why we skipped:</strong> Synthetics add cost, Conformance Packs are just bundles of rules we already cover, continuous Inspector scanning adds cost, Macie full deployment is expensive and our S3 bucket has test data only (no real PII). <strong style="color:#0C447C;">When you'd use it:</strong> Synthetics for production SLA monitoring, Conformance Packs for compliance certification (SOC 2, ISO 27001), continuous Inspector for production workloads, Macie for data discovery in regulated industries.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 11: Threat Detection</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> GuardDuty EKS Protection (threat detection for Kubernetes), GuardDuty RDS Protection (detect suspicious database login attempts), GuardDuty S3 Protection (detect data exfiltration), GuardDuty Malware Protection (scan EC2 and containers), trusted IP lists (whitelist known-good IPs like office/VPN), Security Hub integrations (pull findings from 50+ AWS and partner services), Security Hub standards (AWS Foundational Security Best Practices, CIS AWS Foundations), EventBridge advanced filtering (content-based filtering before invoking targets), automated incident response (auto-isolate compromised instance by modifying security group, auto-disable IAM user on suspicious activity, auto-snapshot for forensics, auto-block IP in WAF). <strong style="color:#0C447C;">Why we skipped:</strong> GuardDuty EKS/RDS protection not relevant (no EKS/RDS in Photo Viewer), S3 Protection adds cost, advanced auto-response risks breaking things in learning environment. <strong style="color:#0C447C;">When you'd use it:</strong> All GuardDuty protections in production, Security Hub for centralized security posture management, automated response for 24/7 incident handling without on-call staff.</div>
+      </div>
+
+      <div class="ac-section">
+        <div class="ac-section-label">Week 12: DNS & Capstone</div>
+        <div class="ac-section-text"><strong style="color:#0C447C;">What we could have done:</strong> Route 53 DNSSEC (cryptographically sign DNS responses to prevent spoofing), Route 53 Resolver DNS Firewall (block DNS queries to known malicious domains), health checks with multi-region active-passive failover, private hosted zones for internal VPC DNS, query logging for security analysis, AWS Firewall Manager for centralized WAF management (deploy WAF rules across all CloudFront distributions in organization), centralized Shield Advanced management, Security Group auditing across organization (detect overly permissive rules). <strong style="color:#0C447C;">Why we skipped:</strong> DNSSEC is complex to set up with limited practical benefit for learning environment, DNS Firewall adds cost (CloudFront WAF already covers web attacks), Firewall Manager requires Organizations setup with multiple accounts, Week 12 is capstone/review. <strong style="color:#0C447C;">When you'd use it:</strong> DNSSEC for high-security applications (financial, government), DNS Firewall for defense-in-depth, Firewall Manager for large organizations with multiple AWS accounts.</div>
+      </div>
+
+      <div class="ac-section" style="margin-top:20px;padding-top:16px;border-top:0.5px solid rgba(0,0,0,0.1);">
+        <div class="ac-section-text" style="font-size:12px;color:#5f5e5a;">
+          <strong style="color:#0C447C;">How to use this reference:</strong> For students — see what "production-grade" looks like and understand trade-offs in system design. For interview prep — answer "What would you change for production?" For professionals — migration checklist from proof-of-concept to production and risk assessment framework.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <footer>
     CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
