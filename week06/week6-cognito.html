@@ -876,8 +876,19 @@
   </div>
   <div class="vuln-body" id="v1">
     <p><strong>The limitation:</strong> Cognito groups are fully configured and the JWT groups claim is read by the Lambda authorizer — but free and premium users currently see the same data, and premium users have no upload capability. The group infrastructure is in place but has no visible effect beyond unauthenticated vs authenticated.</p>
-    <p><strong>What's next:</strong> Week 7 adds the capability layer. Premium users gain S3 presigned URL uploads. When a premium user uploads a photo, an S3 event triggers a Lambda function that calls Rekognition to auto-tag the image and writes metadata to DynamoDB. Free users can search by those auto-generated tags. The <code>cognito:groups</code> claim set up this week is exactly what Week 7's authorization checks will use.</p>
+    <p><strong>What's next:</strong> Week 7 adds the capability layer. Premium users gain upload via S3 presigned PUT URLs. Uploaded photos are tracked by owner in DynamoDB. Users can delete their own uploads, with Lambda validating object-level ownership. Week 7 demonstrates two authorization patterns: endpoint-level (premium-only upload) and object-level (owner-only delete). The <code>cognito:groups</code> claim set up this week is exactly what Week 7's authorization checks will use.</p>
     <p><strong>How to verify groups are working in the lab:</strong> The meaningful test in Week 6 is unauthenticated vs authenticated. Seed one or two DynamoDB items with <code>is_public = false</code> — unauthenticated users should not see them, any logged-in user should.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v2')">
+    <div class="vuln-title">Private photos are hidden from the catalog, but still fetchable from S3</div>
+    <span style="color:#aaa;font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v2">
+    <p><strong>The limitation:</strong> Adding login gives <code>is_public = false</code> a privacy meaning it did not carry before — "only logged-in users should see these." But that filter is applied only to the <code>/photos</code> list response returned by Lambda. The S3 objects themselves are served via CloudFront with Origin Access Control, which has no concept of identity or ownership. Anyone who knows or guesses the CloudFront URL for a private photo can fetch the image, regardless of the <code>is_public</code> flag.</p>
+    <p><strong>Catalog filtering ≠ object-level access control.</strong> Filtering the list hides the pointer. It does not hide the object.</p>
   </div>
 </div>
 

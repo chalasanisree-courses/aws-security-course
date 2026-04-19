@@ -1074,8 +1074,11 @@
       }
     },
     '6': {
-      active: ['functional'],
+      active: ['security','functional'],
       issues: {
+        security: { title:'Security issues in Week 6', bullets:[
+          'Private photos are hidden from the catalog but still fetchable from S3 — the Lambda filter applies is_public only to the /photos list response, while CloudFront + OAC serves any photo URL to anyone who knows it. Catalog filtering is not object-level access control.'
+        ]},
         functional: { title:'Functionality issues in Week 6', bullets:[
           'Premium user group is introduced but premium user functionality is not yet implemented — Cognito groups are set up and the JWT groups claim is validated, but free and premium users see identical data. Upload (premium-only) and delete (owner-only) authorization is added in Week 7.'
         ]}
