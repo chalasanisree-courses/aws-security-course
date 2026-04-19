@@ -2,7 +2,7 @@
 // Photo Viewer — Stage 3
 //
 // Fetches the photo list from /photos — the dynamic API endpoint
-// served by Flask on EC2 via ALB via CloudFront.
+// served by Lambda via API Gateway via CloudFront
 //
 // Stage 1/2 fetched from /photos.json (static file in S3).
 // Stage 3 onwards fetches from /photos (dynamic API).
