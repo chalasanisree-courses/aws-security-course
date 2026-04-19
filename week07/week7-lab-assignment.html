@@ -124,32 +124,60 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
 <!-- ═══════════════ PART 1 ═══════════════ -->
 <div class="part-header">
   <span class="part-num">Part 1</span>
-  <span class="part-title">Update CloudFront Function — Block uploads/ prefix</span>
+  <span class="part-title">Block direct CloudFront access to uploads</span>
 </div>
 
-<p>User-uploaded photos will be stored under the <code>uploads/</code> prefix in S3. CloudFront must not serve these directly — they should only be accessible via presigned GET URLs. Update the existing CloudFront Function to block requests to the <code>uploads/</code> path.</p>
+<p>User-uploaded photos will be stored under the <code>uploads/</code> prefix in S3. They should only be accessible via presigned GET URLs — not via CloudFront. You will create a new CloudFront behavior that blocks any request to the <code>/uploads/*</code> path.</p>
 
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 1</span>
-    <span class="step-title">Edit the CloudFront Function</span>
+    <span class="step-title">Create a CloudFront Function to block uploads</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>CloudFront → Functions</strong> in the AWS console. Open the function you created in Week 3 (or Week 5). Click <strong>Build</strong> tab and add this check at the top of the handler, before the existing file-type check:</p>
-    <pre>// Block direct access to uploaded photos
-if (uri.startsWith('/uploads/')) {
+    <p>Go to <strong>CloudFront → Functions → Create function</strong>. Name it <code>photoviewer-block-uploads</code>. In the <strong>Build</strong> tab, replace the default code with:</p>
+    <pre>function handler(event) {
     return {
         statusCode: 403,
-        statusDescription: 'Forbidden',
-        body: 'Direct access to uploads is not allowed. Use the /photos API.'
+        statusDescription: 'Forbidden'
     };
 }</pre>
     <p>Click <strong>Save changes</strong>, then go to the <strong>Publish</strong> tab and click <strong>Publish function</strong>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 2</span>
+    <span class="step-title">Add a /uploads/* behavior to CloudFront</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudFront → your distribution → Behaviors tab → Create behavior</strong>.</p>
+    <ul>
+      <li>Path pattern: <code>/uploads/*</code></li>
+      <li>Origin: select your S3 origin (<code>photoviewer-9876543210.s3...</code>)</li>
+      <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+      <li>Cache policy: <strong>CachingOptimized</strong></li>
+      <li>Function associations → Viewer request: <strong>CloudFront Functions</strong> → select <code>photoviewer-block-uploads</code></li>
+    </ul>
+    <p>Click <strong>Create behavior</strong>. Your behaviors tab should now show four behaviors:</p>
+    <table>
+      <thead><tr><th>Precedence</th><th>Path pattern</th><th>Origin</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td><code>/photos</code></td><td>API Gateway</td><td>API routes (W5)</td></tr>
+        <tr><td>1</td><td><code>/callback</code></td><td>S3</td><td>OAuth redirect (W6)</td></tr>
+        <tr><td>2</td><td><code>/uploads/*</code></td><td>S3</td><td>Block direct access (W7)</td></tr>
+        <tr><td>3</td><td><code>Default (*)</code></td><td>S3</td><td>HTML/JS/CSS + pre-seeded photos</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info">
+      <p><strong>Why a separate behavior?</strong> CloudFront evaluates behaviors by path specificity. Requests to <code>/uploads/photo.jpg</code> match the <code>/uploads/*</code> behavior (which returns 403) before they reach the <code>Default (*)</code> behavior (which would serve the file from S3). The existing allowlist function on the default behavior is unchanged from Week 5 — each week's work is additive.</p>
+    </div>
     <div class="verify">
       <div class="verify-label">✓ Verify</div>
-      <p>Test the block by visiting <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/uploads/test.jpg</code> — you should see the 403 Forbidden response.</p>
+      <p>Test the block by visiting <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/uploads/test.jpg</code> — you should see a 403 response.</p>
     </div>
-    <div class="screenshot">Browser showing 403 Forbidden when accessing the uploads/ path on CloudFront</div>
+    <div class="screenshot">CloudFront Behaviors tab showing four behaviors including the new <code>/uploads/*</code> path, plus browser showing 403 when accessing the uploads path</div>
   </div>
 </div>
 
@@ -164,7 +192,7 @@ if (uri.startsWith('/uploads/')) {
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 2</span>
+    <span class="step-num">Step 3</span>
     <span class="step-title">Create an inline policy for uploads</span>
   </div>
   <div class="step-body">
@@ -189,13 +217,16 @@ if (uri.startsWith('/uploads/')) {
     <div class="callout info">
       <p><strong>Least privilege:</strong> The <code>Resource</code> is scoped to the <code>uploads/*</code> prefix only. Lambda cannot read, write, or delete objects in the root of the bucket (where your HTML/CSS/JS live). This is the same least-privilege principle from Week 6's Secrets Manager policy — scope to the specific resource ARN, not <code>*</code>.</p>
     </div>
+    <div class="callout">
+      <p><strong>Why does this work when the bucket policy only names CloudFront?</strong> Your Week 3 bucket policy allows <code>s3:GetObject</code> for the CloudFront service principal — it does not mention Lambda. But the policy has no explicit <code>Deny</code>. For same-account IAM principals like your Lambda role, S3 evaluates the IAM policy and the bucket policy together. If the IAM policy explicitly allows the action and the bucket policy does not explicitly deny it, access is granted. The presigned URL carries the Lambda role's SigV4 signature, so S3 treats it as an authenticated IAM request — not a public one. Block Public Access stays on and has no effect on presigned URLs.</p>
+    </div>
     <div class="screenshot">IAM role showing the <code>photoviewer-uploads</code> inline policy attached</div>
   </div>
 </div>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 3</span>
+    <span class="step-num">Step 4</span>
     <span class="step-title">Configure CORS on the S3 bucket</span>
   </div>
   <div class="step-body">
@@ -234,7 +265,7 @@ if (uri.startsWith('/uploads/')) {
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 4</span>
+    <span class="step-num">Step 5</span>
     <span class="step-title">Create the POST /photos route</span>
   </div>
   <div class="step-body">
@@ -249,7 +280,7 @@ if (uri.startsWith('/uploads/')) {
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 5</span>
+    <span class="step-num">Step 6</span>
     <span class="step-title">Create the DELETE /photos/{photoId} route</span>
   </div>
   <div class="step-body">
@@ -267,7 +298,7 @@ if (uri.startsWith('/uploads/')) {
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 6</span>
+    <span class="step-num">Step 7</span>
     <span class="step-title">Create the PATCH /photos/{photoId} route</span>
   </div>
   <div class="step-body">
@@ -282,7 +313,7 @@ if (uri.startsWith('/uploads/')) {
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 7</span>
+    <span class="step-num">Step 8</span>
     <span class="step-title">Verify routes and deploy</span>
   </div>
   <div class="step-body">
@@ -312,13 +343,13 @@ if (uri.startsWith('/uploads/')) {
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 8</span>
+    <span class="step-num">Step 9</span>
     <span class="step-title">Update the Lambda function code</span>
   </div>
   <div class="step-body">
     <p>In CloudShell, run:</p>
     <pre>cd ~/aws-security-course/photoviewer/week07
-zip -j lambda-function.zip lambda/index.mjs
+zip -j lambda-function.zip lambda/lambda_function.py
 aws lambda update-function-code \
     --function-name photoviewer-lambda \
     --zip-file fileb://lambda-function.zip</pre>
@@ -326,7 +357,7 @@ aws lambda update-function-code \
     <pre>aws lambda wait function-updated-v2 --function-name photoviewer-lambda</pre>
 
     <div class="callout info">
-      <p><strong>What changed in the code:</strong> The handler reads <code>event.routeKey</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for items with an <code>s3_key</code> starting with <code>uploads/</code>.</p>
+      <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for items with an <code>s3_key</code> starting with <code>uploads/</code>.</p>
       <p><strong>Presigned URL conditions:</strong> The POST handler generates the presigned PUT URL with embedded conditions: <code>Content-Type</code> must be <code>image/jpeg</code> or <code>image/png</code>, and file size must be under 5 MB. These conditions are part of the signed policy — S3 enforces them on upload and rejects requests that violate them, even though no Lambda runs during the upload itself.</p>
     </div>
 
@@ -339,14 +370,25 @@ aws lambda update-function-code \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 9</span>
+    <span class="step-num">Step 10</span>
     <span class="step-title">Set the S3 bucket name as an environment variable</span>
   </div>
   <div class="step-body">
-    <p>The Lambda function needs to know the bucket name for presigned URL generation. Add it as an environment variable:</p>
-    <pre>aws lambda update-function-configuration \
+    <p>The Lambda function needs to know the bucket name for presigned URL generation. Add it as an environment variable. First, retrieve any existing variables so you don't overwrite them:</p>
+    <pre># Get existing environment variables
+EXISTING=$(aws lambda get-function-configuration \
     --function-name photoviewer-lambda \
-    --environment "Variables={PHOTO_BUCKET=photoviewer-9876543210}"</pre>
+    --query 'Environment.Variables' --output json)
+
+# Merge with the new variable and update
+aws lambda update-function-configuration \
+    --function-name photoviewer-lambda \
+    --environment "Variables=$(echo $EXISTING | python3 -c "
+import sys, json
+env = json.load(sys.stdin)
+env['PHOTO_BUCKET'] = 'photoviewer-9876543210'
+print(json.dumps(env))
+")"</pre>
 
     <div class="callout">
       <p><strong>Not a secret:</strong> The bucket name is not sensitive — it is a configuration value, not a credential. Environment variables are appropriate here. Secrets (like the origin-verify token) go in Secrets Manager. Configuration values (like bucket names, table names, region) go in environment variables.</p>
@@ -363,7 +405,7 @@ aws lambda update-function-code \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 10</span>
+    <span class="step-num">Step 11</span>
     <span class="step-title">Assign your Cognito user to the premium group</span>
   </div>
   <div class="step-body">
@@ -385,7 +427,7 @@ aws lambda update-function-code \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 11</span>
+    <span class="step-num">Step 12</span>
     <span class="step-title">Upload updated frontend files to S3</span>
   </div>
   <div class="step-body">
@@ -399,7 +441,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 12</span>
+    <span class="step-num">Step 13</span>
     <span class="step-title">Invalidate CloudFront cache</span>
   </div>
   <div class="step-body">
@@ -424,7 +466,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 13</span>
+    <span class="step-num">Step 14</span>
     <span class="step-title">Test unauthenticated browsing</span>
   </div>
   <div class="step-body">
@@ -435,7 +477,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 14</span>
+    <span class="step-num">Step 15</span>
     <span class="step-title">Test premium upload</span>
   </div>
   <div class="step-body">
@@ -451,7 +493,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 15</span>
+    <span class="step-num">Step 16</span>
     <span class="step-title">Test visibility toggle</span>
   </div>
   <div class="step-body">
@@ -467,7 +509,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 16</span>
+    <span class="step-num">Step 17</span>
     <span class="step-title">Test that CloudFront blocks direct upload access</span>
   </div>
   <div class="step-body">
@@ -480,7 +522,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 17</span>
+    <span class="step-num">Step 18</span>
     <span class="step-title">Test premium delete</span>
   </div>
   <div class="step-body">
@@ -498,7 +540,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 18</span>
+    <span class="step-num">Step 19</span>
     <span class="step-title">Test free user restrictions</span>
   </div>
   <div class="step-body">
@@ -517,13 +559,18 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 19</span>
+    <span class="step-num">Step 20</span>
     <span class="step-title">Test presigned URL conditions</span>
   </div>
   <div class="step-body">
     <p>Switch your user back to the <code>premium</code> group, log out, and log back in. Upload a valid JPEG — this should succeed. Then test the conditions:</p>
-    <p><strong>Test 1 — wrong Content-Type:</strong> Try uploading a <code>.txt</code> file or rename a text file to <code>.jpg</code>. The presigned URL has a <code>Content-Type</code> condition embedded. S3 should reject the upload with <code>403 AccessDenied</code>.</p>
-    <p><strong>Test 2 — file too large:</strong> Find or create an image file larger than 5 MB. The presigned URL has a <code>Content-Length-Range</code> condition (max 5,242,880 bytes). S3 should reject the upload.</p>
+    <p><strong>Test 1 — wrong Content-Type:</strong> The presigned URL has a <code>Content-Type</code> condition embedded. Test it from CloudShell using the presigned URL from a successful POST /photos response:</p>
+    <pre># Use the uploadUrl from a POST /photos response
+curl -X PUT "PRESIGNED_URL_HERE" \
+  -H "Content-Type: text/plain" \
+  --data-binary "this is not an image"</pre>
+    <p>S3 should reject with <code>403 AccessDenied</code> because the Content-Type does not match the signed condition.</p>
+    <p><strong>Test 2 — file too large:</strong> Find or create an image file larger than 5 MB. Try uploading it through the UI. The presigned URL has a <code>Content-Length-Range</code> condition (max 5,242,880 bytes). S3 should reject the upload.</p>
     <div class="callout info">
       <p><strong>Where is the validation happening?</strong> No Lambda runs during the upload — the browser sends the file directly to S3. S3 itself enforces the conditions that were embedded in the presigned URL at signing time. This is server-side validation without a server invocation.</p>
     </div>
@@ -542,7 +589,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 20</span>
+    <span class="step-num">Step 21</span>
     <span class="step-title">Find your upload and delete events in CloudTrail</span>
   </div>
   <div class="step-body">
@@ -557,7 +604,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
       <li><strong>sourceIPAddress:</strong> This is the IP of the browser that used the presigned URL — the actual uploader.</li>
       <li><strong>requestParameters → key:</strong> The S3 key (e.g. <code>uploads/{sub}/{photoId}.jpg</code>).</li>
     </ul>
-    <p>Now filter by <code>DeleteObject</code> and find the event for the photo you deleted in Step 17. The same fields are present.</p>
+    <p>Now filter by <code>DeleteObject</code> and find the event for the photo you deleted in Step 18. The same fields are present.</p>
 
     <div class="callout info">
       <p><strong>Why this matters:</strong> "Bypassing API Gateway" sounds like it might bypass audit — it does not. Every presigned URL operation is an S3 API call, and CloudTrail logs every S3 API call. The Lambda role's identity in the event tells you which function signed the URL. The source IP tells you who used it. This is the same CloudTrail trail you created in Week 1 — it has been capturing these events all along.</p>
@@ -592,9 +639,9 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
   </thead>
   <tbody>
     <tr>
-      <td><strong>CloudFront Function updated</strong></td>
+      <td><strong>CloudFront /uploads/* behavior</strong></td>
       <td>10</td>
-      <td>Screenshot shows 403 when accessing <code>uploads/</code> path directly on CloudFront.</td>
+      <td>Screenshot shows CloudFront Behaviors tab with <code>/uploads/*</code> path pattern and the <code>photoviewer-block-uploads</code> function attached. Browser shows 403 when accessing the uploads path directly.</td>
     </tr>
     <tr>
       <td><strong>IAM policy for uploads</strong></td>
