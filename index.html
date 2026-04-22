@@ -490,6 +490,25 @@
     </div>
   </div>
 
+  <!-- Firewalls — concept only -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('wfw')">
+      <span class="week-num" style="background:#444441;">Concept</span>
+      <span class="week-title">Firewalls — Types and Differences</span>
+      <span class="week-domain">On-prem vs cloud firewall architecture</span>
+      <span class="week-chevron" id="wfw-chev">▶</span>
+    </div>
+    <div class="week-body" id="wfw">
+      <p class="week-desc">Network firewalls (NGFW) vs web application firewalls (WAF) — why they're separate tools, where they sit on-premises vs in AWS, and how managed services like CloudFront and Security Groups absorb responsibilities that required dedicated appliances. Interactive diagrams for both server-based and serverless models. Includes AWS Firewall Manager for centralized policy enforcement across accounts.</p>
+      <div class="resource-list">
+        <a class="resource-link" href="concepts/firewalls.html">
+          <span class="icon">◈</span> Firewalls — Types and Differences — interactive concept notes
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Week 5 -->
   <div class="week-card">
     <div class="week-header" onclick="toggle('w5')">
@@ -660,12 +679,12 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w12')">
       <span class="week-num">Week 12</span>
-      <span class="week-title">Capstone — Route 53 + Firewall Manager + Full-Stack Review</span>
+      <span class="week-title">Capstone — Route 53 + Full-Stack Review</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w12-chev">▶</span>
     </div>
     <div class="week-body" id="w12">
-      <p class="week-desc">Route 53 custom domain with health checks and DNS failover. Firewall Manager enforces WAF Web ACL across all CloudFront distributions in the organization automatically. Capstone lab: identify and remediate intentionally introduced security misconfigurations across the full 12-week stack.</p>
+      <p class="week-desc">Route 53 custom domain with health checks and DNS failover. Capstone lab: identify and remediate intentionally introduced security misconfigurations across the full 12-week stack.</p>
       <div class="resource-list">
         <a class="resource-link" href="week12/week12-capstone.html">
           <span class="icon">◈</span> Global Resilience and Capstone — concept notes
@@ -802,6 +821,16 @@
               <td><div class="svc-name"><a href="https://aws.amazon.com/waf/" target="_blank">WAF</a></div><span class="svc-abbr"> · AWS Web Application Firewall</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 5</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Filters web traffic. Blocks SQLi, XSS, and rate-based attacks. Must be us-east-1 for CloudFront.</td>
+            </tr>
+            <tr data-scope="regional">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/network-firewall/" target="_blank">Network Firewall</a></div><span class="svc-abbr"> · AWS Network Firewall</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Concept</span></td>
+              <td><span class="scope-pill scope-regional">Regional</span></td>
+              <td>Managed NGFW at VPC boundary. Stateful packet inspection, IPS, and domain-based egress filtering. Covered in the Firewalls concept page.</td>
+            </tr>
+            <tr data-scope="global">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/firewall-manager/" target="_blank">Firewall Manager</a></div><span class="svc-abbr"> · AWS Firewall Manager</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Concept</span></td>
+              <td><span class="scope-pill scope-global">Global</span></td>
+              <td>Centralized management of WAF, Security Group, Network Firewall, and Shield policies across AWS Organizations. Covered in the Firewalls concept page.</td>
             </tr>
             <tr data-scope="regional">
               <td><div class="svc-name"><a href="https://aws.amazon.com/cognito/" target="_blank">Cognito</a></div><span class="svc-abbr"> · Amazon Cognito</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 6</span></td>
