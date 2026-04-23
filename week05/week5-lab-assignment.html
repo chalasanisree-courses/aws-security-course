@@ -138,7 +138,7 @@ Browser → WAF/CloudFront → API Gateway → Lambda → DynamoDB
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
-    "Action": ["dynamodb:Scan"],
+    "Action": ["dynamodb:Scan", "dynamodb:GetItem"],
     "Resource": "arn:aws:dynamodb:us-east-1:<strong>[your-account-id]</strong>:table/photoviewer-photos"
   }]
 }</pre>
@@ -146,9 +146,9 @@ Browser → WAF/CloudFront → API Gateway → Lambda → DynamoDB
   <p>Verify the role now shows two policies:</p>
   <ul>
     <li><code>AWSLambdaBasicExecutionRole</code> — CloudWatch Logs (auto-created)</li>
-    <li><code>photoviewer-dynamodb-read</code> — DynamoDB Scan on one table</li>
+    <li><code>photoviewer-dynamodb-read</code> — DynamoDB Scan + GetItem on one table</li>
   </ul>
-  <div class="deliverable"><strong>Screenshot:</strong> IAM role showing both policies — AWSLambdaBasicExecutionRole and photoviewer-dynamodb-read — with the DynamoDB policy expanded to show the Scan action on the correct table ARN</div>
+  <div class="deliverable"><strong>Screenshot:</strong> IAM role showing both policies — AWSLambdaBasicExecutionRole and photoviewer-dynamodb-read — with the DynamoDB policy expanded to show the Scan and GetItem actions on the correct table ARN</div>
 </div>
 
 <div class="part">
