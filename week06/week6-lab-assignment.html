@@ -115,7 +115,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <li><strong>Required:</strong> <code>photoviewer-lambda</code> exists and is Active</li>
     <li><strong>Required:</strong> <code>photoviewer-authorizer</code> exists and is Active</li>
     <li><strong>Required:</strong> DynamoDB table <code>photoviewer-photos</code> exists with ≥5 items</li>
-    <li><strong>Required:</strong> S3 bucket <code>photoviewer-9876543210</code> has ≥5 photo files</li>
+    <li><strong>Required:</strong> S3 bucket <code>photoviewer-[your-account-id]</code> has ≥5 photo files</li>
     <li><strong>Required:</strong> CloudFront distribution pointing to your S3 bucket — the script prints your CloudFront domain, keep it handy</li>
     <li><strong>Optional:</strong> WAF Web ACL — the lab works without it. WAF costs $5/month so it is fine to have deleted it after Week 5. The script will note it is missing but will not block you.</li>
   </ul>
@@ -493,15 +493,15 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
       <li><code>YOUR_CLOUDFRONT_DOMAIN</code> → your CloudFront domain <strong>without <code>https://</code></strong> (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>). The code adds <code>https://</code> itself when constructing URLs.</li>
     </ul>
     <p>Upload all three files to S3:</p>
-    <pre>aws s3 cp app.js s3://photoviewer-9876543210/app.js \
+    <pre>aws s3 cp app.js s3://photoviewer-[your-account-id]/app.js \
   --content-type "application/javascript" \
   --region us-east-1
 
-aws s3 cp index.html s3://photoviewer-9876543210/index.html \
+aws s3 cp index.html s3://photoviewer-[your-account-id]/index.html \
   --content-type "text/html" \
   --region us-east-1
 
-aws s3 cp style.css s3://photoviewer-9876543210/style.css \
+aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css \
   --content-type "text/css" \
   --region us-east-1</pre>
     <div class="screenshot">S3 bucket showing app.js, index.html, and style.css uploaded</div>
