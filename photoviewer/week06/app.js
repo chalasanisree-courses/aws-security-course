@@ -8,6 +8,7 @@
  *   - On every /photos fetch: include Authorization: Bearer <token> if present
  *   - JWT expiry: silent reload clears state and returns to unauthenticated view
  *   - On logout: clear sessionStorage, redirect to Cognito /logout endpoint
+ *   - On sign-in: Google "G" icon replaced with user's initial from JWT email claim
  *
  * PKCE (Proof Key for Code Exchange):
  *   Before redirecting to Cognito, app.js generates a random code_verifier,
@@ -168,12 +169,19 @@ function renderAuthButton() {
   const token = getToken();
   const btn   = document.getElementById('auth-btn');
   const label = document.getElementById('auth-btn-label');
+  const icon  = btn ? btn.querySelector('.btn-google-icon') : null;
   if (!btn || !label) return;
 
   if (token && !isTokenExpired(token)) {
     const email = getUserEmail(token);
-    label.textContent = email ? `Sign out (${email})` : 'Sign out';
+    label.textContent = 'Sign out';
     btn.onclick = logout;
+
+    // Replace Google "G" with user's initial
+    if (icon && email) {
+      const initial = email.charAt(0).toUpperCase();
+      icon.innerHTML = `<span class="user-initial">${initial}</span>`;
+    }
   } else {
     label.textContent = 'Sign in with Google';
     btn.onclick = login;
