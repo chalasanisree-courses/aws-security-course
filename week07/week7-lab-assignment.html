@@ -224,7 +224,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
       <p><strong>Least privilege:</strong> The <code>Resource</code> is scoped to the <code>uploads/*</code> prefix only. Lambda cannot read, write, or delete objects in the root of the bucket (where your HTML/CSS/JS live). This is the same least-privilege principle from Week 6's Secrets Manager policy — scope to the specific resource ARN, not <code>*</code>.</p>
     </div>
     <div class="callout">
-      <p><strong>Why does this work when the bucket policy only names CloudFront?</strong> Your Week 3 bucket policy allows <code>s3:GetObject</code> for the CloudFront service principal — it does not mention Lambda. But the policy has no explicit <code>Deny</code>. For same-account IAM principals like your Lambda role, S3 evaluates the IAM policy and the bucket policy together. If the IAM policy explicitly allows the action and the bucket policy does not explicitly deny it, access is granted. The presigned URL carries the Lambda role's SigV4 signature, so S3 treats it as an authenticated IAM request — not a public one. Block Public Access stays on and has no effect on presigned URLs.</p>
+      <p><strong>Why does this work when the bucket policy only names CloudFront?</strong> Your Week 3 bucket policy allows <code>s3:GetObject</code> for the CloudFront service principal — it does not mention Lambda. But the policy has no explicit <code>Deny</code>. For same-account IAM principals like your Lambda role, S3 evaluates the IAM policy and the bucket policy together. If the IAM policy explicitly allows the action and the bucket policy does not explicitly deny it, access is granted. Block Public Access stays on and has no effect here — Lambda's requests are authenticated IAM requests, not public ones.</p>
     </div>
     <div class="screenshot">IAM role showing the <code>photoviewer-uploads</code> inline policy attached</div>
   </div>
@@ -268,6 +268,26 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
 </div>
 
 <p>Add three new routes to your existing HTTP API. All routes point to the same <code>photoviewer-lambda</code> function and use the same Lambda authorizer — the function handles routing internally based on the HTTP method and path.</p>
+
+<div class="callout info">
+  <p><strong>The five HTTP calls in <code>app.js</code></strong> — four to API Gateway, plus one direct-to-S3 PUT:</p>
+  <ol>
+    <li><code>GET /photos</code> — list photos (with the <code>url</code> field already populated by Lambda)</li>
+    <li><code>POST /photos</code> — request a presigned PUT URL + create the DynamoDB record</li>
+    <li><code>PUT {presignedUrl}</code> — browser uploads bytes straight to S3, <strong>bypassing API Gateway</strong></li>
+    <li><code>DELETE /photos/{photoId}</code> — remove S3 object + DynamoDB item</li>
+    <li><code>PATCH /photos/{photoId}</code> — flip <code>is_public</code></li>
+  </ol>
+  <p><strong>How <code>GET /photos</code> maps to user tiers</strong> — Lambda branches on what the authorizer tells it:</p>
+  <table>
+    <thead><tr><th>Caller</th><th>What <code>authHeaders()</code> sends</th><th>Lambda returns</th></tr></thead>
+    <tbody>
+      <tr><td>Unauthenticated</td><td>no <code>Authorization</code> header</td><td>items where <code>is_public=true</code></td></tr>
+      <tr><td>Free</td><td><code>Authorization: Bearer &lt;jwt&gt;</code>, no <code>premium</code> in <code>cognito:groups</code></td><td>all items</td></tr>
+      <tr><td>Premium</td><td><code>Authorization: Bearer &lt;jwt&gt;</code>, <code>premium</code> in groups</td><td>all items (+ frontend shows owner controls where <code>photo.owner === sub</code>)</td></tr>
+    </tbody>
+  </table>
+</div>
 
 <div class="step">
   <div class="step-header">
@@ -333,7 +353,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
         <tr><td>PATCH</td><td>/photos/{photoId}</td><td>photoviewer-lambda</td><td>Lambda authorizer</td></tr>
       </tbody>
     </table>
-    <p>Go to <strong>Deploy → Stages → $default</strong> → verify auto-deploy is enabled. If not, click <strong>Deploy</strong>.</p>
+    <p>Your HTTP API uses the <code>$default</code> stage with auto-deploy enabled, so your new routes are already live — no manual deploy step needed.</p>
     <div class="screenshot">API Gateway Routes page showing all four routes with integrations and authorizers attached</div>
   </div>
 </div>
@@ -399,21 +419,13 @@ aws lambda update-function-code \
     <span class="step-title">Set the S3 bucket name as an environment variable</span>
   </div>
   <div class="step-body">
-    <p>The Lambda function needs to know the bucket name for presigned URL generation. Add it as an environment variable. First, retrieve any existing variables so you don't overwrite them:</p>
-    <pre># Get existing environment variables
-EXISTING=$(aws lambda get-function-configuration \
-    --function-name photoviewer-lambda \
-    --query 'Environment.Variables' --output json)
-
-# Merge with the new variable and update
-aws lambda update-function-configuration \
-    --function-name photoviewer-lambda \
-    --environment "Variables=$(echo $EXISTING | python3 -c "
-import sys, json
-env = json.load(sys.stdin) or {}
-env['PHOTO_BUCKET'] = 'photoviewer-[your-account-id]'
-print(json.dumps(env))
-")"</pre>
+    <p>The Lambda function needs to know the bucket name for presigned URL generation. Go to <strong>Lambda → Functions → photoviewer-lambda → Configuration tab → Environment variables → Edit</strong>.</p>
+    <p>Click <strong>Add environment variable</strong>:</p>
+    <ul>
+      <li>Key: <code>PHOTO_BUCKET</code></li>
+      <li>Value: <code>photoviewer-[your-account-id]</code> (your actual bucket name)</li>
+    </ul>
+    <p>Click <strong>Save</strong>.</p>
 
     <div class="callout">
       <p><strong>Not a secret:</strong> The bucket name is not sensitive — it is a configuration value, not a credential. Environment variables are appropriate here. Secrets (like the origin-verify token) go in Secrets Manager. Configuration values (like bucket names, table names, region) go in environment variables.</p>
