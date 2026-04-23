@@ -187,12 +187,19 @@ function renderAuthButton() {
   const token = getToken();
   const btn   = document.getElementById('auth-btn');
   const label = document.getElementById('auth-btn-label');
+  const icon  = btn ? btn.querySelector('.btn-google-icon') : null;
   if (!btn || !label) return;
 
   if (token && !isTokenExpired(token)) {
     const email = getUserEmail(token);
-    label.textContent = email ? `Sign out (${email})` : 'Sign out';
+    label.textContent = 'Sign out';
     btn.onclick = logout;
+
+    // Replace Google "G" with user's initial
+    if (icon && email) {
+      const initial = email.charAt(0).toUpperCase();
+      icon.innerHTML = `<span class="user-initial">${initial}</span>`;
+    }
   } else {
     label.textContent = 'Sign in with Google';
     btn.onclick = login;
