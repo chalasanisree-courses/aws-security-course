@@ -3,7 +3,7 @@ photoviewer-lambda — Week 7
 
 Changes from Week 6:
   - Four routes: GET /photos, POST /photos, DELETE /photos/{photoId}, PATCH /photos/{photoId}
-  - GET: generates presigned GET URLs for uploaded photos (s3_key starts with uploads/)
+  - GET: generates presigned GET URLs for all photos (pre-seeded and uploaded)
   - POST: premium-only, creates DynamoDB record + presigned PUT URL with conditions
   - DELETE: premium + owner-only, deletes S3 object + DynamoDB record
   - PATCH: premium + owner-only, updates is_public in DynamoDB
@@ -89,7 +89,7 @@ def handle_get_photos(event, sub, groups):
     GET /photos — return photo list.
     Unauthenticated: is_public = true only.
     Any authenticated user: all photos.
-    Adds a 'url' field: presigned GET for uploads, relative path for pre-seeded.
+    All photos get a presigned GET URL — no permanent CloudFront URLs.
     """
     if groups:
         print(f'Authenticated: sub={sub} groups={groups} — returning all photos')
@@ -102,13 +102,10 @@ def handle_get_photos(event, sub, groups):
 
     photos = result.get('Items', [])
 
-    # Add url field
+    # Add presigned GET URL for every photo
     for photo in photos:
         s3_key = photo.get('s3_key', '')
-        if s3_key.startswith('uploads/'):
-            photo['url'] = generate_get_url(s3_key)
-        else:
-            photo['url'] = '/' + s3_key
+        photo['url'] = generate_get_url(s3_key)
 
     return response(200, photos)
 

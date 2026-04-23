@@ -205,7 +205,7 @@
     <tr>
       <td><strong>Photo delivery</strong></td>
       <td>All photos served via permanent CloudFront URLs</td>
-      <td>Pre-seeded photos (the showcase photos loaded into DynamoDB before any user existed): CloudFront URLs, unchanged. User uploads: Lambda generates a short-lived presigned GET URL per photo — the browser fetches directly from S3, bypassing CloudFront</td>
+      <td>All photos — pre-seeded and uploaded — served via short-lived presigned GET URLs. The browser fetches directly from S3, bypassing CloudFront. No permanent photo URLs exist.</td>
     </tr>
   </tbody>
 </table>
@@ -259,7 +259,7 @@
   </div>
   <div class="flow-step">
     <div class="step-num">4</div>
-    <div class="step-body"><strong>Lambda generates presigned GET URLs for uploaded photos</strong><p>For each result with an <code>s3_key</code> starting with <code>uploads/</code>, Lambda generates a 5-minute presigned GET URL. Pre-seeded showcase photos use their static CloudFront URLs unchanged. The response JSON includes the URL for each photo &#8212; the browser sets it as <code>&lt;img src&gt;</code> and fetches directly from S3.</p></div>
+    <div class="step-body"><strong>Lambda generates presigned GET URLs for all photos</strong><p>For every photo in the result set, Lambda generates a 5-minute presigned GET URL pointing directly to S3. The response JSON includes the URL for each photo &#8212; the browser sets it as <code>&lt;img src&gt;</code> and fetches directly from S3, bypassing CloudFront. No permanent photo URLs exist in the API response.</p></div>
   </div>
 </div>
 
