@@ -127,10 +127,18 @@ def handle_post_photos(event, sub, groups):
 
     title     = body.get('title', 'Untitled')
     is_public = body.get('is_public', True)
+    content_type = body.get('content_type', 'image/jpeg')
+
+    # Validate content type
+    allowed_types = {'image/jpeg': '.jpg', 'image/png': '.png'}
+    if content_type not in allowed_types:
+        return response(400, {'error': f'Unsupported content type: {content_type}. Allowed: image/jpeg, image/png'})
+
+    ext = allowed_types[content_type]
 
     # Generate IDs and S3 key
     photo_id = f'photo_{uuid.uuid4().hex[:12]}'
-    s3_key   = f'uploads/{sub}/{photo_id}.jpg'
+    s3_key   = f'uploads/{sub}/{photo_id}{ext}'
 
     # Write metadata to DynamoDB
     table.put_item(Item={
@@ -148,7 +156,7 @@ def handle_post_photos(event, sub, groups):
         Params={
             'Bucket':      BUCKET,
             'Key':         s3_key,
-            'ContentType': 'image/jpeg'
+            'ContentType': content_type
         },
         ExpiresIn=PUT_TTL
     )

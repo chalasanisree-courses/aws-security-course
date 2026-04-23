@@ -343,7 +343,7 @@ async function uploadPhoto() {
     const resp = await fetch('/photos', {
       method:  'POST',
       headers: authHeaders(),
-      body:    JSON.stringify({ title: photoTitle, is_public: isPublic })
+      body:    JSON.stringify({ title: photoTitle, is_public: isPublic, content_type: file.type })
     });
 
     if (!resp.ok) {
