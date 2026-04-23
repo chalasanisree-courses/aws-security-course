@@ -83,12 +83,12 @@
 </nav>
 
 <h1>Week 7 Lab — Upload &amp; Delete with Access Control</h1>
-<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 125 pts</p>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 110 pts</p>
 
-<p><strong>Objective:</strong> Add upload, delete, and visibility-toggle capabilities to the Photo Viewer — all restricted to premium users and scoped to their own uploads. Update photo delivery so user-uploaded photos are served via presigned GET URLs instead of static CloudFront URLs. By the end of this lab, Cognito groups will drive real capability differences: premium users can upload, delete, and control visibility of their own photos, while free users can only browse.</p>
+<p><strong>Objective:</strong> Add upload, delete, and visibility-toggle capabilities to the Photo Viewer — all restricted to premium users and scoped to their own uploads. Update photo delivery so all photos (pre-seeded and uploaded) are served via presigned GET URLs instead of static CloudFront URLs. By the end of this lab, Cognito groups will drive real capability differences: premium users can upload, delete, and control visibility of their own photos, while free users can only browse.</p>
 
 <div class="callout info">
-  <p><strong>Architecture after this lab:</strong> Browser → WAF/CloudFront → API Gateway (4 routes) → Lambda authorizer (origin secret + JWT) → main Lambda (group check + ownership check) → DynamoDB + S3 (presigned URLs for uploads)</p>
+  <p><strong>Architecture after this lab:</strong> Browser → WAF/CloudFront → API Gateway (4 routes) → Lambda authorizer (origin secret + JWT) → main Lambda (group check + ownership check) → DynamoDB + S3 (presigned URLs for all photo delivery)</p>
 </div>
 
 <div class="callout info">
@@ -207,7 +207,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 3</span>
-    <span class="step-title">Create an inline policy for uploads</span>
+    <span class="step-title">Create an inline policy for S3 operations</span>
   </div>
   <div class="step-body">
     <p>Go to <strong>Lambda → Functions → photoviewer-lambda → Configuration tab → Permissions</strong>. Under <strong>Execution role</strong>, click the role name link — this opens the exact IAM role that this function uses. Click <strong>Add permissions → Create inline policy → JSON</strong> and paste:</p>
@@ -223,18 +223,26 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
                 "s3:DeleteObject"
             ],
             "Resource": "arn:aws:s3:::photoviewer-[your-account-id]/uploads/*"
+        },
+        {
+            "Sid": "PhotoViewerPreseededRead",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::photoviewer-[your-account-id]/photos/*"
         }
     ]
 }</pre>
-    <p>Name the policy <code>photoviewer-uploads</code>. Click <strong>Create policy</strong>.</p>
+    <p>Name the policy <code>photoviewer-s3-photos</code>. Click <strong>Create policy</strong>.</p>
 
     <div class="callout info">
-      <p><strong>Least privilege:</strong> The <code>Resource</code> is scoped to the <code>uploads/*</code> prefix only. Lambda cannot read, write, or delete objects in the root of the bucket (where your HTML/CSS/JS live). This is the same least-privilege principle from Week 6's Secrets Manager policy — scope to the specific resource ARN, not <code>*</code>.</p>
+      <p><strong>Least privilege — two statements, two scopes:</strong> The first statement allows read, write, and delete on <code>uploads/*</code> (user-uploaded photos). The second allows read-only on <code>photos/*</code> (pre-seeded photos). Lambda needs <code>GetObject</code> on both prefixes because it generates presigned GET URLs for all photos — pre-seeded and uploaded. But it can only write or delete under <code>uploads/*</code>. Neither statement touches the root of the bucket where your HTML/CSS/JS live.</p>
     </div>
     <div class="callout">
       <p><strong>Why does this work when the bucket policy only names CloudFront?</strong> Your Week 3 bucket policy allows <code>s3:GetObject</code> for the CloudFront service principal — it does not mention Lambda. But the policy has no explicit <code>Deny</code>. For same-account IAM principals like your Lambda role, S3 evaluates the IAM policy and the bucket policy together. If the IAM policy explicitly allows the action and the bucket policy does not explicitly deny it, access is granted. Block Public Access stays on and has no effect here — Lambda's requests are authenticated IAM requests, not public ones.</p>
     </div>
-    <div class="screenshot">IAM role showing the <code>photoviewer-uploads</code> inline policy attached</div>
+    <div class="screenshot">IAM role showing the <code>photoviewer-s3-photos</code> inline policy attached</div>
   </div>
 </div>
 
@@ -569,7 +577,7 @@ aws s3 cp frontend/style.css s3://photoviewer-[your-account-id]/style.css --cont
     <span class="step-title">Test premium upload</span>
   </div>
   <div class="step-body">
-    <p>Log in as your premium user. Use the upload form to upload a photo (any .jpg or .png file). Set <code>is_public</code> to <strong>true</strong>.</p>
+    <p>Log in as your premium user. Use the upload form to upload <strong>two photos</strong> (any .jpg or .png files). Set <code>is_public</code> to <strong>true</strong> for both. You will use one for the delete test and one for the visibility toggle test.</p>
     <p>After upload completes, the photo should appear in your photo list. Open DevTools → Network tab and inspect the <code>/photos</code> response. The uploaded photo's URL should be a presigned S3 URL (long query string with <code>X-Amz-Signature</code>), not a CloudFront URL.</p>
     <div class="verify">
       <div class="verify-label">✓ Verify</div>
@@ -633,36 +641,16 @@ aws s3 cp frontend/style.css s3://photoviewer-[your-account-id]/style.css --cont
   </div>
   <div class="step-body">
     <p>Go to <strong>Cognito → your User Pool → Users</strong>. Remove your user from the <code>premium</code> group and add them to the <code>free</code> group. Log out and log back in.</p>
-    <p>The Photo Viewer should show all photos (public + private) but the upload form, delete buttons, and visibility toggles should not be visible. Verify this in the UI.</p>
-    <p>For a deeper check, try calling the upload endpoint directly from CloudShell using your free-user JWT:</p>
-    <pre>curl -X POST https://YOUR_API_GATEWAY_URL/photos \
-  -H "Authorization: Bearer YOUR_FREE_USER_JWT" \
-  -H "x-origin-verify: YOUR_ORIGIN_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"test","is_public":true}'</pre>
-    <p>You should get <strong>403 Forbidden</strong> with a message indicating the premium group is required.</p>
-    <div class="screenshot">Photo Viewer logged in as free user showing all photos but no mutation controls. CloudShell showing 403 on direct POST attempt.</div>
-  </div>
-</div>
-
-<div class="step">
-  <div class="step-header">
-    <span class="step-num">Step 21</span>
-    <span class="step-title">Test presigned URL conditions</span>
-  </div>
-  <div class="step-body">
-    <p>Switch your user back to the <code>premium</code> group, log out, and log back in. Upload a valid JPEG — this should succeed. Then test the conditions:</p>
-    <p><strong>Test 1 — wrong Content-Type:</strong> The presigned URL has a <code>Content-Type</code> condition embedded. Test it from CloudShell using the presigned URL from a successful POST /photos response:</p>
-    <pre># Use the uploadUrl from a POST /photos response
-curl -X PUT "PRESIGNED_URL_HERE" \
-  -H "Content-Type: text/plain" \
-  --data-binary "this is not an image"</pre>
-    <p>S3 should reject with <code>403 AccessDenied</code> because the Content-Type does not match the signed condition.</p>
-    <p><strong>Test 2 — file too large:</strong> Find or create an image file larger than 5 MB. Try uploading it through the UI. The presigned URL has a <code>Content-Length-Range</code> condition (max 5,242,880 bytes). S3 should reject the upload.</p>
-    <div class="callout info">
-      <p><strong>Where is the validation happening?</strong> No Lambda runs during the upload — the browser sends the file directly to S3. S3 itself enforces the conditions that were embedded in the presigned URL at signing time. This is server-side validation without a server invocation.</p>
+    <p>Navigate to the photo you uploaded as a premium user. It should still be visible — free users can see all photos — but the delete button and visibility toggle should <strong>not</strong> appear, even though you are the owner.</p>
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Your uploaded photo is visible. No upload bar, no delete button, no visibility toggle.</p>
     </div>
-    <div class="screenshot">DevTools Network tab showing S3 rejecting an invalid upload (403 response on the PUT request)</div>
+    <div class="screenshot">Photo Viewer logged in as free user, showing the photo you uploaded as premium, with no mutation controls visible</div>
+
+    <div class="callout info">
+      <p><strong>After testing, switch back to premium.</strong> Go to Cognito → remove from <code>free</code> → add to <code>premium</code> → log out and log back in. You need premium access for the remaining steps.</p>
+    </div>
   </div>
 </div>
 
@@ -677,7 +665,7 @@ curl -X PUT "PRESIGNED_URL_HERE" \
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 22</span>
+    <span class="step-num">Step 21</span>
     <span class="step-title">Find your upload and delete events in CloudTrail</span>
   </div>
   <div class="step-body">
@@ -709,12 +697,9 @@ curl -X PUT "PRESIGNED_URL_HERE" \
 </div>
 
 <h3>Question 1</h3>
-<p>The browser uploads the photo file directly to S3 using a presigned PUT URL — it does not send the file through API Gateway or Lambda. Explain why this design is used instead of uploading through the API. Identify at least two specific technical limitations that presigned URLs avoid.</p>
-
-<h3>Question 2</h3>
 <p>A presigned GET URL is included in the <code>/photos</code> response for each uploaded photo. If a logged-in user copies that URL and shares it with someone who is not logged in, what happens? How does the TTL limit the exposure, and what is the residual risk?</p>
 
-<h3>Question 3</h3>
+<h3>Question 2</h3>
 <p>This lab implements two authorization checks on the DELETE endpoint: a group check (is the user premium?) and an ownership check (does the user own this photo?). Explain what attack each check prevents independently. Then explain why both checks are necessary — what would happen if you removed one but kept the other?</p>
 
 
@@ -732,9 +717,9 @@ curl -X PUT "PRESIGNED_URL_HERE" \
       <td>Screenshot shows CloudFront Behaviors tab with <code>/uploads/*</code> path pattern and the <code>photoviewer-block-uploads</code> function attached. Browser shows 403 when accessing the uploads path directly.</td>
     </tr>
     <tr>
-      <td><strong>IAM policy for uploads</strong></td>
+      <td><strong>IAM policy for S3 operations</strong></td>
       <td>8</td>
-      <td>Screenshot shows <code>photoviewer-uploads</code> policy on Lambda role scoped to <code>uploads/*</code>.</td>
+      <td>Screenshot shows <code>photoviewer-s3-photos</code> policy on Lambda role with two statements: <code>uploads/*</code> (read/write/delete) and <code>photos/*</code> (read-only).</td>
     </tr>
     <tr>
       <td><strong>S3 CORS configured</strong></td>
@@ -757,11 +742,6 @@ curl -X PUT "PRESIGNED_URL_HERE" \
       <td>Screenshot of uploaded photo in Photo Viewer. DevTools showing presigned URL in <code>/photos</code> response. DynamoDB record with <code>owner</code>, <code>s3_key</code>, <code>uploaded_at</code> fields.</td>
     </tr>
     <tr>
-      <td><strong>Presigned URL conditions enforced</strong></td>
-      <td>5</td>
-      <td>Screenshot: S3 rejects upload of wrong Content-Type or oversized file (403 on PUT). DevTools Network tab showing the rejection.</td>
-    </tr>
-    <tr>
       <td><strong>Visibility toggle works</strong></td>
       <td>8</td>
       <td>Screenshot: photo visible when logged in, hidden in incognito after toggling <code>is_public = false</code>.</td>
@@ -779,7 +759,7 @@ curl -X PUT "PRESIGNED_URL_HERE" \
     <tr>
       <td><strong>Free user correctly restricted</strong></td>
       <td>8</td>
-      <td>Screenshot: logged in as free user, sees all photos, no mutation controls. CloudShell <code>curl</code> POST returns 403.</td>
+      <td>Screenshot: logged in as free user, showing a photo they uploaded as premium, with no upload bar, delete button, or visibility toggle visible.</td>
     </tr>
     <tr>
       <td><strong>CloudTrail audit trail</strong></td>
@@ -787,23 +767,18 @@ curl -X PUT "PRESIGNED_URL_HERE" \
       <td>Screenshot: CloudTrail Event history showing <code>PutObject</code> event with Lambda role ARN, source IP, and <code>uploads/</code> key path.</td>
     </tr>
     <tr>
-      <td><strong>Reflection Q1 — presigned upload</strong></td>
+      <td><strong>Reflection Q1 — presigned GET sharing</strong></td>
       <td>8</td>
-      <td>Identifies API Gateway 6 MB payload limit and Lambda invocation cost/duration. Explains that presigned URLs bypass both by going directly to S3.</td>
-    </tr>
-    <tr>
-      <td><strong>Reflection Q2 — presigned GET sharing</strong></td>
-      <td>10</td>
       <td>Explains the URL works for anyone within the TTL window (bearer token). TTL limits exposure duration. Residual risk: during the TTL window, the photo is accessible to anyone with the URL. Regeneration on every /photos call means the window is short.</td>
     </tr>
     <tr>
-      <td><strong>Reflection Q3 — two authorization checks</strong></td>
+      <td><strong>Reflection Q2 — two authorization checks</strong></td>
       <td>15</td>
       <td>Group check prevents free users from calling mutation endpoints. Ownership check prevents premium users from modifying each other's data (BOLA/IDOR). Without group check: free users could delete. Without ownership check: any premium user could delete anyone's photos.</td>
     </tr>
     <tr class="rubric-total">
       <td><strong>Total</strong></td>
-      <td><strong>125</strong></td>
+      <td><strong>110</strong></td>
       <td></td>
     </tr>
   </tbody>
