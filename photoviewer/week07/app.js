@@ -9,8 +9,8 @@
  *     DELETE /photos/{photoId} removes from S3 + DynamoDB
  *   - Toggle: premium users see visibility toggle on their own photos;
  *     PATCH /photos/{photoId} flips is_public
- *   - Photo rendering: uses photo.url from API response (presigned for uploads,
- *     relative path for pre-seeded) instead of constructing from s3_key
+ *   - Photo rendering: uses photo.url from API response (presigned S3 URL
+ *     for all photos — pre-seeded and uploaded) instead of constructing from s3_key
  *
  * BEFORE DEPLOYING — replace these three placeholders:
  *   YOUR_COGNITO_DOMAIN    Cognito → User pool → App integration → Domain
@@ -343,7 +343,7 @@ async function uploadPhoto() {
     const resp = await fetch('/photos', {
       method:  'POST',
       headers: authHeaders(),
-      body:    JSON.stringify({ title: photoTitle, is_public: isPublic })
+      body:    JSON.stringify({ title: photoTitle, is_public: isPublic, content_type: file.type })
     });
 
     if (!resp.ok) {
@@ -358,7 +358,7 @@ async function uploadPhoto() {
     // Step 2: Upload file directly to S3 using presigned URL
     const uploadResp = await fetch(uploadUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': 'image/jpeg' },
+      headers: { 'Content-Type': file.type },
       body: file
     });
 
