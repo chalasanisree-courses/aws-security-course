@@ -111,20 +111,22 @@ if [ -n "$POOL_ID" ] && [ "$POOL_ID" != "None" ]; then
   green "User Pool found: $POOL_ID"
 
   # Check for free and premium groups
-  GROUPS=$(aws cognito-idp list-groups --user-pool-id $POOL_ID --region $REGION \
-    --query "Groups[].GroupName" --output json 2>/dev/null)
+  aws cognito-idp list-groups --user-pool-id $POOL_ID --region $REGION \
+    --query "Groups[].GroupName" --output json > /tmp/pv_groups.json 2>/dev/null
 
-  if echo "$GROUPS" | grep -q '"free"'; then
+  if grep -q '"free"' /tmp/pv_groups.json 2>/dev/null; then
     green "Group 'free' exists"
   else
     fail "Group 'free' not found in User Pool"
   fi
 
-  if echo "$GROUPS" | grep -q '"premium"'; then
+  if grep -q '"premium"' /tmp/pv_groups.json 2>/dev/null; then
     green "Group 'premium' exists"
   else
     fail "Group 'premium' not found in User Pool"
   fi
+
+  rm -f /tmp/pv_groups.json
 else
   fail "No Cognito User Pool found"
 fi
