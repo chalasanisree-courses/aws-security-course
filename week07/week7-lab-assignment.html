@@ -468,7 +468,19 @@ aws lambda update-function-code \
     <span class="step-title">Upload updated frontend files to S3</span>
   </div>
   <div class="step-body">
-    <p>The updated frontend adds an upload form, delete button, and visibility toggle — all shown only to premium users. In CloudShell:</p>
+    <p>The updated frontend adds an upload form, delete button, and visibility toggle — all shown only to premium users.</p>
+
+    <div class="callout warning">
+      <p><strong>Before uploading, edit <code>app.js</code></strong> and replace the three placeholders at the top with your actual values — the same ones you used in Week 6:</p>
+      <ul>
+        <li><code>YOUR_COGNITO_DOMAIN</code> — found in <strong>Cognito → User pool → App integration → Domain</strong>. It is the prefix before <code>.auth.us-east-1.amazoncognito.com</code> (e.g. <code>us-east-1abcdefgh</code>)</li>
+        <li><code>YOUR_APP_CLIENT_ID</code> — found in <strong>Cognito → User pool → App integration → App clients</strong> (e.g. <code>7ilrlh8hpfoj87i8vtncfp126b</code>)</li>
+        <li><code>YOUR_CLOUDFRONT_DOMAIN</code> — your CloudFront distribution domain (e.g. <code>d1kbm2nphud61r.cloudfront.net</code>)</li>
+      </ul>
+      <p>If you skip this, login and logout will redirect to a nonexistent domain and break your app.</p>
+    </div>
+
+    <p>Once the placeholders are replaced, upload the files from CloudShell:</p>
     <pre>cd ~/aws-security-course/photoviewer/week07
 aws s3 cp frontend/index.html s3://photoviewer-[your-account-id]/index.html --content-type "text/html"
 aws s3 cp frontend/app.js s3://photoviewer-[your-account-id]/app.js --content-type "application/javascript"
