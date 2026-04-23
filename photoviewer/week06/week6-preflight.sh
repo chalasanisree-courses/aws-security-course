@@ -10,7 +10,6 @@
 
 REGION="us-east-1"
 TABLE="photoviewer-photos"
-BUCKET="photoviewer-9876543210"
 PASS=0
 WARN=0
 FAIL=0
@@ -74,13 +73,28 @@ else
 fi
 echo ""
 
-# ── 4. S3 bucket ──────────────────────────────────────────────
-echo "[ S3 bucket: $BUCKET ]"
-PHOTO_COUNT=$(aws s3 ls s3://$BUCKET/photos/ --region $REGION 2>/dev/null | grep -c "\.jpg" || true)
-if [ "$PHOTO_COUNT" -ge 5 ]; then
-  green "$PHOTO_COUNT photo files found in $BUCKET/photos/ — ready"
+# ── 4. S3 bucket — discover dynamically ─────────────────────
+echo "[ S3 bucket with photos ]"
+BUCKET=""
+PHOTO_COUNT=0
+for b in $(aws s3api list-buckets --query "Buckets[].Name" --output text 2>/dev/null); do
+  COUNT=$(aws s3 ls s3://$b/photos/ --region $REGION 2>/dev/null | grep -c "\.jpg" || true)
+  if [ "$COUNT" -gt 0 ]; then
+    BUCKET=$b
+    PHOTO_COUNT=$COUNT
+    break
+  fi
+done
+
+if [ -n "$BUCKET" ]; then
+  green "Found bucket: $BUCKET"
+  if [ "$PHOTO_COUNT" -ge 5 ]; then
+    green "$PHOTO_COUNT photo files found in photos/ — ready"
+  else
+    warn "Only $PHOTO_COUNT .jpg files found in photos/ — expected ≥5"
+  fi
 else
-  warn "Only $PHOTO_COUNT .jpg files found in $BUCKET/photos/ — expected ≥5"
+  fail "No S3 bucket found with a photos/ folder containing .jpg files"
 fi
 echo ""
 

@@ -10,7 +10,6 @@
 
 REGION="us-east-1"
 TABLE="photoviewer-photos"
-BUCKET="photoviewer-9876543210"
 SECRET_NAME="photoviewer/origin-verify-secret"
 PASS=0
 WARN=0
@@ -71,12 +70,23 @@ else
 fi
 echo ""
 
-# ── 4. S3 bucket ──────────────────────────────────────────────
-echo "[ S3 bucket: $BUCKET ]"
-if aws s3 ls s3://$BUCKET --region $REGION >/dev/null 2>&1; then
-  green "Bucket exists"
+# ── 4. S3 bucket — discover dynamically ─────────────────────
+echo "[ S3 bucket with photos ]"
+BUCKET=""
+PHOTO_COUNT=0
+for b in $(aws s3api list-buckets --query "Buckets[].Name" --output text 2>/dev/null); do
+  COUNT=$(aws s3 ls s3://$b/photos/ --region $REGION 2>/dev/null | grep -c "\.jpg" || true)
+  if [ "$COUNT" -gt 0 ]; then
+    BUCKET=$b
+    PHOTO_COUNT=$COUNT
+    break
+  fi
+done
+
+if [ -n "$BUCKET" ]; then
+  green "Found bucket: $BUCKET"
 else
-  fail "Bucket '$BUCKET' not found"
+  fail "No S3 bucket found with a photos/ folder containing .jpg files"
 fi
 echo ""
 
