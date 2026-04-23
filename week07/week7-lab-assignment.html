@@ -110,7 +110,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <li><code>photoviewer-lambda</code> exists and is Active</li>
     <li><code>photoviewer-authorizer</code> exists and is Active</li>
     <li>DynamoDB table <code>photoviewer-photos</code> exists</li>
-    <li>S3 bucket <code>photoviewer-9876543210</code> exists</li>
+    <li>S3 bucket <code>photoviewer-[your-account-id]</code> exists</li>
     <li>CloudFront distribution exists</li>
     <li>Cognito User Pool exists with <code>free</code> and <code>premium</code> groups</li>
     <li>Secrets Manager secret <code>photoviewer/origin-verify-secret</code> exists</li>
@@ -152,10 +152,16 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <span class="step-title">Add a /uploads/* behavior to CloudFront</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>CloudFront → your distribution → Behaviors tab → Create behavior</strong>.</p>
+    <p><strong>First, update the existing <code>/photos</code> behavior.</strong> Week 7 adds routes like <code>DELETE /photos/{photoId}</code> — CloudFront's exact path <code>/photos</code> won't match <code>/photos/abc123</code>, so those requests would fall through to the S3 default behavior and fail. Go to <strong>CloudFront → your distribution → Behaviors tab</strong>, select the <code>/photos</code> behavior, click <strong>Edit</strong>, and change the path pattern to <code>/photos*</code>. Save changes.</p>
+
+    <div class="callout info">
+      <p><strong>Why <code>/photos*</code> instead of <code>/photos</code>?</strong> CloudFront path matching is literal. <code>/photos</code> matches only the exact path <code>/photos</code>. The wildcard pattern <code>/photos*</code> matches both <code>/photos</code> (GET, POST) and <code>/photos/abc123</code> (DELETE, PATCH). Without this change, mutation requests would never reach API Gateway.</p>
+    </div>
+
+    <p><strong>Next, create the new <code>/uploads/*</code> behavior.</strong> Click <strong>Create behavior</strong>.</p>
     <ul>
       <li>Path pattern: <code>/uploads/*</code></li>
-      <li>Origin: select your S3 origin (<code>photoviewer-9876543210.s3...</code>)</li>
+      <li>Origin: select your S3 origin (<code>photoviewer-[your-account-id].s3...</code>)</li>
       <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
       <li>Cache policy: <strong>CachingOptimized</strong></li>
       <li>Function associations → Viewer request: <strong>CloudFront Functions</strong> → select <code>photoviewer-block-uploads</code></li>
@@ -164,7 +170,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <table>
       <thead><tr><th>Precedence</th><th>Path pattern</th><th>Origin</th><th>Purpose</th></tr></thead>
       <tbody>
-        <tr><td>0</td><td><code>/photos</code></td><td>API Gateway</td><td>API routes (W5)</td></tr>
+        <tr><td>0</td><td><code>/photos*</code></td><td>API Gateway</td><td>API routes (W5, updated W7)</td></tr>
         <tr><td>1</td><td><code>/callback</code></td><td>S3</td><td>OAuth redirect (W6)</td></tr>
         <tr><td>2</td><td><code>/uploads/*</code></td><td>S3</td><td>Block direct access (W7)</td></tr>
         <tr><td>3</td><td><code>Default (*)</code></td><td>S3</td><td>HTML/JS/CSS + pre-seeded photos</td></tr>
@@ -196,7 +202,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <span class="step-title">Create an inline policy for uploads</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>IAM → Roles</strong> → find the execution role for <code>photoviewer-lambda</code>. Click <strong>Add permissions → Create inline policy → JSON</strong> and paste:</p>
+    <p>Go to <strong>Lambda → Functions → photoviewer-lambda → Configuration tab → Permissions</strong>. Under <strong>Execution role</strong>, click the role name link — this opens the exact IAM role that this function uses. Click <strong>Add permissions → Create inline policy → JSON</strong> and paste:</p>
     <pre>{
     "Version": "2012-10-17",
     "Statement": [
@@ -208,7 +214,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
                 "s3:GetObject",
                 "s3:DeleteObject"
             ],
-            "Resource": "arn:aws:s3:::photoviewer-9876543210/uploads/*"
+            "Resource": "arn:aws:s3:::photoviewer-[your-account-id]/uploads/*"
         }
     ]
 }</pre>
@@ -230,7 +236,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <span class="step-title">Configure CORS on the S3 bucket</span>
   </div>
   <div class="step-body">
-    <p>When the browser uploads a file to the presigned S3 URL, it is a <strong>cross-origin request</strong> — your app runs on <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code> but the PUT goes to <code>https://photoviewer-9876543210.s3.us-east-1.amazonaws.com</code>. Without CORS, the browser blocks the upload before it starts.</p>
+    <p>When the browser uploads a file to the presigned S3 URL, it is a <strong>cross-origin request</strong> — your app runs on <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net</code> but the PUT goes to <code>https://photoviewer-[your-account-id].s3.us-east-1.amazonaws.com</code>. Without CORS, the browser blocks the upload before it starts.</p>
     <p>Go to <strong>S3 → your bucket → Permissions tab → scroll to Cross-origin resource sharing (CORS) → Edit</strong> and paste:</p>
     <pre>[
     {
@@ -404,8 +410,8 @@ aws lambda update-function-configuration \
     --function-name photoviewer-lambda \
     --environment "Variables=$(echo $EXISTING | python3 -c "
 import sys, json
-env = json.load(sys.stdin)
-env['PHOTO_BUCKET'] = 'photoviewer-9876543210'
+env = json.load(sys.stdin) or {}
+env['PHOTO_BUCKET'] = 'photoviewer-[your-account-id]'
 print(json.dumps(env))
 ")"</pre>
 
@@ -452,9 +458,9 @@ print(json.dumps(env))
   <div class="step-body">
     <p>The updated frontend adds an upload form, delete button, and visibility toggle — all shown only to premium users. In CloudShell:</p>
     <pre>cd ~/aws-security-course/photoviewer/week07
-aws s3 cp frontend/index.html s3://photoviewer-9876543210/index.html --content-type "text/html"
-aws s3 cp frontend/app.js s3://photoviewer-9876543210/app.js --content-type "application/javascript"
-aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-type "text/css"</pre>
+aws s3 cp frontend/index.html s3://photoviewer-[your-account-id]/index.html --content-type "text/html"
+aws s3 cp frontend/app.js s3://photoviewer-[your-account-id]/app.js --content-type "application/javascript"
+aws s3 cp frontend/style.css s3://photoviewer-[your-account-id]/style.css --content-type "text/css"</pre>
   </div>
 </div>
 
@@ -547,7 +553,7 @@ aws s3 cp frontend/style.css s3://photoviewer-9876543210/style.css --content-typ
   <div class="step-body">
     <p>While logged in as your premium user, click the delete button on one of your uploaded photos. Confirm the deletion. The photo should disappear from the list.</p>
     <p>Verify the S3 object is also gone:</p>
-    <pre>aws s3 ls s3://photoviewer-9876543210/uploads/YOUR_COGNITO_SUB/</pre>
+    <pre>aws s3 ls s3://photoviewer-[your-account-id]/uploads/YOUR_COGNITO_SUB/</pre>
     <p>The deleted photo should no longer appear in the listing.</p>
     <div class="verify">
       <div class="verify-label">✓ Verify</div>
