@@ -148,17 +148,25 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 2</span>
-    <span class="step-title">Add a /uploads/* behavior to CloudFront</span>
+    <span class="step-num">Step 2a</span>
+    <span class="step-title">Update the /photos behavior to /photos*</span>
   </div>
   <div class="step-body">
-    <p><strong>First, update the existing <code>/photos</code> behavior.</strong> Week 7 adds routes like <code>DELETE /photos/{photoId}</code> — CloudFront's exact path <code>/photos</code> won't match <code>/photos/abc123</code>, so those requests would fall through to the S3 default behavior and fail. Go to <strong>CloudFront → your distribution → Behaviors tab</strong>, select the <code>/photos</code> behavior, click <strong>Edit</strong>, and change the path pattern to <code>/photos*</code>. Save changes.</p>
+    <p>Week 7 adds routes like <code>DELETE /photos/{photoId}</code>. CloudFront's exact path <code>/photos</code> won't match <code>/photos/abc123</code> — those requests would fall through to the S3 default behavior and fail. Go to <strong>CloudFront → your distribution → Behaviors tab</strong>, select the <code>/photos</code> behavior, click <strong>Edit</strong>, and change the path pattern to <code>/photos*</code>. Save changes.</p>
 
     <div class="callout info">
       <p><strong>Why <code>/photos*</code> instead of <code>/photos</code>?</strong> CloudFront path matching is literal. <code>/photos</code> matches only the exact path <code>/photos</code>. The wildcard pattern <code>/photos*</code> matches both <code>/photos</code> (GET, POST) and <code>/photos/abc123</code> (DELETE, PATCH). Without this change, mutation requests would never reach API Gateway.</p>
     </div>
+  </div>
+</div>
 
-    <p><strong>Next, create the new <code>/uploads/*</code> behavior.</strong> Click <strong>Create behavior</strong>.</p>
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 2b</span>
+    <span class="step-title">Add a /uploads/* behavior to block direct access</span>
+  </div>
+  <div class="step-body">
+    <p>Click <strong>Create behavior</strong>.</p>
     <ul>
       <li>Path pattern: <code>/uploads/*</code></li>
       <li>Origin: select your S3 origin (<code>photoviewer-[your-account-id].s3...</code>)</li>
@@ -227,6 +235,37 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
       <p><strong>Why does this work when the bucket policy only names CloudFront?</strong> Your Week 3 bucket policy allows <code>s3:GetObject</code> for the CloudFront service principal — it does not mention Lambda. But the policy has no explicit <code>Deny</code>. For same-account IAM principals like your Lambda role, S3 evaluates the IAM policy and the bucket policy together. If the IAM policy explicitly allows the action and the bucket policy does not explicitly deny it, access is granted. Block Public Access stays on and has no effect here — Lambda's requests are authenticated IAM requests, not public ones.</p>
     </div>
     <div class="screenshot">IAM role showing the <code>photoviewer-uploads</code> inline policy attached</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 3b</span>
+    <span class="step-title">Update the DynamoDB policy for write operations</span>
+  </div>
+  <div class="step-body">
+    <p>The DynamoDB policy from Week 5 (<code>photoviewer-dynamodb-read</code>) only allows <code>Scan</code> and <code>GetItem</code>. Week 7 adds upload, delete, and toggle — which need write permissions. Leave the read policy as-is and create a new inline policy. Click <strong>Add permissions → Create inline policy → JSON</strong> and paste:</p>
+    <pre>{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PhotoViewerDynamoDBWrite",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:UpdateItem"
+            ],
+            "Resource": "PASTE_YOUR_DYNAMODB_ARN_HERE"
+        }
+    ]
+}</pre>
+    <p>For the <code>Resource</code> value, open your <code>photoviewer-dynamodb-read</code> policy and copy the ARN from there — it looks like <code>arn:aws:dynamodb:us-east-1:YOUR_ACCOUNT_ID:table/photoviewer-photos</code>. Use the same ARN so both policies target the exact same table.</p>
+    <p>Name the policy <code>photoviewer-dynamodb-write</code>. Click <strong>Create policy</strong>.</p>
+
+    <div class="callout info">
+      <p><strong>Why a separate policy?</strong> The read policy (<code>photoviewer-dynamodb-read</code>) was created in Week 5. The write policy (<code>photoviewer-dynamodb-write</code>) is new in Week 7. Keeping them separate makes it clear which permissions each week introduced — easier to audit and easier to roll back if needed.</p>
+    </div>
   </div>
 </div>
 

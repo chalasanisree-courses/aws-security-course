@@ -13,9 +13,13 @@
  *     relative path for pre-seeded) instead of constructing from s3_key
  *
  * BEFORE DEPLOYING — replace these three placeholders:
- *   YOUR_COGNITO_DOMAIN    e.g. photoviewer-web-client-a1b2c3d4
- *   YOUR_APP_CLIENT_ID     e.g. 1abc2defg3hijklmno4pqrst
- *   YOUR_CLOUDFRONT_DOMAIN e.g. dXXXXXXXXXXXXX.cloudfront.net
+ *   YOUR_COGNITO_DOMAIN    Cognito → User pool → App integration → Domain
+ *                          (the prefix before .auth.us-east-1.amazoncognito.com,
+ *                           e.g. us-east-1abcdefgh)
+ *   YOUR_APP_CLIENT_ID     Cognito → User pool → App integration → App clients
+ *                          (e.g. 7ilrlh8hpfoj87i8vtncfp126b)
+ *   YOUR_CLOUDFRONT_DOMAIN Your CloudFront distribution domain
+ *                          (e.g. d1kbm2nphud61r.cloudfront.net)
  */
 
 // ── Configuration ─────────────────────────────────────────────────────────────
