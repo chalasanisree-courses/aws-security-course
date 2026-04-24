@@ -561,18 +561,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w7')">
       <span class="week-num">Week 7</span>
-      <span class="week-title">Authorization — Upload & Delete with Access Control</span>
+      <span class="week-title">Authorization Patterns — Presigned URLs, RBAC, Ownership</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w7-chev">▶</span>
     </div>
     <div class="week-body" id="w7">
-      <p class="week-desc">RBAC takes effect — Cognito groups from Week 6 now drive capability differences. Premium users get S3 presigned URLs to upload photos directly from the browser. Uploaded photos are tracked by owner in DynamoDB. Users can delete their own uploads via API Gateway with Lambda validating object-level ownership. Demonstrates both endpoint-level (premium-only upload) and object-level (owner-only delete) authorization patterns.</p>
+      <p class="week-desc">RBAC takes effect — Cognito groups from Week 6 now drive capability differences. Premium users get S3 presigned URLs to upload photos directly from the browser. All photos (pre-seeded and uploaded) are now served via presigned GET URLs — no permanent CloudFront photo URLs. Users can delete and toggle visibility of their own uploads via API Gateway with Lambda validating object-level ownership. Demonstrates both endpoint-level (premium-only mutations) and object-level (owner-only delete/toggle) authorization patterns. CORS configured for cross-origin S3 uploads. BOLA/IDOR vulnerability explained.</p>
       <div class="resource-list">
         <a class="resource-link" href="week07/week7-authorization.html">
           <span class="icon">◈</span> Authorization Patterns — concept notes
         </a>
         <a class="resource-link" href="week07/week7-lab-assignment.html">
-          <span class="icon">◈</span> Week 7 Lab — Upload & Delete Authorization
+          <span class="icon">◈</span> Week 7 Lab — Authorization Patterns
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -614,7 +614,7 @@
       <span class="week-chevron" id="w9-chev">▶</span>
     </div>
     <div class="week-body" id="w9">
-      <p class="week-desc">IAM Identity Center replaces individual IAM users — developers log in via SSO with permission sets scoped to accounts. AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone enforces these automatically on new accounts.</p>
+      <p class="week-desc">IAM Identity Center replaces individual IAM users — developers log in via SSO with permission sets scoped to accounts. PhotoViewer employees can now manage pre-seeded photos (flip visibility, delete, add new showcase photos) through Identity Center — a separate auth path from Cognito app users. AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone enforces these automatically on new accounts.</p>
       <div class="resource-list">
         <a class="resource-link" href="week09/week9-identity-center.html">
           <span class="icon">◈</span> Multi-Account Governance — concept notes
@@ -909,7 +909,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 6;
+const currentWeek = 7;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }

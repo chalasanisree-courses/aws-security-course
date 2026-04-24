@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Week 7 Lab — Upload &amp; Delete Authorization · CS 55D</title>
+<title>Week 7 Lab — Authorization Patterns · CS 55D</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
@@ -82,7 +82,7 @@
   <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
 </nav>
 
-<h1>Week 7 Lab — Upload &amp; Delete with Access Control</h1>
+<h1>Week 7 Lab — Authorization Patterns</h1>
 <p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 110 pts</p>
 
 <p><strong>Objective:</strong> Add upload, delete, and visibility-toggle capabilities to the Photo Viewer — all restricted to premium users and scoped to their own uploads. Update photo delivery so all photos (pre-seeded and uploaded) are served via presigned GET URLs instead of static CloudFront URLs. By the end of this lab, Cognito groups will drive real capability differences: premium users can upload, delete, and control visibility of their own photos, while free users can only browse.</p>
@@ -181,7 +181,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
         <tr><td>0</td><td><code>/photos*</code></td><td>API Gateway</td><td>API routes (W5, updated W7)</td></tr>
         <tr><td>1</td><td><code>/callback</code></td><td>S3</td><td>OAuth redirect (W6)</td></tr>
         <tr><td>2</td><td><code>/uploads/*</code></td><td>S3</td><td>Block direct access (W7)</td></tr>
-        <tr><td>3</td><td><code>Default (*)</code></td><td>S3</td><td>HTML/JS/CSS + pre-seeded photos</td></tr>
+        <tr><td>3</td><td><code>Default (*)</code></td><td>S3</td><td>HTML/JS/CSS only</td></tr>
       </tbody>
     </table>
     <div class="callout info">
@@ -449,7 +449,7 @@ aws lambda update-function-code \
     <pre>aws lambda wait function-updated-v2 --function-name photoviewer-lambda</pre>
 
     <div class="callout info">
-      <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for items with an <code>s3_key</code> starting with <code>uploads/</code>.</p>
+      <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for all photos — pre-seeded and uploaded.</p>
       <p><strong>Presigned URL conditions:</strong> The POST handler generates the presigned PUT URL with embedded conditions: <code>Content-Type</code> must be <code>image/jpeg</code> or <code>image/png</code>, and file size must be under 5 MB. These conditions are part of the signed policy — S3 enforces them on upload and rejects requests that violate them, even though no Lambda runs during the upload itself.</p>
     </div>
 
@@ -697,7 +697,7 @@ aws s3 cp frontend/style.css s3://photoviewer-[your-account-id]/style.css --cont
 </div>
 
 <h3>Question 1</h3>
-<p>A presigned GET URL is included in the <code>/photos</code> response for each uploaded photo. If a logged-in user copies that URL and shares it with someone who is not logged in, what happens? How does the TTL limit the exposure, and what is the residual risk?</p>
+<p>A presigned GET URL is included in the <code>/photos</code> response for each photo. If a logged-in user copies that URL and shares it with someone who is not logged in, what happens? How does the TTL limit the exposure, and what is the residual risk?</p>
 
 <h3>Question 2</h3>
 <p>This lab implements two authorization checks on the DELETE endpoint: a group check (is the user premium?) and an ownership check (does the user own this photo?). Explain what attack each check prevents independently. Then explain why both checks are necessary — what would happen if you removed one but kept the other?</p>
