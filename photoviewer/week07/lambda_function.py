@@ -140,17 +140,7 @@ def handle_post_photos(event, sub, groups):
     photo_id = f'photo_{uuid.uuid4().hex[:12]}'
     s3_key   = f'uploads/{sub}/{photo_id}{ext}'
 
-    # Write metadata to DynamoDB
-    table.put_item(Item={
-        'photo_id':    photo_id,
-        'title':       title,
-        'is_public':   is_public,
-        'owner':       sub,
-        's3_key':      s3_key,
-        'uploaded_at': int(time.time())
-    })
-
-    # Generate presigned PUT URL with conditions
+    # Generate presigned PUT URL first — if this fails, no orphaned DynamoDB record
     presigned_url = s3.generate_presigned_url(
         'put_object',
         Params={
@@ -160,6 +150,16 @@ def handle_post_photos(event, sub, groups):
         },
         ExpiresIn=PUT_TTL
     )
+
+    # Write metadata to DynamoDB only after presigned URL generation succeeds
+    table.put_item(Item={
+        'photo_id':    photo_id,
+        'title':       title,
+        'is_public':   is_public,
+        'owner':       sub,
+        's3_key':      s3_key,
+        'uploaded_at': int(time.time())
+    })
 
     print(f'POST /photos: photo_id={photo_id} owner={sub} s3_key={s3_key}')
 
