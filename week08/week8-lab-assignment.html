@@ -150,7 +150,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
       <li>Alias: <code>photoviewer-data-key</code></li>
       <li>Description: <code>Encrypts photos (S3) and photo metadata (DynamoDB)</code></li>
     </ul>
-    <p>On the <strong>Define key usage permissions</strong> page, select the <strong>main Lambda execution role</strong> (<code>photoviewer-lambda-role-*</code>). This is the role that reads and writes photos and DynamoDB records.</p>
+    <p>On the <strong>Define key administrative permissions</strong> page, select your IAM admin user. On the <strong>Define key usage permissions</strong> page, select the <strong>main Lambda execution role</strong> (<code>photoviewer-lambda-role-*</code>). This is the role that reads and writes photos and DynamoDB records.</p>
 
     <div class="callout info">
       <p><strong>Two keys, two scopes:</strong> The infra key protects operational secrets — only the authorizer can decrypt. The data key protects user content — only the main Lambda can decrypt. Neither role can decrypt the other key's data. This is separation of duties enforced by cryptography.</p>
@@ -284,6 +284,10 @@ done</pre>
   </div>
   <div class="step-body">
     <p>Go to <strong>KMS → photoviewer-data-key → Key policy → Edit</strong>. Find the statement that grants the main Lambda execution role <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code>. Remove the Lambda role ARN from that statement. Click <strong>Save changes</strong>.</p>
+
+    <div class="callout warning">
+      <p><strong>Only remove the Lambda role — not your admin user.</strong> If you remove yourself from the key administrators, you will lose the ability to edit the key policy and cannot restore access. Only delete the Lambda execution role ARN from the <em>key users</em> section.</p>
+    </div>
 
     <div class="callout warning">
       <p><strong>This will break the app.</strong> That's the point. IAM still allows <code>dynamodb:Scan</code> and <code>s3:GetObject</code> — those permissions haven't changed. But KMS will deny decryption because the Lambda role is no longer in the key policy.</p>
