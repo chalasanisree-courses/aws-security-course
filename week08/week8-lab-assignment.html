@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 8 Lab — Encryption at Rest with KMS · CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1.2rem 1.4rem; border-radius: 8px; font-size: 0.84rem; overflow-x: auto; margin: 0.8rem 0 1.2rem; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn, .callout.warning { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .step { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+  .step-header { display: flex; align-items: baseline; gap: 1rem; padding: 0.9rem 1.2rem; background: #f5f8fc; border-bottom: 1px solid #d0dce8; }
+  .step-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1F4E79; background: #dce8f5; padding: 0.2em 0.6em; border-radius: 4px; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; color: #111; }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+
+  .verify { background: #f0fff4; border: 1px solid #a5d6a7; border-radius: 8px; padding: 0.9rem 1.2rem; margin: 1rem 0; }
+  .verify-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #155724; margin-bottom: 0.4rem; }
+  .verify p:last-child { margin-bottom: 0; }
+
+  .screenshot { background: #f8f5ff; border: 1px solid #c8b8e8; border-radius: 8px; padding: 0.8rem 1.2rem; margin: 1rem 0; font-size: 0.9rem; color: #4a148c; }
+  .screenshot::before { content: "📸 Screenshot required: "; font-weight: 600; }
+
+  .preflight { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .preflight h3 { color: #e65100; margin-top: 0; }
+
+  .part-header { background: #1F4E79; color: #fff; border-radius: 8px; padding: 0.7rem 1.2rem; margin: 2rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .part-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+  .part-title { font-size: 1.05rem; font-weight: 600; }
+
+  .rubric-table th { background: #1F4E79; color: #fff; }
+  .rubric-table td:nth-child(2) { text-align: center; font-weight: 600; color: #1F4E79; }
+  .rubric-total td { font-weight: 700; background: #f0f4f8; }
+
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .download-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .download-btn:hover { background: #B5D4F4; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6BVW2TTTLE');
+</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 8 Lab — Encryption at Rest with KMS</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 100 pts</p>
+
+<p><strong>Objective:</strong> Replace AWS-managed encryption with customer-managed KMS keys across S3, DynamoDB, and Secrets Manager. Create two keys with distinct key policies to enforce separation of duties. Demonstrate that KMS key policies create an authorization layer independent of IAM, and use CloudTrail to audit decryption events.</p>
+
+<div class="callout info">
+  <p><strong>Architecture after this lab:</strong> Same as Week 7 — no new services or API routes. What changes is the encryption layer underneath: all data at rest is now encrypted with customer-managed KMS keys whose key policies you control.</p>
+</div>
+
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Run the pre-flight script from CloudShell before starting:</p>
+  <pre>cd ~
+git -C aws-security-course pull
+bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
+  <p>The script verifies your Week 7 environment is intact: Lambda functions, DynamoDB table, S3 bucket, CloudFront distribution, Cognito User Pool with groups, and Secrets Manager secret. Address any errors before proceeding.</p>
+</div>
+
+
+<!-- ═══════════════ PART 1 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">Create the infrastructure key</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 1</span>
+    <span class="step-title">Create the photoviewer-infra-key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>KMS → Customer managed keys → Create key</strong>.</p>
+    <ul>
+      <li>Key type: <strong>Symmetric</strong></li>
+      <li>Key usage: <strong>Encrypt and decrypt</strong></li>
+      <li>Alias: <code>photoviewer-infra-key</code></li>
+      <li>Description: <code>Encrypts infrastructure secrets (origin-verify, future credentials)</code></li>
+    </ul>
+    <p>On the <strong>Define key administrative permissions</strong> page, select your IAM admin user. On the <strong>Define key usage permissions</strong> page, select the <strong>Lambda authorizer execution role</strong> (<code>photoviewer-authorizer-role-*</code>). This is the role that reads the origin secret from Secrets Manager on every request.</p>
+
+    <div class="callout info">
+      <p><strong>Why the authorizer role?</strong> When Secrets Manager encrypts the secret with this key, any principal that reads the secret also needs <code>kms:Decrypt</code> permission on the key. The authorizer Lambda reads the secret on every invocation — so its execution role must be in the key policy.</p>
+    </div>
+
+    <div class="screenshot">KMS key details page showing <code>photoviewer-infra-key</code> with the authorizer role in the key policy</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 2 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">Create the data key</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 2</span>
+    <span class="step-title">Create the photoviewer-data-key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>KMS → Customer managed keys → Create key</strong>.</p>
+    <ul>
+      <li>Key type: <strong>Symmetric</strong></li>
+      <li>Key usage: <strong>Encrypt and decrypt</strong></li>
+      <li>Alias: <code>photoviewer-data-key</code></li>
+      <li>Description: <code>Encrypts photos (S3) and photo metadata (DynamoDB)</code></li>
+    </ul>
+    <p>On the <strong>Define key usage permissions</strong> page, select the <strong>main Lambda execution role</strong> (<code>photoviewer-lambda-role-*</code>). This is the role that reads and writes photos and DynamoDB records.</p>
+
+    <div class="callout info">
+      <p><strong>Two keys, two scopes:</strong> The infra key protects operational secrets — only the authorizer can decrypt. The data key protects user content — only the main Lambda can decrypt. Neither role can decrypt the other key's data. This is separation of duties enforced by cryptography.</p>
+    </div>
+
+    <div class="screenshot">KMS console showing both keys: <code>photoviewer-infra-key</code> and <code>photoviewer-data-key</code></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 3 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Encrypt Secrets Manager</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 3</span>
+    <span class="step-title">Switch the origin secret to the infra key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Secrets Manager → photoviewer/origin-verify-secret → Actions → Edit encryption key</strong>. Change from <code>aws/secretsmanager</code> (AWS-managed) to <code>photoviewer-infra-key</code>. Click <strong>Save</strong>.</p>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Load the Photo Viewer in your browser. Login should still work — the authorizer reads the secret, and its role has <code>kms:Decrypt</code> on the infra key. If login fails, check that you selected the correct authorizer role in the key policy.</p>
+    </div>
+
+    <div class="screenshot">Secrets Manager showing <code>photoviewer/origin-verify-secret</code> encrypted with <code>photoviewer-infra-key</code></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 4 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 4</span>
+  <span class="part-title">Encrypt S3</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 4</span>
+    <span class="step-title">Set the bucket default encryption to the data key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>S3 → photoviewer-[your-account-id] → Properties → Default encryption → Edit</strong>. Change from <code>SSE-S3</code> to <code>SSE-KMS</code>. Select <code>photoviewer-data-key</code> from the dropdown. Enable <strong>Bucket Key</strong> (reduces KMS API calls). Click <strong>Save changes</strong>.</p>
+
+    <div class="callout">
+      <p><strong>Existing objects are not re-encrypted.</strong> Changing the default encryption only affects new objects. Existing pre-seeded photos are still encrypted with the old AWS-managed key. You'll re-encrypt them in Step 6.</p>
+    </div>
+
+    <div class="screenshot">S3 bucket Properties showing default encryption set to SSE-KMS with <code>photoviewer-data-key</code></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 5</span>
+    <span class="step-title">Upload a new photo and verify encryption</span>
+  </div>
+  <div class="step-body">
+    <p>Log in as a premium user and upload a photo through the app. After the upload, go to <strong>S3 → your bucket → uploads/ → your photo</strong>. Click the photo and check <strong>Server-side encryption settings</strong>.</p>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>The new photo shows encryption type <code>SSE-KMS</code> with key ARN pointing to <code>photoviewer-data-key</code>.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 6</span>
+    <span class="step-title">Re-encrypt pre-seeded photos</span>
+  </div>
+  <div class="step-body">
+    <p>Existing photos still use the old AWS-managed key. Re-encrypt them by copying in place from CloudShell:</p>
+    <pre>BUCKET=$(aws s3api list-buckets --query "Buckets[].Name" --output text | tr '\t' '\n' | grep photoviewer)
+KEY_ARN=$(aws kms describe-key --key-id alias/photoviewer-data-key --query "KeyMetadata.Arn" --output text)
+
+for obj in $(aws s3 ls s3://$BUCKET/photos/ --recursive | awk '{print $4}'); do
+  aws s3 cp s3://$BUCKET/$obj s3://$BUCKET/$obj \
+    --sse aws:kms --sse-kms-key-id $KEY_ARN
+done</pre>
+    <p>Verify by clicking a pre-seeded photo in S3 — it should now show <code>photoviewer-data-key</code> in the encryption settings.</p>
+
+    <div class="callout info">
+      <p><strong>Copy-in-place:</strong> The <code>aws s3 cp</code> command with the same source and destination re-uploads the object with the new encryption settings. S3 creates a new version encrypted with the specified KMS key. The old version (with the old key) is overwritten.</p>
+    </div>
+
+    <div class="screenshot">S3 object properties for a pre-seeded photo showing SSE-KMS with <code>photoviewer-data-key</code></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 5 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 5</span>
+  <span class="part-title">Encrypt DynamoDB</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 7</span>
+    <span class="step-title">Switch the DynamoDB table to the data key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>DynamoDB → Tables → photoviewer-photos → Additional settings → Encryption</strong>. Click <strong>Manage encryption</strong>. Change from <code>Owned by Amazon DynamoDB</code> to <strong>Customer managed key</strong>. Select <code>photoviewer-data-key</code>. Click <strong>Save changes</strong>.</p>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Load the Photo Viewer and browse photos. All photos should still appear and the counter should show the correct number. The main Lambda role has <code>kms:Decrypt</code> on the data key, so DynamoDB reads work.</p>
+    </div>
+
+    <div class="screenshot">DynamoDB table encryption settings showing <code>photoviewer-data-key</code></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 6 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 6</span>
+  <span class="part-title">Demonstrate KMS as an independent authorization layer</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 8</span>
+    <span class="step-title">Revoke Lambda's access to the data key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>KMS → photoviewer-data-key → Key policy → Edit</strong>. Find the statement that grants the main Lambda execution role <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code>. Remove the Lambda role ARN from that statement. Click <strong>Save changes</strong>.</p>
+
+    <div class="callout warning">
+      <p><strong>This will break the app.</strong> That's the point. IAM still allows <code>dynamodb:Scan</code> and <code>s3:GetObject</code> — those permissions haven't changed. But KMS will deny decryption because the Lambda role is no longer in the key policy.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 9</span>
+    <span class="step-title">Observe the failure</span>
+  </div>
+  <div class="step-body">
+    <p>Load the Photo Viewer. The page loads (HTML/CSS/JS are served from CloudFront) but <code>GET /photos</code> returns a 500 error. Check the Lambda logs:</p>
+    <pre>aws logs tail /aws/lambda/photoviewer-lambda --since 5m --format short</pre>
+    <p>You should see an <code>AccessDeniedException</code> on a KMS operation — the Lambda can still call DynamoDB and S3, but the services cannot decrypt the data because KMS denied the key usage.</p>
+
+    <div class="screenshot">Lambda logs showing <code>AccessDeniedException</code> on <code>kms:Decrypt</code></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 10</span>
+    <span class="step-title">Restore access</span>
+  </div>
+  <div class="step-body">
+    <p>Go back to <strong>KMS → photoviewer-data-key → Key policy → Edit</strong>. Re-add the Lambda execution role ARN to the usage statement. Click <strong>Save changes</strong>.</p>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Reload the Photo Viewer. Photos appear again. One key policy change, instant revocation and restoration — no code deployment, no IAM policy changes.</p>
+    </div>
+
+    <div class="callout info">
+      <p><strong>The teaching moment:</strong> IAM said yes the entire time — <code>dynamodb:Scan</code> and <code>s3:GetObject</code> were never revoked. KMS said no. Two independent authorization layers. You can revoke data access by editing either one.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 7 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 7</span>
+  <span class="part-title">Audit decryption with CloudTrail</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 11</span>
+    <span class="step-title">Find KMS events in CloudTrail</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudTrail → Event history</strong>. Filter by:</p>
+    <ul>
+      <li>Event source: <code>kms.amazonaws.com</code></li>
+    </ul>
+    <p>You should see <code>Decrypt</code>, <code>GenerateDataKey</code>, and possibly <code>Encrypt</code> events. Click into a <code>Decrypt</code> event and examine the details:</p>
+    <ul>
+      <li><strong>userIdentity.arn</strong> — which IAM role triggered the decryption</li>
+      <li><strong>requestParameters.keyId</strong> — which KMS key was used</li>
+      <li><strong>eventTime</strong> — when it happened</li>
+    </ul>
+
+    <div class="callout info">
+      <p><strong>This audit trail didn't exist before.</strong> With AWS-managed keys, CloudTrail logged <code>GetObject</code> and <code>Scan</code> calls but no KMS events. You knew someone called the API — you didn't know if they decrypted the data. With customer-managed keys, every decryption is a separate, auditable event.</p>
+    </div>
+
+    <div class="screenshot">CloudTrail event detail showing a <code>kms:Decrypt</code> call with the Lambda role ARN and the data key ARN</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 12</span>
+    <span class="step-title">Find the denied event</span>
+  </div>
+  <div class="step-body">
+    <p>Still in CloudTrail Event history, look for a <code>Decrypt</code> event with <strong>Error code: AccessDeniedException</strong> — this is from Step 9 when you revoked Lambda's key access.</p>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>The denied event shows the same Lambda role ARN and key ARN, but with an error code. This is the forensic record: if you ever need to prove that a principal's access was revoked and the revocation was effective, this event is the evidence.</p>
+    </div>
+
+    <div class="screenshot">CloudTrail showing a denied <code>kms:Decrypt</code> event with <code>AccessDeniedException</code></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 8 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 8</span>
+  <span class="part-title">Disable the key (optional demo)</span>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 13</span>
+    <span class="step-title">Disable and re-enable the data key</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>KMS → photoviewer-data-key → Key actions → Disable</strong>. Confirm the action.</p>
+    <p>Load the Photo Viewer — <code>GET /photos</code> fails. No data is deleted, but all data encrypted with this key is cryptographically inaccessible. Uploaded photos, pre-seeded photos, and DynamoDB records are all unreadable.</p>
+    <p>Go back to <strong>KMS → photoviewer-data-key → Key actions → Enable</strong>. Reload — everything works again.</p>
+
+    <div class="callout">
+      <p><strong>The "break glass" scenario:</strong> If you discover a data breach, disabling the key instantly makes all copies of the data — including backups, replicas, and any exfiltrated copies — useless. No attacker can decrypt the data without the key, and the key is disabled. Re-enable when the breach is contained.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ REFLECTION ═══════════════ -->
+<h2>Reflection Questions</h2>
+
+<h3>Question 1</h3>
+<p>An employee with <code>s3:GetObject</code> permission downloads a private photo. With AWS-managed encryption (before this lab), how would you detect this? With customer-managed KMS keys (after this lab), how would you detect it <em>and</em> how would you prevent it?</p>
+
+<h3>Question 2</h3>
+<p>This lab uses two KMS keys — <code>photoviewer-infra-key</code> and <code>photoviewer-data-key</code>. Explain the security benefit of this separation. What would be the risk of using a single key for both Secrets Manager and S3/DynamoDB?</p>
+
+
+<!-- ═══════════════ RUBRIC ═══════════════ -->
+<h2>Grading Rubric</h2>
+
+<table class="rubric-table">
+  <thead><tr><th>Deliverable</th><th>Points</th><th>Requirements</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Two KMS keys created</strong></td>
+      <td>10</td>
+      <td>Screenshot: KMS console showing <code>photoviewer-infra-key</code> and <code>photoviewer-data-key</code> with distinct aliases and descriptions.</td>
+    </tr>
+    <tr>
+      <td><strong>Key policies correctly scoped</strong></td>
+      <td>10</td>
+      <td>Screenshot: Key policy for each key showing the correct Lambda role. Infra key → authorizer role. Data key → main Lambda role.</td>
+    </tr>
+    <tr>
+      <td><strong>Secrets Manager encryption switched</strong></td>
+      <td>8</td>
+      <td>Screenshot: Secrets Manager showing <code>photoviewer/origin-verify-secret</code> encrypted with <code>photoviewer-infra-key</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>S3 default encryption switched</strong></td>
+      <td>8</td>
+      <td>Screenshot: S3 bucket properties showing SSE-KMS with <code>photoviewer-data-key</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>New photo encrypted with data key</strong></td>
+      <td>8</td>
+      <td>Screenshot: S3 object properties of a newly uploaded photo showing <code>photoviewer-data-key</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Pre-seeded photo re-encrypted</strong></td>
+      <td>6</td>
+      <td>Screenshot: S3 object properties of a pre-seeded photo showing <code>photoviewer-data-key</code> (not AWS-managed).</td>
+    </tr>
+    <tr>
+      <td><strong>DynamoDB encryption switched</strong></td>
+      <td>8</td>
+      <td>Screenshot: DynamoDB table encryption settings showing <code>photoviewer-data-key</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Key revocation breaks the app</strong></td>
+      <td>10</td>
+      <td>Screenshot: Lambda logs showing <code>AccessDeniedException</code> on <code>kms:Decrypt</code> after removing Lambda role from key policy.</td>
+    </tr>
+    <tr>
+      <td><strong>Key restoration fixes the app</strong></td>
+      <td>5</td>
+      <td>Screenshot: Photo Viewer loading normally after re-adding Lambda role to key policy.</td>
+    </tr>
+    <tr>
+      <td><strong>CloudTrail Decrypt event</strong></td>
+      <td>8</td>
+      <td>Screenshot: CloudTrail event detail showing a successful <code>kms:Decrypt</code> call with principal ARN and key ARN.</td>
+    </tr>
+    <tr>
+      <td><strong>CloudTrail denied event</strong></td>
+      <td>7</td>
+      <td>Screenshot: CloudTrail event showing denied <code>kms:Decrypt</code> with <code>AccessDeniedException</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q1 — detection and prevention</strong></td>
+      <td>7</td>
+      <td>AWS-managed: only S3 access logs or CloudTrail <code>GetObject</code> — no KMS event. Customer-managed: CloudTrail <code>kms:Decrypt</code> shows who decrypted. Prevention: remove role from key policy — IAM still allows GetObject but data is unreadable.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q2 — two keys</strong></td>
+      <td>5</td>
+      <td>Separation of duties: infra-admin can't decrypt photos, photos-admin can't read secrets. Single key: anyone with decrypt access could read both operational secrets and user data.</td>
+    </tr>
+    <tr class="rubric-total">
+      <td><strong>Total</strong></td>
+      <td><strong>100</strong></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html">← Week 8 Concept Notes</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Encryption at Rest with KMS — CS 55D Week 8</title>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#f8f9fa;padding:0 1rem 4rem;}
+    .page-wrap{max-width:860px;margin:0 auto;}
+    nav{font-size:0.85rem;color:#666;padding:1.2rem 0 0.5rem;}
+    nav a{color:#1F4E79;text-decoration:none;}
+    nav a:hover{text-decoration:underline;}
+    h1{font-size:2rem;font-weight:700;color:#1a1a1a;margin:0.5rem 0 0.3rem;}
+    .subtitle{color:#555;font-size:1.05rem;margin-bottom:1.5rem;line-height:1.5;}
+    h2{font-size:1.35rem;font-weight:600;color:#1F4E79;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:2px solid #e0eaf4;}
+    h3{font-size:1.1rem;font-weight:600;color:#1a1a1a;margin:1.5rem 0 0.5rem;}
+    h4{font-size:1rem;font-weight:600;color:#1a1a1a;margin:1rem 0 0.4rem;}
+    p{margin-bottom:1rem;}
+    ul,ol{margin:0.5rem 0 1rem 1.5rem;}
+    li{margin-bottom:0.3rem;}
+    code{background:#f0f4f8;border:1px solid #d0dce8;border-radius:3px;padding:1px 5px;font-size:0.88em;font-family:'SF Mono',Monaco,monospace;}
+    pre{background:#1e2d3d;color:#e8f0f8;padding:1rem 1.2rem;border-radius:6px;overflow-x:auto;font-size:0.88em;margin:1rem 0;}
+    pre code{background:none;border:none;color:inherit;padding:0;}
+    .callout{border-left:4px solid;padding:1rem 1.2rem;margin:1.2rem 0;border-radius:0 6px 6px 0;}
+    .callout.info{border-color:#1F4E79;background:#f0f6ff;}
+    .callout.warn{border-color:#dc3545;background:#fff5f5;}
+    .callout.success{border-color:#155724;background:#f0fff4;}
+    .callout h4{margin:0 0 0.4rem;color:#1F4E79;}
+    .callout.warn h4{color:#dc3545;}
+    .callout p:last-child{margin-bottom:0;}
+    .objectives{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem 1.5rem;margin:1rem 0 1.5rem;}
+    .objectives ul{margin:0.5rem 0 0 1.2rem;}
+    .objectives li{margin-bottom:0.4rem;color:#333;}
+
+    /* Issue cards */
+    .issues-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin:1rem 0;}
+    .issue-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1rem;cursor:pointer;transition:box-shadow 0.15s;}
+    .issue-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+    .issue-card .icon{font-size:1.4rem;margin-bottom:0.4rem;}
+    .issue-card .label{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em;}
+    .issue-card .title{font-size:0.9rem;font-weight:600;color:#1a1a1a;margin:0.2rem 0;}
+    .issue-card .desc{font-size:0.8rem;color:#666;}
+    .issue-detail{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem 1.5rem;margin:0.5rem 0 1rem;display:none;}
+    .issue-detail.active{display:block;}
+    .issue-detail h4{margin:0 0 0.5rem;color:#1F4E79;}
+
+    /* Comparison table */
+    .compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;}
+    .compare-table th{background:#1F4E79;color:#fff;padding:8px 12px;text-align:left;font-weight:500;}
+    .compare-table td{padding:8px 12px;border-bottom:1px solid #e0eaf4;vertical-align:top;}
+    .compare-table tr:nth-child(even) td{background:#f8fafc;}
+    .compare-table tr:last-child td{border-bottom:none;}
+
+    /* Concept cards */
+    .concept-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;margin:0.8rem 0;overflow:hidden;}
+    .concept-header{display:flex;align-items:center;gap:0.8rem;padding:1rem 1.2rem;cursor:pointer;user-select:none;}
+    .concept-header:hover{background:#f5f8fc;}
+    .concept-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0;}
+    .concept-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+    .concept-subtitle{font-size:0.8rem;color:#888;}
+    .concept-chevron{color:#888;font-size:0.8rem;transition:transform 0.2s;}
+    .concept-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #e0eaf4;}
+    .concept-body.open{display:block;}
+    .concept-body p:first-child{margin-top:1rem;}
+
+    /* Vuln cards */
+    .vuln-card{background:#fff;border:1px solid #d0dce8;border-left:4px solid #dc3545;border-radius:0 8px 8px 0;margin:0.8rem 0;overflow:hidden;}
+    .vuln-header{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.2rem;cursor:pointer;user-select:none;}
+    .vuln-header:hover{background:#fff8f8;}
+    .vuln-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+    .vuln-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #f0d0d0;}
+    .vuln-body.open{display:block;}
+    .vuln-body p:first-child{margin-top:1rem;}
+
+    /* Key diagram */
+    .key-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem;margin:1rem 0;}
+    .key-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1rem;}
+    .key-card h4{font-size:0.9rem;color:#1F4E79;margin-bottom:0.5rem;}
+    .key-card ul{margin:0 0 0 1rem;font-size:0.85rem;}
+    .key-card li{margin-bottom:0.2rem;}
+    .key-tag{display:inline-block;font-size:0.72rem;padding:1px 7px;border-radius:10px;font-weight:600;margin-bottom:0.5rem;}
+    .tag-infra{background:#fff3cd;color:#856404;}
+    .tag-data{background:#cce5ff;color:#004085;}
+
+    /* Page nav and footer */
+    .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    .course-nav a{font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;}
+    .course-nav a:hover{color:#fff;}
+    .course-nav-right{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+    .page-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e0eaf4;font-size:0.9rem;}
+    .page-nav a{color:#1F4E79;text-decoration:none;}
+    .page-nav a:hover{text-decoration:underline;}
+    .download-btn{display:inline-flex;align-items:center;gap:8px;font-size:0.85rem;color:#1F4E79;text-decoration:none;padding:8px 14px;border-radius:6px;border:1px solid #B5D4F4;background:#E6F1FB;transition:background 0.15s;}
+    .download-btn:hover{background:#B5D4F4;}
+    footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid #e0eaf4;font-size:0.82rem;color:#999;text-align:center;}
+    footer a{color:#1F4E79;text-decoration:none;}
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+<nav class="course-nav">
+  <a href="../index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
+<h1>Encryption at Rest with KMS</h1>
+<p class="subtitle">This course builds a Photo Viewer application across 12 weeks, adding one AWS security layer per week. Week 8 adds customer-managed encryption to the data infrastructure built in Weeks 5–7 — you now control not just who can access data, but who can read its contents.</p>
+
+<div class="objectives">
+  <strong>Learning objectives</strong>
+  <ul>
+    <li>Explain the difference between AWS-managed keys and customer-managed KMS keys, and why the distinction matters for access control and audit</li>
+    <li>Describe how KMS key policies create an authorization layer independent of IAM — and why two independent layers are stronger than one</li>
+    <li>Use CloudTrail to audit <code>kms:Decrypt</code> events and identify which principal accessed which data</li>
+    <li>Demonstrate that revoking KMS key access blocks data access even when IAM permissions still allow the API call</li>
+    <li>Explain the separation of duties principle using two KMS keys with different key policies</li>
+    <li>Compare KMS with CloudHSM and explain when each is appropriate</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. Where we left off</h2>
+
+<p>Week 7 added authorization — Cognito groups drive capability differences, presigned URLs control photo delivery, and ownership checks prevent BOLA/IDOR. Two issues remain.</p>
+
+<div class="issues-grid">
+  <div class="issue-card" onclick="toggleIssue('i1')">
+    <div class="icon">📦</div>
+    <div class="label">Issue 1</div>
+    <div class="title">Uploaded files are not scanned</div>
+    <div class="desc">Content-Type checks pass malware and PII</div>
+  </div>
+  <div class="issue-card" onclick="toggleIssue('i2')">
+    <div class="icon">🔑</div>
+    <div class="label">Issue 2</div>
+    <div class="title">Encryption is invisible and uncontrollable</div>
+    <div class="desc">AWS-managed keys — no audit, no key policy, no revocation</div>
+  </div>
+</div>
+
+<div class="issue-detail" id="i1">
+  <h4>Uploaded files pass envelope checks but content is not inspected</h4>
+  <p>Week 7 presigned URL conditions enforce Content-Type and file size at the S3 layer — a file claiming to be a 500 MB executable will be rejected. But a file that passes those checks can still be harmful: an image with embedded malware, a JPEG with a PHP payload in its EXIF data, a photo containing PII (someone's driver's license), or inappropriate content. The presigned URL conditions check the envelope, not the contents. This is a detection problem addressed in later weeks.</p>
+</div>
+
+<div class="issue-detail" id="i2">
+  <h4>All data at rest is encrypted with AWS-managed keys</h4>
+  <p>S3, DynamoDB, and Secrets Manager all encrypt data at rest — but with AWS-managed keys. This means there is no CloudTrail audit trail when data is decrypted, no way to scope decryption to specific IAM principals via a key policy, and no ability to revoke decryption access independently of IAM permissions. You control who can call <code>GetObject</code> — but you do not control who can decrypt what <code>GetObject</code> returns. These are two different questions, and right now only one has an answer.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. This week's solution</h2>
+
+<p>Week 8 replaces AWS-managed keys with customer-managed KMS keys. The data doesn't change. The encryption algorithm doesn't change. What changes is <em>who controls the keys</em> — and therefore who controls the ability to read the data.</p>
+
+<table class="compare-table">
+  <thead><tr><th>Property</th><th>AWS-managed key</th><th>Customer-managed KMS key</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Who creates the key?</strong></td>
+      <td>AWS, automatically</td>
+      <td>You, explicitly</td>
+    </tr>
+    <tr>
+      <td><strong>Key policy</strong></td>
+      <td>AWS-controlled — you cannot edit it</td>
+      <td>You write the key policy — you decide which principals can encrypt, decrypt, and manage the key</td>
+    </tr>
+    <tr>
+      <td><strong>CloudTrail audit</strong></td>
+      <td>No <code>kms:Decrypt</code> events logged</td>
+      <td>Every <code>Encrypt</code>, <code>Decrypt</code>, and <code>GenerateDataKey</code> call logged with principal, key ID, and timestamp</td>
+    </tr>
+    <tr>
+      <td><strong>Access revocation</strong></td>
+      <td>Remove IAM permission only</td>
+      <td>Remove from key policy OR remove IAM permission — two independent gates</td>
+    </tr>
+    <tr>
+      <td><strong>Disable/delete</strong></td>
+      <td>Cannot disable or delete</td>
+      <td>Disable instantly makes all encrypted data unreadable. Delete (after waiting period) is permanent.</td>
+    </tr>
+    <tr>
+      <td><strong>Cost</strong></td>
+      <td>Free</td>
+      <td>$1/month per key + $0.03 per 10,000 API calls</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. The core insight</h2>
+
+<div class="callout info">
+  <h4>IAM controls the API call. KMS controls the decryption.</h4>
+  <p>A Lambda function can have <code>s3:GetObject</code> permission — IAM says yes. But if the KMS key policy does not grant that Lambda role <code>kms:Decrypt</code>, S3 returns an error: the object is retrieved but cannot be decrypted. Two independent authorization layers, evaluated separately, both must pass. This is the same pattern as Week 7 (group check + ownership check) — applied to encryption instead of application logic.</p>
+</div>
+
+<p>This separation means you can answer questions that IAM alone cannot:</p>
+<ul>
+  <li><strong>"Who decrypted this photo in the last 24 hours?"</strong> — CloudTrail <code>kms:Decrypt</code> event, filtered by key ID</li>
+  <li><strong>"Revoke this contractor's access to all photos immediately"</strong> — remove their role from the key policy. Takes effect in seconds, no IAM policy changes needed, no code deployment</li>
+  <li><strong>"Make all data unreadable right now"</strong> — disable the key. One toggle, instant. Every copy of the data (including backups, replicas, stolen copies) becomes cryptographically inaccessible</li>
+</ul>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. Two keys, two scopes</h2>
+
+<p>The Photo Viewer has two categories of sensitive data with different access requirements. Using a single key would mean anyone who can decrypt secrets can also decrypt photos — violating the principle of least privilege. Two keys enforce separation of duties.</p>
+
+<div class="key-grid">
+  <div class="key-card">
+    <span class="key-tag tag-infra">INFRASTRUCTURE</span>
+    <h4>photoviewer-infra-key</h4>
+    <p style="font-size:0.85rem;color:#666;margin-bottom:0.5rem;">Protects operational secrets</p>
+    <ul>
+      <li>Secrets Manager (origin-verify secret)</li>
+      <li>Future: database credentials, API keys</li>
+    </ul>
+    <p style="font-size:0.82rem;margin-top:0.5rem;"><strong>Key policy grants:</strong> Lambda authorizer role (reads origin secret at runtime)</p>
+  </div>
+  <div class="key-card">
+    <span class="key-tag tag-data">APPLICATION DATA</span>
+    <h4>photoviewer-data-key</h4>
+    <p style="font-size:0.85rem;color:#666;margin-bottom:0.5rem;">Protects user content</p>
+    <ul>
+      <li>S3 photos (pre-seeded + uploaded)</li>
+      <li>DynamoDB photo metadata</li>
+    </ul>
+    <p style="font-size:0.82rem;margin-top:0.5rem;"><strong>Key policy grants:</strong> Lambda execution role (reads/writes photos and metadata at runtime)</p>
+  </div>
+</div>
+
+<div class="callout info">
+  <h4>Separation of duties in practice</h4>
+  <p>The infra-admin (Week 9) can rotate the origin secret but cannot view user photos — they don't have <code>kms:Decrypt</code> on the data key. The photos-admin (Week 9) can manage pre-seeded photos but cannot read the origin secret — they don't have <code>kms:Decrypt</code> on the infra key. Lambda can decrypt photos at runtime but reads secrets only through Secrets Manager's service integration. Three principals, two keys, no one has access to everything.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. Key concepts</h2>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c1')">
+    <div class="concept-icon">🔐</div>
+    <div>
+      <div class="concept-title">Envelope encryption</div>
+      <div class="concept-subtitle">KMS doesn't encrypt your data directly — it encrypts a data key that encrypts your data</div>
+    </div>
+    <div class="concept-chevron" id="chev-c1">▼</div>
+  </div>
+  <div class="concept-body" id="c1">
+    <p>When S3 encrypts an object with SSE-KMS, it does not send the photo to KMS. Instead, S3 calls <code>kms:GenerateDataKey</code>, which returns a plaintext data key and an encrypted copy of that data key. S3 uses the plaintext key to encrypt the photo, stores the encrypted data key alongside the encrypted photo, and discards the plaintext key from memory.</p>
+    <p>On read, S3 sends the encrypted data key to KMS (<code>kms:Decrypt</code>), gets back the plaintext key, decrypts the photo, and returns it. KMS never sees the photo — it only sees the small data key.</p>
+    <p>This is why KMS has a 4 KB limit on direct encryption — it's designed for keys, not data. Envelope encryption means KMS scales to any data size because the actual encryption is done locally by S3 (or DynamoDB, or any service) using the data key.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c2')">
+    <div class="concept-icon">📋</div>
+    <div>
+      <div class="concept-title">Key policies vs IAM policies</div>
+      <div class="concept-subtitle">KMS is the only AWS service where the resource policy is mandatory</div>
+    </div>
+    <div class="concept-chevron" id="chev-c2">▼</div>
+  </div>
+  <div class="concept-body" id="c2">
+    <p>Most AWS services (S3, DynamoDB, Lambda) evaluate IAM policies and resource policies together — if either allows the action, access is granted. KMS is different: the <strong>key policy is the primary access control</strong>. An IAM policy alone cannot grant access to a KMS key unless the key policy explicitly allows it.</p>
+    <p>In practice, most key policies include a statement that allows the account root to use IAM policies for key management. But for data access (<code>kms:Decrypt</code>, <code>kms:Encrypt</code>), you explicitly name the principals in the key policy. This means removing a role from the key policy revokes access even if the IAM policy still allows it.</p>
+
+    <table class="compare-table">
+      <thead><tr><th>Layer</th><th>Week 7 analogy</th><th>Week 8</th></tr></thead>
+      <tbody>
+        <tr><td>First gate</td><td>Group check (RBAC) — is this user premium?</td><td>IAM policy — does this role have <code>s3:GetObject</code>?</td></tr>
+        <tr><td>Second gate</td><td>Ownership check — does this user own this photo?</td><td>KMS key policy — can this role call <code>kms:Decrypt</code> on this key?</td></tr>
+        <tr><td>Both must pass</td><td>Premium + owner = allowed</td><td>IAM allows + key policy allows = data readable</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c3')">
+    <div class="concept-icon">📊</div>
+    <div>
+      <div class="concept-title">CloudTrail + KMS = data access audit</div>
+      <div class="concept-subtitle">Every decrypt call is logged — who, when, which key</div>
+    </div>
+    <div class="concept-chevron" id="chev-c3">▼</div>
+  </div>
+  <div class="concept-body" id="c3">
+    <p>With AWS-managed keys, CloudTrail logs S3 API calls (<code>GetObject</code>, <code>PutObject</code>) but does not log the underlying KMS operations. You know someone accessed the object, but not whether they decrypted its contents.</p>
+    <p>With customer-managed keys, every <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> call appears in CloudTrail with the principal ARN, the key ARN, and the timestamp. You can trace a specific decryption event back to a specific IAM role at a specific time.</p>
+    <p>This is the audit trail that compliance frameworks (SOC 2, PCI-DSS, HIPAA) require: proof of who accessed sensitive data and when.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c4')">
+    <div class="concept-icon">🏛️</div>
+    <div>
+      <div class="concept-title">KMS vs CloudHSM</div>
+      <div class="concept-subtitle">Shared service vs dedicated hardware — cost, control, compliance</div>
+    </div>
+    <div class="concept-chevron" id="chev-c4">▼</div>
+  </div>
+  <div class="concept-body" id="c4">
+    <p>KMS is a shared, multi-tenant service. AWS manages the hardware security modules (HSMs) that store your key material. You control the key policy, but AWS controls the HSM infrastructure.</p>
+    <p>CloudHSM gives you a dedicated, single-tenant HSM in your VPC. You have full control over the key material — AWS cannot access it, even under subpoena. The HSM is FIPS 140-2 Level 3 certified (tamper-evident hardware).</p>
+
+    <table class="compare-table">
+      <thead><tr><th>Property</th><th>KMS</th><th>CloudHSM</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Cost</strong></td><td>$1/month per key</td><td>~$1,100/month per HSM</td></tr>
+        <tr><td><strong>Management</strong></td><td>Fully managed by AWS</td><td>You manage the HSM cluster</td></tr>
+        <tr><td><strong>Key material</strong></td><td>AWS-managed HSMs (you can import your own)</td><td>You generate and control all key material</td></tr>
+        <tr><td><strong>Compliance</strong></td><td>FIPS 140-2 Level 2</td><td>FIPS 140-2 Level 3</td></tr>
+        <tr><td><strong>Use case</strong></td><td>Most applications</td><td>Government, financial, specific regulatory requirements</td></tr>
+      </tbody>
+    </table>
+
+    <p>For the Photo Viewer — and most applications — KMS is the right choice. CloudHSM is for organizations with specific regulatory requirements that mandate dedicated hardware and full key material control.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>6. What's still missing</h2>
+
+<p>Click to expand.</p>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v1')">
+    <div class="vuln-title">Uploaded files are still not scanned for malicious content</div>
+    <span style="color:#aaa;font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v1">
+    <p><strong>The problem:</strong> Encryption protects data at rest from unauthorized access — it does not inspect data for harmful content. A photo containing embedded malware or PII is now encrypted with a customer-managed key, which makes it <em>harder</em> for unauthorized users to access but does nothing to detect that the content is harmful in the first place.</p>
+    <p><strong>What needs to happen:</strong> Uploaded objects need to be scanned after they land in S3. Macie can detect PII in S3 objects. GuardDuty Malware Protection can scan uploads for known malware signatures. These are detection services that analyze object contents — a different layer from encryption.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v2')">
+    <div class="vuln-title">No employee access management</div>
+    <span style="color:#aaa;font-size:0.8rem;">click to expand</span>
+  </div>
+  <div class="vuln-body" id="v2">
+    <p><strong>The problem:</strong> The key policies name specific Lambda execution roles — but there are no human operator roles yet. The <code>infra-admin</code> and <code>photos-admin</code> roles referenced in the key policy design don't exist as real IAM principals. In production, employees need to manage pre-seeded photos, rotate secrets, and inspect encrypted data — each with appropriate key access.</p>
+    <p><strong>What needs to happen:</strong> IAM Identity Center creates employee permission sets that map to IAM roles. Those roles are then added to the appropriate KMS key policies — infra-admin gets the infra key, photos-admin gets the data key. The key policies are already designed for this separation; the principals just need to be created.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Lab files</h2>
+<p>All lab files for this week are in the course GitHub repository.</p>
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week08" target="_blank">⌥ View Week 8 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-lab-assignment.html">📋 Week 8 Lab Assignment</a>
+</div>
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-authorization.html">← Week 7: Authorization Patterns</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week09/week9-identity-center.html">Week 9: Identity Center →</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</div><!-- end page-wrap -->
+
+<script>
+function toggleIssue(id) {
+  var el = document.getElementById(id);
+  var isOpen = el.style.display === 'block';
+  document.querySelectorAll('.issue-detail').forEach(function(d){ d.style.display='none'; });
+  if (!isOpen) el.style.display = 'block';
+}
+
+function toggleConcept(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.textContent = isOpen ? '▼' : '▲';
+}
+
+function toggleVuln(id) {
+  var body = document.getElementById(id);
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>
