@@ -158,6 +158,10 @@
 
 <p>Week 8 replaces AWS-managed keys with customer-managed KMS keys. The data doesn't change. The encryption algorithm doesn't change. What changes is <em>who controls the keys</em> — and therefore who controls the ability to read the data.</p>
 
+<div style="margin:1.5rem 0;text-align:center;">
+  <img src="week8-architecture.png" alt="Week 8 architecture — Photo Viewer with KMS encrypting S3, DynamoDB, and Secrets Manager" style="max-width:100%;border:1px solid #d0dce8;border-radius:8px;">
+</div>
+
 <table class="compare-table">
   <thead><tr><th>Property</th><th>AWS-managed key</th><th>Customer-managed KMS key</th></tr></thead>
   <tbody>
@@ -232,7 +236,7 @@
     <h4>photoviewer-data-key</h4>
     <p style="font-size:0.85rem;color:#666;margin-bottom:0.5rem;">Protects user content</p>
     <ul>
-      <li>S3 photos (pre-seeded + uploaded)</li>
+      <li>S3 photos (new uploads; pre-seeded photos remain SSE-S3)</li>
       <li>DynamoDB photo metadata</li>
     </ul>
     <p style="font-size:0.82rem;margin-top:0.5rem;"><strong>Key policy grants:</strong> Lambda execution role (reads/writes photos and metadata at runtime)</p>
