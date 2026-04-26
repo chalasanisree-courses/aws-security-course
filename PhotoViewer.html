@@ -771,17 +771,15 @@
           <div class="ac-header-left">
             <div class="week-circle wc-building">9</div>
             <div class="ac-title-group">
-              <div class="ac-title">Multi-account governance</div>
-              <div class="ac-subtitle">Employee SSO, organization-wide guardrails, Control Tower</div>
+              <div class="ac-title">Employee identity</div>
+              <div class="ac-subtitle">Employee SSO via Identity Center, permission sets for KMS key access</div>
             </div>
           </div>
           <div class="ac-header-right">
             <div class="tags-wrap">
               <span class="topic-tag">IAM Identity Center</span>
-              <span class="topic-tag">AWS Organizations</span>
-              <span class="topic-tag">SCPs</span>
-              <span class="topic-tag">Control Tower</span>
               <span class="topic-tag">Permission sets</span>
+              <span class="topic-tag">Employee vs app user auth</span>
             </div>
           </div>
         </div>
@@ -790,11 +788,11 @@
       <div class="ac-body" id="w9">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">App users (Cognito) and employee users (IAM Identity Center) are now managed separately. Developers log into the AWS console via SSO — no long-lived IAM users. PhotoViewer employees can manage pre-seeded photos — flip visibility, delete, and add new showcase photos — through a separate auth path from Cognito app users. Service Control Policies enforce guardrails across all accounts in the organization.</div>
+          <div class="ac-section-text">App users (Cognito) and employee users (IAM Identity Center) are now managed separately. Developers log into the AWS console via SSO — no long-lived IAM users. PhotoViewer employees can manage pre-seeded photos — flip visibility, delete, and add new showcase photos — through a separate auth path from Cognito app users. Permission sets map to IAM roles with appropriate KMS key access.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">IAM Identity Center replaces individual IAM users for developer access — single sign-on with permission sets mapped to AWS accounts. AWS Organizations groups accounts into OUs. SCPs prevent any account from disabling CloudTrail, leaving a specific region, or creating public S3 buckets. Control Tower Landing Zone enforces these guardrails at the organization level.</div>
+          <div class="ac-section-text">IAM Identity Center replaces individual IAM users for developer access — single sign-on with permission sets mapped to AWS accounts. The infra-admin permission set gets <code>kms:Decrypt</code> on the infra key. The photos-admin permission set gets <code>kms:Decrypt</code> on the data key. This completes the separation of duties designed in Week 8 — the key policies are already scoped, now the human principals exist.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week09/week9-identity-center.html" target="_blank">📄 Concept notes</a>
@@ -821,7 +819,9 @@
               <span class="topic-tag">CloudWatch</span>
               <span class="topic-tag">AWS Config</span>
               <span class="topic-tag">Inspector (Lambda)</span>
+              <span class="topic-tag">Trusted Advisor</span>
               <span class="topic-tag">Macie</span>
+              <span class="topic-tag">CVE/NIST</span>
             </div>
           </div>
         </div>
@@ -830,11 +830,11 @@
       <div class="ac-body" id="w10">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">Automated compliance checks, vulnerability scanning on the Lambda function, and sensitive data detection on the S3 bucket. Config rules alert on drift from the desired security posture. Macie scans S3 for personally identifiable information in user-uploaded photos.</div>
+          <div class="ac-section-text">Automated compliance checks, vulnerability scanning on the Lambda function, security best practice assessment, and sensitive data detection on the S3 bucket. Config rules alert on drift from the desired security posture. Trusted Advisor checks account-wide security best practices. Macie scans S3 for personally identifiable information in user-uploaded photos.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce S3 public access block, KMS encryption on DynamoDB, and CloudTrail enabled. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Macie monitors the S3 bucket and generates findings when it detects PII.</div>
+          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce S3 public access block, KMS encryption on DynamoDB, and CloudTrail enabled. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Trusted Advisor reviews security checks — unrestricted security groups, MFA on root, S3 bucket permissions. Macie monitors the S3 bucket and generates findings when it detects PII. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture context for Inspector.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html" target="_blank">📄 Concept notes</a>
@@ -889,17 +889,16 @@
           <div class="ac-header-left">
             <div class="week-circle wc-building">12</div>
             <div class="ac-title-group">
-              <div class="ac-title">Global resilience and capstone</div>
-              <div class="ac-subtitle">DNS failover, Firewall Manager, full-stack security review</div>
+              <div class="ac-title">Multi-account governance</div>
+              <div class="ac-subtitle">Organizations, SCPs, Control Tower, Route 53 lecture</div>
             </div>
           </div>
           <div class="ac-header-right">
             <div class="tags-wrap">
+              <span class="topic-tag">AWS Organizations</span>
+              <span class="topic-tag">SCPs</span>
+              <span class="topic-tag">Control Tower</span>
               <span class="topic-tag">Route 53</span>
-              <span class="topic-tag">Health checks</span>
-              <span class="topic-tag">Firewall Manager</span>
-              <span class="topic-tag">WAF policy (org-wide)</span>
-              <span class="topic-tag">Capstone review</span>
             </div>
           </div>
         </div>
@@ -908,11 +907,11 @@
       <div class="ac-body" id="w12">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">The Photo Viewer gets a custom domain with Route 53 and DNS failover. Firewall Manager enforces the WAF Web ACL and Shield Advanced across all accounts in the organization — any new CloudFront distribution automatically gets the security policy applied. The capstone reviews the full 12-week security posture.</div>
+          <div class="ac-section-text">Now that you've built one account properly, how do you manage hundreds? AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide — no CloudTrail disable, no public S3, region restrictions. Control Tower Landing Zone automates this for new accounts. Route 53 DNS security covered as lecture — custom domains, health checks, DNSSEC.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">Route 53 alias record points to CloudFront. Health checks monitor the <code>/photos</code> endpoint and trigger DNS failover if it goes unhealthy. Firewall Manager security policies apply the WAF Web ACL to all CloudFront distributions in the organization automatically. The capstone lab requires students to identify and remediate a set of intentionally introduced security misconfigurations across the full stack.</div>
+          <div class="ac-section-text">AWS Organizations creates an OU structure. SCPs prevent any account from disabling CloudTrail, leaving a specific region, or creating public S3 buckets. Control Tower provides a pre-configured landing zone with guardrails, Account Factory, and a compliance dashboard. Route 53 alias records point to CloudFront with health checks for DNS failover.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-capstone.html" target="_blank">📄 Concept notes</a>
@@ -1275,12 +1274,12 @@
       </div>
 
       <div class="ac-section">
-        <div class="ac-section-label">Week 9: Multi-Account Governance</div>
+        <div class="ac-section-label">Week 9: Employee Identity</div>
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
-          <ul style="margin:4px 0 10px;padding-left:18px;"><li>AWS Control Tower (automated landing zone, Account Factory, guardrails dashboard)</li><li>Deny-by-default SCPs (explicitly allow only required services)</li><li>Region restrictions (deny operations outside allowed regions)</li><li>Require encryption via SCP (deny S3 PutObject without encryption header)</li><li>Require MFA for sensitive actions (deny DeleteBucket, StopLogging without MFA)</li><li>Tag-based SCPs (require CostCenter, Environment tags)</li><li>ABAC in Identity Center (permissions based on user attributes)</li></ul>
-          <strong style="color:#0C447C;">Why we skipped:</strong> Control Tower is time-intensive (lecture sufficient). Deny-by-default SCPs too restrictive for learning. ABAC is advanced IAM.<br>
-          <strong style="color:#0C447C;">When you'd use it:</strong> Control Tower for any multi-account org. Deny-by-default for highly regulated environments. ABAC for large teams.
+          <ul style="margin:4px 0 10px;padding-left:18px;"><li>ABAC in Identity Center (permissions based on user attributes like department or team)</li><li>Just-in-time access (temporary elevated permissions with automatic expiration)</li><li>MFA enforcement on all Identity Center users</li><li>Session duration limits on permission sets</li><li>Integration with external IdPs (Okta, Azure AD) instead of Identity Center's built-in directory</li></ul>
+          <strong style="color:#0C447C;">Why we skipped:</strong> ABAC is advanced IAM. External IdP requires organizational infrastructure. MFA adds lab friction.<br>
+          <strong style="color:#0C447C;">When you'd use it:</strong> External IdP for any company with existing identity infrastructure. ABAC for large teams. JIT access for break-glass scenarios.
         </div>
       </div>
 
@@ -1305,12 +1304,12 @@
       </div>
 
       <div class="ac-section">
-        <div class="ac-section-label">Week 12: DNS & Capstone</div>
+        <div class="ac-section-label">Week 12: Multi-Account Governance</div>
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
-          <ul style="margin:4px 0 10px;padding-left:18px;"><li>Route 53 DNSSEC (cryptographically sign DNS responses)</li><li>Route 53 Resolver DNS Firewall (block queries to malicious domains)</li><li>Health checks with multi-region active-passive failover</li><li>Private hosted zones for internal VPC DNS</li><li>Query logging for security analysis</li><li>AWS Firewall Manager (centralized WAF management across organization)</li><li>Security Group auditing across organization</li></ul>
-          <strong style="color:#0C447C;">Why we skipped:</strong> DNSSEC complex with limited learning benefit. Firewall Manager requires multi-account Organizations setup. Week 12 is capstone/review.<br>
-          <strong style="color:#0C447C;">When you'd use it:</strong> DNSSEC for high-security apps (financial, government). Firewall Manager for large multi-account organizations.
+          <ul style="margin:4px 0 10px;padding-left:18px;"><li>Deny-by-default SCPs (explicitly allow only required services)</li><li>Require encryption via SCP (deny S3 PutObject without encryption header)</li><li>Require MFA for sensitive actions (deny DeleteBucket, StopLogging without MFA)</li><li>Tag-based SCPs (require CostCenter, Environment tags)</li><li>Route 53 DNSSEC (cryptographically sign DNS responses)</li><li>Route 53 Resolver DNS Firewall (block queries to malicious domains)</li><li>Health checks with multi-region active-passive failover</li><li>AWS Firewall Manager (centralized WAF management across organization — covered in Firewalls concept page)</li></ul>
+          <strong style="color:#0C447C;">Why we skipped:</strong> Deny-by-default SCPs too restrictive for learning. DNSSEC complex with limited learning benefit. Firewall Manager covered as a concept, not a lab.<br>
+          <strong style="color:#0C447C;">When you'd use it:</strong> Deny-by-default for highly regulated environments. DNSSEC for high-security apps (financial, government). Firewall Manager for large multi-account organizations.
         </div>
       </div>
 

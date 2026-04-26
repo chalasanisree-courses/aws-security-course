@@ -609,18 +609,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w9')">
       <span class="week-num">Week 9</span>
-      <span class="week-title">Multi-Account Governance — Identity Center + Organizations</span>
+      <span class="week-title">Employee Identity — IAM Identity Center</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w9-chev">▶</span>
     </div>
     <div class="week-body" id="w9">
-      <p class="week-desc">IAM Identity Center replaces individual IAM users — developers log in via SSO with permission sets scoped to accounts. PhotoViewer employees can now manage pre-seeded photos (flip visibility, delete, add new showcase photos) through Identity Center — a separate auth path from Cognito app users. AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone enforces these automatically on new accounts.</p>
+      <p class="week-desc">IAM Identity Center replaces individual IAM users — developers log in via SSO with permission sets scoped to accounts. PhotoViewer employees can now manage pre-seeded photos (flip visibility, delete, add new showcase photos) through Identity Center — a separate auth path from Cognito app users. Permission sets map to IAM roles with KMS key access for the appropriate keys.</p>
       <div class="resource-list">
         <a class="resource-link" href="week09/week9-identity-center.html">
-          <span class="icon">◈</span> Multi-Account Governance — concept notes
+          <span class="icon">◈</span> Employee Identity — concept notes
         </a>
         <a class="resource-link" href="week09/week9-lab-assignment.html">
-          <span class="icon">◈</span> Week 9 Lab — Identity Center + SCPs
+          <span class="icon">◈</span> Week 9 Lab — Identity Center
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -635,18 +635,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w10')">
       <span class="week-num">Week 10</span>
-      <span class="week-title">Visibility + Compliance — CloudWatch, Config, Inspector, Macie</span>
+      <span class="week-title">Visibility + Compliance — CloudWatch, Config, Inspector, Trusted Advisor, Macie</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w10-chev">▶</span>
     </div>
     <div class="week-body" id="w10">
-      <p class="week-desc">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce desired security posture — S3 public access block, KMS encryption, CloudTrail enabled. Inspector scans the Lambda function for known CVEs. Macie monitors S3 for PII in user-uploaded photos. CVE and NIST frameworks covered as lecture.</p>
+      <p class="week-desc">We've been setting up security controls manually — how do we know they're correct, and that they haven't drifted? CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce desired security posture — S3 public access block, KMS encryption, CloudTrail enabled. Inspector scans the Lambda function for known CVEs. Trusted Advisor checks security best practices across the account. Macie monitors S3 for PII in user-uploaded photos. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture.</p>
       <div class="resource-list">
         <a class="resource-link" href="week10/week10-monitoring.html">
           <span class="icon">◈</span> Visibility and Compliance — concept notes
         </a>
         <a class="resource-link" href="week10/week10-lab-assignment.html">
-          <span class="icon">◈</span> Week 10 Lab — Config + Inspector + Macie
+          <span class="icon">◈</span> Week 10 Lab — Config + Inspector + Trusted Advisor + Macie
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -679,18 +679,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w12')">
       <span class="week-num">Week 12</span>
-      <span class="week-title">Capstone — Route 53 + Full-Stack Review</span>
+      <span class="week-title">Multi-Account Governance — Organizations, SCPs, Route 53</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w12-chev">▶</span>
     </div>
     <div class="week-body" id="w12">
-      <p class="week-desc">Route 53 custom domain with health checks and DNS failover. Capstone lab: identify and remediate intentionally introduced security misconfigurations across the full 12-week stack.</p>
+      <p class="week-desc">Now that you've built one account properly, how do you manage hundreds? AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone automates this for new accounts. Route 53 DNS security covered as lecture — custom domains, health checks, DNSSEC.</p>
       <div class="resource-list">
-        <a class="resource-link" href="week12/week12-capstone.html">
-          <span class="icon">◈</span> Global Resilience and Capstone — concept notes
+        <a class="resource-link" href="week12/week12-governance.html">
+          <span class="icon">◈</span> Multi-Account Governance — concept notes
         </a>
         <a class="resource-link" href="week12/week12-lab-assignment.html">
-          <span class="icon">◈</span> Week 12 Lab — Capstone
+          <span class="icon">◈</span> Week 12 Lab — Organizations + SCPs
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -863,7 +863,7 @@
               <td>Continuously monitors resource configurations. Alerts when they drift from your security baseline.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/trustedadvisor/" target="_blank">Trusted Advisor</a></div><span class="svc-abbr"> · AWS Trusted Advisor</span><br><span class="special-pill free-tier">free tier</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/trustedadvisor/" target="_blank">Trusted Advisor</a></div><span class="svc-abbr"> · AWS Trusted Advisor</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Inspects your account for security, cost, and performance improvements.</td>
             </tr>
@@ -883,7 +883,7 @@
               <td>AI image analysis. Detects objects, scenes, and labels in photos. Used to auto-tag premium user uploads.</td>
             </tr>
             <tr data-scope="global">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/organizations/" target="_blank">AWS Organizations</a></div><span class="svc-abbr"> · AWS Organizations</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 9</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/organizations/" target="_blank">AWS Organizations</a></div><span class="svc-abbr"> · AWS Organizations</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 12</span></td>
               <td><span class="scope-pill scope-global">Global</span></td>
               <td>Manages multiple AWS accounts centrally. Service Control Policies restrict what accounts can do.</td>
             </tr>
