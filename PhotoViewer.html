@@ -737,9 +737,12 @@
           <div class="ac-header-right">
             <div class="tags-wrap">
               <span class="topic-tag">KMS</span>
-              <span class="topic-tag">S3 SSE-KMS</span>
-              <span class="topic-tag">DynamoDB encryption</span>
+              <span class="topic-tag">Customer-managed keys</span>
               <span class="topic-tag">Key policies</span>
+              <span class="topic-tag">Separation of duties</span>
+              <span class="topic-tag">Envelope encryption</span>
+              <span class="topic-tag">CloudTrail audit</span>
+              <span class="topic-tag">CloudHSM</span>
             </div>
           </div>
         </div>
@@ -748,11 +751,11 @@
       <div class="ac-body" id="w8">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">User-facing experience is unchanged. S3 photos and DynamoDB records are now encrypted with customer-managed KMS keys — you control who can use the key, every use is logged in CloudTrail, and keys can be rotated independently of the application.</div>
+          <div class="ac-section-text">User-facing experience is unchanged. All data at rest — S3 photos, DynamoDB metadata, and Secrets Manager secrets — is now encrypted with customer-managed KMS keys instead of AWS-managed keys. You control who can decrypt the data via key policies, every decryption is logged in CloudTrail, and keys can be disabled instantly to make all encrypted data unreadable.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">A KMS customer-managed key (CMK) is created with a key policy scoping usage to the Lambda execution role and Secrets Manager. S3 default encryption is updated to SSE-KMS. DynamoDB table encryption is switched to the CMK. The Secrets Manager secret is re-encrypted with the same key. All key usage is logged in CloudTrail automatically.</div>
+          <div class="ac-section-text">Two KMS customer-managed keys enforce separation of duties. The <strong>infrastructure key</strong> (<code>photoviewer-infra-key</code>) encrypts operational secrets in Secrets Manager — only the Lambda authorizer role can decrypt. The <strong>data key</strong> (<code>photoviewer-data-key</code>) encrypts user content in S3 and DynamoDB — only the main Lambda execution role can decrypt. Key policies create an authorization layer independent of IAM: a role needs both IAM permission for the API call and key policy permission for decryption. Presigned URL uploads include KMS encryption headers so S3 encrypts user-uploaded photos with the data key. All <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> calls appear in CloudTrail with principal ARN, key ARN, and timestamp.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html" target="_blank">📄 Concept notes</a>
@@ -943,6 +946,8 @@
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 6</button>
         <button class="pent-btn" data-week="7" onclick="pentSelectWeek('7')"
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 7</button>
+        <button class="pent-btn" data-week="8" onclick="pentSelectWeek('8')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 8</button>
       </div>
 
       <!-- Pentagon SVG -->
@@ -1096,6 +1101,17 @@
         ]},
         performance: { title:'Performance issues in Week 7', bullets:[
           '<span style="color:#854F0B;">⚙ Permanent simplification:</span> S3 presigned URLs bypass CloudFront — no edge caching, every request hits us-east-1. Production fix: CloudFront signed URLs (requires RSA key pair). <em>→ see Hardening Guide below</em>'
+        ]}
+      }
+    },
+    '8': {
+      active: ['security','operability'],
+      issues: {
+        security: { title:'Security issues in Week 8', bullets:[
+          'Uploaded files are still not scanned for malicious content. Encryption protects data at rest from unauthorized access — it does not inspect data for harmful content. A photo containing embedded malware or PII is now encrypted, which makes it harder to access but does nothing to detect that the content is harmful.'
+        ]},
+        operability: { title:'Operability issues in Week 8', bullets:[
+          'No employee access management. The key policies reference infra-admin and photos-admin roles that do not exist as real IAM principals. In production, employees need to manage pre-seeded photos, rotate secrets, and inspect encrypted data — each with appropriate key access. IAM Identity Center is needed to create these roles.'
         ]}
       }
     }
@@ -1252,9 +1268,9 @@
         <div class="ac-section-label">Week 8: Encryption at Rest</div>
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
-          <ul style="margin:4px 0 10px;padding-left:18px;"><li>Multi-region KMS keys (disaster recovery)</li><li>Separate KMS keys per service (blast radius control, granular audit)</li><li>Key policy conditions (restrict usage to specific VPCs, IP ranges, time windows)</li><li>Encryption context in KMS API calls (additional authenticated data)</li><li>AWS CloudHSM for FIPS 140-2 Level 3 (~$1,100/month)</li></ul>
-          <strong style="color:#0C447C;">Why we skipped:</strong> One key demonstrates encryption concepts sufficiently. CloudHSM requires specialized HSM administration.<br>
-          <strong style="color:#0C447C;">When you'd use it:</strong> Multi-region for DR, separate keys for PCI-DSS/HIPAA audits, CloudHSM for government/finance regulatory requirements.
+          <ul style="margin:4px 0 10px;padding-left:18px;"><li>Multi-region KMS keys (disaster recovery)</li><li>Separate KMS key per service (one for S3, one for DynamoDB, one for Secrets Manager — finer blast radius)</li><li>Key policy conditions (restrict usage to specific VPCs, IP ranges, time windows)</li><li>Encryption context in KMS API calls (additional authenticated data binding key to object)</li><li>AWS CloudHSM for FIPS 140-2 Level 3 (~$1,100/month)</li></ul>
+          <strong style="color:#0C447C;">Why we skipped:</strong> Two keys (infra vs data) demonstrate separation of duties. Per-service keys add key management overhead without new conceptual value. CloudHSM requires specialized HSM administration.<br>
+          <strong style="color:#0C447C;">When you'd use it:</strong> Multi-region for DR, per-service keys for PCI-DSS/HIPAA audits requiring granular blast radius, CloudHSM for government/finance regulatory requirements.
         </div>
       </div>
 

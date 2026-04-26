@@ -592,7 +592,7 @@
       <span class="week-chevron" id="w8-chev">▶</span>
     </div>
     <div class="week-body" id="w8">
-      <p class="week-desc">Replace AWS-managed encryption with customer-managed KMS keys for S3, DynamoDB, and Secrets Manager. Key policies scope usage to the Lambda execution role. Every key use is logged in CloudTrail. CloudHSM covered as a lecture topic for hardware-backed key storage.</p>
+      <p class="week-desc">Replace AWS-managed encryption with customer-managed KMS keys for S3, DynamoDB, and Secrets Manager. Two keys enforce separation of duties: an infrastructure key protects operational secrets, a data key protects user content. Key policies create an authorization layer independent of IAM — both must pass. Envelope encryption explained. Every key use is logged in CloudTrail — who decrypted what, and when. CloudHSM covered as a lecture topic for hardware-backed key storage.</p>
       <div class="resource-list">
         <a class="resource-link" href="week08/week8-kms.html">
           <span class="icon">◈</span> Encryption at Rest — concept notes
@@ -867,8 +867,8 @@
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Inspects your account for security, cost, and performance improvements.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/kms/" target="_blank">KMS</a></div><span class="svc-abbr"> · Key Management Service</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 8</span></td>
+            <tr data-scope="regional" data-week="8">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/kms/" target="_blank">KMS</a></div><span class="svc-abbr"> · Key Management Service</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 8</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Creates and manages encryption keys for S3, DynamoDB, EBS, and other services.</td>
             </tr>
@@ -909,7 +909,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 7;
+const currentWeek = 8;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }
