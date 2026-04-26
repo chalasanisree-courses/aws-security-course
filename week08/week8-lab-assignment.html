@@ -466,7 +466,7 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
     <p>Still in CloudTrail Event history, look for a <code>Decrypt</code> event with <strong>Error code: AccessDeniedException</strong> &mdash; this is from Step 12 when you revoked Lambda's key access.</p>
 
     <div class="callout">
-      <p><strong>CloudTrail events can take 5&ndash;15 minutes to appear.</strong> If you don't see the denied event yet, continue with the optional demo below and come back.</p>
+      <p><strong>CloudTrail events can take 5&ndash;15 minutes to appear.</strong> If you don't see the denied event yet, wait a few minutes and refresh.</p>
     </div>
 
     <div class="verify">
@@ -475,29 +475,6 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
     </div>
 
     <div class="screenshot">CloudTrail showing a denied <code>kms:Decrypt</code> event with <code>AccessDeniedException</code></div>
-  </div>
-</div>
-
-
-<!-- ═══════════════ PART 8 ═══════════════ -->
-<div class="part-header">
-  <span class="part-num">Part 8</span>
-  <span class="part-title">Disable the key (optional demo)</span>
-</div>
-
-<div class="step">
-  <div class="step-header">
-    <span class="step-num">Step 16</span>
-    <span class="step-title">Disable and re-enable the data key</span>
-  </div>
-  <div class="step-body">
-    <p>Go to <strong>KMS &rarr; photoviewer-data-key &rarr; Key actions &rarr; Disable</strong>. Confirm the action.</p>
-    <p>Load the Photo Viewer &mdash; <code>GET /photos</code> fails. No data is deleted, but all data encrypted with this key is cryptographically inaccessible.</p>
-    <p>Go back to <strong>KMS &rarr; photoviewer-data-key &rarr; Key actions &rarr; Enable</strong>. Reload &mdash; everything works again.</p>
-
-    <div class="callout">
-      <p><strong>The "break glass" scenario:</strong> If you discover a data breach, disabling the key instantly makes all copies of the data &mdash; including backups, replicas, and any exfiltrated copies &mdash; useless. Re-enable when the breach is contained.</p>
-    </div>
   </div>
 </div>
 
