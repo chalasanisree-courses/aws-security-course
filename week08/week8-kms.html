@@ -85,6 +85,24 @@
     .tag-infra{background:#fff3cd;color:#856404;}
     .tag-data{background:#cce5ff;color:#004085;}
 
+    /* Flow tabs */
+    .flow-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem;margin:1rem 0 0;}
+    .flow-tab{background:#fff;border:2px solid #d0dce8;border-radius:8px;padding:1rem 1.2rem;cursor:pointer;transition:all 0.15s;user-select:none;}
+    .flow-tab:hover{border-color:#1F4E79;background:#f5f8fc;}
+    .flow-tab.active-blue{border-color:#1F4E79;background:#e8f0f8;}
+    .flow-tab.active-orange{border-color:#e67e22;background:#fef3e2;}
+    .flow-tab-badge{display:inline-block;font-size:1rem;font-weight:700;margin-bottom:0.3rem;}
+    .flow-tab-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;margin-bottom:0.2rem;}
+    .flow-tab-sub{font-size:0.8rem;color:#666;line-height:1.4;}
+    .flow-panel{display:none;background:#fff;border:1px solid #d0dce8;border-radius:0 0 8px 8px;padding:1.2rem 1.5rem;margin-top:-1px;}
+    .flow-panel.active{display:block;}
+    .flow-panel.panel-orange{border-color:#e67e22;}
+    .flow-step{display:flex;gap:1rem;margin-bottom:1.2rem;align-items:flex-start;}
+    .flow-step .step-num{background:#1F4E79;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;margin-top:2px;}
+    .flow-step .step-num.auth{background:#e67e22;}
+    .flow-step .step-body strong{display:block;margin-bottom:0.2rem;}
+    .flow-step .step-body p{margin:0;font-size:0.92rem;color:#333;}
+
     /* Page nav and footer */
     .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
     .course-nav a{font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;}
@@ -158,10 +176,6 @@
 
 <p>Week 8 replaces AWS-managed keys with customer-managed KMS keys. The data doesn't change. The encryption algorithm doesn't change. What changes is <em>who controls the keys</em> — and therefore who controls the ability to read the data.</p>
 
-<div style="margin:1.5rem 0;text-align:center;">
-  <img src="week8-architecture.png" alt="Week 8 architecture — Photo Viewer with KMS encrypting S3, DynamoDB, and Secrets Manager" style="max-width:100%;border:1px solid #d0dce8;border-radius:8px;">
-</div>
-
 <table class="compare-table">
   <thead><tr><th>Property</th><th>AWS-managed key</th><th>Customer-managed KMS key</th></tr></thead>
   <tbody>
@@ -200,23 +214,13 @@
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. The core insight</h2>
+<h2>3. Architecture</h2>
 
-<div class="callout info">
-  <h4>IAM controls the API call. KMS controls the decryption.</h4>
-  <p>A Lambda function can have <code>s3:GetObject</code> permission — IAM says yes. But if the KMS key policy does not grant that Lambda role <code>kms:Decrypt</code>, S3 returns an error: the object is retrieved but cannot be decrypted. Two independent authorization layers, evaluated separately, both must pass. This is the same pattern as Week 7 (group check + ownership check) — applied to encryption instead of application logic.</p>
+<p>The diagram shows the Week 8 architecture. One service is new: <strong>KMS</strong> — S3, DynamoDB, and Secrets Manager now encrypt data using customer-managed keys stored in KMS. Two keys enforce separation of duties: the infrastructure key protects operational secrets, the data key protects user content.</p>
+
+<div style="margin:1.5rem 0;text-align:center;">
+  <img src="week8-architecture.png" alt="Week 8 architecture — Photo Viewer with KMS encrypting S3, DynamoDB, and Secrets Manager" style="max-width:100%;border:1px solid #d0dce8;border-radius:8px;">
 </div>
-
-<p>This separation means you can answer questions that IAM alone cannot:</p>
-<ul>
-  <li><strong>"Who decrypted this photo in the last 24 hours?"</strong> — CloudTrail <code>kms:Decrypt</code> event, filtered by key ID</li>
-  <li><strong>"Revoke this contractor's access to all photos immediately"</strong> — remove their role from the key policy. Takes effect in seconds, no IAM policy changes needed, no code deployment</li>
-  <li><strong>"Make all data unreadable right now"</strong> — disable the key. One toggle, instant. Every copy of the data (including backups, replicas, stolen copies) becomes cryptographically inaccessible</li>
-</ul>
-
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>4. Two keys, two scopes</h2>
 
 <p>The Photo Viewer has two categories of sensitive data with different access requirements. Using a single key would mean anyone who can decrypt secrets can also decrypt photos — violating the principle of least privilege. Two keys enforce separation of duties.</p>
 
@@ -250,7 +254,99 @@
 
 
 <!-- ═══════════════════════════════════════════════════ -->
+<h2>4. How a request flows</h2>
+
+<p>Click each tab to see the step-by-step flow. KMS is involved in both — but in different ways.</p>
+
+<div class="flow-tabs">
+  <div class="flow-tab active-blue" id="tab-f1" onclick="showFlow('f1')">
+    <div class="flow-tab-badge" style="color:#1F4E79;">&#9312;</div>
+    <div class="flow-tab-title">Browse photos</div>
+    <div class="flow-tab-sub">Any user &#8212; DynamoDB + S3 decrypt with data key</div>
+  </div>
+  <div class="flow-tab" id="tab-f2" onclick="showFlow('f2')">
+    <div class="flow-tab-badge" style="color:#e67e22;">&#9313;</div>
+    <div class="flow-tab-title">Upload a photo</div>
+    <div class="flow-tab-sub">Premium only &#8212; presigned PUT with KMS encryption headers</div>
+  </div>
+</div>
+
+<!-- Panel 1: Browse -->
+<div class="flow-panel active" id="panel-f1">
+  <div class="flow-step">
+    <div class="step-num">1</div>
+    <div class="step-body"><strong>app.js calls GET /photos</strong><p>Request goes through CloudFront → API Gateway → Lambda authorizer (checks origin secret by calling Secrets Manager, which decrypts with <code>photoviewer-infra-key</code>).</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">2</div>
+    <div class="step-body"><strong>Main Lambda queries DynamoDB</strong><p>DynamoDB is encrypted with <code>photoviewer-data-key</code>. When Lambda calls <code>table.scan()</code>, DynamoDB calls <code>kms:Decrypt</code> on the data key internally. Lambda's role is in the key policy, so KMS allows it. The decrypted metadata is returned.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">3</div>
+    <div class="step-body"><strong>Lambda generates presigned GET URLs</strong><p>For each photo, Lambda generates a presigned GET URL. When the browser fetches the photo, S3 calls <code>kms:Decrypt</code> on the data key to decrypt the object. The presigned URL carries Lambda's credentials, so KMS checks the Lambda role against the key policy.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num">4</div>
+    <div class="step-body"><strong>CloudTrail logs the decryptions</strong><p>Each <code>kms:Decrypt</code> call — from DynamoDB and from S3 — appears as a separate event in CloudTrail with the Lambda role ARN and the key ARN. This audit trail did not exist with AWS-managed keys.</p></div>
+  </div>
+</div>
+
+<!-- Panel 2: Upload -->
+<div class="flow-panel panel-orange" id="panel-f2" style="display:none;">
+  <div class="flow-step">
+    <div class="step-num auth">1</div>
+    <div class="step-body"><strong>app.js sends POST /photos with JWT</strong><p>Same as Week 7 — request body includes title, visibility, and content type.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">2</div>
+    <div class="step-body"><strong>Lambda generates presigned PUT URL with KMS parameters</strong><p>Lambda includes <code>ServerSideEncryption: 'aws:kms'</code> and <code>SSEKMSKeyId</code> in the presigned URL. These are baked into the URL's signature. Lambda also returns <code>encryption</code> and <code>kmsKeyId</code> in the JSON response to app.js.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">3</div>
+    <div class="step-body"><strong>Browser uploads directly to S3 with encryption headers</strong><p>app.js reads the encryption parameters from the response and adds <code>x-amz-server-side-encryption</code> and <code>x-amz-server-side-encryption-aws-kms-key-id</code> headers to the PUT request. These must match what Lambda signed — otherwise S3 rejects the request.</p></div>
+  </div>
+  <div class="flow-step">
+    <div class="step-num auth">4</div>
+    <div class="step-body"><strong>S3 encrypts the object with the data key</strong><p>S3 calls <code>kms:GenerateDataKey</code> to get a data encryption key, encrypts the photo, stores the encrypted object and encrypted data key together. A <code>kms:GenerateDataKey</code> event appears in CloudTrail.</p></div>
+  </div>
+  <div class="callout info" style="margin-top:1rem;">
+    <p><strong>Why can't S3 just apply the bucket default?</strong> With presigned URLs, the browser uploads directly to S3 — Lambda is not in the data path. S3 does not transparently apply bucket-default KMS encryption to presigned URL uploads. The encryption parameters must be explicitly included in the presigned URL and the request headers.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
 <h2>5. Key concepts</h2>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c0')">
+    <div class="concept-icon">🔒</div>
+    <div>
+      <div class="concept-title">Two independent authorization layers</div>
+      <div class="concept-subtitle">IAM controls the API call. KMS controls the decryption. Both must pass.</div>
+    </div>
+    <div class="concept-chevron" id="chev-c0">▼</div>
+  </div>
+  <div class="concept-body" id="c0">
+    <p>A Lambda function can have <code>s3:GetObject</code> permission — IAM says yes. But if the KMS key policy does not grant that Lambda role <code>kms:Decrypt</code>, S3 returns an error: the object is retrieved but cannot be decrypted. Two independent authorization layers, evaluated separately, both must pass. This is the same pattern as Week 7 (group check + ownership check) — applied to encryption instead of application logic.</p>
+
+    <table class="compare-table">
+      <thead><tr><th>Layer</th><th>Week 7 analogy</th><th>Week 8</th></tr></thead>
+      <tbody>
+        <tr><td>First gate</td><td>Group check (RBAC) — is this user premium?</td><td>IAM policy — does this role have <code>s3:GetObject</code>?</td></tr>
+        <tr><td>Second gate</td><td>Ownership check — does this user own this photo?</td><td>KMS key policy — can this role call <code>kms:Decrypt</code> on this key?</td></tr>
+        <tr><td>Both must pass</td><td>Premium + owner = allowed</td><td>IAM allows + key policy allows = data readable</td></tr>
+      </tbody>
+    </table>
+
+    <p>This separation means you can answer questions that IAM alone cannot:</p>
+    <ul>
+      <li><strong>"Who decrypted this photo in the last 24 hours?"</strong> — CloudTrail <code>kms:Decrypt</code> event, filtered by key ID</li>
+      <li><strong>"Revoke this contractor's access to all photos immediately"</strong> — remove their role from the key policy. Takes effect in seconds, no IAM policy changes needed, no code deployment</li>
+      <li><strong>"Make all data unreadable right now"</strong> — disable the key. One toggle, instant. Every copy of the data becomes cryptographically inaccessible</li>
+    </ul>
+  </div>
+</div>
 
 <div class="concept-card">
   <div class="concept-header" onclick="toggleConcept('c1')">
@@ -387,6 +483,16 @@
 </div><!-- end page-wrap -->
 
 <script>
+function showFlow(id) {
+  ['f1','f2'].forEach(function(f) {
+    document.getElementById('panel-' + f).style.display = 'none';
+    document.getElementById('tab-' + f).className = 'flow-tab';
+  });
+  document.getElementById('panel-' + id).style.display = 'block';
+  var colors = {f1:'active-blue', f2:'active-orange'};
+  document.getElementById('tab-' + id).className = 'flow-tab ' + colors[id];
+}
+
 function toggleIssue(id) {
   var el = document.getElementById(id);
   var isOpen = el.style.display === 'block';
