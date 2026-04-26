@@ -1,16 +1,12 @@
 /**
- * Photo Viewer — app.js (Week 7)
+ * Photo Viewer — app.js (Week 8)
  *
- * Changes from Week 6:
- *   - Parses cognito:groups and sub from JWT to determine premium status and identity
- *   - Upload: premium users get an upload form; POST /photos returns presigned PUT URL;
- *     browser uploads file bytes directly to S3
- *   - Delete: premium users see delete button on their own photos;
- *     DELETE /photos/{photoId} removes from S3 + DynamoDB
- *   - Toggle: premium users see visibility toggle on their own photos;
- *     PATCH /photos/{photoId} flips is_public
- *   - Photo rendering: uses photo.url from API response (presigned S3 URL
- *     for all photos — pre-seeded and uploaded) instead of constructing from s3_key
+ * Changes from Week 7:
+ *   - Upload: reads encryption and kmsKeyId from POST /photos response;
+ *     if present, sends x-amz-server-side-encryption and
+ *     x-amz-server-side-encryption-aws-kms-key-id headers on PUT to S3
+ *   - Backward compatible: when Lambda has no KMS_DATA_KEY_ID env var (Week 7),
+ *     encryption/kmsKeyId are absent and no extra headers are sent
  *
  * BEFORE DEPLOYING — replace these three placeholders:
  *   YOUR_COGNITO_DOMAIN    Cognito → User pool → App integration → Domain
@@ -24,9 +20,9 @@
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-const COGNITO_DOMAIN    = 'YOUR_COGNITO_DOMAIN';
-const APP_CLIENT_ID     = 'YOUR_APP_CLIENT_ID';
-const CLOUDFRONT_DOMAIN = 'YOUR_CLOUDFRONT_DOMAIN';
+const COGNITO_DOMAIN    = 'us-east-1gyxfdhejs';
+const APP_CLIENT_ID     = '7ilrlh8hpfoj87i8vtncfp126b';
+const CLOUDFRONT_DOMAIN = 'd1kbm2nphud61r.cloudfront.net';
 
 const COGNITO_BASE      = `https://${COGNITO_DOMAIN}.auth.us-east-1.amazoncognito.com`;
 const REDIRECT_URI      = `https://${CLOUDFRONT_DOMAIN}/callback`;
