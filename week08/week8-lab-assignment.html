@@ -326,10 +326,6 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
       <li>KMS key ARN: the ARN of <code>photoviewer-data-key</code></li>
     </ul>
 
-    <div class="callout info">
-      <p><strong>Before and after, side by side.</strong> The pre-seeded photo from Step 8 shows SSE-S3. The photo you just uploaded shows SSE-KMS. Both are in the same bucket, both are served by the same app. The difference is when they were uploaded &mdash; before or after the default encryption switch. S3 default encryption is not retroactive.</p>
-    </div>
-
     <div class="verify">
       <div class="verify-label">&#10003; Verify</div>
       <p>The uploaded photo&rsquo;s encryption settings show <code>SSE-KMS</code> with the <code>photoviewer-data-key</code> ARN. If the upload fails with 400, check that all changes from Parts 2 and 4 are deployed: Lambda code, <code>KMS_DATA_KEY_ID</code> env var, <code>app.js</code>, and CORS.</p>
@@ -521,11 +517,6 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
       <td>Screenshot: S3 bucket properties showing SSE-KMS with <code>photoviewer-data-key</code>.</td>
     </tr>
     <tr>
-      <td><strong>Existing object still SSE-S3</strong></td>
-      <td>5</td>
-      <td>Screenshot: S3 object detail page for a pre-seeded photo in <code>photos/</code> showing encryption type <code>SSE-S3</code>. Proves default encryption is not retroactive.</td>
-    </tr>
-    <tr>
       <td><strong>New photo encrypted with data key</strong></td>
       <td>6</td>
       <td>Screenshot: S3 object detail page for a newly uploaded photo showing encryption type <code>SSE-KMS</code> with <code>photoviewer-data-key</code> ARN.</td>
@@ -537,7 +528,7 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
     </tr>
     <tr>
       <td><strong>Key revocation breaks the app</strong></td>
-      <td>10</td>
+      <td>15</td>
       <td>Screenshot: Lambda logs showing <code>AccessDeniedException</code> on <code>kms:Decrypt</code> after removing Lambda role from key policy.</td>
     </tr>
     <tr>
