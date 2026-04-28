@@ -10,14 +10,9 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#f8f9fa;padding:0 1rem 4rem;}
     .page-wrap{max-width:860px;margin:0 auto;}
-    nav{font-size:0.85rem;color:#666;padding:1.2rem 0 0.5rem;}
-    nav a{color:#1F4E79;text-decoration:none;}
-    nav a:hover{text-decoration:underline;}
     h1{font-size:2rem;font-weight:700;color:#1a1a1a;margin:0.5rem 0 0.3rem;}
     .subtitle{color:#555;font-size:1.05rem;margin-bottom:1.5rem;line-height:1.5;}
     h2{font-size:1.35rem;font-weight:600;color:#1F4E79;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:2px solid #e0eaf4;}
-    h3{font-size:1.1rem;font-weight:600;color:#1a1a1a;margin:1.5rem 0 0.5rem;}
-    h4{font-size:1rem;font-weight:600;color:#1a1a1a;margin:1rem 0 0.4rem;}
     p{margin-bottom:1rem;}
     ul,ol{margin:0.5rem 0 1rem 1.5rem;}
     li{margin-bottom:0.3rem;}
@@ -27,32 +22,32 @@
     .callout{border-left:4px solid;padding:1rem 1.2rem;margin:1.2rem 0;border-radius:0 6px 6px 0;}
     .callout.info{border-color:#1F4E79;background:#f0f6ff;}
     .callout.warn{border-color:#dc3545;background:#fff5f5;}
-    .callout.success{border-color:#155724;background:#f0fff4;}
     .callout h4{margin:0 0 0.4rem;color:#1F4E79;}
     .callout.warn h4{color:#dc3545;}
     .callout p:last-child{margin-bottom:0;}
-
-    /* Comparison table */
     .compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;}
     .compare-table th{background:#1F4E79;color:#fff;padding:8px 12px;text-align:left;font-weight:500;}
     .compare-table td{padding:8px 12px;border-bottom:1px solid #e0eaf4;vertical-align:top;}
     .compare-table tr:nth-child(even) td{background:#f8fafc;}
     .compare-table tr:last-child td{border-bottom:none;}
-
-    /* Concept cards */
-    .concept-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;margin:0.8rem 0;overflow:hidden;}
+    .concept-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;margin:0.8rem 0;overflow:hidden;transition:border-color 0.3s,box-shadow 0.3s;}
+    .concept-card.highlight{border-color:#1F4E79;box-shadow:0 0 0 2px rgba(31,78,121,0.2);}
     .concept-header{display:flex;align-items:center;gap:0.8rem;padding:1rem 1.2rem;cursor:pointer;user-select:none;}
     .concept-header:hover{background:#f5f8fc;}
     .concept-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0;}
     .concept-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
     .concept-subtitle{font-size:0.8rem;color:#888;}
-    .concept-chevron{color:#888;font-size:0.8rem;transition:transform 0.2s;}
+    .concept-chevron{color:#888;font-size:0.8rem;}
     .concept-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #e0eaf4;}
     .concept-body.open{display:block;}
     .concept-body p:first-child{margin-top:1rem;}
-
-    /* Page nav and footer */
-    .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    .policy-field{background:rgba(255,255,255,0.08);border-radius:3px;padding:1px 4px;transition:background 0.15s;cursor:pointer;}
+    .policy-field:hover{background:rgba(100,180,255,0.2);}
+    .policy-field.active{background:rgba(100,180,255,0.3);outline:1px solid rgba(100,180,255,0.5);}
+    .diagram-wrap{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem;margin:1.2rem 0;text-align:center;overflow-x:auto;}
+    .diagram-wrap svg .clickable{cursor:pointer;}
+    .diagram-wrap svg .clickable:hover .hover-border{stroke-width:2.5;}
+    .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;}
     .course-nav a{font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;}
     .course-nav a:hover{color:#fff;}
     .course-nav-right{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
@@ -67,28 +62,25 @@
 <div class="page-wrap">
 
 <nav class="course-nav">
-  <a href="../index.html">← Course home</a>
-  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+  <a href="../index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
 </nav>
 
 <h1>Infrastructure Identity Security</h1>
-<p class="subtitle">IAM identity types, policy families, access evaluation logic, and identity federation — the framework for how AWS decides who can do what. This concept module bridges application-layer identity (Weeks 6–7) and encryption access control (Week 8).</p>
+<p class="subtitle">IAM answers two questions: <strong>who are you?</strong> (identity types) and <strong>what are you allowed to do?</strong> (policies). This page covers both. Click any element in the diagrams to jump to its explanation.</p>
 
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>1. Two layers of identity</h2>
 
-<p>In Weeks 6 and 7, we secured identity at the <strong>application layer</strong> — the people who <em>use</em> the Photo Viewer. Cognito and Google login handle authentication, JWT claims and Lambda logic handle authorization, and ownership checks prevent users from modifying each other's photos.</p>
-
-<p>But there's another set of people: the ones who <em>operate</em> the Photo Viewer. Developers who update Lambda code, infrastructure admins who manage API Gateway and CloudFront, security auditors who review CloudTrail logs. These people log into the AWS Console — not the Photo Viewer. Their identity and access is managed by a different system: <strong>AWS IAM</strong>.</p>
+<p>We've already secured identity at the <strong>application layer</strong> &mdash; app users logging in via Google, authorized by JWT claims and Lambda logic. This module covers the <strong>infrastructure layer</strong> &mdash; the developers, admins, and auditors who log into the AWS Console to operate the Photo Viewer. Their identity is managed by <strong>AWS IAM</strong>.</p>
 
 <table class="compare-table">
   <thead><tr><th></th><th>Application layer</th><th>Infrastructure layer</th></tr></thead>
   <tbody>
     <tr><td><strong>Who</strong></td><td>App users (customers)</td><td>Employees (operators)</td></tr>
-    <tr><td><strong>Authentication</strong></td><td>Cognito + Google OAuth → JWT</td><td>IAM username/password or role assumption → temporary credentials</td></tr>
-    <tr><td><strong>Authorization</strong></td><td>JWT claims → Lambda logic (group checks, ownership)</td><td>IAM policies + resource policies</td></tr>
-    <tr><td><strong>Built in</strong></td><td>Weeks 6–7</td><td>Week 1 (IAM user), this module (framework), Week 9 (lab)</td></tr>
+    <tr><td><strong>Authentication</strong></td><td>Cognito + Google &rarr; JWT</td><td>IAM login or role assumption</td></tr>
+    <tr><td><strong>Authorization</strong></td><td>JWT claims &rarr; Lambda logic</td><td>IAM + resource policies</td></tr>
   </tbody>
 </table>
 
@@ -96,82 +88,264 @@
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>2. Three IAM identity types</h2>
+<h2 id="sec-overview">2. IAM at a glance</h2>
 
-<p>Click to expand each identity type.</p>
+<p><strong>Click any box</strong> to jump to its explanation.</p>
 
-<div class="concept-card">
+<div class="diagram-wrap">
+<svg viewBox="0 0 780 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <!-- Identity side -->
+  <rect x="20" y="12" width="270" height="120" rx="10" fill="#f0f6ff" stroke="#1F4E79" stroke-width="1.5"/>
+  <text x="155" y="36" text-anchor="middle" font-size="13" font-weight="700" fill="#1F4E79">IDENTITY TYPES</text>
+  <g class="clickable" onclick="openCard('c1')">
+    <rect class="hover-border" x="38" y="50" width="74" height="44" rx="6" fill="#fff" stroke="#d0dce8" stroke-width="1.5"/>
+    <text x="75" y="72" text-anchor="middle" font-size="16">&#x1F464;</text>
+    <text x="75" y="88" text-anchor="middle" font-size="10" fill="#666">user</text>
+  </g>
+  <g class="clickable" onclick="openCard('c2')">
+    <rect class="hover-border" x="118" y="50" width="74" height="44" rx="6" fill="#fff" stroke="#d0dce8" stroke-width="1.5"/>
+    <text x="155" y="72" text-anchor="middle" font-size="16">&#x1F465;</text>
+    <text x="155" y="88" text-anchor="middle" font-size="10" fill="#666">group</text>
+  </g>
+  <g class="clickable" onclick="openCard('c3')">
+    <rect class="hover-border" x="198" y="50" width="74" height="44" rx="6" fill="#fff" stroke="#d0dce8" stroke-width="1.5"/>
+    <text x="235" y="72" text-anchor="middle" font-size="16">&#x1F3AD;</text>
+    <text x="235" y="88" text-anchor="middle" font-size="10" fill="#666">role</text>
+  </g>
+
+  <!-- Resource side -->
+  <rect x="490" y="12" width="270" height="120" rx="10" fill="#f0fff4" stroke="#28a745" stroke-width="1.5"/>
+  <text x="625" y="36" text-anchor="middle" font-size="13" font-weight="700" fill="#155724">RESOURCE</text>
+  <text x="625" y="90" text-anchor="middle" font-size="50" fill="#555">&#x2699;</text>
+
+  <!-- Access arrow -->
+  <line x1="295" y1="72" x2="485" y2="72" stroke="#555" stroke-width="2" stroke-dasharray="8,5"/>
+  <polygon points="485,66 498,72 485,78" fill="#555"/>
+  <text x="390" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#555">access request</text>
+
+  <!-- POLICIES box - bottom center -->
+  <g class="clickable" onclick="scrollToEl('sec-anatomy')">
+    <rect x="215" y="175" width="350" height="88" rx="12" fill="#fffbf0" stroke="#e8a000" stroke-width="1.5"/>
+    <text x="390" y="203" text-anchor="middle" font-size="13" font-weight="700" fill="#b37700" letter-spacing="0.06em">WHAT &mdash; POLICIES</text>
+    <text x="390" y="225" text-anchor="middle" font-size="11" fill="#666">JSON documents that control access</text>
+    <text x="390" y="245" text-anchor="middle" font-size="11" fill="#888">Can attach to identities OR resources</text>
+    <text x="390" y="260" text-anchor="middle" font-size="10" fill="#aaa">click to explore &darr;</text>
+  </g>
+
+  <!-- Arrow: Policies → Identity (IAM policy) -->
+  <line x1="310" y1="175" x2="200" y2="137" stroke="#e8a000" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="204,132 194,134 200,142" fill="#e8a000"/>
+  <text x="230" y="163" font-size="10" fill="#b37700" font-weight="600">IAM policy</text>
+
+  <!-- Arrow: Policies → Resource (resource policy) -->
+  <line x1="470" y1="175" x2="580" y2="137" stroke="#e8a000" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="576,132 586,134 580,142" fill="#e8a000"/>
+  <text x="540" y="163" font-size="10" fill="#b37700" font-weight="600">resource policy</text>
+</svg>
+</div>
+
+<p>Policies can attach to either side. An <strong>IAM policy</strong> attaches to an identity and says "what can this identity do?" A <strong>resource policy</strong> attaches to a resource and says "who can access me?" When an access request happens, both are evaluated together. The rest of this page walks through each part.</p>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="sec-who">3. WHO &mdash; Three IAM identity types</h2>
+
+<p>Click to expand each.</p>
+
+<div class="concept-card" id="card-c1">
   <div class="concept-header" onclick="toggleConcept('c1')">
-    <div class="concept-icon">👤</div>
+    <div class="concept-icon">&#x1F464;</div>
     <div>
       <div class="concept-title">IAM Users</div>
       <div class="concept-subtitle">Permanent identity with long-lived credentials</div>
     </div>
-    <div class="concept-chevron" id="chev-c1">▼</div>
+    <div class="concept-chevron" id="chev-c1">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c1">
-    <p>An IAM user is a permanent identity within an AWS account. It has a username, a console password, and optionally access keys for CLI or API access. These credentials are long-lived — they don't expire unless you manually rotate them.</p>
-    <p>The IAM admin user you created in Week 1 is an IAM user. It's what you've been logging into the console with every week. The policy attached to it was permissive — <code>AdministratorAccess</code> — which is why you've been able to use every AWS service freely.</p>
-    <p><strong>The problem with IAM users:</strong> If credentials leak — pasted into a GitHub repo, stored in a script, left on a stolen laptop — they remain valid until someone manually revokes them. There is no automatic expiration. In a team, if multiple people share one IAM user, CloudTrail shows which credentials were used but not which human. You can't investigate an incident if you can't distinguish between people.</p>
+    <p>An IAM user is a permanent identity within an AWS account. It has a username, a console password, and optionally access keys for CLI or API access. These credentials are long-lived &mdash; they don't expire unless you manually rotate them.</p>
+    <p>The IAM admin user you created at the start of this course is an IAM user. It's what you've been logging into the console with every week. The policy attached to it &mdash; <code>AdministratorAccess</code> &mdash; is why you've been able to use every AWS service freely.</p>
+    <p><strong>The problem with IAM users:</strong> If credentials leak &mdash; pasted into a GitHub repo, stored in a script, left on a stolen laptop &mdash; they remain valid until someone manually revokes them. There is no automatic expiration. In a team, if multiple people share one IAM user, CloudTrail shows which credentials were used but not which human.</p>
   </div>
 </div>
 
-<div class="concept-card">
+<div class="concept-card" id="card-c2">
   <div class="concept-header" onclick="toggleConcept('c2')">
-    <div class="concept-icon">👥</div>
+    <div class="concept-icon">&#x1F465;</div>
     <div>
       <div class="concept-title">IAM Groups</div>
-      <div class="concept-subtitle">Container for users — simplifies policy assignment</div>
+      <div class="concept-subtitle">Container for users &mdash; simplifies policy assignment</div>
     </div>
-    <div class="concept-chevron" id="chev-c2">▼</div>
+    <div class="concept-chevron" id="chev-c2">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c2">
-    <p>A group is a container for IAM users. You attach policies to the group; every user in the group inherits those policies. Groups don't have credentials — you can't log in as a group. They're purely an organizational and policy-assignment mechanism.</p>
+    <p>A group is a container for IAM users. You attach policies to the group; every user in the group inherits those policies. Groups don't have credentials &mdash; you can't log in as a group. They're purely an organizational and policy-assignment mechanism.</p>
     <p>Instead of writing the same IAM policy for ten developers individually, you create a <code>developers</code> group, attach the policy once, and add all ten users. If a new developer joins, add them to the group. If someone leaves, remove them.</p>
-    <p>In the Week 9 lab, you'll create <code>developers</code> and <code>infra-admins</code> groups — each with policies scoped to different KMS keys, enforcing the separation of duties from Week 8 at the human level.</p>
   </div>
 </div>
 
-<div class="concept-card">
+<div class="concept-card" id="card-c3">
   <div class="concept-header" onclick="toggleConcept('c3')">
-    <div class="concept-icon">🎭</div>
+    <div class="concept-icon">&#x1F3AD;</div>
     <div>
       <div class="concept-title">IAM Roles</div>
-      <div class="concept-subtitle">Temporary identity with short-lived credentials — assumed by services or humans</div>
+      <div class="concept-subtitle">Temporary identity with short-lived credentials &mdash; assumed by services or humans</div>
     </div>
-    <div class="concept-chevron" id="chev-c3">▼</div>
+    <div class="concept-chevron" id="chev-c3">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c3">
-    <p>A role has no permanent credentials. When something <strong>assumes</strong> a role, it gets temporary credentials from STS (Security Token Service) that expire automatically — typically in minutes to hours.</p>
-    <p><strong>You've already been using roles.</strong> The Lambda execution role from Week 5 is an IAM role. Every time Lambda runs your function, it assumes that role and gets temporary credentials for the duration of that invocation. The EC2 instance profile from Week 4 is also backed by an IAM role. Roles aren't just for services — humans can assume roles too.</p>
-    <p>When a human assumes a role via the console's "Switch Role" feature or via <code>sts:AssumeRole</code> in the CLI, they get temporary credentials scoped to that role's policies. When the session expires, the credentials are gone. No keys to leak, no passwords to rotate.</p>
-    <p>In the Week 9 lab, an external auditor with zero standing permissions will assume an auditor role to get temporary access to DynamoDB — and you'll see both sides of the trust relationship required for this to work.</p>
-
+    <p>A role has no permanent credentials. When something <strong>assumes</strong> a role, it gets temporary credentials from STS (Security Token Service) that expire automatically &mdash; typically in minutes to hours.</p>
+    <p><strong>You've already been using roles.</strong> The Lambda execution role is an IAM role. Every time Lambda runs your function, it assumes that role and gets temporary credentials for the duration of that invocation. The EC2 instance profile is also backed by an IAM role. Roles aren't just for services &mdash; humans can assume roles too.</p>
+    <p>When a human assumes a role via the console's "Switch Role" feature or via <code>sts:AssumeRole</code> in the CLI, they get temporary credentials scoped to that role's policies. When the session expires, the credentials are gone.</p>
     <div class="callout info">
-      <h4>Identity federation — the Cognito parallel</h4>
-      <p>In Weeks 6–7, Photo Viewer users were redirected to Google to log in, then returned to the app with a JWT. The same pattern works for AWS access: Foothill College's identity system (Duo) can be trusted by AWS IAM, so when an instructor tries to access AWS, they're redirected to Duo, authenticated, and returned with temporary credentials mapped to a role. The user directory stays at Foothill — no need to recreate all users inside AWS IAM. This is called <strong>identity federation</strong>, and it's the conceptual foundation for IAM Identity Center (covered in Week 12).</p>
+      <h4>Identity federation &mdash; the Cognito parallel</h4>
+      <p>Photo Viewer users are redirected to Google to log in, then returned with a JWT. The same pattern works for AWS: Foothill College's identity system (Duo) can be trusted by AWS IAM, so an instructor is redirected to Duo, authenticated, and returned with temporary credentials mapped to a role. This is <strong>identity federation</strong> &mdash; a pattern we'll return to later in the course.</p>
     </div>
   </div>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. Two policy families</h2>
+<h2 id="sec-anatomy">4. WHAT &mdash; Anatomy of an IAM policy</h2>
 
-<p>Every access decision in AWS involves the same question: does this principal have permission to perform this action on this resource? The answer comes from two types of policies.</p>
+<p>Policies are JSON documents with a consistent structure. <strong>Click any highlighted field</strong> to see what it does.</p>
 
-<div class="concept-card">
+<div style="display:flex;flex-direction:column;gap:0;margin:1rem 0;">
+<div style="background:#1e2d3d;color:#e8f0f8;padding:1rem 1.2rem;border-radius:6px 6px 0 0;font-size:0.88em;font-family:'SF Mono',Monaco,monospace;line-height:1.8;overflow-x:auto;">
+{<br>
+&nbsp;&nbsp;<span class="policy-field" data-field="version" onclick="showField('version')" style="color:#6a737d;">"Version": "2012-10-17",</span><br>
+&nbsp;&nbsp;"Statement": [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="policy-field" data-field="effect" onclick="showField('effect')">"Effect": "Allow"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="policy-field" data-field="principal" onclick="showField('principal')">"Principal": { "AWS": "arn:aws:iam::ACCOUNT-ID:user/mike" }</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="policy-field" data-field="action" onclick="showField('action')">"Action": [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"s3:GetObject",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"s3:ListBucket"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;]</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="policy-field" data-field="resource" onclick="showField('resource')">"Resource": [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"arn:aws:s3:::cs55d-bucket",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"arn:aws:s3:::cs55d-bucket/*"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;]</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="policy-field" data-field="condition" onclick="showField('condition')">"Condition": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"IpAddress": { "aws:SourceIp": "12.34.56.0/24" }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}</span><br>
+&nbsp;&nbsp;}]<br>
+}
+</div>
+<div id="field-explain" style="background:#fff;border:1px solid #d0dce8;border-top:2px solid #1F4E79;border-radius:0 0 6px 6px;padding:1rem 1.2rem;min-height:80px;">
+  <div id="field-default" style="color:#888;font-size:0.9rem;">&#x2191; Click any highlighted field above to see what it does.</div>
+  <div id="explain-version" style="display:none;">
+    <h4 style="color:#1F4E79;margin:0 0 0.5rem;">Version &mdash; policy language version</h4>
+    <p style="margin-bottom:0.5rem;">This is the IAM policy language version, not a date you set. It's always <code>"2012-10-17"</code>. AWS uses it to determine which policy features are available (for example, policy variables like <code>${aws:username}</code> require this version).</p>
+    <p style="margin-bottom:0;font-size:0.88rem;color:#555;">Just include it in every policy and move on. There is no newer version.</p>
+  </div>
+  <div id="explain-effect" style="display:none;">
+    <h4 style="color:#1F4E79;margin:0 0 0.5rem;">Effect &mdash; allow or deny?</h4>
+    <p style="margin-bottom:0.5rem;"><code>"Allow"</code> or <code>"Deny"</code>. Only two options. Says whether the statement grants or blocks access.</p>
+    <p style="margin-bottom:0;font-size:0.88rem;color:#555;">In this example: <strong>Allow</strong> &mdash; Mike is being granted access.</p>
+  </div>
+  <div id="explain-principal" style="display:none;">
+    <h4 style="color:#1F4E79;margin:0 0 0.5rem;">Principal &mdash; who?</h4>
+    <p style="margin-bottom:0.5rem;"><em>Who</em> is this policy about? Can be a specific IAM user, a role, a service (<code>"Service": "cloudfront.amazonaws.com"</code>), or everyone (<code>"*"</code>).</p>
+    <p style="margin-bottom:0.5rem;"><strong>Key distinction:</strong> In <strong>identity-based policies</strong> (attached to a user/group/role), Principal is <em>omitted</em>. In <strong>resource-based policies</strong> (attached to a resource), Principal is <em>required</em>.</p>
+    <p style="margin-bottom:0;font-size:0.88rem;color:#555;">Here: the principal is IAM user <strong>mike</strong>. Since Principal is present, this is a resource-based policy.</p>
+  </div>
+  <div id="explain-action" style="display:none;">
+    <h4 style="color:#1F4E79;margin:0 0 0.5rem;">Action &mdash; what can they do?</h4>
+    <p style="margin-bottom:0.5rem;">Specified as <code>service:operation</code>. You can list multiple or use wildcards like <code>s3:Get*</code>. Principle of least privilege: list only the specific actions needed.</p>
+    <p style="margin-bottom:0.5rem;"><strong>Least privilege question:</strong> Does Mike need <code>s3:ListBucket</code>? If he only downloads specific files, removing it tightens the policy.</p>
+    <p style="margin-bottom:0;font-size:0.88rem;color:#555;">Here: Mike can <strong>download objects</strong> and <strong>list bucket contents</strong>.</p>
+  </div>
+  <div id="explain-resource" style="display:none;">
+    <h4 style="color:#1F4E79;margin:0 0 0.5rem;">Resource &mdash; which specific resource?</h4>
+    <p style="margin-bottom:0.5rem;">Specified as an ARN (Amazon Resource Name). <code>"*"</code> means all resources &mdash; violates least privilege. Always scope to the specific resource.</p>
+    <p style="margin-bottom:0.5rem;">Two ARNs here because <code>ListBucket</code> operates on the <em>bucket</em> while <code>GetObject</code> operates on <em>objects inside</em>. S3 treats these as different resources.</p>
+    <p style="margin-bottom:0;font-size:0.88rem;color:#555;">Here: the <strong>cs55d-bucket</strong> and all objects inside it.</p>
+  </div>
+  <div id="explain-condition" style="display:none;">
+    <h4 style="color:#1F4E79;margin:0 0 0.5rem;">Condition &mdash; under what circumstances?</h4>
+    <p style="margin-bottom:0.5rem;"><strong>Optional.</strong> Adds constraints: source IP, time of day, MFA required, encryption key. If the condition isn't met, the statement doesn't apply.</p>
+    <p style="margin-bottom:0;font-size:0.88rem;color:#555;">Here: only applies from IP range <strong>12.34.56.0/24</strong>. From any other IP, this statement is ignored.</p>
+  </div>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="sec-families">5. Two policy families and how they're evaluated</h2>
+
+<p>The overview diagram showed that policies can attach to either side. Here's the detail. <strong>Click on the policies</strong> to expand their explanations below.</p>
+
+<div class="diagram-wrap">
+<svg viewBox="0 0 800 310" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <!-- Identity side -->
+  <g>
+    <rect x="20" y="12" width="270" height="155" rx="10" fill="#f0f6ff" stroke="#1F4E79" stroke-width="1.5"/>
+    <text x="155" y="38" text-anchor="middle" font-size="13" font-weight="700" fill="#1F4E79">IDENTITY TYPES</text>
+    <rect x="42" y="52" width="74" height="44" rx="6" fill="#fff" stroke="#d0dce8"/>
+    <text x="79" y="72" text-anchor="middle" font-size="16">&#x1F464;</text>
+    <text x="79" y="88" text-anchor="middle" font-size="10" fill="#666">user</text>
+    <rect x="124" y="52" width="74" height="44" rx="6" fill="#fff" stroke="#d0dce8"/>
+    <text x="161" y="72" text-anchor="middle" font-size="16">&#x1F465;</text>
+    <text x="161" y="88" text-anchor="middle" font-size="10" fill="#666">group</text>
+    <rect x="206" y="52" width="74" height="44" rx="6" fill="#fff" stroke="#d0dce8"/>
+    <text x="243" y="72" text-anchor="middle" font-size="16">&#x1F3AD;</text>
+    <text x="243" y="88" text-anchor="middle" font-size="10" fill="#666">role</text>
+  </g>
+
+  <!-- Resource side -->
+  <rect x="510" y="12" width="270" height="155" rx="10" fill="#f0fff4" stroke="#28a745" stroke-width="1.5"/>
+  <text x="645" y="38" text-anchor="middle" font-size="13" font-weight="700" fill="#155724">RESOURCE</text>
+  <text x="645" y="110" text-anchor="middle" font-size="56" fill="#555">&#x2699;</text>
+
+  <!-- Access arrow -->
+  <line x1="295" y1="90" x2="505" y2="90" stroke="#555" stroke-width="2" stroke-dasharray="8,5"/>
+  <polygon points="505,84 518,90 505,96" fill="#555"/>
+  <text x="400" y="78" text-anchor="middle" font-size="11" font-weight="600" fill="#555">access request</text>
+
+  <!-- IAM Policy doc -->
+  <g class="clickable" onclick="openCard('c4')">
+    <rect class="hover-border" x="40" y="205" width="220" height="85" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+    <text x="68" y="232" font-size="15">&#x1F4CB;</text>
+    <text x="90" y="232" font-size="13" font-weight="600" fill="#1F4E79">IAM Policy</text>
+    <text x="58" y="254" font-size="11" fill="#555">Attached to the identity</text>
+    <text x="58" y="272" font-size="11" fill="#888">"What can this identity do?"</text>
+  </g>
+  <line x1="150" y1="203" x2="150" y2="170" stroke="#1F4E79" stroke-width="1.5"/>
+  <polygon points="144,172 150,160 156,172" fill="#1F4E79"/>
+
+  <!-- Resource Policy doc -->
+  <g class="clickable" onclick="openCard('c5')">
+    <rect class="hover-border" x="540" y="205" width="220" height="85" rx="6" fill="#fff" stroke="#28a745" stroke-width="1.5"/>
+    <text x="568" y="232" font-size="15">&#x1F3F7;</text>
+    <text x="590" y="232" font-size="13" font-weight="600" fill="#155724">Resource Policy</text>
+    <text x="558" y="254" font-size="11" fill="#555">Attached to the resource</text>
+    <text x="558" y="272" font-size="11" fill="#888">"Who can access me?"</text>
+  </g>
+  <line x1="650" y1="203" x2="650" y2="170" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="644,172 650,160 656,172" fill="#28a745"/>
+
+  <!-- Evaluation box -->
+  <g class="clickable" onclick="openCard('c6')">
+    <rect class="hover-border" x="265" y="220" width="270" height="56" rx="6" fill="#fffbf0" stroke="#e8a000" stroke-width="1.5"/>
+    <text x="400" y="242" text-anchor="middle" font-size="11" font-weight="600" fill="#b37700">Both evaluated together</text>
+    <text x="400" y="262" text-anchor="middle" font-size="10" fill="#666">explicit deny &gt; explicit allow &gt; implicit deny</text>
+  </g>
+</svg>
+</div>
+
+<div class="concept-card" id="card-c4">
   <div class="concept-header" onclick="toggleConcept('c4')">
-    <div class="concept-icon">📋</div>
+    <div class="concept-icon">&#x1F4CB;</div>
     <div>
       <div class="concept-title">Identity-based policies (IAM policies)</div>
-      <div class="concept-subtitle">Attached to a principal — "what is this identity allowed to do?"</div>
+      <div class="concept-subtitle">Attached to a principal &mdash; "what is this identity allowed to do?"</div>
     </div>
-    <div class="concept-chevron" id="chev-c4">▼</div>
+    <div class="concept-chevron" id="chev-c4">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c4">
-    <p>An identity-based policy is attached to a user, group, or role. It answers: <em>"what is this principal allowed to do?"</em></p>
-    <p>You've been writing these since Week 4. The Lambda execution role's policy says:</p>
+    <p>Attached to a user, group, or role. No <code>Principal</code> field &mdash; the principal is whoever the policy is attached to.</p>
+    <p>The Lambda execution role's policy:</p>
 <pre><code>{
   "Effect": "Allow",
   "Action": [
@@ -182,22 +356,22 @@
   ],
   "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
 }</code></pre>
-    <p>This policy follows the <strong>principle of least privilege</strong> — it grants only the specific DynamoDB actions needed, only on the specific table needed. Not <code>dynamodb:*</code>, not <code>Resource: *</code>.</p>
+    <p>Notice there's no <code>Principal</code> &mdash; the principal is implicit (the Lambda role this policy is attached to). Least privilege: only the specific DynamoDB actions needed, only on the specific table.</p>
   </div>
 </div>
 
-<div class="concept-card">
+<div class="concept-card" id="card-c5">
   <div class="concept-header" onclick="toggleConcept('c5')">
-    <div class="concept-icon">🏷️</div>
+    <div class="concept-icon">&#x1F3F7;</div>
     <div>
       <div class="concept-title">Resource-based policies</div>
-      <div class="concept-subtitle">Attached to a resource — "who is allowed to access this resource?"</div>
+      <div class="concept-subtitle">Attached to a resource &mdash; "who is allowed to access this resource?"</div>
     </div>
-    <div class="concept-chevron" id="chev-c5">▼</div>
+    <div class="concept-chevron" id="chev-c5">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c5">
-    <p>A resource-based policy is attached to the resource itself, not to a principal. It answers: <em>"who is allowed to access this resource?"</em></p>
-    <p>You wrote one in Week 3 — the S3 bucket policy that allows CloudFront's Origin Access Control to read from the bucket:</p>
+    <p>Attached to the resource itself. <code>Principal</code> is <em>required</em> &mdash; it names who can access.</p>
+    <p>The S3 bucket policy that allows CloudFront's OAC to read from the bucket:</p>
 <pre><code>{
   "Effect": "Allow",
   "Principal": {
@@ -207,133 +381,122 @@
   "Resource": "arn:aws:s3:::BUCKET-NAME/*",
   "Condition": {
     "StringEquals": {
-      "AWS:SourceArn": "arn:aws:cloudfront::ACCOUNT-ID:distribution/DISTRIBUTION-ID"
+      "AWS:SourceArn": "arn:aws:cloudfront::ACCOUNT-ID:distribution/DIST-ID"
     }
   }
 }</code></pre>
-    <p>Because it's on an S3 bucket, we call it a <strong>bucket policy</strong>. On a KMS key, it's a <strong>key policy</strong>. On an SQS queue, a <strong>queue policy</strong>. On an IAM role (its trust policy), a <strong>trust policy</strong>. They're all resource-based policies — same concept, different resource.</p>
+    <p>Notice the <code>Principal</code> field names CloudFront, and the <code>Condition</code> restricts it to one specific distribution.</p>
+    <p>On an S3 bucket: <strong>bucket policy</strong>. On a KMS key: <strong>key policy</strong>. On an IAM role: <strong>trust policy</strong>. All resource-based policies &mdash; same concept, different resource.</p>
   </div>
 </div>
 
-
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>4. Policy evaluation — how AWS decides</h2>
-
-<p>When a request is made, AWS collects all applicable policies — identity-based and resource-based — and evaluates them together. The rule is simple:</p>
-
-<div class="concept-card">
+<div class="concept-card" id="card-c6">
   <div class="concept-header" onclick="toggleConcept('c6')">
-    <div class="concept-icon">⚖️</div>
+    <div class="concept-icon">&#x2696;</div>
     <div>
-      <div class="concept-title">Explicit deny → Explicit allow → Implicit deny</div>
+      <div class="concept-title">Policy evaluation &mdash; explicit deny &gt; explicit allow &gt; implicit deny</div>
       <div class="concept-subtitle">Deny always wins. Silence means no.</div>
     </div>
-    <div class="concept-chevron" id="chev-c6">▼</div>
+    <div class="concept-chevron" id="chev-c6">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c6">
-    <p><strong>1. Explicit deny always wins.</strong> If any policy — identity-based or resource-based — contains an explicit <code>"Effect": "Deny"</code> for the action, access is denied. No other policy can override this.</p>
-    <p><strong>2. Explicit allow.</strong> If no policy explicitly denies, and at least one policy explicitly allows, access is granted.</p>
-    <p><strong>3. Implicit deny.</strong> If no policy says anything — no allow, no deny — the default is denied. Silence means no.</p>
-    <p><strong>Example:</strong> A developer named Mike has an IAM policy allowing <code>s3:DeleteObject</code> on the Photo Viewer bucket. But the bucket policy explicitly denies <code>s3:DeleteObject</code> for everyone except the Lambda execution role. Mike tries to delete a photo. The bucket policy's explicit deny wins — Mike cannot delete, even though his IAM policy allows it.</p>
+    <p><strong>1. Explicit deny always wins.</strong> If any policy &mdash; identity-based or resource-based &mdash; contains <code>"Effect": "Deny"</code>, access is denied. Nothing overrides this.</p>
+    <p><strong>2. Explicit allow.</strong> If nothing denies and at least one policy allows, access is granted.</p>
+    <p><strong>3. Implicit deny.</strong> If no policy says anything, the default is denied. Silence means no.</p>
+    <p><strong>Example:</strong> A developer named Mike has an IAM policy allowing <code>s3:DeleteObject</code> on the Photo Viewer bucket. But the bucket policy explicitly denies <code>s3:DeleteObject</code> for everyone except the Lambda execution role. Mike tries to delete a photo &mdash; the bucket policy's explicit deny wins. Mike cannot delete, even though his IAM policy allows it.</p>
     <p>This is a powerful security property: a resource owner can always protect their resource, regardless of what IAM policies exist on the other side.</p>
   </div>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Why both policy families exist</h2>
+<h2>6. Why both policy families exist</h2>
 
-<div class="concept-card">
+<p>Why not just use identity-based policies for everything? Two scenarios where resource policies are essential.</p>
+
+<div class="concept-card" id="card-c7">
   <div class="concept-header" onclick="toggleConcept('c7')">
-    <div class="concept-icon">🏦</div>
+    <div class="concept-icon">&#x1F3E6;</div>
     <div>
       <div class="concept-title">Cross-account access</div>
       <div class="concept-subtitle">Two accounts, both must agree</div>
     </div>
-    <div class="concept-chevron" id="chev-c7">▼</div>
+    <div class="concept-chevron" id="chev-c7">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c7">
-    <p>Imagine the Photo Viewer grows, and now there's a separate AWS account for production and one for development. A developer in the dev account needs to access an S3 bucket in production. The dev account's IAM policy alone isn't sufficient — the production account doesn't know about it. The production S3 bucket must explicitly say, via a resource policy, "I allow this role from this other account." Both sides must agree.</p>
-    <p>Think of it like a bank: to transfer money from another person's account, you need permission to initiate the transfer, and the other account must authorize it.</p>
+    <p>A developer in a dev account needs to access an S3 bucket in production. The dev account's IAM policy alone isn't sufficient &mdash; the production account doesn't know about it. The bucket must explicitly say, via a resource policy, "I allow this role from this other account." Both sides must agree.</p>
+    <p>Think of it like a bank: to transfer from another person's account, you need permission to initiate, and the other account must authorize it.</p>
   </div>
 </div>
 
-<div class="concept-card">
+<div class="concept-card" id="card-c8">
   <div class="concept-header" onclick="toggleConcept('c8')">
-    <div class="concept-icon">🛡️</div>
+    <div class="concept-icon">&#x1F6E1;</div>
     <div>
       <div class="concept-title">Protecting a resource within the same account</div>
       <div class="concept-subtitle">Resource policies as a defensive boundary</div>
     </div>
-    <div class="concept-chevron" id="chev-c8">▼</div>
+    <div class="concept-chevron" id="chev-c8">&#x25BC;</div>
   </div>
   <div class="concept-body" id="c8">
-    <p>Even within one account, you might want to ensure that only the Lambda execution role can write to DynamoDB — not any developer, not any admin, regardless of what IAM policies get attached to them in the future. A resource policy with an explicit deny for all principals except Lambda ensures this. The explicit deny wins over any IAM policy, providing a defensive boundary at the resource level.</p>
+    <p>Even within one account, you might want to ensure only the Lambda execution role can read objects from the Photo Viewer S3 bucket &mdash; not any developer, regardless of what IAM policies get attached in the future. A bucket policy with an explicit deny for all principals except Lambda ensures this. The explicit deny wins over any IAM policy, providing a defensive boundary at the resource level.</p>
   </div>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>6. What you've already built — the map</h2>
+<h2 id="sec-map">7. What you've already built &mdash; the map</h2>
 
-<p>You've been working with both policy families since Week 1 without putting a name on it. Here's the framework applied to what you've built:</p>
+<p>You've been working with both policy families throughout this course. Here's the framework applied to what you've built:</p>
 
 <table class="compare-table">
   <thead><tr><th>Resource</th><th>Identity policy (on role)</th><th>Resource policy (on resource)</th><th>Week</th></tr></thead>
   <tbody>
     <tr>
-      <td><strong>DynamoDB</strong></td>
-      <td>Lambda role → <code>dynamodb:Scan</code></td>
-      <td><em>(none — IAM only)</em></td>
-      <td>5</td>
-    </tr>
-    <tr>
       <td><strong>S3 bucket</strong></td>
       <td><em>(none on CloudFront)</em></td>
-      <td>Bucket policy → OAC principal</td>
+      <td>Bucket policy &rarr; OAC principal</td>
       <td>3</td>
     </tr>
     <tr>
+      <td><strong>DynamoDB</strong></td>
+      <td>Lambda role &rarr; <code>dynamodb:Scan</code></td>
+      <td><em>(none &mdash; IAM only)</em></td>
+      <td>5</td>
+    </tr>
+    <tr>
       <td><strong>Secrets Manager</strong></td>
-      <td>Authorizer role → <code>secretsmanager:GetSecretValue</code></td>
-      <td><em>(none — IAM only)</em></td>
+      <td>Authorizer role &rarr; <code>secretsmanager:GetSecretValue</code></td>
+      <td><em>(none &mdash; IAM only)</em></td>
       <td>6</td>
     </tr>
     <tr>
       <td><strong>KMS key</strong></td>
-      <td><em>(varies — see Week 8)</em></td>
-      <td>Key policy → Lambda role ARN</td>
+      <td><em>(varies &mdash; see Week 8)</em></td>
+      <td>Key policy &rarr; Lambda role ARN</td>
       <td>8</td>
-    </tr>
-    <tr>
-      <td><strong>IAM role (trust policy)</strong></td>
-      <td>User → <code>sts:AssumeRole</code></td>
-      <td>Trust policy → user ARN</td>
-      <td>9</td>
     </tr>
   </tbody>
 </table>
 
 <div class="callout info">
-  <h4>What's next — KMS key policies</h4>
-  <p>In Week 8, you'll see a service where the resource-based policy isn't just optional — it's <strong>required</strong>. KMS key policies are resource policies on encryption keys, but unlike S3, where a bucket policy is optional, KMS won't even evaluate your IAM policies unless the key policy explicitly enables it. The key policy is the root of trust. This makes encryption keys the most tightly controlled resource in AWS — even a compromised IAM admin can't decrypt data if they're not in the key policy.</p>
+  <h4>What's next &mdash; KMS key policies</h4>
+  <p>Next, you'll see a service where the resource-based policy isn't just optional &mdash; it's <strong>required</strong>. KMS key policies are resource policies on encryption keys, but unlike S3, KMS won't even evaluate your IAM policies unless the key policy explicitly enables it. The key policy is the root of trust &mdash; even a compromised IAM admin can't decrypt data if they're not in the key policy.</p>
 </div>
 
 
-<!-- ═══════════════════════════════════════════════════ -->
-
 <div class="page-nav">
-  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
-  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-authorization.html">← Week 7: Authorization Patterns</a></div>
-  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html">Week 8: Encryption at Rest →</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-authorization.html">&larr; Week 7: Authorization</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html">Week 8: Encryption at Rest &rarr;</a></div>
 </div>
 
 <footer>
-  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
   <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
 </footer>
 
-</div><!-- end page-wrap -->
+</div>
 
 <script>
 function toggleConcept(id) {
@@ -341,7 +504,36 @@ function toggleConcept(id) {
   var chev = document.getElementById('chev-' + id);
   var isOpen = body.classList.contains('open');
   body.classList.toggle('open', !isOpen);
-  chev.textContent = isOpen ? '▼' : '▲';
+  chev.textContent = isOpen ? '\u25BC' : '\u25B2';
+}
+
+function openCard(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var card = document.getElementById('card-' + id);
+  if (!body.classList.contains('open')) {
+    body.classList.add('open');
+    chev.textContent = '\u25B2';
+  }
+  card.classList.add('highlight');
+  setTimeout(function(){ card.classList.remove('highlight'); }, 2000);
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scrollToEl(id) {
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showField(field) {
+  var fields = ['version','effect','principal','action','resource','condition'];
+  document.getElementById('field-default').style.display = 'none';
+  fields.forEach(function(f) {
+    document.getElementById('explain-' + f).style.display = (f === field) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.policy-field').forEach(function(el) {
+    el.classList.toggle('active', el.getAttribute('data-field') === field);
+  });
 }
 </script>
 </body>
