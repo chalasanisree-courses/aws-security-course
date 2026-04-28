@@ -579,6 +579,25 @@
     </div>
   </div>
 
+  <!-- Concept: Infrastructure Identity -->
+  <div class="week-card">
+    <div class="week-header" onclick="toggle('wiam')">
+      <span class="week-num" style="background:#444441;">Concept</span>
+      <span class="week-title">Infrastructure Identity Security — IAM Foundations</span>
+      <span class="week-domain">IAM identity types, policy families, access evaluation</span>
+      <span class="week-chevron" id="wiam-chev">▶</span>
+    </div>
+    <div class="week-body" id="wiam">
+      <p class="week-desc">Weeks 6–7 secured identity at the application layer (Cognito, Google login, RBAC). This concept module turns to the infrastructure layer — the developers and admins who operate the Photo Viewer. Three IAM identity types: users (permanent, long-lived credentials), groups (containers for policy assignment), and roles (temporary identities assumed by services or humans). Two policy families: identity-based policies on principals vs resource-based policies on resources. Policy evaluation logic: explicit deny beats explicit allow beats implicit deny. Identity federation explained via the Cognito parallel. This module provides the IAM framework needed for Week 8 (KMS key policies) and Week 9 (IAM groups, role assumption, Policy Simulator).</p>
+      <div class="resource-list">
+        <a class="resource-link" href="concepts/infrastructure-identity.html">
+          <span class="icon">◈</span> Infrastructure Identity Security — interactive concept notes
+        </a>
+        <span class="coming-soon">▸ Videos — see Canvas LMS</span>
+      </div>
+    </div>
+  </div>
+
   <div class="phase-divider">
     <span>Phase 4</span><hr>
   </div>
@@ -609,18 +628,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w9')">
       <span class="week-num">Week 9</span>
-      <span class="week-title">Employee Identity — IAM Identity Center</span>
+      <span class="week-title">IAM Deep Dive — Identities and Access Determination</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w9-chev">▶</span>
     </div>
     <div class="week-body" id="w9">
-      <p class="week-desc">IAM Identity Center replaces individual IAM users — developers log in via SSO with permission sets scoped to accounts. PhotoViewer employees can now manage pre-seeded photos (flip visibility, delete, add new showcase photos) through Identity Center — a separate auth path from Cognito app users. Permission sets map to IAM roles with KMS key access for the appropriate keys.</p>
+      <p class="week-desc">Module 7b introduced the IAM framework. Week 9 puts it into practice. IAM groups enforce the KMS separation of duties at the human level — developers get data key access, infra-admins get infra key access. An external auditor with zero standing permissions assumes a role via console Switch Role to get temporary DynamoDB access, then hits the KMS dual-authorization wall when expanding to S3 photos. The IAM Policy Simulator maps the complete access matrix across all principals. IAM Identity Center is introduced as a lecture concept — the production upgrade to temporary credentials and SSO — with hands-on deferred to Week 12.</p>
       <div class="resource-list">
-        <a class="resource-link" href="week09/week9-identity-center.html">
-          <span class="icon">◈</span> Employee Identity — concept notes
+        <a class="resource-link" href="week09/week9-iam.html">
+          <span class="icon">◈</span> IAM Deep Dive — concept notes
         </a>
         <a class="resource-link" href="week09/week9-lab-assignment.html">
-          <span class="icon">◈</span> Week 9 Lab — Identity Center
+          <span class="icon">◈</span> Week 9 Lab — IAM Groups, Roles, and Policy Simulator
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -679,18 +698,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w12')">
       <span class="week-num">Week 12</span>
-      <span class="week-title">Multi-Account Governance — Organizations, SCPs, Route 53</span>
+      <span class="week-title">Multi-Account Governance — Organizations, Identity Center, SCPs</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w12-chev">▶</span>
     </div>
     <div class="week-body" id="w12">
-      <p class="week-desc">Now that you've built one account properly, how do you manage hundreds? AWS Organizations groups accounts into OUs. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone automates this for new accounts. Route 53 DNS security covered as lecture — custom domains, health checks, DNSSEC.</p>
+      <p class="week-desc">Now that you've built one account properly, how do you manage hundreds? AWS Organizations groups accounts into OUs. IAM Identity Center replaces individual IAM users with SSO — employees log in once and assume temporary roles with permission sets scoped to accounts, completing the transition from long-lived credentials to temporary credentials introduced conceptually in Week 9. Service Control Policies enforce guardrails org-wide: no CloudTrail disable, no public S3, region restriction. Control Tower Landing Zone automates this for new accounts. Route 53 DNS security covered as lecture — custom domains, health checks, DNSSEC.</p>
       <div class="resource-list">
         <a class="resource-link" href="week12/week12-governance.html">
           <span class="icon">◈</span> Multi-Account Governance — concept notes
         </a>
         <a class="resource-link" href="week12/week12-lab-assignment.html">
-          <span class="icon">◈</span> Week 12 Lab — Organizations + SCPs
+          <span class="icon">◈</span> Week 12 Lab — Organizations, Identity Center + SCPs
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -838,7 +857,7 @@
               <td>User authentication and identity federation. User Pool manages app users and issues JWTs. Supports Google, Facebook, and other OIDC providers via Authorization Code flow.</td>
             </tr>
             <tr data-scope="global">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><span class="svc-abbr"> · AWS SSO</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 9</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/iam/identity-center/" target="_blank">IAM Identity Center</a></div><span class="svc-abbr"> · AWS SSO</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 12</span></td>
               <td><span class="scope-pill scope-global">Global</span></td>
               <td>Single sign-on for employee access. Centralizes identity for multiple roles and accounts.</td>
             </tr>

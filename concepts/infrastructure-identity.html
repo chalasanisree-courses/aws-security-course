@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Infrastructure Identity Security — CS 55D</title>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#f8f9fa;padding:0 1rem 4rem;}
+    .page-wrap{max-width:860px;margin:0 auto;}
+    nav{font-size:0.85rem;color:#666;padding:1.2rem 0 0.5rem;}
+    nav a{color:#1F4E79;text-decoration:none;}
+    nav a:hover{text-decoration:underline;}
+    h1{font-size:2rem;font-weight:700;color:#1a1a1a;margin:0.5rem 0 0.3rem;}
+    .subtitle{color:#555;font-size:1.05rem;margin-bottom:1.5rem;line-height:1.5;}
+    h2{font-size:1.35rem;font-weight:600;color:#1F4E79;margin:2.5rem 0 1rem;padding-bottom:0.4rem;border-bottom:2px solid #e0eaf4;}
+    h3{font-size:1.1rem;font-weight:600;color:#1a1a1a;margin:1.5rem 0 0.5rem;}
+    h4{font-size:1rem;font-weight:600;color:#1a1a1a;margin:1rem 0 0.4rem;}
+    p{margin-bottom:1rem;}
+    ul,ol{margin:0.5rem 0 1rem 1.5rem;}
+    li{margin-bottom:0.3rem;}
+    code{background:#f0f4f8;border:1px solid #d0dce8;border-radius:3px;padding:1px 5px;font-size:0.88em;font-family:'SF Mono',Monaco,monospace;}
+    pre{background:#1e2d3d;color:#e8f0f8;padding:1rem 1.2rem;border-radius:6px;overflow-x:auto;font-size:0.88em;margin:1rem 0;}
+    pre code{background:none;border:none;color:inherit;padding:0;}
+    .callout{border-left:4px solid;padding:1rem 1.2rem;margin:1.2rem 0;border-radius:0 6px 6px 0;}
+    .callout.info{border-color:#1F4E79;background:#f0f6ff;}
+    .callout.warn{border-color:#dc3545;background:#fff5f5;}
+    .callout.success{border-color:#155724;background:#f0fff4;}
+    .callout h4{margin:0 0 0.4rem;color:#1F4E79;}
+    .callout.warn h4{color:#dc3545;}
+    .callout p:last-child{margin-bottom:0;}
+
+    /* Comparison table */
+    .compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;}
+    .compare-table th{background:#1F4E79;color:#fff;padding:8px 12px;text-align:left;font-weight:500;}
+    .compare-table td{padding:8px 12px;border-bottom:1px solid #e0eaf4;vertical-align:top;}
+    .compare-table tr:nth-child(even) td{background:#f8fafc;}
+    .compare-table tr:last-child td{border-bottom:none;}
+
+    /* Concept cards */
+    .concept-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;margin:0.8rem 0;overflow:hidden;}
+    .concept-header{display:flex;align-items:center;gap:0.8rem;padding:1rem 1.2rem;cursor:pointer;user-select:none;}
+    .concept-header:hover{background:#f5f8fc;}
+    .concept-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0;}
+    .concept-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+    .concept-subtitle{font-size:0.8rem;color:#888;}
+    .concept-chevron{color:#888;font-size:0.8rem;transition:transform 0.2s;}
+    .concept-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #e0eaf4;}
+    .concept-body.open{display:block;}
+    .concept-body p:first-child{margin-top:1rem;}
+
+    /* Page nav and footer */
+    .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    .course-nav a{font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;}
+    .course-nav a:hover{color:#fff;}
+    .course-nav-right{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+    .page-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e0eaf4;font-size:0.9rem;}
+    .page-nav a{color:#1F4E79;text-decoration:none;}
+    .page-nav a:hover{text-decoration:underline;}
+    footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid #e0eaf4;font-size:0.82rem;color:#999;text-align:center;}
+    footer a{color:#1F4E79;text-decoration:none;}
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+<nav class="course-nav">
+  <a href="../index.html">← Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;·&nbsp; Foothill College</div>
+</nav>
+
+<h1>Infrastructure Identity Security</h1>
+<p class="subtitle">IAM identity types, policy families, access evaluation logic, and identity federation — the framework for how AWS decides who can do what. This concept module bridges application-layer identity (Weeks 6–7) and encryption access control (Week 8).</p>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. Two layers of identity</h2>
+
+<p>In Weeks 6 and 7, we secured identity at the <strong>application layer</strong> — the people who <em>use</em> the Photo Viewer. Cognito and Google login handle authentication, JWT claims and Lambda logic handle authorization, and ownership checks prevent users from modifying each other's photos.</p>
+
+<p>But there's another set of people: the ones who <em>operate</em> the Photo Viewer. Developers who update Lambda code, infrastructure admins who manage API Gateway and CloudFront, security auditors who review CloudTrail logs. These people log into the AWS Console — not the Photo Viewer. Their identity and access is managed by a different system: <strong>AWS IAM</strong>.</p>
+
+<table class="compare-table">
+  <thead><tr><th></th><th>Application layer</th><th>Infrastructure layer</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Who</strong></td><td>App users (customers)</td><td>Employees (operators)</td></tr>
+    <tr><td><strong>Authentication</strong></td><td>Cognito + Google OAuth → JWT</td><td>IAM username/password or role assumption → temporary credentials</td></tr>
+    <tr><td><strong>Authorization</strong></td><td>JWT claims → Lambda logic (group checks, ownership)</td><td>IAM policies + resource policies</td></tr>
+    <tr><td><strong>Built in</strong></td><td>Weeks 6–7</td><td>Week 1 (IAM user), this module (framework), Week 9 (lab)</td></tr>
+  </tbody>
+</table>
+
+<p>Every SaaS product has both layers. They should never be the same system.</p>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. Three IAM identity types</h2>
+
+<p>Click to expand each identity type.</p>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c1')">
+    <div class="concept-icon">👤</div>
+    <div>
+      <div class="concept-title">IAM Users</div>
+      <div class="concept-subtitle">Permanent identity with long-lived credentials</div>
+    </div>
+    <div class="concept-chevron" id="chev-c1">▼</div>
+  </div>
+  <div class="concept-body" id="c1">
+    <p>An IAM user is a permanent identity within an AWS account. It has a username, a console password, and optionally access keys for CLI or API access. These credentials are long-lived — they don't expire unless you manually rotate them.</p>
+    <p>The IAM admin user you created in Week 1 is an IAM user. It's what you've been logging into the console with every week. The policy attached to it was permissive — <code>AdministratorAccess</code> — which is why you've been able to use every AWS service freely.</p>
+    <p><strong>The problem with IAM users:</strong> If credentials leak — pasted into a GitHub repo, stored in a script, left on a stolen laptop — they remain valid until someone manually revokes them. There is no automatic expiration. In a team, if multiple people share one IAM user, CloudTrail shows which credentials were used but not which human. You can't investigate an incident if you can't distinguish between people.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c2')">
+    <div class="concept-icon">👥</div>
+    <div>
+      <div class="concept-title">IAM Groups</div>
+      <div class="concept-subtitle">Container for users — simplifies policy assignment</div>
+    </div>
+    <div class="concept-chevron" id="chev-c2">▼</div>
+  </div>
+  <div class="concept-body" id="c2">
+    <p>A group is a container for IAM users. You attach policies to the group; every user in the group inherits those policies. Groups don't have credentials — you can't log in as a group. They're purely an organizational and policy-assignment mechanism.</p>
+    <p>Instead of writing the same IAM policy for ten developers individually, you create a <code>developers</code> group, attach the policy once, and add all ten users. If a new developer joins, add them to the group. If someone leaves, remove them.</p>
+    <p>In the Week 9 lab, you'll create <code>developers</code> and <code>infra-admins</code> groups — each with policies scoped to different KMS keys, enforcing the separation of duties from Week 8 at the human level.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c3')">
+    <div class="concept-icon">🎭</div>
+    <div>
+      <div class="concept-title">IAM Roles</div>
+      <div class="concept-subtitle">Temporary identity with short-lived credentials — assumed by services or humans</div>
+    </div>
+    <div class="concept-chevron" id="chev-c3">▼</div>
+  </div>
+  <div class="concept-body" id="c3">
+    <p>A role has no permanent credentials. When something <strong>assumes</strong> a role, it gets temporary credentials from STS (Security Token Service) that expire automatically — typically in minutes to hours.</p>
+    <p><strong>You've already been using roles.</strong> The Lambda execution role from Week 5 is an IAM role. Every time Lambda runs your function, it assumes that role and gets temporary credentials for the duration of that invocation. The EC2 instance profile from Week 4 is also backed by an IAM role. Roles aren't just for services — humans can assume roles too.</p>
+    <p>When a human assumes a role via the console's "Switch Role" feature or via <code>sts:AssumeRole</code> in the CLI, they get temporary credentials scoped to that role's policies. When the session expires, the credentials are gone. No keys to leak, no passwords to rotate.</p>
+    <p>In the Week 9 lab, an external auditor with zero standing permissions will assume an auditor role to get temporary access to DynamoDB — and you'll see both sides of the trust relationship required for this to work.</p>
+
+    <div class="callout info">
+      <h4>Identity federation — the Cognito parallel</h4>
+      <p>In Weeks 6–7, Photo Viewer users were redirected to Google to log in, then returned to the app with a JWT. The same pattern works for AWS access: Foothill College's identity system (Duo) can be trusted by AWS IAM, so when an instructor tries to access AWS, they're redirected to Duo, authenticated, and returned with temporary credentials mapped to a role. The user directory stays at Foothill — no need to recreate all users inside AWS IAM. This is called <strong>identity federation</strong>, and it's the conceptual foundation for IAM Identity Center (covered in Week 12).</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. Two policy families</h2>
+
+<p>Every access decision in AWS involves the same question: does this principal have permission to perform this action on this resource? The answer comes from two types of policies.</p>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c4')">
+    <div class="concept-icon">📋</div>
+    <div>
+      <div class="concept-title">Identity-based policies (IAM policies)</div>
+      <div class="concept-subtitle">Attached to a principal — "what is this identity allowed to do?"</div>
+    </div>
+    <div class="concept-chevron" id="chev-c4">▼</div>
+  </div>
+  <div class="concept-body" id="c4">
+    <p>An identity-based policy is attached to a user, group, or role. It answers: <em>"what is this principal allowed to do?"</em></p>
+    <p>You've been writing these since Week 4. The Lambda execution role's policy says:</p>
+<pre><code>{
+  "Effect": "Allow",
+  "Action": [
+    "dynamodb:Scan",
+    "dynamodb:GetItem",
+    "dynamodb:PutItem",
+    "dynamodb:DeleteItem"
+  ],
+  "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
+}</code></pre>
+    <p>This policy follows the <strong>principle of least privilege</strong> — it grants only the specific DynamoDB actions needed, only on the specific table needed. Not <code>dynamodb:*</code>, not <code>Resource: *</code>.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c5')">
+    <div class="concept-icon">🏷️</div>
+    <div>
+      <div class="concept-title">Resource-based policies</div>
+      <div class="concept-subtitle">Attached to a resource — "who is allowed to access this resource?"</div>
+    </div>
+    <div class="concept-chevron" id="chev-c5">▼</div>
+  </div>
+  <div class="concept-body" id="c5">
+    <p>A resource-based policy is attached to the resource itself, not to a principal. It answers: <em>"who is allowed to access this resource?"</em></p>
+    <p>You wrote one in Week 3 — the S3 bucket policy that allows CloudFront's Origin Access Control to read from the bucket:</p>
+<pre><code>{
+  "Effect": "Allow",
+  "Principal": {
+    "Service": "cloudfront.amazonaws.com"
+  },
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::BUCKET-NAME/*",
+  "Condition": {
+    "StringEquals": {
+      "AWS:SourceArn": "arn:aws:cloudfront::ACCOUNT-ID:distribution/DISTRIBUTION-ID"
+    }
+  }
+}</code></pre>
+    <p>Because it's on an S3 bucket, we call it a <strong>bucket policy</strong>. On a KMS key, it's a <strong>key policy</strong>. On an SQS queue, a <strong>queue policy</strong>. On an IAM role (its trust policy), a <strong>trust policy</strong>. They're all resource-based policies — same concept, different resource.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. Policy evaluation — how AWS decides</h2>
+
+<p>When a request is made, AWS collects all applicable policies — identity-based and resource-based — and evaluates them together. The rule is simple:</p>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c6')">
+    <div class="concept-icon">⚖️</div>
+    <div>
+      <div class="concept-title">Explicit deny → Explicit allow → Implicit deny</div>
+      <div class="concept-subtitle">Deny always wins. Silence means no.</div>
+    </div>
+    <div class="concept-chevron" id="chev-c6">▼</div>
+  </div>
+  <div class="concept-body" id="c6">
+    <p><strong>1. Explicit deny always wins.</strong> If any policy — identity-based or resource-based — contains an explicit <code>"Effect": "Deny"</code> for the action, access is denied. No other policy can override this.</p>
+    <p><strong>2. Explicit allow.</strong> If no policy explicitly denies, and at least one policy explicitly allows, access is granted.</p>
+    <p><strong>3. Implicit deny.</strong> If no policy says anything — no allow, no deny — the default is denied. Silence means no.</p>
+    <p><strong>Example:</strong> A developer named Mike has an IAM policy allowing <code>s3:DeleteObject</code> on the Photo Viewer bucket. But the bucket policy explicitly denies <code>s3:DeleteObject</code> for everyone except the Lambda execution role. Mike tries to delete a photo. The bucket policy's explicit deny wins — Mike cannot delete, even though his IAM policy allows it.</p>
+    <p>This is a powerful security property: a resource owner can always protect their resource, regardless of what IAM policies exist on the other side.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. Why both policy families exist</h2>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c7')">
+    <div class="concept-icon">🏦</div>
+    <div>
+      <div class="concept-title">Cross-account access</div>
+      <div class="concept-subtitle">Two accounts, both must agree</div>
+    </div>
+    <div class="concept-chevron" id="chev-c7">▼</div>
+  </div>
+  <div class="concept-body" id="c7">
+    <p>Imagine the Photo Viewer grows, and now there's a separate AWS account for production and one for development. A developer in the dev account needs to access an S3 bucket in production. The dev account's IAM policy alone isn't sufficient — the production account doesn't know about it. The production S3 bucket must explicitly say, via a resource policy, "I allow this role from this other account." Both sides must agree.</p>
+    <p>Think of it like a bank: to transfer money from another person's account, you need permission to initiate the transfer, and the other account must authorize it.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c8')">
+    <div class="concept-icon">🛡️</div>
+    <div>
+      <div class="concept-title">Protecting a resource within the same account</div>
+      <div class="concept-subtitle">Resource policies as a defensive boundary</div>
+    </div>
+    <div class="concept-chevron" id="chev-c8">▼</div>
+  </div>
+  <div class="concept-body" id="c8">
+    <p>Even within one account, you might want to ensure that only the Lambda execution role can write to DynamoDB — not any developer, not any admin, regardless of what IAM policies get attached to them in the future. A resource policy with an explicit deny for all principals except Lambda ensures this. The explicit deny wins over any IAM policy, providing a defensive boundary at the resource level.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>6. What you've already built — the map</h2>
+
+<p>You've been working with both policy families since Week 1 without putting a name on it. Here's the framework applied to what you've built:</p>
+
+<table class="compare-table">
+  <thead><tr><th>Resource</th><th>Identity policy (on role)</th><th>Resource policy (on resource)</th><th>Week</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>DynamoDB</strong></td>
+      <td>Lambda role → <code>dynamodb:Scan</code></td>
+      <td><em>(none — IAM only)</em></td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td><strong>S3 bucket</strong></td>
+      <td><em>(none on CloudFront)</em></td>
+      <td>Bucket policy → OAC principal</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td><strong>Secrets Manager</strong></td>
+      <td>Authorizer role → <code>secretsmanager:GetSecretValue</code></td>
+      <td><em>(none — IAM only)</em></td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td><strong>KMS key</strong></td>
+      <td><em>(varies — see Week 8)</em></td>
+      <td>Key policy → Lambda role ARN</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td><strong>IAM role (trust policy)</strong></td>
+      <td>User → <code>sts:AssumeRole</code></td>
+      <td>Trust policy → user ARN</td>
+      <td>9</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+  <h4>What's next — KMS key policies</h4>
+  <p>In Week 8, you'll see a service where the resource-based policy isn't just optional — it's <strong>required</strong>. KMS key policies are resource policies on encryption keys, but unlike S3, where a bucket policy is optional, KMS won't even evaluate your IAM policies unless the key policy explicitly enables it. The key policy is the root of trust. This makes encryption keys the most tightly controlled resource in AWS — even a compromised IAM admin can't decrypt data if they're not in the key policy.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">← Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week07/week7-authorization.html">← Week 7: Authorization Patterns</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html">Week 8: Encryption at Rest →</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</div><!-- end page-wrap -->
+
+<script>
+function toggleConcept(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.textContent = isOpen ? '▼' : '▲';
+}
+</script>
+</body>
+</html>
