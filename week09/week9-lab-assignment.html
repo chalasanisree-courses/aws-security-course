@@ -76,15 +76,11 @@
 
 <div class="preflight">
   <h3>Pre-flight checklist</h3>
-  <p>Before starting, verify your Week 8 environment is intact:</p>
-  <ul>
-    <li>Two KMS keys exist: <code>photoviewer-infra-key</code> and <code>photoviewer-data-key</code></li>
-    <li>Secrets Manager secret is encrypted with the infra key</li>
-    <li>S3 bucket default encryption is set to the data key</li>
-    <li>DynamoDB table is encrypted with the data key</li>
-    <li>The Photo Viewer loads and functions normally (login, browse, upload)</li>
-  </ul>
-  <p>Note the ARNs of both KMS keys &mdash; you'll need them for permission sets and policies.</p>
+  <p>Run the pre-flight script from CloudShell before starting:</p>
+  <pre>cd ~
+git -C aws-security-course pull
+bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
+  <p>The script verifies your Week 8 environment is intact: both KMS keys exist and are enabled, S3/DynamoDB are encrypted with the data key, Secrets Manager is encrypted with the infra key, and the Photo Viewer loads. It also prints the key ARNs you'll need for permission sets and policies. Address any errors before proceeding.</p>
 </div>
 
 
@@ -103,7 +99,7 @@
   </div>
   <div class="step-body">
     <p>Go to <strong>AWS Organizations</strong> in the console. Click <strong>Create an organization</strong>.</p>
-    <p>Your current account becomes the <strong>management account</strong>. This is a prerequisite for Identity Center. In Week 12, you'll use this Organization for SCPs and multi-account governance.</p>
+    <p>Your current account becomes the <strong>management account</strong>. This is a prerequisite for Identity Center and for multi-account governance later in the course.</p>
 
     <div class="screenshot">AWS Organizations console showing the organization created with your account as the management account</div>
   </div>
@@ -112,6 +108,35 @@
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 2</span>
+    <span class="step-title">Create Organizational Units</span>
+  </div>
+  <div class="step-body">
+    <p>In the Organizations console, select <strong>Root</strong> &rarr; <strong>Actions</strong> &rarr; <strong>Create new</strong>. Create two OUs:</p>
+    <ul>
+      <li><code>Production</code> &mdash; for the current Photo Viewer deployment</li>
+      <li><code>Staging</code> &mdash; empty for now, ready for a future staging environment where changes can be tested before reaching customers</li>
+    </ul>
+
+    <div class="screenshot">Organizations console showing Root with two OUs: Production and Staging</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 3</span>
+    <span class="step-title">Move account into Production OU</span>
+  </div>
+  <div class="step-body">
+    <p>Select your account (it's currently under Root). Click <strong>Actions</strong> &rarr; <strong>Move</strong>. Select <strong>Production</strong> as the destination.</p>
+    <p>The account now sits inside the Production OU. Later in the course, SCPs applied to this OU will govern what the account can do &mdash; and the Staging OU will hold a second account for testing changes before they reach customers.</p>
+
+    <div class="screenshot">Organizations console showing your account inside the Production OU</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 4</span>
     <span class="step-title">Enable IAM Identity Center</span>
   </div>
   <div class="step-body">
@@ -125,7 +150,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 3</span>
+    <span class="step-num">Step 5</span>
     <span class="step-title">Create two Identity Center users</span>
   </div>
   <div class="step-body">
@@ -147,7 +172,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 4</span>
+    <span class="step-num">Step 6</span>
     <span class="step-title">Create two groups</span>
   </div>
   <div class="step-body">
@@ -161,7 +186,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 5</span>
+    <span class="step-num">Step 7</span>
     <span class="step-title">Create the InfraAdmin permission set</span>
   </div>
   <div class="step-body">
@@ -209,7 +234,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 6</span>
+    <span class="step-num">Step 8</span>
     <span class="step-title">Create the PhotosAdmin permission set</span>
   </div>
   <div class="step-body">
@@ -260,7 +285,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 7</span>
+    <span class="step-num">Step 9</span>
     <span class="step-title">Assign permission sets to the account</span>
   </div>
   <div class="step-body">
@@ -274,11 +299,11 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 8</span>
+    <span class="step-num">Step 10</span>
     <span class="step-title">Log in as Jerry via SSO portal</span>
   </div>
   <div class="step-body">
-    <p>Open an <strong>incognito/private browser window</strong>. Go to the SSO portal URL from Step 2. Log in as <code>jerry</code> with the one-time password, then set a new password.</p>
+    <p>Open an <strong>incognito/private browser window</strong>. Go to the SSO portal URL from Step 4. Log in as <code>jerry</code> with the one-time password, then set a new password.</p>
     <p>The portal shows your AWS account with the <code>InfraAdmin</code> permission set. Click <strong>Management Console</strong>.</p>
     <p>Look at the <strong>top-right of the console</strong> &mdash; you'll see a role name like <code>AWSReservedSSO_InfraAdmin_...</code>, not a username. This is the IAM role that Identity Center created behind the scenes and assumed on your behalf.</p>
   </div>
@@ -286,7 +311,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 9</span>
+    <span class="step-num">Step 11</span>
     <span class="step-title">Verify Jerry's access</span>
   </div>
   <div class="step-body">
@@ -308,7 +333,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 10</span>
+    <span class="step-num">Step 12</span>
     <span class="step-title">Log in as Tom and verify</span>
   </div>
   <div class="step-body">
@@ -341,7 +366,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 11</span>
+    <span class="step-num">Step 13</span>
     <span class="step-title">Create an IAM user with no permissions</span>
   </div>
   <div class="step-body">
@@ -359,7 +384,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 12</span>
+    <span class="step-num">Step 14</span>
     <span class="step-title">Create the auditor role</span>
   </div>
   <div class="step-body">
@@ -405,7 +430,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 13</span>
+    <span class="step-num">Step 15</span>
     <span class="step-title">Give the auditor user permission to assume the role</span>
   </div>
   <div class="step-body">
@@ -430,7 +455,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 14</span>
+    <span class="step-num">Step 16</span>
     <span class="step-title">Log in as external-auditor</span>
   </div>
   <div class="step-body">
@@ -449,7 +474,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 15</span>
+    <span class="step-num">Step 17</span>
     <span class="step-title">Switch Role to the auditor role</span>
   </div>
   <div class="step-body">
@@ -469,7 +494,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 16</span>
+    <span class="step-num">Step 18</span>
     <span class="step-title">Verify auditor access</span>
   </div>
   <div class="step-body">
@@ -498,7 +523,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 17</span>
+    <span class="step-num">Step 19</span>
     <span class="step-title">Add S3 permission to the auditor role</span>
   </div>
   <div class="step-body">
@@ -514,7 +539,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 18</span>
+    <span class="step-num">Step 20</span>
     <span class="step-title">Test &mdash; try to download a photo as the auditor</span>
   </div>
   <div class="step-body">
@@ -528,7 +553,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 19</span>
+    <span class="step-num">Step 21</span>
     <span class="step-title">Add KMS decrypt permission to the auditor role</span>
   </div>
   <div class="step-body">
@@ -547,7 +572,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 20</span>
+    <span class="step-num">Step 22</span>
     <span class="step-title">Test again</span>
   </div>
   <div class="step-body">
@@ -570,7 +595,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 21</span>
+    <span class="step-num">Step 23</span>
     <span class="step-title">Switch back</span>
   </div>
   <div class="step-body">
@@ -589,7 +614,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 22</span>
+    <span class="step-num">Step 24</span>
     <span class="step-title">Open the IAM Policy Simulator</span>
   </div>
   <div class="step-body">
@@ -599,7 +624,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 23</span>
+    <span class="step-num">Step 25</span>
     <span class="step-title">Test s3:GetObject for each principal</span>
   </div>
   <div class="step-body">
@@ -625,7 +650,7 @@
 
 <div class="step">
   <div class="step-header">
-    <span class="step-num">Step 24</span>
+    <span class="step-num">Step 26</span>
     <span class="step-title">Check CloudTrail</span>
   </div>
   <div class="step-body">
@@ -681,6 +706,11 @@
       <td>Screenshot: AWS Organizations console showing the organization.</td>
     </tr>
     <tr>
+      <td><strong>OUs created, account moved</strong></td>
+      <td>3</td>
+      <td>Screenshot: Organizations console showing Production and Staging OUs, with your account inside Production.</td>
+    </tr>
+    <tr>
       <td><strong>Identity Center enabled</strong></td>
       <td>3</td>
       <td>Screenshot: Identity Center dashboard with portal URL.</td>
@@ -692,7 +722,7 @@
     </tr>
     <tr>
       <td><strong>Two permission sets created</strong></td>
-      <td>8</td>
+      <td>5</td>
       <td>Screenshot: Both permission sets with inline policies showing KMS key ARNs scoped correctly (infra key for InfraAdmin, data key for PhotosAdmin).</td>
     </tr>
     <tr>
