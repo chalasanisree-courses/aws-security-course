@@ -259,7 +259,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
       "Resource": [
         "arn:aws:s3:::BUCKET-NAME",
         "arn:aws:s3:::BUCKET-NAME/*",
-        "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
+        "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/photoviewer-photos"
       ]
     },
     {
@@ -341,7 +341,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>Test what Tom can and cannot do:</p>
     <ul>
       <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; download a photo &rarr; <strong>CAN</strong> view photos &#x2713;</li>
-      <li>Go to <strong>DynamoDB</strong> &rarr; scan the PhotoViewerPhotos table &rarr; <strong>CAN</strong> see metadata &#x2713;</li>
+      <li>Go to <strong>DynamoDB</strong> &rarr; scan the photoviewer-photos table &rarr; <strong>CAN</strong> see metadata &#x2713;</li>
       <li>Go to <strong>Secrets Manager</strong> &rarr; try to view the origin secret &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
     </ul>
 
@@ -389,12 +389,19 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   </div>
   <div class="step-body">
     <p>Go to <strong>IAM &rarr; Roles &rarr; Create role</strong>.</p>
-    <ul>
-      <li>Trusted entity type: <strong>AWS account</strong></li>
-      <li>Select <strong>This account</strong></li>
-      <li>Role name: <code>photo-auditor-role</code></li>
-    </ul>
-    <p>The console creates a <strong>trust policy</strong> (a resource-based policy on the role itself). Edit it to name the auditor user specifically:</p>
+    <ol>
+      <li><strong>Trusted entity type:</strong> Select <strong>AWS account</strong>, then select <strong>This account</strong>. Click <strong>Next</strong>.</li>
+      <li><strong>Add permissions:</strong> Skip &mdash; don't attach any policies. Click <strong>Next</strong>.</li>
+      <li><strong>Name:</strong> Enter <code>photo-auditor-role</code>. Click <strong>Create role</strong>.</li>
+    </ol>
+
+    <p>The console auto-generates a trust policy that trusts the entire account. Narrow it to the auditor user only:</p>
+    <ol>
+      <li>Go to <strong>IAM &rarr; Roles &rarr; photo-auditor-role</strong></li>
+      <li>Click the <strong>Trust relationships</strong> tab</li>
+      <li>Click <strong>Edit trust policy</strong></li>
+      <li>Replace the content with:</li>
+    </ol>
 <pre><code>{
   "Version": "2012-10-17",
   "Statement": [
@@ -407,9 +414,16 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     }
   ]
 }</code></pre>
-    <p>This says: <em>"I trust the external-auditor user to assume me."</em></p>
+    <p>Click <strong>Update policy</strong>. This says: <em>"I trust only the external-auditor user to assume me."</em></p>
 
-    <p>Attach an <strong>inline policy</strong> to the role granting DynamoDB read access:</p>
+    <p>Now attach an inline policy to the role granting DynamoDB read access:</p>
+    <ol>
+      <li>Click the <strong>Permissions</strong> tab</li>
+      <li>Click <strong>Add permissions &rarr; Create inline policy</strong></li>
+      <li>Switch to the <strong>JSON</strong> tab</li>
+      <li>Replace the default content with the policy below</li>
+      <li>Click <strong>Next</strong>, name the policy <code>auditor-dynamodb-read</code>, and click <strong>Create policy</strong></li>
+    </ol>
 <pre><code>{
   "Version": "2012-10-17",
   "Statement": [
@@ -419,9 +433,10 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
       "Action": [
         "dynamodb:Scan",
         "dynamodb:GetItem",
-        "dynamodb:DescribeTable"
+        "dynamodb:DescribeTable",
+        "dynamodb:ListTables"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
+      "Resource": "*"
     }
   ]
 }</code></pre>
@@ -434,7 +449,14 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Give the auditor user permission to assume the role</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>IAM &rarr; Users &rarr; external-auditor &rarr; Permissions &rarr; Add inline policy</strong>:</p>
+    <p>Go to <strong>IAM &rarr; Users &rarr; external-auditor</strong>.</p>
+    <ol>
+      <li>Click the <strong>Permissions</strong> tab</li>
+      <li>Click <strong>Add permissions &rarr; Create inline policy</strong></li>
+      <li>Switch to the <strong>JSON</strong> tab</li>
+      <li>Replace the default content with the policy below</li>
+      <li>Click <strong>Next</strong>, name the policy <code>auditor-assume-role</code>, and click <strong>Create policy</strong></li>
+    </ol>
 <pre><code>{
   "Version": "2012-10-17",
   "Statement": [
@@ -499,7 +521,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   </div>
   <div class="step-body">
     <ul>
-      <li>Go to <strong>DynamoDB</strong> &rarr; scan the PhotoViewerPhotos table &rarr; <strong>WORKS</strong> &#x2713;</li>
+      <li>Go to <strong>DynamoDB</strong> &rarr; scan the photoviewer-photos table &rarr; <strong>WORKS</strong> &#x2713;</li>
       <li>Go to <strong>S3</strong> &rarr; try to download a photo &rarr; <strong>Access Denied</strong> &#x2717; (role has no S3 permissions yet)</li>
     </ul>
 
@@ -527,7 +549,12 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Add S3 permission to the auditor role</span>
   </div>
   <div class="step-body">
-    <p>Switch back to your admin session. Go to <strong>IAM &rarr; Roles &rarr; photo-auditor-role</strong>. Edit the inline policy to add:</p>
+    <p>Switch back to your admin session. Go to <strong>IAM &rarr; Roles &rarr; photo-auditor-role &rarr; Permissions</strong> tab.</p>
+    <ol>
+      <li>Click the <strong>auditor-dynamodb-read</strong> policy name to expand it</li>
+      <li>Click <strong>Edit</strong></li>
+      <li>Add the following statement to the <code>Statement</code> array (after the existing AuditDynamoDB statement, separated by a comma):</li>
+    </ol>
 <pre><code>{
   "Sid": "AuditS3",
   "Effect": "Allow",
@@ -557,7 +584,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Add KMS decrypt permission to the auditor role</span>
   </div>
   <div class="step-body">
-    <p>Switch back to admin. Edit the auditor role's inline policy to add:</p>
+    <p>Switch back to admin. Go to <strong>IAM &rarr; Roles &rarr; photo-auditor-role &rarr; Permissions</strong> tab. Edit the <strong>auditor-dynamodb-read</strong> policy again and add this statement to the array:</p>
 <pre><code>{
   "Sid": "AuditDataKeyDecrypt",
   "Effect": "Allow",
@@ -567,6 +594,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   ],
   "Resource": "arn:aws:kms:us-east-1:ACCOUNT-ID:key/DATA-KEY-ID"
 }</code></pre>
+    <p>Click <strong>Save changes</strong>. The policy now has three statements: AuditDynamoDB, AuditS3, and AuditDataKeyDecrypt.</p>
   </div>
 </div>
 

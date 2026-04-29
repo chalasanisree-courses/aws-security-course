@@ -354,7 +354,7 @@
     "dynamodb:PutItem",
     "dynamodb:DeleteItem"
   ],
-  "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
+  "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/photoviewer-photos"
 }</code></pre>
     <p>Notice there's no <code>Principal</code> &mdash; the principal is implicit (the Lambda role this policy is attached to). Least privilege: only the specific DynamoDB actions needed, only on the specific table.</p>
   </div>
