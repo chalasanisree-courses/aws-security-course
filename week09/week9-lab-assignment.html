@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 9 Lab — IAM Deep Dive · CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1.2rem 1.4rem; border-radius: 8px; font-size: 0.84rem; overflow-x: auto; margin: 0.8rem 0 1.2rem; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn, .callout.warning { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+  .step { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+  .step-header { display: flex; align-items: baseline; gap: 1rem; padding: 0.9rem 1.2rem; background: #f5f8fc; border-bottom: 1px solid #d0dce8; }
+  .step-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1F4E79; background: #dce8f5; padding: 0.2em 0.6em; border-radius: 4px; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; color: #111; }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+  .verify { background: #f0fff4; border: 1px solid #a5d6a7; border-radius: 8px; padding: 0.9rem 1.2rem; margin: 1rem 0; }
+  .verify-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #155724; margin-bottom: 0.4rem; }
+  .verify p:last-child { margin-bottom: 0; }
+  .screenshot { background: #f8f5ff; border: 1px solid #c8b8e8; border-radius: 8px; padding: 0.8rem 1.2rem; margin: 1rem 0; font-size: 0.9rem; color: #4a148c; }
+  .screenshot::before { content: "📸 Screenshot required: "; font-weight: 600; }
+  .preflight { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .preflight h3 { color: #e65100; margin-top: 0; }
+  .part-header { background: #1F4E79; color: #fff; border-radius: 8px; padding: 0.7rem 1.2rem; margin: 2rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .part-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+  .part-title { font-size: 1.05rem; font-weight: 600; }
+  .rubric-table th { background: #1F4E79; color: #fff; }
+  .rubric-table td:nth-child(2) { text-align: center; font-weight: 600; color: #1F4E79; }
+  .rubric-total td { font-weight: 700; background: #f0f4f8; }
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 9 Lab &mdash; IAM Deep Dive</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 100 pts</p>
+
+<p><strong>Objective:</strong> Set up IAM Identity Center with permission sets scoped to the Week 8 KMS keys, enforcing separation of duties at the human level. Create an external auditor scenario using IAM role assumption to demonstrate trust policies and dual-policy authorization. Use the IAM Policy Simulator to map the complete access landscape of the Photo Viewer.</p>
+
+<div class="callout info">
+  <p><strong>What changes this week:</strong> No user-facing changes to the Photo Viewer. All changes are on the operator side &mdash; who can log into the AWS console and what they can access. Identity Center provides employee SSO with temporary credentials. The auditor exercise demonstrates role assumption mechanics. The Policy Simulator maps who can access what.</p>
+</div>
+
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Before starting, verify your Week 8 environment is intact:</p>
+  <ul>
+    <li>Two KMS keys exist: <code>photoviewer-infra-key</code> and <code>photoviewer-data-key</code></li>
+    <li>Secrets Manager secret is encrypted with the infra key</li>
+    <li>S3 bucket default encryption is set to the data key</li>
+    <li>DynamoDB table is encrypted with the data key</li>
+    <li>The Photo Viewer loads and functions normally (login, browse, upload)</li>
+  </ul>
+  <p>Note the ARNs of both KMS keys &mdash; you'll need them for permission sets and policies.</p>
+</div>
+
+
+<!-- ═══════════════ PART 1 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">Identity Center for employee access</span>
+</div>
+
+<p>In this part, you'll set up IAM Identity Center so that Photo Viewer operators can log in via SSO with temporary credentials, scoped to the appropriate KMS keys.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 1</span>
+    <span class="step-title">Enable AWS Organizations</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>AWS Organizations</strong> in the console. Click <strong>Create an organization</strong>.</p>
+    <p>Your current account becomes the <strong>management account</strong>. This is a prerequisite for Identity Center. In Week 12, you'll use this Organization for SCPs and multi-account governance.</p>
+
+    <div class="screenshot">AWS Organizations console showing the organization created with your account as the management account</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 2</span>
+    <span class="step-title">Enable IAM Identity Center</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>IAM Identity Center</strong> in the console. Click <strong>Enable</strong>.</p>
+    <p>When prompted for the identity source, choose <strong>Identity Center directory</strong> (the built-in directory). This is Identity Center's own user store &mdash; no external IdP needed for the lab. In production, you would federate with Okta, Azure AD, or Google Workspace.</p>
+    <p>Note the <strong>AWS access portal URL</strong> that appears after enabling &mdash; this is the SSO login page your Identity Center users will use. It looks like <code>https://d-xxxxxxxxxx.awsapps.com/start</code>.</p>
+
+    <div class="screenshot">IAM Identity Center dashboard showing enabled status and the AWS access portal URL</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 3</span>
+    <span class="step-title">Create two Identity Center users</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Identity Center &rarr; Users &rarr; Add user</strong>. Create two users:</p>
+    <table>
+      <thead><tr><th>Username</th><th>Email</th><th>First name</th><th>Last name</th></tr></thead>
+      <tbody>
+        <tr><td><code>infra-admin</code></td><td>your email with <code>+infra</code> suffix</td><td>Infra</td><td>Admin</td></tr>
+        <tr><td><code>photos-admin</code></td><td>your email with <code>+photos</code> suffix</td><td>Photos</td><td>Admin</td></tr>
+      </tbody>
+    </table>
+    <p>Each user will receive a one-time password email. You'll use these to log in via the SSO portal later.</p>
+
+    <div class="callout info">
+      <p><strong>Email suffix trick:</strong> Gmail treats <code>you+anything@gmail.com</code> the same as <code>you@gmail.com</code>. Both emails arrive in your inbox, but Identity Center sees them as distinct users.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 4</span>
+    <span class="step-title">Create two groups</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Identity Center &rarr; Groups</strong>. Create two groups:</p>
+    <ul>
+      <li><code>infra-team</code> &mdash; add <code>infra-admin</code></li>
+      <li><code>photos-team</code> &mdash; add <code>photos-admin</code></li>
+    </ul>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 5</span>
+    <span class="step-title">Create the InfraAdmin permission set</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Identity Center &rarr; Permission sets &rarr; Create permission set</strong>. Choose <strong>Custom permission set</strong>.</p>
+    <p>Name: <code>InfraAdmin</code>. Add an inline policy:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InfraServices",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:ListSecrets",
+        "apigateway:GET",
+        "cloudfront:Get*",
+        "cloudfront:List*",
+        "lambda:GetFunction",
+        "lambda:ListFunctions",
+        "cloudwatch:GetMetricData",
+        "logs:GetLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "InfraKeyDecrypt",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:DescribeKey"
+      ],
+      "Resource": "arn:aws:kms:us-east-1:ACCOUNT-ID:key/INFRA-KEY-ID"
+    }
+  ]
+}</code></pre>
+
+    <div class="callout info">
+      <p><strong>Replace <code>ACCOUNT-ID</code> and <code>INFRA-KEY-ID</code></strong> with your actual values. The infra key ARN is on the KMS console page for <code>photoviewer-infra-key</code>.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 6</span>
+    <span class="step-title">Create the PhotosAdmin permission set</span>
+  </div>
+  <div class="step-body">
+    <p>Create a second permission set. Name: <code>PhotosAdmin</code>. Add an inline policy:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DataServices",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "dynamodb:Scan",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+      ],
+      "Resource": [
+        "arn:aws:s3:::BUCKET-NAME",
+        "arn:aws:s3:::BUCKET-NAME/*",
+        "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
+      ]
+    },
+    {
+      "Sid": "DataKeyDecrypt",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey"
+      ],
+      "Resource": "arn:aws:kms:us-east-1:ACCOUNT-ID:key/DATA-KEY-ID"
+    }
+  ]
+}</code></pre>
+
+    <div class="callout info">
+      <p><strong>Replace <code>BUCKET-NAME</code>, <code>ACCOUNT-ID</code>, and <code>DATA-KEY-ID</code></strong> with your actual values.</p>
+    </div>
+
+    <div class="screenshot">Identity Center showing both permission sets: <code>InfraAdmin</code> and <code>PhotosAdmin</code></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 7</span>
+    <span class="step-title">Assign permission sets to the account</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>Identity Center &rarr; AWS accounts</strong>. Select your account. Click <strong>Assign users or groups</strong>.</p>
+    <ul>
+      <li>Assign the <code>infra-team</code> group &rarr; <code>InfraAdmin</code> permission set</li>
+      <li>Assign the <code>photos-team</code> group &rarr; <code>PhotosAdmin</code> permission set</li>
+    </ul>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 8</span>
+    <span class="step-title">Log in as infra-admin via SSO portal</span>
+  </div>
+  <div class="step-body">
+    <p>Open an <strong>incognito/private browser window</strong>. Go to the SSO portal URL from Step 2. Log in as <code>infra-admin</code> with the one-time password, then set a new password.</p>
+    <p>The portal shows your AWS account with the <code>InfraAdmin</code> permission set. Click <strong>Management Console</strong>.</p>
+    <p>Look at the <strong>top-right of the console</strong> &mdash; you'll see a role name like <code>AWSReservedSSO_InfraAdmin_...</code>, not a username. This is the IAM role that Identity Center created behind the scenes and assumed on your behalf.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 9</span>
+    <span class="step-title">Verify infra-admin access</span>
+  </div>
+  <div class="step-body">
+    <p>Test what infra-admin can and cannot do:</p>
+    <ul>
+      <li>Go to <strong>Secrets Manager</strong> &rarr; view the <code>photoviewer/origin-verify-secret</code> value &rarr; <strong>CAN</strong> view it &#x2713;</li>
+      <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; try to download a photo &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
+    </ul>
+
+    <div class="verify">
+      <div class="verify-label">&#x2713; Verify</div>
+      <p>Infra-admin can read Secrets Manager (has infra key decrypt) but cannot access S3 photos (no data key decrypt). The Week 8 KMS separation of duties is now enforced at the human level.</p>
+    </div>
+
+    <div class="screenshot">Secrets Manager showing the secret value visible to infra-admin</div>
+    <div class="screenshot">S3 showing Access Denied when infra-admin tries to download a photo</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 10</span>
+    <span class="step-title">Log in as photos-admin and verify</span>
+  </div>
+  <div class="step-body">
+    <p>Open a <strong>different incognito window</strong>. Log in to the SSO portal as <code>photos-admin</code>.</p>
+    <p>Test what photos-admin can and cannot do:</p>
+    <ul>
+      <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; download a photo &rarr; <strong>CAN</strong> view photos &#x2713;</li>
+      <li>Go to <strong>DynamoDB</strong> &rarr; scan the PhotoViewerPhotos table &rarr; <strong>CAN</strong> see metadata &#x2713;</li>
+      <li>Go to <strong>Secrets Manager</strong> &rarr; try to view the origin secret &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
+    </ul>
+
+    <div class="verify">
+      <div class="verify-label">&#x2713; Verify</div>
+      <p>Photos-admin can access user data (S3 photos, DynamoDB metadata) but cannot access infrastructure secrets. Separation of duties is complete &mdash; for both machines (Lambda roles from Week 8) and humans (Identity Center users from this week).</p>
+    </div>
+
+    <div class="screenshot">S3 showing a photo successfully downloaded by photos-admin</div>
+    <div class="screenshot">Secrets Manager showing Access Denied for photos-admin</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 2 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">External auditor &mdash; role assumption</span>
+</div>
+
+<p>Identity Center automates role assumption behind the scenes. In this part, you'll do it manually &mdash; creating an IAM user with no permissions, an IAM role with a trust policy, and using console Switch Role to assume temporary access. This is the mechanism Identity Center hides.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 11</span>
+    <span class="step-title">Create an IAM user with no permissions</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>IAM &rarr; Users &rarr; Create user</strong>.</p>
+    <ul>
+      <li>Username: <code>external-auditor</code></li>
+      <li>Select <strong>Provide user access to the AWS Management Console</strong></li>
+      <li>Custom password (note it down)</li>
+      <li>Uncheck "Users must create a new password at next sign-in"</li>
+      <li><strong>Do NOT attach any policies</strong> &mdash; click through to create</li>
+    </ul>
+    <p>This represents a contractor from an outside audit firm. They have an AWS identity but zero standing permissions.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 12</span>
+    <span class="step-title">Create the auditor role</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>IAM &rarr; Roles &rarr; Create role</strong>.</p>
+    <ul>
+      <li>Trusted entity type: <strong>AWS account</strong></li>
+      <li>Select <strong>This account</strong></li>
+      <li>Role name: <code>photo-auditor-role</code></li>
+    </ul>
+    <p>The console creates a <strong>trust policy</strong> (a resource-based policy on the role itself). Edit it to name the auditor user specifically:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::ACCOUNT-ID:user/external-auditor"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}</code></pre>
+    <p>This says: <em>"I trust the external-auditor user to assume me."</em></p>
+
+    <p>Attach an <strong>inline policy</strong> to the role granting DynamoDB read access:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AuditDynamoDB",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Scan",
+        "dynamodb:GetItem",
+        "dynamodb:DescribeTable"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-1:ACCOUNT-ID:table/PhotoViewerPhotos"
+    }
+  ]
+}</code></pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 13</span>
+    <span class="step-title">Give the auditor user permission to assume the role</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>IAM &rarr; Users &rarr; external-auditor &rarr; Permissions &rarr; Add inline policy</strong>:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::ACCOUNT-ID:role/photo-auditor-role"
+    }
+  ]
+}</code></pre>
+    <p>This says: <em>"I am allowed to assume the photo-auditor-role."</em></p>
+
+    <div class="callout info">
+      <p><strong>Both sides must agree.</strong> The <strong>user</strong> needs an identity-based policy (<code>sts:AssumeRole</code>). The <strong>role</strong> needs a trust policy naming the user. If either side is missing, the assumption fails. This is the same dual-policy pattern as KMS &mdash; same logic, different resource type.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 14</span>
+    <span class="step-title">Log in as external-auditor</span>
+  </div>
+  <div class="step-body">
+    <p>Open a <strong>new incognito window</strong>. Go to the regular IAM sign-in page (not the SSO portal): <code>https://ACCOUNT-ID.signin.aws.amazon.com/console</code>. Log in as <code>external-auditor</code>.</p>
+    <p>Try to access any service:</p>
+    <ul>
+      <li>DynamoDB &rarr; <strong>Access Denied</strong></li>
+      <li>S3 &rarr; <strong>Access Denied</strong></li>
+      <li>Secrets Manager &rarr; <strong>Access Denied</strong></li>
+    </ul>
+    <p>The user has no permissions. Nothing works.</p>
+
+    <div class="screenshot">Console showing Access Denied on DynamoDB for external-auditor</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 15</span>
+    <span class="step-title">Switch Role to the auditor role</span>
+  </div>
+  <div class="step-body">
+    <p>Click the <strong>username in the top-right</strong> of the console &rarr; <strong>Switch Role</strong>.</p>
+    <ul>
+      <li>Account: your account ID</li>
+      <li>Role: <code>photo-auditor-role</code></li>
+      <li>Display name: <code>Auditor</code></li>
+      <li>Color: pick any color</li>
+    </ul>
+    <p>Click <strong>Switch Role</strong>.</p>
+    <p>The <strong>console header changes color</strong> and shows <code>Auditor</code> &mdash; you are now operating as a different principal. You are no longer <code>external-auditor</code> (zero permissions). You are now <code>photo-auditor-role</code> (DynamoDB read access).</p>
+
+    <div class="screenshot">Console header showing the role name and changed color after Switch Role</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 16</span>
+    <span class="step-title">Verify auditor access</span>
+  </div>
+  <div class="step-body">
+    <ul>
+      <li>Go to <strong>DynamoDB</strong> &rarr; scan the PhotoViewerPhotos table &rarr; <strong>WORKS</strong> &#x2713;</li>
+      <li>Go to <strong>S3</strong> &rarr; try to download a photo &rarr; <strong>Access Denied</strong> &#x2717; (role has no S3 permissions yet)</li>
+    </ul>
+
+    <div class="verify">
+      <div class="verify-label">&#x2713; Verify</div>
+      <p>The auditor can query DynamoDB metadata but cannot access S3 photos. The role's identity policy grants only what's needed for the metadata audit.</p>
+    </div>
+
+    <div class="screenshot">DynamoDB scan results showing photo metadata visible to the auditor role</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 3 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Expanding the auditor &mdash; the KMS wall</span>
+</div>
+
+<p>The auditor now needs to review the actual photos in S3, not just the metadata. You'll add S3 access and discover that S3 permission alone isn't enough &mdash; the photos are encrypted, and KMS needs to authorize the decryption.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 17</span>
+    <span class="step-title">Add S3 permission to the auditor role</span>
+  </div>
+  <div class="step-body">
+    <p>Switch back to your admin session. Go to <strong>IAM &rarr; Roles &rarr; photo-auditor-role</strong>. Edit the inline policy to add:</p>
+<pre><code>{
+  "Sid": "AuditS3",
+  "Effect": "Allow",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::BUCKET-NAME/*"
+}</code></pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 18</span>
+    <span class="step-title">Test &mdash; try to download a photo as the auditor</span>
+  </div>
+  <div class="step-body">
+    <p>Switch back to the auditor session (the incognito window where you're logged in as external-auditor with the role assumed). Go to S3 &rarr; navigate to the photos bucket &rarr; click on a photo &rarr; download.</p>
+    <p><strong>Access Denied.</strong></p>
+    <p>The auditor has <code>s3:GetObject</code> permission. Why doesn't it work? Because the photos are encrypted with the data key (from Week 8). When S3 tries to decrypt, it calls <code>kms:Decrypt</code> on behalf of the auditor role. The auditor role doesn't have <code>kms:Decrypt</code> permission on the data key. S3 can read the encrypted object, but KMS won't decrypt it.</p>
+
+    <div class="screenshot">S3 showing Access Denied when the auditor role (with <code>s3:GetObject</code>) tries to download an encrypted photo</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 19</span>
+    <span class="step-title">Add KMS decrypt permission to the auditor role</span>
+  </div>
+  <div class="step-body">
+    <p>Switch back to admin. Edit the auditor role's inline policy to add:</p>
+<pre><code>{
+  "Sid": "AuditDataKeyDecrypt",
+  "Effect": "Allow",
+  "Action": [
+    "kms:Decrypt",
+    "kms:DescribeKey"
+  ],
+  "Resource": "arn:aws:kms:us-east-1:ACCOUNT-ID:key/DATA-KEY-ID"
+}</code></pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 20</span>
+    <span class="step-title">Test again</span>
+  </div>
+  <div class="step-body">
+    <p>Switch back to the auditor session. Try to download the photo again.</p>
+    <p><strong>It works.</strong> &#x2713;</p>
+    <p>This worked because the data key's key policy includes the <strong>"Enable IAM policies"</strong> statement (the AWS console wizard adds it by default). This statement delegates KMS authorization to IAM &mdash; meaning the identity policy's <code>kms:Decrypt</code> grant is sufficient. Without that statement, you would also need to add the auditor role ARN directly to the key policy.</p>
+
+    <div class="verify">
+      <div class="verify-label">&#x2713; Verify</div>
+      <p>The auditor can now download photos. Two permissions were required: <code>s3:GetObject</code> for the S3 API call, and <code>kms:Decrypt</code> for the encryption layer. S3 permission alone was not enough &mdash; this is the dual-authorization model.</p>
+    </div>
+
+    <div class="callout warn">
+      <p><strong>Security consequence:</strong> You just granted a third principal access to decrypt all user photos. In production, you would want a <strong>KMS grant</strong> instead of a permanent policy statement (grants are revocable and can expire), <strong>time-bounded conditions</strong> on the policy, or <strong>MFA enforcement</strong> on the role assumption. You expanded the blast radius of the data key &mdash; that was a deliberate security decision.</p>
+    </div>
+
+    <div class="screenshot">S3 showing a photo successfully downloaded by the auditor role after adding KMS decrypt permission</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 21</span>
+    <span class="step-title">Switch back</span>
+  </div>
+  <div class="step-body">
+    <p>In the auditor session, click the role name in the top-right &rarr; <strong>Switch back</strong>. The console header reverts. You're back to <code>external-auditor</code> with zero permissions. The temporary role session is over.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ PART 4 ═══════════════ -->
+<div class="part-header">
+  <span class="part-num">Part 4</span>
+  <span class="part-title">Policy Simulator &mdash; the access matrix</span>
+</div>
+
+<p>The Policy Simulator lets you test permissions for any IAM principal without actually making API calls. You'll map the complete <code>s3:GetObject</code> access landscape across all Photo Viewer principals.</p>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 22</span>
+    <span class="step-title">Open the IAM Policy Simulator</span>
+  </div>
+  <div class="step-body">
+    <p>Log in with your original IAM admin user. Go to <strong>IAM &rarr; Policy Simulator</strong> (or navigate to <code>https://policysim.aws.amazon.com</code>).</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 23</span>
+    <span class="step-title">Test s3:GetObject for each principal</span>
+  </div>
+  <div class="step-body">
+    <p>For each principal below, select the principal in the simulator, choose service <strong>S3</strong>, action <strong>GetObject</strong>, and resource <code>arn:aws:s3:::BUCKET-NAME/*</code>. Click <strong>Run Simulation</strong>.</p>
+
+    <table>
+      <thead><tr><th>Principal</th><th>Expected result</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Lambda execution role</td><td><strong>Allowed</strong></td><td>Identity policy from Week 5 + key policy from Week 8</td></tr>
+        <tr><td><code>photo-auditor-role</code></td><td><strong>Allowed</strong></td><td>Identity policy updated in Part 3</td></tr>
+        <tr><td><code>external-auditor</code> (user, not role)</td><td><strong>Denied</strong></td><td>No policies &mdash; only <code>sts:AssumeRole</code></td></tr>
+        <tr><td>Lambda authorizer role</td><td><strong>Denied</strong></td><td>Only has Secrets Manager + infra key access</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <p><strong>Limitation:</strong> The Policy Simulator evaluates <strong>identity-based policies only</strong>. It does not evaluate resource-based policies (bucket policies, key policies). So the simulator will show "Allowed" for principals that have <code>s3:GetObject</code> in their identity policy &mdash; but in practice, they also need the key policy to agree for encrypted objects. The Identity Center roles may not appear in the simulator directly &mdash; they are auto-generated IAM roles with names like <code>AWSReservedSSO_PhotosAdmin_...</code>.</p>
+    </div>
+
+    <div class="screenshot">IAM Policy Simulator showing results for <code>s3:GetObject</code> across multiple principals &mdash; some allowed, some denied</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 24</span>
+    <span class="step-title">Check CloudTrail</span>
+  </div>
+  <div class="step-body">
+    <p>Go to <strong>CloudTrail &rarr; Event history</strong>. Filter by event name <code>AssumeRole</code>.</p>
+    <p>You should see:</p>
+    <ul>
+      <li>The Identity Center users' role assumptions (from Part 1) &mdash; showing the Identity Center username</li>
+      <li>The <code>external-auditor</code>'s role assumption to <code>photo-auditor-role</code> (from Part 2) &mdash; showing the IAM user ARN</li>
+    </ul>
+    <p>Each event shows an individual identity &mdash; not a shared credential. This is the auditability benefit of both Identity Center and explicit role assumption.</p>
+
+    <div class="callout">
+      <p><strong>CloudTrail events can take 5&ndash;15 minutes to appear.</strong> If you don't see events yet, wait and refresh.</p>
+    </div>
+
+    <div class="screenshot">CloudTrail showing <code>AssumeRole</code> events with individual user identities</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ CLEANUP ═══════════════ -->
+<h2>Cleanup</h2>
+
+<p>Delete or disable resources to avoid unexpected charges:</p>
+<ul>
+  <li>Delete the IAM user: <code>external-auditor</code> (delete inline policies first)</li>
+  <li>Delete the IAM role: <code>photo-auditor-role</code></li>
+  <li>Identity Center users, groups, and permission sets can remain (no ongoing cost) or be deleted</li>
+  <li><strong>Do NOT disable Organizations</strong> &mdash; it's needed for Week 12 (SCPs)</li>
+  <li><strong>Do NOT disable Identity Center</strong> &mdash; it's needed for Week 12</li>
+</ul>
+
+
+<!-- ═══════════════ REFLECTION ═══════════════ -->
+<h2>Reflection Questions</h2>
+
+<h3>Question 1</h3>
+<p>The external auditor needed three permissions to access a photo: <code>sts:AssumeRole</code>, <code>s3:GetObject</code>, and <code>kms:Decrypt</code>. For each one, explain what it controls and what would happen if it were missing.</p>
+
+<h3>Question 2</h3>
+<p>Compare how <code>infra-admin</code> (Identity Center) and <code>external-auditor</code> (IAM) log into the AWS console. What is different about their credentials, how they authenticate, and what CloudTrail records for each?</p>
+
+
+<!-- ═══════════════ RUBRIC ═══════════════ -->
+<h2>Grading Rubric</h2>
+
+<table class="rubric-table">
+  <thead><tr><th>Deliverable</th><th>Points</th><th>Requirements</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Organizations enabled</strong></td>
+      <td>3</td>
+      <td>Screenshot: AWS Organizations console showing the organization.</td>
+    </tr>
+    <tr>
+      <td><strong>Identity Center enabled</strong></td>
+      <td>3</td>
+      <td>Screenshot: Identity Center dashboard with portal URL.</td>
+    </tr>
+    <tr>
+      <td><strong>Two Identity Center users created</strong></td>
+      <td>4</td>
+      <td>Screenshot: Identity Center users list showing <code>infra-admin</code> and <code>photos-admin</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Two permission sets created</strong></td>
+      <td>8</td>
+      <td>Screenshot: Both permission sets with inline policies showing KMS key ARNs scoped correctly (infra key for InfraAdmin, data key for PhotosAdmin).</td>
+    </tr>
+    <tr>
+      <td><strong>Infra-admin CAN read Secrets Manager</strong></td>
+      <td>6</td>
+      <td>Screenshot: Secrets Manager secret value visible to infra-admin.</td>
+    </tr>
+    <tr>
+      <td><strong>Infra-admin CANNOT access S3 photos</strong></td>
+      <td>6</td>
+      <td>Screenshot: S3 Access Denied for infra-admin.</td>
+    </tr>
+    <tr>
+      <td><strong>Photos-admin CAN access S3 photos</strong></td>
+      <td>6</td>
+      <td>Screenshot: S3 photo downloaded successfully by photos-admin.</td>
+    </tr>
+    <tr>
+      <td><strong>Photos-admin CANNOT read Secrets Manager</strong></td>
+      <td>6</td>
+      <td>Screenshot: Secrets Manager Access Denied for photos-admin.</td>
+    </tr>
+    <tr>
+      <td><strong>External-auditor has no access</strong></td>
+      <td>4</td>
+      <td>Screenshot: Console showing Access Denied for external-auditor before Switch Role.</td>
+    </tr>
+    <tr>
+      <td><strong>Trust policy correctly scoped</strong></td>
+      <td>5</td>
+      <td>Screenshot: <code>photo-auditor-role</code> trust policy showing the external-auditor user ARN.</td>
+    </tr>
+    <tr>
+      <td><strong>Switch Role &mdash; console header change</strong></td>
+      <td>5</td>
+      <td>Screenshot: Console header showing the auditor role name and changed color.</td>
+    </tr>
+    <tr>
+      <td><strong>Auditor CAN query DynamoDB</strong></td>
+      <td>5</td>
+      <td>Screenshot: DynamoDB scan results visible to the auditor role.</td>
+    </tr>
+    <tr>
+      <td><strong>S3 Access Denied before KMS permission</strong></td>
+      <td>8</td>
+      <td>Screenshot: S3 Access Denied when auditor has <code>s3:GetObject</code> but no <code>kms:Decrypt</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>S3 works after KMS permission added</strong></td>
+      <td>8</td>
+      <td>Screenshot: Photo downloaded successfully after adding <code>kms:Decrypt</code> to auditor role.</td>
+    </tr>
+    <tr>
+      <td><strong>Policy Simulator results</strong></td>
+      <td>8</td>
+      <td>Screenshot: Policy Simulator showing allowed/denied for at least three principals on <code>s3:GetObject</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>CloudTrail AssumeRole events</strong></td>
+      <td>5</td>
+      <td>Screenshot: CloudTrail event history showing <code>AssumeRole</code> events with individual identities.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q1 &mdash; three permissions</strong></td>
+      <td>5</td>
+      <td><code>sts:AssumeRole</code>: without it, user can't assume the role. <code>s3:GetObject</code>: without it, S3 denies the API call. <code>kms:Decrypt</code>: without it, S3 can read the object but KMS won't decrypt &mdash; data is unreadable.</td>
+    </tr>
+    <tr>
+      <td><strong>Reflection Q2 &mdash; Identity Center vs IAM</strong></td>
+      <td>5</td>
+      <td>Identity Center: SSO portal, temporary credentials, session expires. IAM: console login, permanent password. CloudTrail: Identity Center shows username + assumed role; IAM shows IAM user ARN.</td>
+    </tr>
+    <tr class="rubric-total">
+      <td><strong>Total</strong></td>
+      <td><strong>100</strong></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week09/week9-iam.html">&larr; Week 9 Concept Notes</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>
