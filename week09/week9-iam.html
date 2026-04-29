@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM Deep Dive — CS 55D Week 9</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.5rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2.5rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.35rem; font-weight: 600; margin: 2.5rem 0 1rem; color: #111; padding-bottom: 0.4rem; border-bottom: 2px solid #e8e8e8; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 1.8rem 0 0.6rem; color: #222; }
+  p { margin-bottom: 1rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.88em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+
+  .objectives { background: #f8f9fa; border-left: 4px solid #0066cc; padding: 1.2rem 1.5rem; margin-bottom: 2rem; border-radius: 0 6px 6px 0; }
+  .objectives ul { margin: 0; padding-left: 1.2rem; }
+  .objectives li { margin-bottom: 0.4rem; color: #333; }
+
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .flow-diagram { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 10px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+
+  .vuln-card { border: 1px solid #e8e8e8; border-left: 4px solid #dc3545; border-radius: 0 8px 8px 0; margin: 0.8rem 0; overflow: hidden; }
+  .vuln-header { display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem 1.2rem; cursor: pointer; user-select: none; }
+  .vuln-header:hover { background: #fff8f8; }
+  .vuln-title { font-weight: 600; font-size: 0.95rem; color: #1a1a1a; flex: 1; }
+  .vuln-body { padding: 0 1.2rem 1.2rem; display: none; border-top: 1px solid #f0d0d0; }
+  .vuln-body.open { display: block; }
+  .vuln-body p:first-child { margin-top: 1rem; }
+
+  .download-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .download-btn:hover { background: #B5D4F4; }
+
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>IAM Deep Dive &mdash; Identities and Access Determination</h1>
+<p class="subtitle">The <a href="../concepts/infrastructure-identity.html" style="color:#1F4E79;">Infrastructure Identity Security</a> concept module covered how IAM works. This week asks: where does IAM fall short, and what do you do about it?</p>
+
+<div class="objectives">
+  <strong>Learning objectives</strong>
+  <ul>
+    <li>Identify the operational challenges of managing employee identity with IAM alone</li>
+    <li>Explain what IAM Identity Center adds on top of IAM and the mechanism underneath</li>
+    <li>Set up Identity Center with permission sets scoped to KMS keys</li>
+    <li>Demonstrate IAM role assumption via console Switch Role</li>
+    <li>Distinguish customer identity (Cognito) from employee identity (IAM / Identity Center)</li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════ SECTION 1 ═══════════════ -->
+<h2>1. Where we left off</h2>
+
+<p>The Photo Viewer has two populations of users, managed by different identity systems:</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 840 220" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <text x="10" y="48" font-size="11" fill="#555">Customers /</text>
+  <text x="10" y="63" font-size="11" fill="#555">App users</text>
+  <line x1="100" y1="55" x2="148" y2="55" stroke="#888" stroke-width="1"/>
+  <polygon points="148,52 155,55 148,58" fill="#888"/>
+  <text x="10" y="148" font-size="11" fill="#555">Employees</text>
+  <line x1="75" y1="155" x2="148" y2="155" stroke="#888" stroke-width="1"/>
+  <polygon points="148,152 155,155 148,158" fill="#888"/>
+
+  <rect x="160" y="15" width="280" height="80" rx="10" fill="#fde8d0" stroke="#e87c00" stroke-width="1.5"/>
+  <text x="300" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="#b35a00">Application</text>
+  <text x="300" y="68" text-anchor="middle" font-size="11" fill="#885030">Photo Viewer</text>
+  <rect x="160" y="115" width="280" height="80" rx="10" fill="#d0e8f8" stroke="#1a6b8a" stroke-width="1.5"/>
+  <text x="300" y="148" text-anchor="middle" font-size="14" font-weight="700" fill="#14536d">Infrastructure</text>
+  <text x="300" y="168" text-anchor="middle" font-size="11" fill="#306880">S3, Lambda, DynamoDB, KMS...</text>
+
+  <line x1="445" y1="55" x2="520" y2="55" stroke="#c62828" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="520,51 530,55 520,59" fill="#c62828"/>
+  <rect x="535" y="28" width="150" height="52" rx="6" fill="#fff" stroke="#c62828" stroke-width="1.5"/>
+  <text x="610" y="52" text-anchor="middle" font-size="12" font-weight="600" fill="#c62828">Amazon Cognito</text>
+  <text x="610" y="68" text-anchor="middle" font-size="10" fill="#888">Google OAuth &#x2192; JWT</text>
+
+  <line x1="445" y1="155" x2="520" y2="155" stroke="#c62828" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="520,151 530,155 520,159" fill="#c62828"/>
+  <rect x="535" y="122" width="130" height="52" rx="6" fill="#fff" stroke="#c62828" stroke-width="1.5"/>
+  <text x="600" y="146" text-anchor="middle" font-size="12" font-weight="600" fill="#c62828">AWS IAM</text>
+  <text x="600" y="162" text-anchor="middle" font-size="10" fill="#888">Policies + roles</text>
+  <rect x="680" y="122" width="150" height="52" rx="6" fill="#fff" stroke="#c62828" stroke-width="1.5"/>
+  <text x="755" y="135" text-anchor="middle" font-size="11" font-weight="600" fill="#c62828">AWS Identity</text>
+  <text x="755" y="149" text-anchor="middle" font-size="11" font-weight="600" fill="#c62828">Center</text>
+  <text x="755" y="163" text-anchor="middle" font-size="9" fill="#888">SSO + temp creds</text>
+</svg>
+</div>
+
+<p>Cognito manages customer identity (application layer). IAM and Identity Center manage employee identity (infrastructure layer). The infrastructure layer has been managed with a single IAM admin user &mdash; <code>AdministratorAccess</code> &mdash; since the start of the course. As the team grows, this violates the principle of least privilege. Different employees need access to different resources.</p>
+
+<table>
+  <thead><tr><th>Employee</th><th>Role</th><th>Needs access to</th><th>Must NOT access</th><th>KMS key</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Tom</strong></td><td>Customer support</td><td>S3 (photos), DynamoDB (metadata)</td><td>Secrets Manager, security config</td><td>Data key</td></tr>
+    <tr><td><strong>Jerry</strong></td><td>Security engineer</td><td>Secrets Manager, CloudFront, API Gateway, Lambda config</td><td>Customer photos, user metadata</td><td>Infra key</td></tr>
+  </tbody>
+</table>
+
+<p>The KMS separation of duties from last week maps directly: Tom needs the data key, Jerry needs the infra key. The key policies already enforce this boundary for Lambda roles &mdash; it now needs to extend to human operators.</p>
+
+
+<!-- ═══════════════ SECTION 2 ═══════════════ -->
+<h2>2. The challenge &mdash; and the solution</h2>
+
+<h3>Single account &mdash; scoped IAM users</h3>
+
+<p><strong>Problem:</strong> One admin user with full access. No separation of duties for humans.</p>
+
+<p><strong>Solution:</strong> Create IAM users with scoped policies. Tom gets S3, DynamoDB, and <code>kms:Decrypt</code> on the data key. Jerry gets Secrets Manager, CloudFront, API Gateway, and <code>kms:Decrypt</code> on the infra key.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 620 160" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="40" y="10" width="540" height="110" rx="10" fill="#f8f9fa" stroke="#d0d8e0" stroke-width="1.5"/>
+  <text x="60" y="32" font-size="11" font-weight="600" fill="#555">AWS Account (us-east-1)</text>
+  <line x1="310" y1="40" x2="310" y2="112" stroke="#1F4E79" stroke-width="2" stroke-dasharray="6,4"/>
+
+  <rect x="70" y="48" width="100" height="30" rx="5" fill="#fff" stroke="#1a6b8a" stroke-width="1.5"/>
+  <text x="120" y="68" text-anchor="middle" font-size="10" fill="#1a6b8a">&#x1F464; Tom</text>
+  <line x1="172" y1="63" x2="210" y2="63" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="210,59 220,63 210,67" fill="#28a745"/>
+  <rect x="222" y="48" width="72" height="30" rx="5" fill="#fff" stroke="#1a6b8a"/>
+  <text x="258" y="67" text-anchor="middle" font-size="9" fill="#1a6b8a">Data key</text>
+
+  <rect x="330" y="48" width="100" height="30" rx="5" fill="#fff" stroke="#8e24aa" stroke-width="1.5"/>
+  <text x="380" y="68" text-anchor="middle" font-size="10" fill="#8e24aa">&#x1F464; Jerry</text>
+  <line x1="432" y1="63" x2="470" y2="63" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="470,59 480,63 470,67" fill="#28a745"/>
+  <rect x="482" y="48" width="72" height="30" rx="5" fill="#fff" stroke="#8e24aa"/>
+  <text x="518" y="67" text-anchor="middle" font-size="9" fill="#8e24aa">Infra key</text>
+
+  <text x="120" y="105" text-anchor="middle" font-size="8" fill="#dc3545">&#x2717; can't access infra key</text>
+  <text x="380" y="105" text-anchor="middle" font-size="8" fill="#dc3545">&#x2717; can't access data key</text>
+
+  <rect x="180" y="130" width="260" height="24" rx="4" fill="#f0fff4" stroke="#28a745"/>
+  <text x="310" y="146" text-anchor="middle" font-size="10" font-weight="600" fill="#155724">&#x2713; Separation of duties at the human level</text>
+</svg>
+</div>
+
+<p>Tom can check customer photos and metadata but cannot access infrastructure secrets. Jerry can troubleshoot security configurations but cannot see user photos. For a single account, this is sufficient.</p>
+
+
+<h3>Multiple accounts &mdash; Identity Center</h3>
+
+<p><strong>Problem:</strong> The Photo Viewer expands to a second account in <code>ap-southeast-1</code> for lower latency in Asia. IAM users are per-account &mdash; Tom and Jerry must be recreated with separate passwords and policies. If Tom leaves, his identity must be deleted from each account independently. Corporate identity policies (password rotation, MFA enforcement, automatic deactivation) do not apply to IAM users.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="40" y="10" width="250" height="100" rx="8" fill="#f0f6ff" stroke="#1a6b8a" stroke-width="1.5"/>
+  <text x="60" y="30" font-size="10" font-weight="600" fill="#1a6b8a">Account: us-east-1</text>
+  <rect x="60" y="42" width="90" height="26" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="105" y="59" text-anchor="middle" font-size="9" fill="#555">&#x1F464; Tom</text>
+  <rect x="160" y="42" width="90" height="26" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="205" y="59" text-anchor="middle" font-size="9" fill="#555">&#x1F464; Jerry</text>
+  <text x="165" y="95" text-anchor="middle" font-size="8" fill="#888">passwords, policies, KMS access</text>
+
+  <rect x="330" y="10" width="250" height="100" rx="8" fill="#f5f0ff" stroke="#8e24aa" stroke-width="1.5"/>
+  <text x="350" y="30" font-size="10" font-weight="600" fill="#8e24aa">Account: ap-southeast-1</text>
+  <rect x="350" y="42" width="90" height="26" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="395" y="59" text-anchor="middle" font-size="9" fill="#dc3545">&#x1F464; Tom</text>
+  <rect x="450" y="42" width="90" height="26" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="495" y="59" text-anchor="middle" font-size="9" fill="#dc3545">&#x1F464; Jerry</text>
+  <text x="455" y="95" text-anchor="middle" font-size="8" fill="#dc3545">duplicated users + policies</text>
+
+  <rect x="40" y="130" width="540" height="58" rx="6" fill="#fff5f5" stroke="#dc3545" stroke-width="1"/>
+  <text x="60" y="150" font-size="9" fill="#dc3545" font-weight="600">Issues:</text>
+  <text x="60" y="165" font-size="9" fill="#555">&#x2717; Users duplicated per account with independent passwords</text>
+  <text x="60" y="180" font-size="9" fill="#555">&#x2717; Tom leaves &#x2192; must delete from every account (forget one = security gap)</text>
+</svg>
+</div>
+
+<p><strong>Solution:</strong> IAM Identity Center manages Tom and Jerry once, centrally. Permission sets define per-account access. Every login goes through STS &mdash; temporary credentials only. One disable revokes access everywhere.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="195" y="10" width="230" height="56" rx="8" fill="#e67e22"/>
+  <text x="310" y="33" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Identity Center</text>
+  <text x="310" y="50" text-anchor="middle" font-size="9" fill="#fff">&#x1F464; Tom &nbsp;&nbsp; &#x1F464; Jerry &nbsp;&nbsp; (created once)</text>
+
+  <line x1="310" y1="68" x2="310" y2="86" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="306,86 310,96 314,86" fill="#28a745"/>
+  <rect x="270" y="98" width="80" height="28" rx="5" fill="#fff" stroke="#28a745" stroke-width="1.5"/>
+  <text x="310" y="116" text-anchor="middle" font-size="9" font-weight="600" fill="#155724">STS</text>
+
+  <line x1="270" y1="112" x2="170" y2="140" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="174,136 166,140 172,146" fill="#28a745"/>
+  <line x1="350" y1="112" x2="450" y2="140" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="446,136 454,140 448,146" fill="#28a745"/>
+
+  <rect x="60" y="140" width="200" height="40" rx="8" fill="#f0f6ff" stroke="#1a6b8a" stroke-width="1.5"/>
+  <text x="160" y="160" text-anchor="middle" font-size="10" font-weight="600" fill="#1a6b8a">us-east-1</text>
+  <text x="160" y="174" text-anchor="middle" font-size="8" fill="#888">temp creds via role assumption</text>
+
+  <rect x="360" y="140" width="200" height="40" rx="8" fill="#f5f0ff" stroke="#8e24aa" stroke-width="1.5"/>
+  <text x="460" y="160" text-anchor="middle" font-size="10" font-weight="600" fill="#8e24aa">ap-southeast-1</text>
+  <text x="460" y="174" text-anchor="middle" font-size="8" fill="#888">temp creds via role assumption</text>
+</svg>
+</div>
+
+<table>
+  <thead><tr><th></th><th>IAM users</th><th>Identity Center</th></tr></thead>
+  <tbody>
+    <tr><td><strong>User created</strong></td><td>Per account</td><td>Once, centrally</td></tr>
+    <tr><td><strong>Credentials</strong></td><td>Permanent password + access keys</td><td>Temporary via STS, per session</td></tr>
+    <tr><td><strong>Employee leaves</strong></td><td>Delete from each account</td><td>One disable, all access revoked</td></tr>
+    <tr><td><strong>CloudTrail</strong></td><td>Shows IAM user ARN</td><td>Shows Identity Center username + role</td></tr>
+    <tr><td><strong>Corp IdP policies</strong></td><td>Do not apply</td><td>Enforced at authentication</td></tr>
+  </tbody>
+</table>
+
+
+<h3>Corporate identity &mdash; federation</h3>
+
+<p><strong>Problem:</strong> Identity Center's built-in directory is still a separate identity silo. Tom has an Identity Center password and a corporate Okta password &mdash; two credentials, no connection. Disabling Tom's Okta account does not disable his Identity Center account.</p>
+
+<p><strong>Solution:</strong> Connect Identity Center to the corporate IdP. Tom authenticates through Okta. Identity Center maps him to the right permission sets. One identity, one deactivation point.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 620 120" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="20" y="30" width="130" height="56" rx="6" fill="#e8e8e8" stroke="#999"/>
+  <text x="85" y="53" text-anchor="middle" font-size="10" font-weight="600" fill="#333">Corporate IdP</text>
+  <text x="85" y="68" text-anchor="middle" font-size="9" fill="#888">Okta / Azure AD</text>
+  <text x="85" y="80" text-anchor="middle" font-size="8" fill="#888">password, MFA, policies</text>
+
+  <line x1="152" y1="58" x2="210" y2="58" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="210,54 220,58 210,62" fill="#28a745"/>
+  <text x="186" y="50" font-size="8" fill="#155724" font-weight="600">one config</text>
+
+  <rect x="225" y="30" width="150" height="56" rx="8" fill="#e67e22"/>
+  <text x="300" y="53" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Identity Center</text>
+  <text x="300" y="69" text-anchor="middle" font-size="9" fill="#fff">Permission sets</text>
+
+  <line x1="377" y1="50" x2="430" y2="50" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="430,46 440,50 430,54" fill="#28a745"/>
+  <line x1="377" y1="66" x2="430" y2="66" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="430,62 440,66 430,70" fill="#28a745"/>
+
+  <rect x="445" y="30" width="70" height="28" rx="5" fill="#1a6b8a"/>
+  <text x="480" y="49" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">us-east-1</text>
+  <rect x="445" y="62" width="70" height="28" rx="5" fill="#8e24aa"/>
+  <text x="480" y="81" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">ap-se-1</text>
+
+  <text x="310" y="110" text-anchor="middle" font-size="10" font-weight="600" fill="#155724">&#x2713; One identity &middot; One login &middot; One deactivation point</text>
+</svg>
+</div>
+
+<p>The lab uses Identity Center's built-in directory (no external IdP). The architecture is the same &mdash; centralized identity, permission sets, temporary credentials. Connecting an external IdP is a configuration step, not an architecture change.</p>
+
+
+<!-- ═══════════════ SECTION 3 ═══════════════ -->
+<h2>3. How it works &mdash; Identity Center is IAM underneath</h2>
+
+<p>Identity Center is not a replacement for IAM &mdash; it is a layer on top. When a permission set is assigned to a user for an account, Identity Center creates an IAM role in that account. When the user logs in via the SSO portal and selects an account, Identity Center calls <code>STS:AssumeRole</code> and returns temporary credentials. Authorization still uses IAM policies and resource policies &mdash; on the assumed role, not a permanent user.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 820 390" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <line x1="410" y1="10" x2="410" y2="385" stroke="#ccc" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <text x="200" y="28" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Without Identity Center</text>
+  <rect x="50" y="45" width="200" height="44" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="150" y="64" text-anchor="middle" font-size="10" fill="#555">Authentication:</text>
+  <text x="150" y="78" text-anchor="middle" font-size="10" font-weight="600" fill="#333">Long-lived passwords per account</text>
+
+  <rect x="30" y="110" width="160" height="110" rx="8" fill="#1a6b8a"/>
+  <text x="42" y="130" font-size="11" font-weight="600" fill="#fff">Account A</text>
+  <circle cx="110" cy="165" r="18" fill="#fff"/><text x="110" y="170" text-anchor="middle" font-size="14">&#x1F464;</text>
+  <rect x="94" y="195" width="32" height="16" rx="3" fill="#b0b0b0"/><text x="110" y="207" text-anchor="middle" font-size="7" fill="#fff">resource</text>
+
+  <rect x="210" y="110" width="160" height="110" rx="8" fill="#8e24aa"/>
+  <text x="222" y="130" font-size="11" font-weight="600" fill="#fff">Account B</text>
+  <circle cx="290" cy="165" r="18" fill="#fff"/><text x="290" y="170" text-anchor="middle" font-size="14">&#x1F464;</text>
+  <rect x="274" y="195" width="32" height="16" rx="3" fill="#b0b0b0"/><text x="290" y="207" text-anchor="middle" font-size="7" fill="#fff">resource</text>
+
+  <rect x="40" y="240" width="310" height="44" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="195" y="258" text-anchor="middle" font-size="10" fill="#555">Authorization:</text>
+  <text x="195" y="273" text-anchor="middle" font-size="10" font-weight="600" fill="#333">IAM policies + Resource policies</text>
+
+  <text x="620" y="28" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">With Identity Center</text>
+
+  <rect x="560" y="40" width="120" height="60" rx="8" fill="#e67e22"/>
+  <text x="620" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Identity Center</text>
+  <circle cx="620" cy="82" r="14" fill="#fff"/><text x="620" y="87" text-anchor="middle" font-size="12">&#x1F464;</text>
+
+  <rect x="695" y="42" width="110" height="56" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="750" y="58" text-anchor="middle" font-size="9" fill="#555">Authentication:</text>
+  <text x="750" y="70" text-anchor="middle" font-size="9" font-weight="600" fill="#333">SSO portal login</text>
+  <text x="750" y="82" text-anchor="middle" font-size="9" fill="#555">Temp credentials</text>
+  <text x="750" y="92" text-anchor="middle" font-size="9" fill="#555">via role assumption</text>
+
+  <rect x="460" y="145" width="160" height="110" rx="8" fill="#1a6b8a"/>
+  <text x="472" y="165" font-size="11" font-weight="600" fill="#fff">Account A</text>
+  <circle cx="540" cy="200" r="18" fill="#fff"/>
+  <circle cx="540" cy="200" r="12" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="540" y="205" text-anchor="middle" font-size="12">&#x1F464;</text>
+  <rect x="524" y="230" width="32" height="16" rx="3" fill="#b0b0b0"/><text x="540" y="242" text-anchor="middle" font-size="7" fill="#fff">resource</text>
+
+  <rect x="640" y="145" width="160" height="110" rx="8" fill="#8e24aa"/>
+  <text x="652" y="165" font-size="11" font-weight="600" fill="#fff">Account B</text>
+  <circle cx="720" cy="200" r="18" fill="#fff"/>
+  <circle cx="720" cy="200" r="12" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="720" y="205" text-anchor="middle" font-size="12">&#x1F464;</text>
+  <rect x="704" y="230" width="32" height="16" rx="3" fill="#b0b0b0"/><text x="720" y="242" text-anchor="middle" font-size="7" fill="#fff">resource</text>
+
+  <path d="M 595 100 Q 550 130 540 143" fill="none" stroke="#2196f3" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="537,140 540,150 545,141" fill="#2196f3"/>
+  <path d="M 645 100 Q 700 130 720 143" fill="none" stroke="#2196f3" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="717,140 720,150 725,141" fill="#2196f3"/>
+
+  <text x="580" y="132" font-size="8" fill="#1976d2" font-weight="600">creates role +</text>
+  <text x="576" y="142" font-size="8" fill="#1976d2" font-weight="600">STS:AssumeRole</text>
+
+  <rect x="460" y="278" width="340" height="50" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="630" y="296" text-anchor="middle" font-size="10" fill="#555">Authorization:</text>
+  <text x="630" y="311" text-anchor="middle" font-size="10" font-weight="600" fill="#333">IAM policies + Resource policies</text>
+  <text x="630" y="323" text-anchor="middle" font-size="9" fill="#888">associated with the assumed role</text>
+
+  <circle cx="530" cy="350" r="8" fill="#fff" stroke="#d0d8e0"/>
+  <text x="530" y="354" text-anchor="middle" font-size="9">&#x1F464;</text>
+  <text x="548" y="354" font-size="9" fill="#666">= IAM user (permanent credentials)</text>
+  <circle cx="530" cy="374" r="8" fill="#fff" stroke="#d0d8e0"/>
+  <circle cx="530" cy="374" r="6" fill="none" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="530" y="378" text-anchor="middle" font-size="9">&#x1F464;</text>
+  <text x="548" y="378" font-size="9" fill="#666">= IAM role (temporary, via Identity Center)</text>
+</svg>
+</div>
+
+<div class="callout info">
+  <p><strong>In the lab:</strong> After logging in via the SSO portal, the console top-right shows a role name like <code>AWSReservedSSO_InfraAdmin_...</code> &mdash; the IAM role Identity Center created. Part 2 of the lab does the same thing manually with Switch Role, exposing the mechanism Identity Center abstracts.</p>
+</div>
+
+<div class="callout">
+  <p><strong>The "Enable IAM policies" statement in KMS.</strong> The console wizard adds a key policy statement granting <code>kms:*</code> to the account root. This delegates authority to IAM &mdash; it tells KMS to evaluate IAM policies when principals try to use the key. Without it, IAM policies granting <code>kms:Decrypt</code> are silently ignored. The auditor role in Part 3 of the lab relies on this delegation: adding <code>kms:Decrypt</code> to the role's IAM policy is sufficient because the key policy delegates the decision. Removing the delegation statement makes the key policy the sole gatekeeper &mdash; a security decision, not boilerplate.</p>
+</div>
+
+
+<!-- ═══════════════ SECTION 4 ═══════════════ -->
+<h2>4. What's still missing</h2>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v1')">
+    <div class="vuln-title">Uploaded files are still not scanned for malicious content</div>
+    <span style="color:#aaa;font-size:0.8rem;">&#x25BC;</span>
+  </div>
+  <div class="vuln-body" id="v1">
+    <p>Encryption protects data at rest from unauthorized access &mdash; it does not inspect data for harmful content. Macie detects PII in S3 objects. GuardDuty Malware Protection scans uploads. These are detection services &mdash; a different layer from encryption and access control.</p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('v2')">
+    <div class="vuln-title">No automated monitoring of security posture</div>
+    <span style="color:#aaa;font-size:0.8rem;">&#x25BC;</span>
+  </div>
+  <div class="vuln-body" id="v2">
+    <p>Security controls have been built manually &mdash; encryption, key policies, permission sets, role-based access. There is no mechanism to detect drift. AWS Config rules enforce desired state. CloudWatch alarms catch operational anomalies. Inspector scans for vulnerabilities. These are visibility and compliance tools &mdash; coming next.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ LAB ═══════════════ -->
+<h2>Lab files</h2>
+<p>All lab files for this week are in the course GitHub repository.</p>
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week09" target="_blank">&#x2325; View Week 9 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week09/week9-lab-assignment.html">&#x1F4CB; Week 9 Lab Assignment</a>
+</div>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week08/week8-kms.html">&larr; Week 8 Concept Notes</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+<script>
+function toggleVuln(id) {
+  var body = document.getElementById(id);
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>
