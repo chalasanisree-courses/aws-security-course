@@ -68,7 +68,7 @@
 <h1>Week 9 Lab &mdash; IAM Deep Dive</h1>
 <p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 100 pts</p>
 
-<p><strong>Objective:</strong> Set up IAM Identity Center with permission sets scoped to the Week 8 KMS keys, enforcing separation of duties at the human level. Create an external auditor scenario using IAM role assumption to demonstrate trust policies and dual-policy authorization. Use the IAM Policy Simulator to map the complete access landscape of the Photo Viewer.</p>
+<p><strong>Objective:</strong> The Photo Viewer team has grown. Tom (customer support) needs access to photos and metadata. Jerry (security engineer) needs access to infrastructure secrets and configuration. Set up IAM Identity Center with permission sets scoped to the KMS keys from last week, enforcing separation of duties at the human level. Create an external auditor scenario using IAM role assumption to demonstrate trust policies and dual-policy authorization. Use the IAM Policy Simulator to map the complete access landscape.</p>
 
 <div class="callout info">
   <p><strong>What changes this week:</strong> No user-facing changes to the Photo Viewer. All changes are on the operator side &mdash; who can log into the AWS console and what they can access. Identity Center provides employee SSO with temporary credentials. The auditor exercise demonstrates role assumption mechanics. The Policy Simulator maps who can access what.</p>
@@ -94,7 +94,7 @@
   <span class="part-title">Identity Center for employee access</span>
 </div>
 
-<p>In this part, you'll set up IAM Identity Center so that Photo Viewer operators can log in via SSO with temporary credentials, scoped to the appropriate KMS keys.</p>
+<p>Tom (customer support) needs access to S3 photos and DynamoDB metadata &mdash; scoped to the <strong>data key</strong>. Jerry (security engineer) needs access to Secrets Manager, CloudFront, and API Gateway &mdash; scoped to the <strong>infra key</strong>. In this part, you'll set up IAM Identity Center so Tom and Jerry can log in via SSO with temporary credentials.</p>
 
 <div class="step">
   <div class="step-header">
@@ -133,8 +133,8 @@
     <table>
       <thead><tr><th>Username</th><th>Email</th><th>First name</th><th>Last name</th></tr></thead>
       <tbody>
-        <tr><td><code>infra-admin</code></td><td>your email with <code>+infra</code> suffix</td><td>Infra</td><td>Admin</td></tr>
-        <tr><td><code>photos-admin</code></td><td>your email with <code>+photos</code> suffix</td><td>Photos</td><td>Admin</td></tr>
+        <tr><td><code>jerry</code></td><td>your email with <code>+jerry</code> suffix</td><td>Jerry</td><td>(your last name)</td></tr>
+        <tr><td><code>tom</code></td><td>your email with <code>+tom</code> suffix</td><td>Tom</td><td>(your last name)</td></tr>
       </tbody>
     </table>
     <p>Each user will receive a one-time password email. You'll use these to log in via the SSO portal later.</p>
@@ -153,8 +153,8 @@
   <div class="step-body">
     <p>Go to <strong>Identity Center &rarr; Groups</strong>. Create two groups:</p>
     <ul>
-      <li><code>infra-team</code> &mdash; add <code>infra-admin</code></li>
-      <li><code>photos-team</code> &mdash; add <code>photos-admin</code></li>
+      <li><code>infra-team</code> &mdash; add <code>jerry</code></li>
+      <li><code>photos-team</code> &mdash; add <code>tom</code></li>
     </ul>
   </div>
 </div>
@@ -275,10 +275,10 @@
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 8</span>
-    <span class="step-title">Log in as infra-admin via SSO portal</span>
+    <span class="step-title">Log in as Jerry via SSO portal</span>
   </div>
   <div class="step-body">
-    <p>Open an <strong>incognito/private browser window</strong>. Go to the SSO portal URL from Step 2. Log in as <code>infra-admin</code> with the one-time password, then set a new password.</p>
+    <p>Open an <strong>incognito/private browser window</strong>. Go to the SSO portal URL from Step 2. Log in as <code>jerry</code> with the one-time password, then set a new password.</p>
     <p>The portal shows your AWS account with the <code>InfraAdmin</code> permission set. Click <strong>Management Console</strong>.</p>
     <p>Look at the <strong>top-right of the console</strong> &mdash; you'll see a role name like <code>AWSReservedSSO_InfraAdmin_...</code>, not a username. This is the IAM role that Identity Center created behind the scenes and assumed on your behalf.</p>
   </div>
@@ -287,10 +287,10 @@
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 9</span>
-    <span class="step-title">Verify infra-admin access</span>
+    <span class="step-title">Verify Jerry's access</span>
   </div>
   <div class="step-body">
-    <p>Test what infra-admin can and cannot do:</p>
+    <p>Test what Jerry can and cannot do:</p>
     <ul>
       <li>Go to <strong>Secrets Manager</strong> &rarr; view the <code>photoviewer/origin-verify-secret</code> value &rarr; <strong>CAN</strong> view it &#x2713;</li>
       <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; try to download a photo &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
@@ -298,22 +298,22 @@
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>Infra-admin can read Secrets Manager (has infra key decrypt) but cannot access S3 photos (no data key decrypt). The Week 8 KMS separation of duties is now enforced at the human level.</p>
+      <p>Jerry can read Secrets Manager (has infra key decrypt) but cannot access S3 photos (no data key decrypt). The Week 8 KMS separation of duties is now enforced at the human level.</p>
     </div>
 
-    <div class="screenshot">Secrets Manager showing the secret value visible to infra-admin</div>
-    <div class="screenshot">S3 showing Access Denied when infra-admin tries to download a photo</div>
+    <div class="screenshot">Secrets Manager showing the secret value visible to Jerry</div>
+    <div class="screenshot">S3 showing Access Denied when Jerry tries to download a photo</div>
   </div>
 </div>
 
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 10</span>
-    <span class="step-title">Log in as photos-admin and verify</span>
+    <span class="step-title">Log in as Tom and verify</span>
   </div>
   <div class="step-body">
-    <p>Open a <strong>different incognito window</strong>. Log in to the SSO portal as <code>photos-admin</code>.</p>
-    <p>Test what photos-admin can and cannot do:</p>
+    <p>Open a <strong>different incognito window</strong>. Log in to the SSO portal as <code>tom</code>.</p>
+    <p>Test what Tom can and cannot do:</p>
     <ul>
       <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; download a photo &rarr; <strong>CAN</strong> view photos &#x2713;</li>
       <li>Go to <strong>DynamoDB</strong> &rarr; scan the PhotoViewerPhotos table &rarr; <strong>CAN</strong> see metadata &#x2713;</li>
@@ -322,11 +322,11 @@
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>Photos-admin can access user data (S3 photos, DynamoDB metadata) but cannot access infrastructure secrets. Separation of duties is complete &mdash; for both machines (Lambda roles from Week 8) and humans (Identity Center users from this week).</p>
+      <p>Tom can access user data (S3 photos, DynamoDB metadata) but cannot access infrastructure secrets. Separation of duties is complete &mdash; for both machines (Lambda roles from Week 8) and humans (Identity Center users from this week).</p>
     </div>
 
-    <div class="screenshot">S3 showing a photo successfully downloaded by photos-admin</div>
-    <div class="screenshot">Secrets Manager showing Access Denied for photos-admin</div>
+    <div class="screenshot">S3 showing a photo successfully downloaded by Tom</div>
+    <div class="screenshot">Secrets Manager showing Access Denied for Tom</div>
   </div>
 </div>
 
@@ -666,7 +666,7 @@
 <p>The external auditor needed three permissions to access a photo: <code>sts:AssumeRole</code>, <code>s3:GetObject</code>, and <code>kms:Decrypt</code>. For each one, explain what it controls and what would happen if it were missing.</p>
 
 <h3>Question 2</h3>
-<p>Compare how <code>infra-admin</code> (Identity Center) and <code>external-auditor</code> (IAM) log into the AWS console. What is different about their credentials, how they authenticate, and what CloudTrail records for each?</p>
+<p>Compare how <code>jerry</code> (Identity Center) and <code>external-auditor</code> (IAM) log into the AWS console. What is different about their credentials, how they authenticate, and what CloudTrail records for each?</p>
 
 
 <!-- ═══════════════ RUBRIC ═══════════════ -->
@@ -688,7 +688,7 @@
     <tr>
       <td><strong>Two Identity Center users created</strong></td>
       <td>4</td>
-      <td>Screenshot: Identity Center users list showing <code>infra-admin</code> and <code>photos-admin</code>.</td>
+      <td>Screenshot: Identity Center users list showing <code>jerry</code> and <code>tom</code>.</td>
     </tr>
     <tr>
       <td><strong>Two permission sets created</strong></td>
@@ -696,24 +696,24 @@
       <td>Screenshot: Both permission sets with inline policies showing KMS key ARNs scoped correctly (infra key for InfraAdmin, data key for PhotosAdmin).</td>
     </tr>
     <tr>
-      <td><strong>Infra-admin CAN read Secrets Manager</strong></td>
+      <td><strong>Jerry CAN read Secrets Manager</strong></td>
       <td>6</td>
-      <td>Screenshot: Secrets Manager secret value visible to infra-admin.</td>
+      <td>Screenshot: Secrets Manager secret value visible to Jerry.</td>
     </tr>
     <tr>
-      <td><strong>Infra-admin CANNOT access S3 photos</strong></td>
+      <td><strong>Jerry CANNOT access S3 photos</strong></td>
       <td>6</td>
-      <td>Screenshot: S3 Access Denied for infra-admin.</td>
+      <td>Screenshot: S3 Access Denied for Jerry.</td>
     </tr>
     <tr>
-      <td><strong>Photos-admin CAN access S3 photos</strong></td>
+      <td><strong>Tom CAN access S3 photos</strong></td>
       <td>6</td>
-      <td>Screenshot: S3 photo downloaded successfully by photos-admin.</td>
+      <td>Screenshot: S3 photo downloaded successfully by Tom.</td>
     </tr>
     <tr>
-      <td><strong>Photos-admin CANNOT read Secrets Manager</strong></td>
+      <td><strong>Tom CANNOT read Secrets Manager</strong></td>
       <td>6</td>
-      <td>Screenshot: Secrets Manager Access Denied for photos-admin.</td>
+      <td>Screenshot: Secrets Manager Access Denied for Tom.</td>
     </tr>
     <tr>
       <td><strong>External-auditor has no access</strong></td>
