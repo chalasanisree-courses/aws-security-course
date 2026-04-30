@@ -360,7 +360,7 @@
 </div>
 
 <div class="callout">
-  <p><strong>The "Enable IAM policies" statement in KMS.</strong> The console wizard adds a key policy statement granting <code>kms:*</code> to the account root. This delegates authority to IAM &mdash; it tells KMS to evaluate IAM policies when principals try to use the key. Without it, IAM policies granting <code>kms:Decrypt</code> are silently ignored. The auditor role in Part 3 of the lab relies on this delegation: adding <code>kms:Decrypt</code> to the role's IAM policy is sufficient because the key policy delegates the decision. Removing the delegation statement makes the key policy the sole gatekeeper &mdash; a security decision, not boilerplate.</p>
+  <p><strong>KMS key policies are resource policies.</strong> Like trust policies on roles, KMS key policies name which principals can use the key. In Part 3 of the lab, the auditor has <code>s3:GetObject</code> permission but cannot download a photo &mdash; because the data key's key policy does not name the auditor role. Adding the auditor role to the key policy with <code>kms:Decrypt</code> completes the authorization. This is the same dual-authorization pattern as role assumption: the S3 identity policy and the KMS resource policy must both agree.</p>
 </div>
 
 

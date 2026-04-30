@@ -581,20 +581,28 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 21</span>
-    <span class="step-title">Add KMS decrypt permission to the auditor role</span>
+    <span class="step-title">Add the auditor role to the data key's key policy</span>
   </div>
   <div class="step-body">
-    <p>Switch back to admin. Go to <strong>IAM &rarr; Roles &rarr; photo-auditor-role &rarr; Permissions</strong> tab. Edit the <strong>auditor-dynamodb-read</strong> policy again and add this statement to the array:</p>
+    <p>Switch back to admin. Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong> tab.</p>
+    <ol>
+      <li>Click <strong>Edit</strong></li>
+      <li>Add the following statement to the <code>Statement</code> array:</li>
+    </ol>
 <pre><code>{
-  "Sid": "AuditDataKeyDecrypt",
+  "Sid": "AllowAuditorDecrypt",
   "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::ACCOUNT-ID:role/photo-auditor-role"
+  },
   "Action": [
     "kms:Decrypt",
     "kms:DescribeKey"
   ],
-  "Resource": "arn:aws:kms:us-east-1:ACCOUNT-ID:key/DATA-KEY-ID"
+  "Resource": "*"
 }</code></pre>
-    <p>Click <strong>Save changes</strong>. The policy now has three statements: AuditDynamoDB, AuditS3, and AuditDataKeyDecrypt.</p>
+    <p>Click <strong>Save changes</strong>.</p>
+    <p>This is a <strong>resource policy</strong> on the key itself &mdash; the key is explicitly granting the auditor role permission to decrypt. This is the same pattern as the trust policy on the IAM role: the resource names who can use it.</p>
   </div>
 </div>
 
@@ -606,18 +614,23 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   <div class="step-body">
     <p>Switch back to the auditor session. Try to download the photo again.</p>
     <p><strong>It works.</strong> &#x2713;</p>
-    <p>This worked because the data key's key policy includes the <strong>"Enable IAM policies"</strong> statement (the AWS console wizard adds it by default). This statement delegates KMS authorization to IAM &mdash; meaning the identity policy's <code>kms:Decrypt</code> grant is sufficient. Without that statement, you would also need to add the auditor role ARN directly to the key policy.</p>
+    <p>Two things had to agree for this download to succeed:</p>
+    <ul>
+      <li><strong>S3 authorization:</strong> The auditor role's IAM policy grants <code>s3:GetObject</code> &mdash; S3 allows the read.</li>
+      <li><strong>KMS authorization:</strong> The data key's key policy grants the auditor role <code>kms:Decrypt</code> &mdash; KMS allows the decryption.</li>
+    </ul>
+    <p>This is the same dual-authorization pattern as role assumption: the role's trust policy and the user's identity policy must both agree. Here, the S3 identity policy and the KMS resource policy must both agree. Neither alone is sufficient.</p>
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>The auditor can now download photos. Two permissions were required: <code>s3:GetObject</code> for the S3 API call, and <code>kms:Decrypt</code> for the encryption layer. S3 permission alone was not enough &mdash; this is the dual-authorization model.</p>
+      <p>The auditor can now download photos. S3 permission alone was not enough &mdash; the key policy had to explicitly name the auditor role as a principal allowed to decrypt.</p>
     </div>
 
     <div class="callout warn">
-      <p><strong>Security consequence:</strong> You just granted a third principal access to decrypt all user photos. In production, you would want a <strong>KMS grant</strong> instead of a permanent policy statement (grants are revocable and can expire), <strong>time-bounded conditions</strong> on the policy, or <strong>MFA enforcement</strong> on the role assumption. You expanded the blast radius of the data key &mdash; that was a deliberate security decision.</p>
+      <p><strong>Security consequence:</strong> You just granted a third principal access to decrypt all user photos by modifying the key policy. In production, you would want a <strong>KMS grant</strong> instead of a permanent key policy statement (grants are revocable and can expire), <strong>time-bounded conditions</strong>, or <strong>MFA enforcement</strong> on the role assumption. You expanded the blast radius of the data key &mdash; that was a deliberate security decision.</p>
     </div>
 
-    <div class="screenshot">S3 showing a photo successfully downloaded by the auditor role after adding KMS decrypt permission</div>
+    <div class="screenshot">S3 showing a photo successfully downloaded by the auditor role after adding the role to the data key's key policy</div>
   </div>
 </div>
 
@@ -796,12 +809,12 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <tr>
       <td><strong>S3 Access Denied before KMS permission</strong></td>
       <td>8</td>
-      <td>Screenshot: S3 Access Denied when auditor has <code>s3:GetObject</code> but no <code>kms:Decrypt</code>.</td>
+      <td>Screenshot: S3 Access Denied when auditor has <code>s3:GetObject</code> but the data key's key policy does not name the auditor role.</td>
     </tr>
     <tr>
       <td><strong>S3 works after KMS permission added</strong></td>
       <td>8</td>
-      <td>Screenshot: Photo downloaded successfully after adding <code>kms:Decrypt</code> to auditor role.</td>
+      <td>Screenshot: Photo downloaded successfully after adding auditor role to the data key's key policy.</td>
     </tr>
     <tr>
       <td><strong>Policy Simulator results</strong></td>
