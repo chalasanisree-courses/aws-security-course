@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 10 Lab — Photo Viewer Configuration &amp; Performance Monitoring · CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1.2rem 1.4rem; border-radius: 8px; font-size: 0.84rem; overflow-x: auto; margin: 0.8rem 0 1.2rem; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn, .callout.warning { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+  .step { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+  .step-header { display: flex; align-items: baseline; gap: 1rem; padding: 0.9rem 1.2rem; background: #f5f8fc; border-bottom: 1px solid #d0dce8; }
+  .step-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1F4E79; background: #dce8f5; padding: 0.2em 0.6em; border-radius: 4px; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; color: #111; }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+  .verify { background: #f0fff4; border: 1px solid #a5d6a7; border-radius: 8px; padding: 0.9rem 1.2rem; margin: 1rem 0; }
+  .verify-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #155724; margin-bottom: 0.4rem; }
+  .verify p:last-child { margin-bottom: 0; }
+  .screenshot { background: #f8f5ff; border: 1px solid #c8b8e8; border-radius: 8px; padding: 0.8rem 1.2rem; margin: 1rem 0; font-size: 0.9rem; color: #4a148c; }
+  .screenshot::before { content: "\1F4F8 Screenshot required: "; font-weight: 600; }
+  .preflight { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .preflight h3 { color: #e65100; margin-top: 0; }
+  .part-header { background: #1F4E79; color: #fff; border-radius: 8px; padding: 0.7rem 1.2rem; margin: 2rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .part-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+  .part-title { font-size: 1.05rem; font-weight: 600; }
+  .rubric-table th { background: #1F4E79; color: #fff; }
+  .rubric-table td:nth-child(2) { text-align: center; font-weight: 600; color: #1F4E79; }
+  .rubric-total td { font-weight: 700; background: #f0f4f8; }
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 10 Lab &mdash; Photo Viewer Configuration &amp; Performance Monitoring</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 100 pts</p>
+
+<p><strong>Objective:</strong> The Photo Viewer has been built and secured over nine weeks &mdash; encryption, access control, identity management, key policies. But how would you know if something breaks, drifts from the intended baseline, or has a known vulnerability &mdash; before customers or attackers discover it? Set up CloudWatch alarms for operational monitoring, AWS Config rules for security baseline enforcement, Inspector for vulnerability scanning, and Trusted Advisor for account-level health checks.</p>
+
+<div class="callout info">
+  <p><strong>What changes this week:</strong> No user-facing changes to the Photo Viewer. All changes are on the monitoring and compliance side &mdash; visibility into how the application is performing and whether its security configuration has drifted from the intended baseline.</p>
+</div>
+
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Run the pre-flight script from CloudShell before starting:</p>
+  <pre>cd ~
+git -C aws-security-course pull
+bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
+  <p>The script verifies your Week 9 environment is intact: both KMS keys, S3/DynamoDB encryption, Secrets Manager encryption, Lambda function, CloudFront distribution, Identity Center, and Organizations. It also confirms the SNS topic from Week 1 exists (needed for alarm notifications). Address any errors before proceeding.</p>
+</div>
+
+
+<!-- Part 1 -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">CloudWatch &mdash; operational monitoring</span>
+</div>
+
+<p>Customers are reporting that the Photo Viewer is slow and sometimes fails. You have no visibility into Lambda performance &mdash; you would only know about problems by checking the console manually. CloudWatch alarms fix this by monitoring metrics continuously and notifying you when thresholds are breached.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Find Lambda metrics in CloudWatch</span></div><div class="step-body">
+<p>Go to <strong>CloudWatch &rarr; Metrics &rarr; All metrics &rarr; Lambda &rarr; By Function Name</strong>. Find <code>photoviewer-lambda</code>. Select the <strong>Errors</strong> and <strong>Duration</strong> metrics. Observe the graphs &mdash; there are no alarms configured. You would only notice problems by opening this dashboard.</p>
+<div class="screenshot">CloudWatch metrics dashboard showing photoviewer-lambda Errors and Duration metrics with no alarms configured</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 2</span><span class="step-title">Create an error alarm</span></div><div class="step-body">
+<p>Go to <strong>CloudWatch &rarr; Alarms &rarr; Create alarm</strong>.</p>
+<ul>
+  <li>Select metric: <strong>Lambda &rarr; By Function Name &rarr; photoviewer-lambda &rarr; Errors</strong></li>
+  <li>Statistic: <strong>Sum</strong></li>
+  <li>Period: <strong>5 minutes</strong></li>
+  <li>Threshold: <strong>Static &rarr; Greater/Equal &rarr; 1</strong></li>
+  <li>Notification: Select the <strong>SNS topic from Week 1</strong> (the one used for billing alarms)</li>
+  <li>Alarm name: <code>photoviewer-lambda-errors</code></li>
+</ul>
+<p>This alarm fires if the Lambda function produces one or more errors in any 5-minute window. The SNS topic sends you an email &mdash; the same notification channel you have been using since Week 1.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Create a duration alarm</span></div><div class="step-body">
+<p>Create a second alarm:</p>
+<ul>
+  <li>Select metric: <strong>Lambda &rarr; By Function Name &rarr; photoviewer-lambda &rarr; Duration</strong></li>
+  <li>Statistic: <strong>Average</strong></li>
+  <li>Period: <strong>5 minutes</strong></li>
+  <li>Threshold: <strong>Static &rarr; Greater &rarr; 5000</strong> (5 seconds in milliseconds)</li>
+  <li>Notification: Same <strong>SNS topic</strong></li>
+  <li>Alarm name: <code>photoviewer-lambda-duration</code></li>
+</ul>
+<p>This catches performance degradation &mdash; if average response time exceeds 5 seconds, something is wrong.</p>
+<div class="screenshot">CloudWatch Alarms console showing both alarms in OK state</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Break the Lambda &mdash; trigger the error alarm</span></div><div class="step-body">
+<p>Go to <strong>Lambda &rarr; Functions &rarr; photoviewer-lambda &rarr; Configuration &rarr; Environment variables &rarr; Edit</strong>. Change the <code>PHOTO_BUCKET</code> value to <code>wrong-bucket-name</code>. Click <strong>Save</strong>.</p>
+<p>Now load the Photo Viewer in your browser. The page itself loads (HTML/CSS/JS from CloudFront), but the photo list fails &mdash; Lambda tries to generate presigned URLs for a bucket that does not exist.</p>
+<p>Wait a few minutes. Go to <strong>CloudWatch &rarr; Alarms</strong>. The <code>photoviewer-lambda-errors</code> alarm should transition to <strong>ALARM</strong> state. Check your email &mdash; the SNS notification should arrive.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>The error alarm is in ALARM state. You received an email notification. In production, this would wake someone up before customers start complaining.</p>
+</div>
+<div class="screenshot">CloudWatch alarm in ALARM state (red) for photoviewer-lambda-errors</div>
+<div class="screenshot">Email notification from SNS showing the alarm details</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Fix it &mdash; alarm returns to OK</span></div><div class="step-body">
+<p>Go back to <strong>Lambda &rarr; Environment variables &rarr; Edit</strong>. Change <code>PHOTO_BUCKET</code> back to the correct bucket name. Click <strong>Save</strong>.</p>
+<p>Load the Photo Viewer &mdash; photos appear again. Wait for the next evaluation period (~5 minutes). The alarm transitions back to <strong>OK</strong>.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>Photo Viewer works. Alarm is back in OK state. The full cycle: break &rarr; alarm &rarr; diagnose &rarr; fix &rarr; alarm clears.</p>
+</div>
+<div class="screenshot">CloudWatch alarm back in OK state (green) after fixing the environment variable</div>
+</div></div>
+
+
+<!-- Part 2 -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">AWS Config &mdash; detecting drift</span>
+</div>
+
+<p>A junior developer was troubleshooting a photo upload issue and disabled S3 default encryption to rule out KMS as the cause. They forgot to re-enable it. The Photo Viewer still works &mdash; but every new photo is now stored unencrypted. Nothing in CloudWatch would catch this. CloudWatch monitors <em>performance</em>; Config monitors <em>configuration</em>.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable AWS Config</span></div><div class="step-body">
+<p>Go to <strong>AWS Config &rarr; Get started</strong> (or <strong>Settings</strong> if already visited).</p>
+<ul>
+  <li>Recording strategy: <strong>All resource types</strong> (or select specific types to reduce cost)</li>
+  <li>AWS Config role: let Config create a <strong>service-linked role</strong></li>
+  <li>Delivery method: Create a new S3 bucket (Config stores configuration history snapshots here)</li>
+</ul>
+<p>Click <strong>Confirm</strong>. Config begins recording resource configurations across the account.</p>
+<div class="callout"><p><strong>Cost note:</strong> AWS Config charges per configuration item recorded (~$0.003 each) plus the S3 storage for history. With a small lab account, expect $1&ndash;2/month. Keep Config running through Week 11 &mdash; it is needed for Security Hub.</p></div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Add managed rules</span></div><div class="step-body">
+<p>Go to <strong>AWS Config &rarr; Rules &rarr; Add rule</strong>. Add the following four managed rules one at a time:</p>
+<table>
+  <tr><th>Rule name</th><th>What it checks</th></tr>
+  <tr><td><code>s3-bucket-server-side-encryption-enabled</code></td><td>S3 buckets have default encryption configured</td></tr>
+  <tr><td><code>s3-bucket-public-read-prohibited</code></td><td>S3 buckets do not allow public read access</td></tr>
+  <tr><td><code>cloud-trail-encryption-enabled</code></td><td>CloudTrail trails are encrypted with KMS</td></tr>
+  <tr><td><code>iam-root-access-key-check</code></td><td>Root account does not have active access keys</td></tr>
+</table>
+<p>For each rule, accept the default parameters and click <strong>Save</strong>. These are AWS-managed rules &mdash; Config knows how to evaluate them without any custom logic.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Wait for evaluation and screenshot</span></div><div class="step-body">
+<p>Config evaluates rules against current resource configurations. This can take a few minutes. Go to <strong>AWS Config &rarr; Rules</strong> and wait until all four rules show a compliance status.</p>
+<p>If your environment is correctly configured from Weeks 1&ndash;9, all rules should show <strong>Compliant</strong>. If <code>cloud-trail-encryption-enabled</code> shows Non-compliant, it means your CloudTrail trail is using default encryption rather than a KMS key &mdash; this is a valid finding.</p>
+<div class="screenshot">AWS Config Rules dashboard showing all four rules with compliance status</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Break it &mdash; remove S3 encryption</span></div><div class="step-body">
+<p>Go to <strong>S3 &rarr; your Photo Viewer bucket &rarr; Properties &rarr; Default encryption &rarr; Edit</strong>. Change the encryption type from <strong>SSE-KMS</strong> to <strong>SSE-S3</strong> (or disable default encryption entirely). Click <strong>Save changes</strong>.</p>
+<p>The Photo Viewer still works &mdash; S3 does not require KMS encryption to serve existing objects. But new uploads are no longer encrypted with your customer-managed key. This is exactly the kind of silent drift that Config catches.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Observe Config catch the drift</span></div><div class="step-body">
+<p>Go to <strong>AWS Config &rarr; Rules &rarr; s3-bucket-server-side-encryption-enabled</strong>. Click <strong>Re-evaluate</strong> (or wait 5&ndash;10 minutes for automatic re-evaluation).</p>
+<p>The rule transitions to <strong>Non-compliant</strong>. Click into the rule to see which resource is non-compliant &mdash; your Photo Viewer bucket.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>Config detected the encryption drift. Without Config, this change would be invisible &mdash; the app works fine, no errors, no alarms. Only Config knows the configuration has changed.</p>
+</div>
+<div class="screenshot">AWS Config showing s3-bucket-server-side-encryption-enabled as Non-compliant with the Photo Viewer bucket listed</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Fix it &mdash; restore encryption</span></div><div class="step-body">
+<p>Go back to <strong>S3 &rarr; bucket &rarr; Properties &rarr; Default encryption &rarr; Edit</strong>. Change back to <strong>SSE-KMS</strong> and select <code>photoviewer-data-key</code>. Click <strong>Save changes</strong>.</p>
+<p>Return to Config and re-evaluate the rule. It should return to <strong>Compliant</strong>.</p>
+<div class="screenshot">AWS Config showing the rule back to Compliant after restoring KMS encryption</div>
+</div></div>
+
+
+<!-- Part 3 -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Inspector &mdash; vulnerability scanning</span>
+</div>
+
+<p>The Photo Viewer Lambda function uses several Python packages (<code>boto3</code>, <code>botocore</code>). Each package has dependencies. Any one of them could have a published CVE &mdash; a known vulnerability cataloged by the NIST National Vulnerability Database. Inspector scans Lambda functions and reports any findings.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">Enable Inspector</span></div><div class="step-body">
+<p>Go to <strong>Amazon Inspector &rarr; Get Started &rarr; Enable Inspector</strong>.</p>
+<p>On the activation page, ensure <strong>Lambda standard scanning</strong> is selected. You can also enable EC2 scanning, but since we removed EC2 in Week 5, Lambda scanning is the relevant option.</p>
+<p>Inspector starts a 15-day free trial. It automatically discovers all Lambda functions in the account and begins scanning their deployment packages for known CVEs.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review findings</span></div><div class="step-body">
+<p>Wait a few minutes for the initial scan to complete. Go to <strong>Inspector &rarr; Findings &rarr; By Lambda function</strong>. Look for <code>photoviewer-lambda</code> and <code>photoviewer-authorizer</code>.</p>
+<p>Review any findings. Each finding includes the CVE ID, severity (Critical / High / Medium / Low), the affected package and version, and a link to the NIST NVD entry.</p>
+<p>A <strong>clean scan</strong> (no findings) is a valid and good result &mdash; document it. If there are findings, note the CVE ID and severity. In production, you would update the affected package.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>Inspector has scanned photoviewer-lambda. You can see either findings with CVE details or a clean scan result. Either outcome demonstrates that you now have automated vulnerability visibility.</p>
+</div>
+<div class="screenshot">Inspector findings for photoviewer-lambda &mdash; showing CVE details or a clean scan</div>
+</div></div>
+
+
+<!-- Part 4 -->
+<div class="part-header">
+  <span class="part-num">Part 4</span>
+  <span class="part-title">Trusted Advisor &mdash; account health check</span>
+</div>
+
+<p>Trusted Advisor checks your account against AWS best practices across five categories: cost optimization, performance, security, fault tolerance, and service limits. Think of it as a doctor's annual physical for your AWS account.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 14</span><span class="step-title">Review security checks</span></div><div class="step-body">
+<p>Go to <strong>AWS Trusted Advisor</strong>. Click the <strong>Security</strong> tab.</p>
+<p>Review the checks. Common findings in a lab account include:</p>
+<ul>
+  <li><strong>MFA on Root Account</strong> &mdash; should be green if you enabled MFA in Week 1</li>
+  <li><strong>Security Groups &mdash; Specific Ports Unrestricted</strong> &mdash; may flag if any security groups are too permissive</li>
+  <li><strong>S3 Bucket Permissions</strong> &mdash; should be green after your bucket policy work</li>
+  <li><strong>IAM Use</strong> &mdash; should be green since you have created IAM users</li>
+</ul>
+<div class="callout info"><p><strong>Note:</strong> Some Trusted Advisor checks are only available with a Business or Enterprise Support plan. Free-tier accounts see a subset of checks &mdash; that is expected.</p></div>
+<div class="screenshot">Trusted Advisor Security tab showing check results &mdash; green (ok), yellow (warning), and red (action recommended)</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 15</span><span class="step-title">Compare Trusted Advisor with Config</span></div><div class="step-body">
+<p>Trusted Advisor and Config both check security posture, but they work differently:</p>
+<table>
+  <tr><th></th><th>Trusted Advisor</th><th>AWS Config</th></tr>
+  <tr><td><strong>Scope</strong></td><td>Account-wide, fixed checks</td><td>Per-resource, customizable rules</td></tr>
+  <tr><td><strong>Frequency</strong></td><td>On-demand or weekly</td><td>Continuous &mdash; detects changes in near real-time</td></tr>
+  <tr><td><strong>Customization</strong></td><td>Cannot add custom checks</td><td>Can add custom rules with Lambda</td></tr>
+  <tr><td><strong>Remediation</strong></td><td>Recommendations only</td><td>Can trigger automated remediation via EventBridge</td></tr>
+</table>
+<p>Both are useful. Trusted Advisor is a quick health check. Config is continuous compliance monitoring. In Week 11, Config findings will flow into Security Hub alongside findings from GuardDuty, Inspector, and Macie.</p>
+</div></div>
+
+
+<!-- Cleanup -->
+<h2>Cleanup</h2>
+<p>Disable or delete resources to avoid unexpected charges:</p>
+<ul>
+  <li><strong>Disable Inspector</strong> &mdash; free trial runs for 15 days, then charges begin. Go to Inspector &rarr; Settings &rarr; Disable Inspector.</li>
+  <li><strong>Keep AWS Config running</strong> &mdash; it is needed for Security Hub in Week 11. Cost is ~$1&ndash;2/month.</li>
+  <li><strong>Keep CloudWatch alarms</strong> &mdash; no cost for two alarms on Lambda metrics. They provide ongoing monitoring.</li>
+</ul>
+
+
+<!-- Reflection -->
+<h2>Reflection Questions</h2>
+
+<h3>Question 1</h3>
+<p>In Step 9, you removed S3 default encryption. The Photo Viewer continued to work normally &mdash; no errors, no CloudWatch alarms. Explain why CloudWatch did not catch this change, and why a different tool (Config) was needed.</p>
+
+<h3>Question 2</h3>
+<p>You now have four monitoring and compliance tools running: CloudWatch, Config, Inspector, and Trusted Advisor. For each of the following scenarios, which tool would detect the problem first? Explain your reasoning.</p>
+<ul>
+  <li>(a) A Lambda code deployment introduces a bug that causes every third request to time out.</li>
+  <li>(b) Someone changes the S3 bucket policy to allow public read access.</li>
+  <li>(c) A new CVE is published for a Python package used by the Lambda function.</li>
+</ul>
+
+
+<!-- Rubric -->
+<h2>Grading Rubric</h2>
+
+<table class="rubric-table">
+  <thead><tr><th>Deliverable</th><th>Points</th><th>Requirements</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Lambda metrics found</strong></td><td>3</td><td>Screenshot: CloudWatch metrics dashboard showing photoviewer-lambda Errors and Duration metrics.</td></tr>
+    <tr><td><strong>Error alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-errors</code> showing threshold &#8805; 1 error, 5-minute period, SNS notification target.</td></tr>
+    <tr><td><strong>Duration alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-duration</code> showing threshold &gt; 5000ms, 5-minute period.</td></tr>
+    <tr><td><strong>Alarm fires in ALARM state</strong></td><td>10</td><td>Screenshot: <code>photoviewer-lambda-errors</code> alarm in ALARM state (red) after changing <code>PHOTO_BUCKET</code> to wrong value.</td></tr>
+    <tr><td><strong>SNS notification received</strong></td><td>5</td><td>Screenshot: Email from SNS showing the alarm notification.</td></tr>
+    <tr><td><strong>Alarm returns to OK</strong></td><td>5</td><td>Screenshot: Alarm back in OK state after restoring the correct bucket name.</td></tr>
+    <tr><td><strong>Config enabled</strong></td><td>3</td><td>Screenshot: AWS Config Settings page showing recorder enabled.</td></tr>
+    <tr><td><strong>Four Config rules added</strong></td><td>8</td><td>Screenshot: AWS Config Rules dashboard showing all four managed rules.</td></tr>
+    <tr><td><strong>Rules show Compliant</strong></td><td>5</td><td>Screenshot: Config Rules dashboard with rules in Compliant status (before removing encryption).</td></tr>
+    <tr><td><strong>Non-compliant after drift</strong></td><td>10</td><td>Screenshot: <code>s3-bucket-server-side-encryption-enabled</code> showing Non-compliant after removing S3 encryption. The non-compliant resource (Photo Viewer bucket) is visible.</td></tr>
+    <tr><td><strong>Compliant after fix</strong></td><td>5</td><td>Screenshot: Rule back to Compliant after restoring KMS encryption.</td></tr>
+    <tr><td><strong>Inspector enabled</strong></td><td>3</td><td>Screenshot: Inspector dashboard showing Lambda scanning active.</td></tr>
+    <tr><td><strong>Inspector findings</strong></td><td>8</td><td>Screenshot: Inspector findings for photoviewer-lambda &mdash; either CVE findings with details or a documented clean scan.</td></tr>
+    <tr><td><strong>Trusted Advisor security tab</strong></td><td>5</td><td>Screenshot: Trusted Advisor Security tab with check results visible.</td></tr>
+    <tr><td><strong>Reflection Q1 &mdash; CloudWatch vs Config</strong></td><td>10</td><td>CloudWatch monitors <em>metrics</em> &mdash; error counts, duration, invocations. Removing encryption does not cause errors because the app still works. Config monitors <em>resource configuration</em> &mdash; it compares actual state against desired state defined by rules. Different tools for different categories of problems.</td></tr>
+    <tr><td><strong>Reflection Q2 &mdash; right tool for each scenario</strong></td><td>10</td><td>(a) CloudWatch &mdash; duration alarm catches timeouts as a metric spike. (b) Config &mdash; <code>s3-bucket-public-read-prohibited</code> rule detects the policy change. (c) Inspector &mdash; rescans Lambda packages against updated CVE databases.</td></tr>
+    <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+  </tbody>
+</table>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html">&larr; Week 10 Concept Notes</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>
