@@ -359,8 +359,38 @@
   <p><strong>In the lab:</strong> After logging in via the SSO portal, the console top-right shows a role name like <code>AWSReservedSSO_InfraAdmin_...</code> &mdash; the IAM role Identity Center created. Part 2 of the lab does the same thing manually with Switch Role, exposing the mechanism Identity Center abstracts.</p>
 </div>
 
+<h3>How IAM evaluates access by resource type</h3>
+
+<p>When a signed request reaches a resource, the IAM engine evaluates both the requester's identity policy and the resource's resource policy (if one exists). The evaluation follows the priority order: explicit deny, explicit allow, implicit deny. But the role of each policy differs by resource type:</p>
+
+<table>
+  <thead><tr><th>Resource</th><th>IAM policy</th><th>Resource policy</th><th>How access is granted</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>S3 bucket</strong></td>
+      <td>Optional</td>
+      <td>Optional</td>
+      <td>Either IAM policy or bucket policy can grant access. An explicit deny in either one overrides. Policy evaluation = ED &rarr; EA &rarr; ID.</td>
+    </tr>
+    <tr>
+      <td><strong>KMS key</strong></td>
+      <td>Optional</td>
+      <td>Required</td>
+      <td>The key policy must explicitly name the principal and grant access. If it does, the IAM policy is not needed. The IAM policy can only close the gate (explicit deny).</td>
+    </tr>
+    <tr>
+      <td><strong>IAM role</strong></td>
+      <td>Optional</td>
+      <td>Required</td>
+      <td>The trust policy must explicitly name the principal and allow assumption. If it does, the IAM policy is not needed. The IAM policy can only close the gate (explicit deny).</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>KMS keys and IAM roles share the same posture: the resource policy is the gatekeeper. It must explicitly name the principal. The IAM policy cannot open a gate the resource policy hasn't opened &mdash; it can only close one. S3 is more permissive: either policy can open the gate independently.</p>
+
 <div class="callout">
-  <p><strong>KMS key policies are resource policies.</strong> Like trust policies on roles, KMS key policies name which principals can use the key. In Part 3 of the lab, the auditor has <code>s3:GetObject</code> permission but cannot download a photo &mdash; because the data key's key policy does not name the auditor role. Adding the auditor role to the key policy with <code>kms:Decrypt</code> completes the authorization. This is the same dual-authorization pattern as role assumption: the S3 identity policy and the KMS resource policy must both agree.</p>
+  <p><strong>Why do Tom and Jerry's permission sets include <code>kms:Decrypt</code>?</strong> The table above says IAM policies are optional for KMS &mdash; the key policy is the gatekeeper. This is true by default. However, the KMS console wizard adds a statement to every key policy that <strong>delegates authority to IAM</strong> &mdash; it tells KMS to also evaluate IAM policies when a principal requests access. With this delegation in place, Tom's permission set granting <code>kms:Decrypt</code> on the data key is sufficient. In Part 3 of the lab, we take the direct approach instead: adding the auditor role to the key policy explicitly, without relying on delegation. Both approaches work &mdash; delegation is convenient for established employees, direct key policy grants are more explicit for temporary access.</p>
 </div>
 
 
