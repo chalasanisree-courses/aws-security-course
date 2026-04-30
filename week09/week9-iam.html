@@ -361,7 +361,9 @@
 
 <h3>How IAM evaluates access by resource type</h3>
 
-<p>When a signed request reaches a resource, the IAM engine evaluates both the requester's identity policy and the resource's resource policy (if one exists). The evaluation follows the priority order: explicit deny, explicit allow, implicit deny. But the role of each policy differs by resource type:</p>
+<p>When a signed request reaches a resource, the IAM engine evaluates both the requester's identity policy and the resource's resource policy (if one exists). The evaluation follows the priority order: explicit deny, explicit allow, implicit deny. But the role of each policy differs by resource type.</p>
+
+<h4>Same-account access</h4>
 
 <table>
   <thead><tr><th>Resource</th><th>IAM policy</th><th>Resource policy</th><th>How access is granted</th></tr></thead>
@@ -374,23 +376,53 @@
     </tr>
     <tr>
       <td><strong>KMS key</strong></td>
-      <td>Optional</td>
+      <td>Optional **</td>
       <td>Required</td>
       <td>The key policy must explicitly name the principal and grant access. If it does, the IAM policy is not needed. The IAM policy can only close the gate (explicit deny).</td>
     </tr>
     <tr>
       <td><strong>IAM role</strong></td>
-      <td>Optional</td>
+      <td>Optional *</td>
       <td>Required</td>
       <td>The trust policy must explicitly name the principal and allow assumption. If it does, the IAM policy is not needed. The IAM policy can only close the gate (explicit deny).</td>
     </tr>
   </tbody>
 </table>
 
-<p>KMS keys and IAM roles share the same posture: the resource policy is the gatekeeper. It must explicitly name the principal. The IAM policy cannot open a gate the resource policy hasn't opened &mdash; it can only close one. S3 is more permissive: either policy can open the gate independently.</p>
+<p style="font-size:0.88rem;color:#666;">* If the trust policy names the <strong>account root</strong> instead of a specific user, the IAM policy with <code>sts:AssumeRole</code> becomes required. When the trust policy names a specific user directly, the trust policy alone is sufficient.</p>
+
+<p style="font-size:0.88rem;color:#666;">** The KMS console wizard adds a statement to every key policy that <strong>delegates authority to IAM</strong> &mdash; it tells KMS to also evaluate IAM policies when a principal requests access. With this delegation in place, an IAM policy granting <code>kms:Decrypt</code> is sufficient even if the key policy does not name the principal directly. This is why Tom and Jerry's permission sets include <code>kms:Decrypt</code> &mdash; the delegation makes it work. In Part 3 of the lab, we take the direct approach instead: adding the auditor role to the key policy explicitly, without relying on delegation. Both approaches work &mdash; delegation is convenient for established employees, direct key policy grants are more explicit for temporary access.</p>
+
+<h4>Cross-account access</h4>
+
+<table>
+  <thead><tr><th>Resource</th><th>IAM policy</th><th>Resource policy</th><th>How access is granted</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>S3 bucket</strong></td>
+      <td>Required</td>
+      <td>Required</td>
+      <td>Both the IAM policy in the caller's account and the bucket policy in the resource's account must grant access.</td>
+    </tr>
+    <tr>
+      <td><strong>KMS key</strong></td>
+      <td>Required</td>
+      <td>Required</td>
+      <td>Both the IAM policy in the caller's account and the key policy in the resource's account must grant access.</td>
+    </tr>
+    <tr>
+      <td><strong>IAM role</strong></td>
+      <td>Required</td>
+      <td>Required</td>
+      <td>Both the IAM policy in the caller's account (allowing <code>sts:AssumeRole</code>) and the trust policy in the target account must grant access.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Cross-account access always requires both policies &mdash; the resource policy in the target account grants access, and the IAM policy in the caller's account allows the action. Neither alone is sufficient. This is why resource policies exist: they are the mechanism by which one account grants access to principals in another account.</p>
 
 <div class="callout">
-  <p><strong>Why do Tom and Jerry's permission sets include <code>kms:Decrypt</code>?</strong> The table above says IAM policies are optional for KMS &mdash; the key policy is the gatekeeper. This is true by default. However, the KMS console wizard adds a statement to every key policy that <strong>delegates authority to IAM</strong> &mdash; it tells KMS to also evaluate IAM policies when a principal requests access. With this delegation in place, Tom's permission set granting <code>kms:Decrypt</code> on the data key is sufficient. In Part 3 of the lab, we take the direct approach instead: adding the auditor role to the key policy explicitly, without relying on delegation. Both approaches work &mdash; delegation is convenient for established employees, direct key policy grants are more explicit for temporary access.</p>
+  <p>KMS keys and IAM roles share the same posture for same-account access: the resource policy is the gatekeeper. It must explicitly name the principal. The IAM policy cannot open a gate the resource policy hasn't opened &mdash; it can only close one. S3 is more permissive within the same account: either policy can open the gate independently. Across accounts, all three resource types require both policies.</p>
 </div>
 
 
