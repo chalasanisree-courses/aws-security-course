@@ -359,11 +359,106 @@
   <p><strong>In the lab:</strong> After logging in via the SSO portal, the console top-right shows a role name like <code>AWSReservedSSO_InfraAdmin_...</code> &mdash; the IAM role Identity Center created. Part 2 of the lab does the same thing manually with Switch Role, exposing the mechanism Identity Center abstracts.</p>
 </div>
 
-<h3>How IAM evaluates access by resource type</h3>
 
-<p>When a signed request reaches a resource, the IAM engine evaluates both the requester's identity policy and the resource's resource policy (if one exists). The evaluation follows the priority order: explicit deny, explicit allow, implicit deny. But the role of each policy differs by resource type.</p>
+<!-- ═══════════════ SECTION 4 ═══════════════ -->
+<h2>4. How IAM evaluates access</h2>
 
-<h4>Same-account access</h4>
+<p>IAM does two things: <strong>identity verification</strong> (who are you?) and <strong>access management</strong> (are you allowed?). These happen in sequence &mdash; first you authenticate and get credentials, then every subsequent request is signed with those credentials and evaluated by the IAM engine.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <!-- Divider -->
+  <line x1="400" y1="10" x2="400" y2="310" stroke="#ccc" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- ═══ LEFT: Identity Verification ═══ -->
+  <text x="190" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">&#x2460; Identity Verification</text>
+
+  <!-- Person -->
+  <circle cx="50" cy="110" r="18" fill="#fff" stroke="#555" stroke-width="1.5"/>
+  <text x="50" y="115" text-anchor="middle" font-size="16">&#x1F464;</text>
+
+  <!-- Branch lines -->
+  <line x1="70" y1="100" x2="100" y2="100" stroke="#555" stroke-width="1"/>
+  <line x1="100" y1="100" x2="100" y2="65" stroke="#555" stroke-width="1"/>
+  <line x1="100" y1="100" x2="100" y2="155" stroke="#555" stroke-width="1"/>
+  <line x1="100" y1="65" x2="125" y2="65" stroke="#555" stroke-width="1"/>
+  <polygon points="125,61 135,65 125,69" fill="#555"/>
+  <line x1="100" y1="155" x2="125" y2="155" stroke="#555" stroke-width="1"/>
+  <polygon points="125,151 135,155 125,159" fill="#555"/>
+
+  <!-- Permanent path -->
+  <rect x="140" y="42" width="230" height="48" rx="6" fill="#fff" stroke="#1a6b8a" stroke-width="1.5"/>
+  <text x="255" y="62" text-anchor="middle" font-size="10" font-weight="600" fill="#1a6b8a">Permanent (IAM User)</text>
+  <text x="255" y="78" text-anchor="middle" font-size="9" fill="#555">UI: username + password &nbsp;&nbsp;|&nbsp;&nbsp; API: access keys</text>
+
+  <!-- Temporary path -->
+  <rect x="140" y="120" width="230" height="72" rx="6" fill="#fff" stroke="#e67e22" stroke-width="1.5"/>
+  <text x="255" y="140" text-anchor="middle" font-size="10" font-weight="600" fill="#e67e22">Temporary (Role assumption)</text>
+  <text x="255" y="158" text-anchor="middle" font-size="9" fill="#555">Trust policy must allow caller</text>
+  <text x="255" y="174" text-anchor="middle" font-size="9" fill="#555">STS issues: AccessKeyId + SecretKey + SessionToken</text>
+  <text x="255" y="186" text-anchor="middle" font-size="8" fill="#888">credentials auto-expire</text>
+
+  <!-- Result -->
+  <line x1="255" y1="90" x2="255" y2="210" stroke="#fff" stroke-width="0"/>
+  <rect x="125" y="215" width="245" height="30" rx="5" fill="#f0fff4" stroke="#28a745"/>
+  <text x="248" y="234" text-anchor="middle" font-size="9" font-weight="600" fill="#155724">Both produce credentials to sign requests</text>
+
+  <!-- Note about IC -->
+  <text x="248" y="262" text-anchor="middle" font-size="8" fill="#888">Identity Center automates the temporary path:</text>
+  <text x="248" y="275" text-anchor="middle" font-size="8" fill="#888">creates the role, calls STS on the user's behalf</text>
+
+  <!-- ═══ RIGHT: Access Management ═══ -->
+  <text x="620" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">&#x2461; Access Management</text>
+
+  <!-- Person with signed request -->
+  <circle cx="440" cy="80" r="18" fill="#fff" stroke="#555" stroke-width="1.5"/>
+  <text x="440" y="85" text-anchor="middle" font-size="16">&#x1F464;</text>
+
+  <line x1="460" y1="80" x2="640" y2="80" stroke="#28a745" stroke-width="1.5"/>
+  <polygon points="640,76 650,80 640,84" fill="#28a745"/>
+  <text x="550" y="72" text-anchor="middle" font-size="9" fill="#28a745" font-weight="600">signed request</text>
+
+  <!-- Resource box -->
+  <rect x="655" y="60" width="100" height="40" rx="6" fill="#f8f9fa" stroke="#555" stroke-width="1.5"/>
+  <text x="705" y="85" text-anchor="middle" font-size="11" font-weight="600" fill="#333">Resource</text>
+
+  <!-- Resource type boxes stacked right of Resource -->
+  <rect x="770" y="45" width="40" height="22" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="790" y="60" text-anchor="middle" font-size="8" fill="#555">S3</text>
+  <text x="820" y="60" font-size="7" fill="#888">bucket policy</text>
+
+  <rect x="770" y="70" width="40" height="22" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="790" y="85" text-anchor="middle" font-size="8" fill="#555">KMS</text>
+  <text x="820" y="85" font-size="7" fill="#888">key policy</text>
+
+  <rect x="770" y="95" width="40" height="22" rx="4" fill="#fff" stroke="#d0d8e0"/>
+  <text x="790" y="110" text-anchor="middle" font-size="8" fill="#555">Role</text>
+  <text x="820" y="110" font-size="7" fill="#888">trust policy</text>
+
+  <!-- Arrow down from midpoint of green line to IAM engine -->
+  <line x1="550" y1="80" x2="550" y2="140" stroke="#555" stroke-width="1.5"/>
+  <polygon points="546,140 550,150 554,140" fill="#555"/>
+
+  <!-- Policy evaluation box -->
+  <rect x="440" y="155" width="380" height="55" rx="8" fill="#f0f6ff" stroke="#1a6b8a" stroke-width="1.5"/>
+  <text x="630" y="175" text-anchor="middle" font-size="11" font-weight="600" fill="#1a6b8a">IAM Policy Engine</text>
+  <text x="630" y="191" text-anchor="middle" font-size="9" fill="#555">Evaluates: IAM policy + Resource policy</text>
+  <text x="630" y="205" text-anchor="middle" font-size="8" fill="#888">Priority: Explicit Deny &rarr; Explicit Allow &rarr; Implicit Deny</text>
+
+  <!-- Result arrow -->
+  <rect x="545" y="230" width="170" height="28" rx="5" fill="#f0fff4" stroke="#28a745"/>
+  <text x="630" y="249" text-anchor="middle" font-size="9" font-weight="600" fill="#155724">&#x2713; Allow &nbsp;&nbsp;or&nbsp;&nbsp; &#x2717; Deny</text>
+</svg>
+</div>
+
+<p><strong>Step 1 — Identity verification</strong> happens once per session. You authenticate with permanent credentials (username/password or API keys) or temporary credentials (STS). The result is credentials you can sign requests with.</p>
+
+<p><strong>Step 2 — Access management</strong> happens on every API call. The signed request reaches the resource. The resource hands it to the IAM policy engine, which evaluates the requester's IAM policy and the resource's resource policy (if one exists). The engine returns allow or deny. The resource does not evaluate policies itself.</p>
+
+<p>The role of each policy differs by resource type.</p>
+
+<h3>Same-account access</h3>
 
 <table>
   <thead><tr><th>Resource</th><th>IAM policy</th><th>Resource policy</th><th>How access is granted</th></tr></thead>
@@ -393,7 +488,7 @@
 
 <p style="font-size:0.88rem;color:#666;">** The KMS console wizard adds a statement to every key policy that <strong>delegates authority to IAM</strong> &mdash; it tells KMS to also evaluate IAM policies when a principal requests access. With this delegation in place, an IAM policy granting <code>kms:Decrypt</code> is sufficient even if the key policy does not name the principal directly. This is why Tom and Jerry's permission sets include <code>kms:Decrypt</code> &mdash; the delegation makes it work. In Part 3 of the lab, we take the direct approach instead: adding the auditor role to the key policy explicitly, without relying on delegation. Both approaches work &mdash; delegation is convenient for established employees, direct key policy grants are more explicit for temporary access.</p>
 
-<h4>Cross-account access</h4>
+<h3>Cross-account access</h3>
 
 <table>
   <thead><tr><th>Resource</th><th>IAM policy</th><th>Resource policy</th><th>How access is granted</th></tr></thead>
@@ -426,8 +521,8 @@
 </div>
 
 
-<!-- ═══════════════ SECTION 4 ═══════════════ -->
-<h2>4. What's still missing</h2>
+<!-- ═══════════════ SECTION 5 ═══════════════ -->
+<h2>5. What's still missing</h2>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v1')">
