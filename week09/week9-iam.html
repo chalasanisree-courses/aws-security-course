@@ -146,19 +146,19 @@
   <text x="60" y="32" font-size="11" font-weight="600" fill="#555">AWS Account (us-east-1)</text>
   <line x1="310" y1="40" x2="310" y2="112" stroke="#1F4E79" stroke-width="2" stroke-dasharray="6,4"/>
 
-  <rect x="70" y="48" width="100" height="30" rx="5" fill="#fff" stroke="#1a6b8a" stroke-width="1.5"/>
-  <text x="120" y="68" text-anchor="middle" font-size="10" fill="#1a6b8a">&#x1F464; Tom</text>
+  <rect x="70" y="48" width="100" height="30" rx="5" fill="#fff" stroke="#555" stroke-width="1.5"/>
+  <text x="120" y="68" text-anchor="middle" font-size="10" fill="#333">&#x1F464; Tom</text>
   <line x1="172" y1="63" x2="210" y2="63" stroke="#28a745" stroke-width="1.5"/>
   <polygon points="210,59 220,63 210,67" fill="#28a745"/>
-  <rect x="222" y="48" width="72" height="30" rx="5" fill="#fff" stroke="#1a6b8a"/>
-  <text x="258" y="67" text-anchor="middle" font-size="9" fill="#1a6b8a">Data key</text>
+  <rect x="222" y="48" width="72" height="30" rx="5" fill="#fff" stroke="#555"/>
+  <text x="258" y="67" text-anchor="middle" font-size="9" fill="#333">Data key</text>
 
-  <rect x="330" y="48" width="100" height="30" rx="5" fill="#fff" stroke="#8e24aa" stroke-width="1.5"/>
-  <text x="380" y="68" text-anchor="middle" font-size="10" fill="#8e24aa">&#x1F464; Jerry</text>
+  <rect x="330" y="48" width="100" height="30" rx="5" fill="#fff" stroke="#555" stroke-width="1.5"/>
+  <text x="380" y="68" text-anchor="middle" font-size="10" fill="#333">&#x1F464; Jerry</text>
   <line x1="432" y1="63" x2="470" y2="63" stroke="#28a745" stroke-width="1.5"/>
   <polygon points="470,59 480,63 470,67" fill="#28a745"/>
-  <rect x="482" y="48" width="72" height="30" rx="5" fill="#fff" stroke="#8e24aa"/>
-  <text x="518" y="67" text-anchor="middle" font-size="9" fill="#8e24aa">Infra key</text>
+  <rect x="482" y="48" width="72" height="30" rx="5" fill="#fff" stroke="#555"/>
+  <text x="518" y="67" text-anchor="middle" font-size="9" fill="#333">Infra key</text>
 
   <text x="120" y="105" text-anchor="middle" font-size="8" fill="#dc3545">&#x2717; can't access infra key</text>
   <text x="380" y="105" text-anchor="middle" font-size="8" fill="#dc3545">&#x2717; can't access data key</text>
@@ -171,7 +171,7 @@
 <p>Tom can check customer photos and metadata but cannot access infrastructure secrets. Jerry can troubleshoot security configurations but cannot see user photos. For a single account, this is sufficient.</p>
 
 
-<h3>Multiple accounts &mdash; Identity Center</h3>
+<h3>Multiple accounts</h3>
 
 <p><strong>Problem:</strong> The Photo Viewer has real users. Deploying directly to production is risky &mdash; a bad Lambda update takes the app down for customers. A staging account lets the team test changes before they reach production. Now Tom and Jerry need access to both accounts. IAM users are per-account &mdash; they must be recreated with separate passwords and policies. If Tom leaves, his identity must be deleted from each account independently. Corporate identity policies (password rotation, MFA enforcement, automatic deactivation) do not apply to IAM users.</p>
 
@@ -200,7 +200,126 @@
 </svg>
 </div>
 
-<p><strong>Solution:</strong> IAM Identity Center manages Tom and Jerry once, centrally. Permission sets define per-account access. Every login goes through STS &mdash; temporary credentials only. One disable revokes access everywhere.</p>
+<p>Two services address these problems — one for accounts, one for people.</p>
+
+<h3>Two layers of management</h3>
+
+<p><strong>AWS Organizations</strong> manages accounts — grouping them into organizational units (OUs), applying guardrails (SCPs), and consolidating billing. <strong>IAM Identity Center</strong> manages people — who can access which accounts, with what permissions. Identity Center requires Organizations as a prerequisite.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 700 270" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <!-- Column labels -->
+  <text x="150" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#555">ACCOUNTS</text>
+  <text x="150" y="32" text-anchor="middle" font-size="9" fill="#888">managed by AWS Organizations</text>
+
+  <text x="520" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#555">PEOPLE</text>
+  <text x="520" y="32" text-anchor="middle" font-size="9" fill="#888">managed by Identity Center</text>
+
+  <!-- ═══ LEFT: Organizations (clickable) ═══ -->
+  <g style="cursor:pointer;" onclick="showMgmtPanel('orgs')">
+
+    <!-- Clickable area border -->
+    <rect x="8" y="42" width="284" height="170" rx="10" fill="none" stroke="#1a6b8a" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+
+    <!-- Root -->
+    <rect x="80" y="48" width="140" height="34" rx="8" fill="#163756"/>
+    <text x="150" y="70" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Root (Org)</text>
+
+    <!-- Vertical line from Root center -->
+    <line x1="150" y1="82" x2="150" y2="98" stroke="#555" stroke-width="1"/>
+
+    <!-- Horizontal branch -->
+    <line x1="75" y1="98" x2="225" y2="98" stroke="#555" stroke-width="1"/>
+
+    <!-- Left branch down to Production OU -->
+    <line x1="75" y1="98" x2="75" y2="112" stroke="#555" stroke-width="1"/>
+    <rect x="15" y="112" width="120" height="32" rx="6" fill="#f0f6ff" stroke="#1a6b8a" stroke-width="1.5"/>
+    <text x="75" y="133" text-anchor="middle" font-size="10" font-weight="600" fill="#1a6b8a">Production OU</text>
+
+    <!-- Account under Production -->
+    <line x1="75" y1="144" x2="75" y2="162" stroke="#1a6b8a" stroke-width="1"/>
+    <rect x="15" y="162" width="120" height="40" rx="6" fill="#fff" stroke="#1a6b8a" stroke-width="1.5"/>
+    <text x="75" y="180" text-anchor="middle" font-size="9" font-weight="600" fill="#1a6b8a">CS-55D Account</text>
+    <text x="75" y="195" text-anchor="middle" font-size="8" fill="#888">(us-east-1)</text>
+
+    <!-- Right branch down to Staging OU -->
+    <line x1="225" y1="98" x2="225" y2="112" stroke="#555" stroke-width="1"/>
+    <rect x="165" y="112" width="120" height="32" rx="6" fill="#f5f0ff" stroke="#8e24aa" stroke-width="1.5"/>
+    <text x="225" y="133" text-anchor="middle" font-size="10" font-weight="600" fill="#8e24aa">Staging OU</text>
+
+    <!-- Empty label under Staging -->
+    <text x="225" y="155" text-anchor="middle" font-size="8" fill="#8e24aa">(empty &mdash; ready for later)</text>
+  </g>
+
+  <!-- ═══ RIGHT: Identity Center (clickable) ═══ -->
+  <g style="cursor:pointer;" onclick="showMgmtPanel('idc')">
+
+    <!-- Clickable area border -->
+    <rect x="384" y="42" width="272" height="134" rx="10" fill="none" stroke="#e67e22" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+
+    <!-- Identity Center -->
+    <rect x="390" y="48" width="260" height="34" rx="8" fill="#e67e22"/>
+    <text x="520" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Identity Center</text>
+
+    <!-- Lines down to groups -->
+    <line x1="450" y1="82" x2="450" y2="100" stroke="#555" stroke-width="1"/>
+    <line x1="590" y1="82" x2="590" y2="100" stroke="#555" stroke-width="1"/>
+
+    <!-- infra-team group -->
+    <rect x="390" y="100" width="120" height="72" rx="6" fill="#fff" stroke="#555" stroke-width="1"/>
+    <text x="450" y="117" text-anchor="middle" font-size="9" font-weight="600" fill="#333">infra-team</text>
+    <line x1="400" y1="124" x2="500" y2="124" stroke="#eee" stroke-width="1"/>
+    <text x="450" y="142" text-anchor="middle" font-size="14">&#x1F464;</text>
+    <text x="450" y="157" text-anchor="middle" font-size="9" font-weight="600" fill="#333">Jerry</text>
+    <text x="450" y="168" text-anchor="middle" font-size="7" fill="#888">security engineer</text>
+
+    <!-- photos-team group -->
+    <rect x="530" y="100" width="120" height="72" rx="6" fill="#fff" stroke="#555" stroke-width="1"/>
+    <text x="590" y="117" text-anchor="middle" font-size="9" font-weight="600" fill="#333">photos-team</text>
+    <line x1="540" y1="124" x2="640" y2="124" stroke="#eee" stroke-width="1"/>
+    <text x="590" y="142" text-anchor="middle" font-size="14">&#x1F464;</text>
+    <text x="590" y="157" text-anchor="middle" font-size="9" font-weight="600" fill="#333">Tom</text>
+    <text x="590" y="168" text-anchor="middle" font-size="7" fill="#888">customer support</text>
+  </g>
+
+  <!-- Arrows from groups to account -->
+  <path d="M 390 150 Q 270 170 137 182" fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="140,178 133,181 138,187" fill="#555"/>
+  <text x="260" y="175" text-anchor="middle" font-size="7" fill="#555">infra key access</text>
+
+  <path d="M 530 172 Q 340 210 137 192" fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="140,189 133,192 138,197" fill="#555"/>
+  <text x="345" y="210" text-anchor="middle" font-size="7" fill="#555">data key access</text>
+
+  <!-- Legend -->
+  <text x="350" y="242" text-anchor="middle" font-size="9" fill="#555">Organizations answers: <tspan font-weight="600">how are accounts structured?</tspan></text>
+  <text x="350" y="257" text-anchor="middle" font-size="9" fill="#555">Identity Center answers: <tspan font-weight="600">who can access which accounts?</tspan></text>
+</svg>
+</div>
+
+<p style="font-size:0.88rem;color:#666;"><strong>Click</strong> the left or right side of the diagram to learn more about each service.</p>
+
+<!-- Clickable callout panels -->
+<div id="panel-orgs" class="callout info" style="display:none;">
+  <p><strong>AWS Organizations</strong> manages accounts. Accounts are grouped into Organizational Units (OUs) &mdash; Production and Staging in the lab. Service Control Policies (SCPs) set the maximum permissions for all accounts in an OU &mdash; even if an IAM policy allows an action, an SCP can block it. Consolidated billing aggregates costs across all accounts into a single bill. Organizations is a prerequisite for Identity Center.</p>
+</div>
+
+<div id="panel-idc" class="callout info" style="display:none;">
+  <p><strong>IAM Identity Center</strong> manages people. Users are organized into groups (infra-team, photos-team). Each group is assigned a permission set (InfraAdmin, PhotosAdmin) for specific accounts. When a user logs in via the SSO portal and selects an account, Identity Center creates an IAM role from the permission set and calls STS:AssumeRole &mdash; issuing temporary credentials that expire automatically. One user, one directory, one disable to revoke all access.</p>
+</div>
+
+<table>
+  <thead><tr><th></th><th>AWS Organizations</th><th>IAM Identity Center</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Manages</strong></td><td>Accounts</td><td>People</td></tr>
+    <tr><td><strong>Groups into</strong></td><td>OUs (Production, Staging)</td><td>Groups (infra-team, photos-team)</td></tr>
+    <tr><td><strong>Controls</strong></td><td>SCPs &mdash; maximum permissions per account</td><td>Permission sets &mdash; what a person can do in an account</td></tr>
+    <tr><td><strong>Billing</strong></td><td>Consolidated across all accounts</td><td>&mdash;</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Solution:</strong> Identity Center manages Tom and Jerry once, centrally. Permission sets define per-account access. Every login goes through STS &mdash; temporary credentials only. One disable revokes access everywhere.</p>
 
 <div class="flow-diagram">
 <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
@@ -569,6 +688,18 @@
 function toggleVuln(id) {
   var body = document.getElementById(id);
   body.classList.toggle('open');
+}
+
+function showMgmtPanel(id) {
+  var orgs = document.getElementById('panel-orgs');
+  var idc = document.getElementById('panel-idc');
+  if (id === 'orgs') {
+    idc.style.display = 'none';
+    orgs.style.display = orgs.style.display === 'none' ? 'block' : 'none';
+  } else {
+    orgs.style.display = 'none';
+    idc.style.display = idc.style.display === 'none' ? 'block' : 'none';
+  }
 }
 </script>
 </body>
