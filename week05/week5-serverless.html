@@ -334,7 +334,6 @@
       <text x="465" y="112" text-anchor="middle" font-size="8" fill="#666" font-family="system-ui">execution role</text>
     </g>
     <line x1="520" y1="85" x2="570" y2="85" stroke="#E65100" stroke-width="2" marker-end="url(#arrow-orange)"/>
-    <text x="545" y="77" text-anchor="middle" font-size="8" fill="#E65100" font-family="system-ui">endpoint</text>
     <!-- DynamoDB -->
     <g id="tnode-dynamo" onclick="selectTierNode('dynamo')" style="cursor:pointer;">
       <rect x="570" y="50" width="110" height="70" rx="8" fill="#fff" stroke="#E65100" stroke-width="2"/>
@@ -565,7 +564,7 @@
 </div>
 
 <div class="callout info">
-  <p><strong>Verify in DevTools:</strong> Open your Photo Viewer site in the browser. Press <strong>F12</strong> (or right-click → Inspect) to open DevTools, then go to the <strong>Network</strong> tab. Reload the page and click the <code>/photos</code> request. In the Response Headers you should see <code>Via: CloudFront</code> — confirming the request went through CloudFront — and no <code>Server: Werkzeug</code> header. That header is gone because there is no longer a Flask server. The response came from Lambda via API Gateway.</p>
+  <p><strong>Verify in DevTools:</strong> Open your Photo Viewer site in the browser. Press <strong>F12</strong> (or right-click → Inspect) to open DevTools, then go to the <strong>Network</strong> tab. Reload the page and click the <code>/photos</code> request. In the Response Headers you should see <code>Via: CloudFront</code> — confirming the request went through CloudFront — and no <code>Server: Werkzeug</code> header. That header is gone because the backend is now serverless. The response came from Lambda via API Gateway.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
@@ -588,7 +587,7 @@
       <li><strong>Memory</strong> — allocated RAM (128MB–10GB). CPU allocation scales proportionally.</li>
       <li><strong>Concurrency</strong> — each simultaneous request gets its own environment. Lambda scales horizontally automatically. Default account limit: 1,000 concurrent executions per region.</li>
     </ul>
-    <p><strong>In the demo:</strong> <code>lambda_function.py</code> handles <code>GET /photos</code> — scans DynamoDB, returns JSON. No Flask, no port to listen on, no server to manage.</p>
+    <p><strong>In the demo:</strong> <code>lambda_function.py</code> handles <code>GET /photos</code> — scans DynamoDB, returns JSON. No web framework, no port to listen on, no server to manage.</p>
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-apigw-comp')">

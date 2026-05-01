@@ -156,7 +156,7 @@ Browser → WAF/CloudFront → API Gateway → Lambda → DynamoDB
   <p>Go back to your Lambda function → <strong>Code tab.</strong> You will see a default <code>lambda_function.py</code> with a placeholder. Replace the entire contents with the code from the Week 5 GitHub repo.</p>
   <div class="note"><strong>You must click Deploy after pasting.</strong> The Lambda code editor is just a text editor — the running function does not update until you explicitly click <strong>Deploy</strong>. This is different from API Gateway's Auto-deploy, which applies only to route and integration changes, not to Lambda function code. If you skip Deploy, the old hello-world placeholder keeps running and every request will fail.</div>
   <p>Click <strong>Deploy</strong> — wait for the green "Changes deployed" confirmation before moving on.</p>
-  <div class="info">The function uses <code>Attr('is_public').eq(True)</code> to filter the DynamoDB scan — the same logic as <code>app.py</code> in Week 4 but without Flask, ports, or a server process. No packages need to be installed — <code>boto3</code> is provided by the Lambda runtime automatically.</div>
+  <div class="info">The function uses <code>Attr('is_public').eq(True)</code> to filter the DynamoDB scan — the same logic as <code>app.py</code> in Week 4 but without a web framework, ports, or a server process. No packages need to be installed — <code>boto3</code> is provided by the Lambda runtime automatically.</div>
 </div>
 
 <div class="part">
@@ -314,7 +314,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
     <li>Status: <strong>200</strong></li>
     <li>Response: a JSON array of photo objects</li>
     <li>Response headers include <code>Via: CloudFront</code></li>
-    <li>No <code>Server: Werkzeug</code> header — Flask and EC2 are gone</li>
+    <li>No <code>Server: Werkzeug</code> header — EC2 is gone</li>
   </ul>
   <div class="info"><strong>✓ CloudShell verify:</strong>
   <pre>curl -s https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/photos</pre>
@@ -375,10 +375,10 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <p>In the <strong>Response Headers</strong> panel confirm:</p>
   <ul>
     <li><code>Via: 1.1 XXXXXXXXXX.cloudfront.net (CloudFront)</code> — request went through CloudFront ✓</li>
-    <li><strong>No</strong> <code>Server: Werkzeug</code> header — Flask on EC2 is gone ✓</li>
+    <li><strong>No</strong> <code>Server: Werkzeug</code> header — EC2 is gone ✓</li>
     <li><code>x-amzn-requestid</code> — present, confirming the response came from API Gateway / Lambda ✓</li>
   </ul>
-  <div class="success"><strong>Expected result:</strong> Photos load correctly and DevTools confirms the response is no longer coming from Flask/EC2.</div>
+  <div class="success"><strong>Expected result:</strong> Photos load correctly and DevTools confirms the response is no longer coming from EC2.</div>
   <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading in browser + DevTools Network tab showing the /photos request with Via: CloudFront header and no Server: Werkzeug header</div>
 </div>
 
@@ -502,7 +502,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <tr><td>ALB and EC2 deleted</td><td>5</td><td>EC2 in terminated state, no active load balancers visible.</td></tr>
   <tr><td>WAF Web ACL with rate-based rule</td><td>15</td><td>Web ACL shows photos-rate-limit rule scoped to /photos URI path. CloudFront distribution listed as associated resource.</td></tr>
   <tr><td>End-to-end browser verification</td><td>20</td><td>Photo Viewer loads correctly. DevTools shows Via: CloudFront header and no Server: Werkzeug header on the /photos request.</td></tr>
-  <tr><td>CloudWatch Logs verification</td><td>8</td><td>Log group /aws/lambda/photoviewer-lambda shows START/END/REPORT entries corresponding to page loads.</td></tr>
+  <tr><td>CloudWatch Logs verification</td><td>5</td><td>Log group /aws/lambda/photoviewer-lambda shows START/END/REPORT entries corresponding to page loads.</td></tr>
   <tr><td>Reflection Q1</td><td>4</td><td>Correctly explains that the secret header prevents open access but is a shared secret — anyone who discovers it can call the API directly. Correctly identifies that aws:SourceArn would be stronger as it's IAM-enforced and tied to a specific distribution ARN with no secret to discover.</td></tr>
   <tr><td>Reflection Q2</td><td>3</td><td>Correctly identifies that Lambda provides boto3 natively with no install step, eliminating the NAT Gateway and the supply chain risk of pulling packages from the internet.</td></tr>
   <tr><td>Reflection Q3</td><td>3</td><td>Correctly identifies that WAF rate limits traffic volume (including from CloudFront) while the Lambda authorizer blocks requests not originating from CloudFront — complementary controls at different layers.</td></tr>
