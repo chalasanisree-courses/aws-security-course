@@ -81,6 +81,10 @@
 git -C aws-security-course pull
 bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   <p>The script verifies your Week 8 environment is intact: both KMS keys exist and are enabled, S3/DynamoDB are encrypted with the data key, Secrets Manager is encrypted with the infra key, and the Photo Viewer loads. It also prints the key ARNs you'll need for permission sets and policies. Address any errors before proceeding.</p>
+
+  <div class="callout warn">
+    <p><strong>Region check:</strong> All Photo Viewer resources are in <code>us-east-1</code> (N. Virginia). The console sometimes resets to a different region &mdash; especially after Switch Role or logging in via the SSO portal. If you see "No tables," "No secrets," or unexpected empty pages, check the region dropdown in the top-right before troubleshooting.</p>
+  </div>
 </div>
 
 
@@ -226,7 +230,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   ]
 }</code></pre>
 
-    <div class="callout info">
+    <div class="callout">
       <p><strong>Replace <code>ACCOUNT-ID</code> and <code>INFRA-KEY-ID</code></strong> with your actual values. The infra key ARN is on the KMS console page for <code>photoviewer-infra-key</code>.</p>
     </div>
   </div>
@@ -275,8 +279,12 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   ]
 }</code></pre>
 
-    <div class="callout info">
+    <div class="callout">
       <p><strong>Replace <code>BUCKET-NAME</code>, <code>ACCOUNT-ID</code>, and <code>DATA-KEY-ID</code></strong> with your actual values.</p>
+    </div>
+
+    <div class="callout info">
+      <p><strong>Why does <code>kms:Decrypt</code> in the permission set work?</strong> The KMS console wizard adds a statement to every key policy that delegates authority to IAM. This means IAM policies granting <code>kms:Decrypt</code> are honored by KMS. In Part 3, you'll see the alternative approach &mdash; adding a principal directly to the key policy instead.</p>
     </div>
 
     <div class="screenshot">Identity Center showing both permission sets: <code>InfraAdmin</code> and <code>PhotosAdmin</code></div>
@@ -306,6 +314,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>Open an <strong>incognito/private browser window</strong>. Go to the SSO portal URL from Step 4. Log in as <code>jerry</code> with the one-time password, then set a new password.</p>
     <p>The portal shows your AWS account with the <code>InfraAdmin</code> permission set. Click <strong>Management Console</strong>.</p>
     <p>Look at the <strong>top-right of the console</strong> &mdash; you'll see a role name like <code>AWSReservedSSO_InfraAdmin_...</code>, not a username. This is the IAM role that Identity Center created behind the scenes and assumed on your behalf.</p>
+    <p><strong>Important:</strong> Verify the region is set to <code>us-east-1</code> (N. Virginia). The SSO portal may open the console in a different region.</p>
   </div>
 </div>
 
@@ -315,7 +324,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Verify Jerry's access</span>
   </div>
   <div class="step-body">
-    <p>Test what Jerry can and cannot do:</p>
+    <p>Confirm the region is <code>us-east-1</code> (N. Virginia) before testing. Then test what Jerry can and cannot do:</p>
     <ul>
       <li>Go to <strong>Secrets Manager</strong> &rarr; view the <code>photoviewer/origin-verify-secret</code> value &rarr; <strong>CAN</strong> view it &#x2713;</li>
       <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; try to download a photo &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
@@ -470,7 +479,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>This says: <em>"I am allowed to assume the photo-auditor-role."</em></p>
 
     <div class="callout info">
-      <p><strong>Both sides must agree.</strong> The <strong>user</strong> needs an identity-based policy (<code>sts:AssumeRole</code>). The <strong>role</strong> needs a trust policy naming the user. If either side is missing, the assumption fails. This is the same dual-policy pattern as KMS &mdash; same logic, different resource type.</p>
+      <p><strong>Both sides must agree.</strong> The <strong>role's</strong> trust policy names who can assume it. The <strong>user's</strong> identity policy says what they're allowed to do. In this lab, we set up both for explicitness &mdash; though for same-account access, the trust policy naming a specific user is sufficient on its own.</p>
     </div>
   </div>
 </div>
@@ -510,6 +519,8 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>Click <strong>Switch Role</strong>.</p>
     <p>The <strong>console header changes color</strong> and shows <code>Auditor</code> &mdash; you are now operating as a different principal. You are no longer <code>external-auditor</code> (zero permissions). You are now <code>photo-auditor-role</code> (DynamoDB read access).</p>
 
+    <p><strong>Important:</strong> Verify the region is set to <code>us-east-1</code> (N. Virginia) after switching roles. The console may reset the region.</p>
+
     <div class="screenshot">Console header showing the role name and changed color after Switch Role</div>
   </div>
 </div>
@@ -520,6 +531,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Verify auditor access</span>
   </div>
   <div class="step-body">
+    <p>Confirm the region is <code>us-east-1</code> (N. Virginia) &mdash; it may have reset after Switch Role. Then test:</p>
     <ul>
       <li>Go to <strong>DynamoDB</strong> &rarr; scan the photoviewer-photos table &rarr; <strong>WORKS</strong> &#x2713;</li>
       <li>Go to <strong>S3</strong> &rarr; try to download a photo &rarr; <strong>Access Denied</strong> &#x2717; (role has no S3 permissions yet)</li>
@@ -619,15 +631,11 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
       <li><strong>S3 authorization:</strong> The auditor role's IAM policy grants <code>s3:GetObject</code> &mdash; S3 allows the read.</li>
       <li><strong>KMS authorization:</strong> The data key's key policy grants the auditor role <code>kms:Decrypt</code> &mdash; KMS allows the decryption.</li>
     </ul>
-    <p>This is the same dual-authorization pattern as role assumption: the role's trust policy and the user's identity policy must both agree. Here, the S3 identity policy and the KMS resource policy must both agree. Neither alone is sufficient.</p>
+    <p>S3 and KMS are two independent resources, each making their own authorization decision. Both must succeed for the download to work.</p>
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
       <p>The auditor can now download photos. S3 permission alone was not enough &mdash; the key policy had to explicitly name the auditor role as a principal allowed to decrypt.</p>
-    </div>
-
-    <div class="callout warn">
-      <p><strong>Security consequence:</strong> You just granted a third principal access to decrypt all user photos by modifying the key policy. In production, you would want a <strong>KMS grant</strong> instead of a permanent key policy statement (grants are revocable and can expire), <strong>time-bounded conditions</strong>, or <strong>MFA enforcement</strong> on the role assumption. You expanded the blast radius of the data key &mdash; that was a deliberate security decision.</p>
     </div>
 
     <div class="screenshot">S3 showing a photo successfully downloaded by the auditor role after adding the role to the data key's key policy</div>
