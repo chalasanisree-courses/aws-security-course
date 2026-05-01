@@ -853,7 +853,7 @@
             <div class="week-circle wc-building">11</div>
             <div class="ac-title-group">
               <div class="ac-title">Threat detection and automated response</div>
-              <div class="ac-subtitle">GuardDuty findings trigger automated remediation via EventBridge</div>
+              <div class="ac-subtitle">Macie, GuardDuty, Security Hub detect threats; EventBridge + Lambda automate remediation</div>
             </div>
           </div>
           <div class="ac-header-right">
@@ -861,9 +861,9 @@
               <span class="topic-tag">GuardDuty</span>
               <span class="topic-tag">Macie</span>
               <span class="topic-tag">Security Hub</span>
-              <span class="topic-tag">CloudTrail deep dive</span>
               <span class="topic-tag">EventBridge</span>
-              <span class="topic-tag">Automated remediation</span>
+              <span class="topic-tag">Image Validator</span>
+              <span class="topic-tag">Automated Remediation</span>
             </div>
           </div>
         </div>
@@ -872,14 +872,15 @@
       <div class="ac-body" id="w11">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">GuardDuty continuously analyzes CloudTrail events and DNS logs for threat indicators. Macie enabled on the S3 bucket — detects PII and sensitive data in user-uploaded photos. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into a single dashboard. EventBridge rules trigger Lambda remediation functions automatically when high-severity findings are raised.</div>
+          <div class="ac-section-text">Image validator Lambda checks every upload is a real image — Inspector flags known CVEs in the Pillow dependency. Macie detects PII in user-uploaded files. GuardDuty Malware Protection scans uploads for malware and analyzes CloudTrail events for adversarial behavior. Security Hub aggregates all findings into a single ASFF-normalized dashboard. EventBridge rules trigger automated response — SNS notification and a quarantine Lambda that moves flagged files immediately.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">GuardDuty enabled on the account — detects credential exfiltration, unusual API calls, and S3 data exposure. Macie monitors the S3 bucket and generates findings when it detects PII in user-uploaded photos. Security Hub with AWS Foundational Security Best Practices standard. EventBridge rule matches GuardDuty HIGH severity findings and invokes a Lambda function that revokes IAM credentials, isolates resources, or sends notifications via SNS.</div>
+          <div class="ac-section-text">Image validator Lambda with Pillow 9.5.0 (deliberately outdated — Inspector flags CVE-2023-50447). S3 event notification triggers validation on every upload to photos/. Macie one-time discovery job on the Photo Viewer bucket. GuardDuty with Malware Protection for S3 enabled. Security Hub with AWS Foundational Security Best Practices standard. EventBridge rule matches GuardDuty findings with severity ≥ 7, routing to two targets: SNS topic for notification and a quarantine Lambda that moves flagged objects from photos/ to quarantine/.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-guardduty.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-detection.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-lab-assignment.html" target="_blank">📋 Lab assignment</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week11" target="_blank">⌥ View Week 11 code on GitHub</a>
         </div>
       </div>
@@ -954,6 +955,8 @@
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 9</button>
         <button class="pent-btn" data-week="10" onclick="pentSelectWeek('10')"
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 10</button>
+        <button class="pent-btn" data-week="11" onclick="pentSelectWeek('11')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 11</button>
       </div>
 
       <!-- Pentagon SVG -->
@@ -1138,6 +1141,15 @@
           'No detection of adversarial behavior. This week monitors configuration drift, performance degradation, and known vulnerabilities — all inward-facing concerns. None of these tools detect an attacker. If someone exfiltrates IAM credentials and makes API calls from an unfamiliar IP, CloudWatch won\'t flag it, Config won\'t flag it, and Inspector won\'t flag it. GuardDuty detects adversarial behavior by analyzing VPC flow logs, DNS logs, and CloudTrail events.'
         ]}
       }
+    },
+    '11': {
+      active: ['security'],
+      issues: {
+        security: { title:'Security issues in Week 11', bullets:[
+          'Everything built so far applies to a single AWS account. In production, workloads run across multiple accounts — production, staging, development, audit. A single misconfigured account can compromise the entire organization.',
+          'No organizational guardrails. There is nothing preventing an administrator from deleting CloudTrail, making an S3 bucket public, or creating resources in unauthorized regions. Service Control Policies (SCPs) enforce boundaries that no individual account can override — even the root user.'
+        ]}
+      }
     }
   };
 
@@ -1319,12 +1331,12 @@
       </div>
 
       <div class="ac-section">
-        <div class="ac-section-label">Week 11: Threat Detection</div>
+        <div class="ac-section-label">Week 11: Incident Detection & Response</div>
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
-          <ul style="margin:4px 0 10px;padding-left:18px;"><li>GuardDuty EKS/RDS/S3/Malware Protection (full coverage)</li><li>Trusted IP lists (whitelist office/VPN IPs)</li><li>Macie automated full-estate sensitive data discovery</li><li>Security Hub integrations (50+ AWS and partner services)</li><li>Security Hub standards (AWS Foundational Security Best Practices, CIS)</li><li>EventBridge advanced content-based filtering</li><li>Automated incident response (auto-isolate instances, auto-disable IAM users, auto-snapshot for forensics, auto-block IPs in WAF)</li></ul>
-          <strong style="color:#0C447C;">Why we skipped:</strong> EKS/RDS not relevant (no EKS/RDS in Photo Viewer). Advanced auto-response risks breaking things in learning environment.<br>
-          <strong style="color:#0C447C;">When you'd use it:</strong> All GuardDuty protections in production. Macie for regulated industries with PII requirements. Automated response for 24/7 incident handling without on-call staff.
+          <ul style="margin:4px 0 10px;padding-left:18px;"><li>GuardDuty EKS/RDS Protection plans (full coverage beyond S3)</li><li>Trusted IP lists (whitelist office/VPN IPs to reduce false positives)</li><li>Macie automated scheduled discovery (continuous instead of one-time)</li><li>Security Hub integrations (50+ AWS and partner services)</li><li>Security Hub custom actions and automated remediation playbooks</li><li>EventBridge advanced content-based filtering with input transformers</li><li>Multi-target remediation (auto-isolate instances, auto-disable IAM users, auto-snapshot for forensics, auto-block IPs in WAF)</li><li>Image validator with current Pillow version and broader file-type validation</li></ul>
+          <strong style="color:#0C447C;">Why we skipped:</strong> EKS/RDS not relevant (no EKS/RDS in Photo Viewer). Deliberately outdated Pillow used to demonstrate Inspector CVE detection. Advanced auto-response risks breaking things in learning environment.<br>
+          <strong style="color:#0C447C;">When you'd use it:</strong> All GuardDuty protections in production. Scheduled Macie jobs for regulated industries with PII requirements. Multi-target automated response for 24/7 incident handling without on-call staff.
         </div>
       </div>
 

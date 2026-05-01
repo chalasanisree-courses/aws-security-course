@@ -362,16 +362,11 @@ s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
     detail = event.get('detail', {})
-    resource = detail.get('resource', {})
 
-    # Extract bucket and key from the GuardDuty finding
-    s3_details = resource.get('s3BucketDetails', [{}])[0]
-    bucket = s3_details.get('name', '')
-
-    # For S3 malware findings, the key is in the resource details
-    key = ''
-    for item in detail.get('resource', {}).get('s3ObjectDetails', []):
-        key = item.get('key', '')
+    # Extract bucket and key from the Malware Protection scan result
+    s3_object = detail.get('s3ObjectDetails', {})
+    bucket = s3_object.get('bucketName', '')
+    key = s3_object.get('objectKey', '')
 
     if not bucket or not key:
         print(f'Could not extract bucket/key from event: {json.dumps(event)}')
@@ -400,25 +395,43 @@ def lambda_handler(event, context):
 <p>Add <code>AmazonS3FullAccess</code> to the Lambda execution role (same as the image validator).</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 20</span><span class="step-title">Add the Lambda as a second EventBridge target</span></div><div class="step-body">
-<p>Go to <strong>EventBridge &rarr; Rules &rarr; guardduty-high-severity-alert &rarr; Edit</strong>.</p>
-<p>Add a second target to the existing rule:</p>
+<div class="step"><div class="step-header"><span class="step-num">Step 20</span><span class="step-title">Create an EventBridge rule for malware scan results</span></div><div class="step-body">
+<p>The rule from Step 16 matches standard GuardDuty findings (credential compromise, unusual API calls). Malware Protection for S3 emits a <em>different</em> event type &mdash; <code>GuardDuty Malware Protection Object Scan Result</code> &mdash; with a different JSON structure. It needs its own rule.</p>
+<p>Go to <strong>Amazon EventBridge &rarr; Rules &rarr; Create rule</strong>.</p>
 <ul>
-  <li>Target type: <strong>AWS service &rarr; Lambda function</strong></li>
-  <li>Function: <code>photoviewer-quarantine</code></li>
+  <li>Name: <code>guardduty-malware-quarantine</code></li>
+  <li>Event bus: <strong>default</strong></li>
+  <li>Rule type: <strong>Rule with an event pattern</strong></li>
 </ul>
-<p>The rule now has two targets: SNS (notification) and Lambda (remediation). Both fire simultaneously when a high-severity finding matches.</p>
+<p>Event pattern:</p>
+<pre>{
+  "source": ["aws.guardduty"],
+  "detail-type": ["GuardDuty Malware Protection Object Scan Result"],
+  "detail": {
+    "scanResultDetails": {
+      "scanResultStatus": ["THREATS_FOUND"]
+    }
+  }
+}</pre>
+<p>This matches any Malware Protection scan that found threats. Add two targets:</p>
+<ul>
+  <li><strong>Target 1:</strong> SNS topic &mdash; same topic as the standard findings rule</li>
+  <li><strong>Target 2:</strong> Lambda function &rarr; <code>photoviewer-quarantine</code></li>
+</ul>
+<p>Click <strong>Create rule</strong>.</p>
+<p>You now have two EventBridge rules: one for standard GuardDuty findings (notification only), one for malware scan results (notification + quarantine). The malware rule has two targets &mdash; SNS tells Jerry, Lambda acts immediately.</p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 21</span><span class="step-title">Test the full loop</span></div><div class="step-body">
 <p>Upload a new EICAR test file to <code>photos/</code> (name it <code>malware-test.jpg</code>).</p>
-<p>Wait for GuardDuty Malware Protection to scan and generate a finding. When the finding fires:</p>
+<p>Wait for GuardDuty Malware Protection to scan and generate a scan result (this may take several minutes). When the scan result fires:</p>
 <ul>
-  <li>EventBridge matches the pattern (severity &ge; 7)</li>
+  <li>EventBridge matches the <code>guardduty-malware-quarantine</code> rule (scan result = THREATS_FOUND)</li>
   <li>SNS sends Jerry an email (notification)</li>
   <li>The quarantine Lambda moves the file from <code>photos/</code> to <code>quarantine/</code> (remediation)</li>
 </ul>
 <p>Check the S3 bucket. The file should no longer be in <code>photos/</code>. It should be in <code>quarantine/</code>.</p>
+<p><strong>Troubleshooting:</strong> If the file does not move, check the quarantine Lambda&rsquo;s CloudWatch Logs for errors. The most common issue is missing S3 permissions on the Lambda execution role.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>The full detection-to-remediation loop works: GuardDuty detects malware &rarr; EventBridge matches &rarr; SNS notifies Jerry &rarr; Lambda quarantines the file. No human intervention required.</p>
 </div>
@@ -434,7 +447,7 @@ def lambda_handler(event, context):
 <ul>
   <li><strong>Disable Macie</strong> &mdash; free trial runs for 30 days, then charges begin. Go to Macie &rarr; Settings &rarr; Disable Macie.</li>
   <li><strong>Disable GuardDuty</strong> &mdash; free trial runs for 30 days, then charges begin. Go to GuardDuty &rarr; Settings &rarr; Suspend/Disable GuardDuty.</li>
-  <li><strong>Delete test files</strong> &mdash; remove <code>test-photo.jpg</code>, <code>malware-test.jpg</code>, and <code>customer-data.txt</code> from both <code>photos/</code> and <code>quarantine/</code> prefixes.</li>
+  <li><strong>Delete test files</strong> &mdash; remove <code>suspicious.jpg</code> (Step 4), <code>test-photo.jpg</code> (Step 12), <code>malware-test.jpg</code> (Step 21), <code>customer-data.txt</code> (Step 8), and any test photos uploaded in Step 4 from both <code>photos/</code> and <code>quarantine/</code> prefixes.</li>
   <li><strong>Keep Security Hub running</strong> &mdash; needed for the production hardening review next week.</li>
   <li><strong>Keep both Lambda functions</strong> &mdash; the image validator and quarantine Lambda demonstrate real detection and remediation.</li>
 </ul>
@@ -474,11 +487,11 @@ def lambda_handler(event, context):
     <tr><td><strong>GuardDuty sample findings</strong></td><td>3</td><td>Screenshot: Three sample findings of different severity levels.</td></tr>
     <tr><td><strong>Security Hub enabled</strong></td><td>2</td><td>Screenshot: Security Hub dashboard showing aggregated findings.</td></tr>
     <tr><td><strong>Security Hub multi-source</strong></td><td>5</td><td>Screenshot: Security Hub findings from at least three different sources visible.</td></tr>
-    <tr><td><strong>EventBridge rule created</strong></td><td>4</td><td>Screenshot: EventBridge rule showing GuardDuty event pattern with severity &ge; 7.</td></tr>
+    <tr><td><strong>EventBridge rule created</strong></td><td>4</td><td>Screenshot: EventBridge rule <code>guardduty-high-severity-alert</code> showing GuardDuty Finding event pattern with severity &ge; 7.</td></tr>
     <tr><td><strong>EventBridge alert received</strong></td><td>5</td><td>Screenshot: Email notification from EventBridge &rarr; SNS for a high-severity finding.</td></tr>
     <tr><td><strong>Quarantine Lambda deployed</strong></td><td>4</td><td>Screenshot: Lambda console showing <code>photoviewer-quarantine</code> function.</td></tr>
-    <tr><td><strong>Quarantine Lambda as EventBridge target</strong></td><td>3</td><td>Screenshot: EventBridge rule showing two targets &mdash; SNS and Lambda.</td></tr>
-    <tr><td><strong>Automated quarantine works</strong></td><td>6</td><td>Screenshot: EICAR file moved from <code>photos/</code> to <code>quarantine/</code> automatically after GuardDuty finding.</td></tr>
+    <tr><td><strong>Malware quarantine rule</strong></td><td>3</td><td>Screenshot: EventBridge rule <code>guardduty-malware-quarantine</code> showing Malware Protection scan result pattern with two targets &mdash; SNS and Lambda.</td></tr>
+    <tr><td><strong>Automated quarantine works</strong></td><td>6</td><td>Screenshot: EICAR file moved from <code>photos/</code> to <code>quarantine/</code> automatically after GuardDuty malware scan.</td></tr>
     <tr><td><strong>Reflection Q1 &mdash; encryption vs classification</strong></td><td>8</td><td>Encryption protects <em>confidentiality</em> &mdash; unauthorized users cannot read the data. Macie detects <em>content</em> &mdash; it classifies what kind of data is present. Encryption does not prevent authorized services (like Macie) from reading and classifying the data. Different problems, different tools.</td></tr>
     <tr><td><strong>Reflection Q2 &mdash; upgrade despite unused code path</strong></td><td>7</td><td>Yes, upgrade. Future code changes might use the vulnerable function. Automated compliance tools flag the version regardless. An attacker who gains code execution could import and call any function in the package. Defense in depth means not relying on one layer of protection.</td></tr>
     <tr><td><strong>Reflection Q3 &mdash; multi-service incident</strong></td><td>7</td><td>Example: An attacker exploits the Pillow CVE (Inspector flagged it) to execute code, disables S3 encryption (Config detects drift), and exfiltrates data (GuardDuty detects unusual API calls). One incident, three services, three perspectives.</td></tr>

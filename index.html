@@ -676,18 +676,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w11')">
       <span class="week-num">Week 11</span>
-      <span class="week-title">Threat Detection — GuardDuty + Macie + Security Hub + EventBridge</span>
+      <span class="week-title">Incident Detection & Response — GuardDuty + Macie + Security Hub + EventBridge</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w11-chev">▶</span>
     </div>
     <div class="week-body" id="w11">
-      <p class="week-desc">GuardDuty enabled — continuously analyzes CloudTrail events and DNS logs for threat indicators including credential exfiltration and unusual API calls. Macie enabled on the S3 bucket — detects PII and sensitive data in user-uploaded photos. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie. EventBridge rule matches high-severity findings and invokes a Lambda remediation function. CloudTrail deep dive: management vs data events, multi-region trails, log integrity.</p>
+      <p class="week-desc">Image validator Lambda deployed — verifies uploaded files are real images; Inspector flags known CVEs in Pillow dependency. Macie detects PII in user-uploaded files. GuardDuty Malware Protection scans uploads for malware and analyzes CloudTrail events for adversarial behavior. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into ASFF. EventBridge rule matches high-severity findings — SNS notifies, quarantine Lambda remediates automatically.</p>
       <div class="resource-list">
-        <a class="resource-link" href="week11/week11-guardduty.html">
-          <span class="icon">◈</span> Threat Detection and Response — concept notes
+        <a class="resource-link" href="week11/week11-detection.html">
+          <span class="icon">◈</span> Incident Detection & Response — concept notes
         </a>
         <a class="resource-link" href="week11/week11-lab-assignment.html">
-          <span class="icon">◈</span> Week 11 Lab — GuardDuty + Macie + EventBridge Remediation
+          <span class="icon">◈</span> Week 11 Lab — Incident Detection & Response
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>

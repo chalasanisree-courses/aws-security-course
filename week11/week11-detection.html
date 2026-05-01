@@ -157,7 +157,7 @@
 <p><strong>Learning objectives</strong></p>
 <ul>
   <li>Distinguish between monitoring (inward-facing) and detection (adversary-facing)</li>
-  <li>Identify three categories of threat actors: careless insiders, malicious uploaders, and latent dependency risks</li>
+  <li>Identify three threat categories addressed this week: careless data exposure, malicious content, and vulnerable dependencies</li>
   <li>Explain how Macie classifies sensitive data in S3 objects by scanning content patterns</li>
   <li>Explain how GuardDuty detects threats by analyzing CloudTrail, VPC flow logs, DNS logs, and S3 object scans</li>
   <li>Explain how Security Hub normalizes findings from multiple services into a single dashboard using ASFF</li>
@@ -376,15 +376,15 @@ function showThreat(idx) {
 <p>Security Hub shows findings in a dashboard. But dashboards require someone watching. EventBridge closes the loop by matching finding events against patterns and routing them to targets automatically.</p>
 
 <div class="flow-container">
-  <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>Event source:</strong> GuardDuty generates a finding (e.g., malware detected in S3).</div></div>
-  <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>Event bus:</strong> The finding is published to the default EventBridge event bus as a structured JSON event.</div></div>
-  <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>Rule matches:</strong> An EventBridge rule matches on <code>source = aws.guardduty</code> and <code>severity &ge; 7</code>.</div></div>
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>Event source:</strong> GuardDuty Malware Protection scans an uploaded S3 object and publishes a scan result.</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>Event bus:</strong> The scan result is published to the default EventBridge event bus as a structured JSON event.</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>Rule matches:</strong> An EventBridge rule matches on <code>source = aws.guardduty</code> and <code>scanResultStatus = THREATS_FOUND</code>.</div></div>
   <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>Target 1 &mdash; notification:</strong> The rule sends the event to an SNS topic. SNS delivers an email to Jerry.</div></div>
   <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Target 2 &mdash; remediation:</strong> The same rule triggers a quarantine Lambda that moves the flagged S3 object from <code>photos/</code> to <code>quarantine/</code>.</div></div>
   <div class="flow-step"><div class="flow-num">6</div><div class="flow-text"><strong>At 3 AM:</strong> Nobody is watching the dashboard. The email arrives, and the malicious file is already quarantined. Jerry wakes up and the situation is already contained.</div></div>
 </div>
 
-<p>One EventBridge rule, two targets, two response types running simultaneously. Notification tells a human; remediation acts immediately. In production, automated remediation requires careful tuning &mdash; quarantining a legitimate file is a false-positive outage. Most organizations start with notifications and graduate to automated remediation as they gain confidence in their detection rules.</p>
+<p>One rule, two targets, two response types running simultaneously. Notification tells a human; remediation acts immediately. A second EventBridge rule matches standard GuardDuty findings (credential compromise, unusual API calls) at severity &ge; 7, routing those to SNS for notification. Different event types require separate rules &mdash; but the pattern is the same. In production, automated remediation requires careful tuning &mdash; quarantining a legitimate file is a false-positive outage. Most organizations start with notifications and graduate to automated remediation as they gain confidence in their detection rules.</p>
 
 
 <!-- ═══════════════ SECTION 4 ═══════════════ -->
@@ -419,7 +419,8 @@ function showThreat(idx) {
 <details>
   <summary>EventBridge event patterns &mdash; matching on structure, not strings</summary>
   <div class="accordion-body">
-    <p>EventBridge rules match events by their JSON structure, not by string searching. The pattern:</p>
+    <p>EventBridge rules match events by their JSON structure, not by string searching. GuardDuty emits two different event types, each requiring its own pattern:</p>
+    <p><strong>Standard findings</strong> (credential compromise, unusual API calls):</p>
     <pre><code>{
   "source": ["aws.guardduty"],
   "detail-type": ["GuardDuty Finding"],
@@ -427,8 +428,18 @@ function showThreat(idx) {
     "severity": [{ "numeric": [">=", 7] }]
   }
 }</code></pre>
-    <p>This says: match any event from GuardDuty where the severity field in the detail object is numerically 7 or higher. Only High and Critical findings trigger the rule. Low and Medium findings pass through without action.</p>
-    <p>The same pattern language works for any AWS service event. You could match Config compliance changes, Inspector findings above a threshold, or Macie findings of specific PII types. EventBridge is the universal router for security automation.</p>
+    <p><strong>Malware Protection scan results</strong> (malicious files in S3):</p>
+    <pre><code>{
+  "source": ["aws.guardduty"],
+  "detail-type": ["GuardDuty Malware Protection Object Scan Result"],
+  "detail": {
+    "scanResultDetails": {
+      "scanResultStatus": ["THREATS_FOUND"]
+    }
+  }
+}</code></pre>
+    <p>The first pattern matches on severity &mdash; only High and Critical findings trigger the rule. The second matches on scan result &mdash; only objects where threats were found. Different event types, different JSON structures, but the same pattern-matching language.</p>
+    <p>This pattern language works for any AWS service event. You could match Config compliance changes, Inspector findings above a threshold, or Macie findings of specific PII types. EventBridge is the universal router for security automation.</p>
   </div>
 </details>
 
