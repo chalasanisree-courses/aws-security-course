@@ -654,18 +654,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w10')">
       <span class="week-num">Week 10</span>
-      <span class="week-title">Visibility + Compliance — CloudWatch, Config, Inspector, Trusted Advisor, Macie</span>
+      <span class="week-title">Visibility + Compliance — CloudWatch, Config, Inspector, Trusted Advisor</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w10-chev">▶</span>
     </div>
     <div class="week-body" id="w10">
-      <p class="week-desc">We've been setting up security controls manually — how do we know they're correct, and that they haven't drifted? CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce desired security posture — S3 public access block, KMS encryption, CloudTrail enabled. Inspector scans the Lambda function for known CVEs. Trusted Advisor checks security best practices across the account. Macie monitors S3 for PII in user-uploaded photos. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture.</p>
+      <p class="week-desc">We've been setting up security controls manually — how do we know they're correct, and that they haven't drifted? CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce desired security posture — S3 public access block, KMS encryption, CloudTrail enabled. Inspector scans the Lambda function for known CVEs. Trusted Advisor checks security best practices across the account. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture.</p>
       <div class="resource-list">
         <a class="resource-link" href="week10/week10-monitoring.html">
           <span class="icon">◈</span> Visibility and Compliance — concept notes
         </a>
         <a class="resource-link" href="week10/week10-lab-assignment.html">
-          <span class="icon">◈</span> Week 10 Lab — Config + Inspector + Trusted Advisor + Macie
+          <span class="icon">◈</span> Week 10 Lab — Config + Inspector + Trusted Advisor
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -676,18 +676,18 @@
   <div class="week-card">
     <div class="week-header" onclick="toggle('w11')">
       <span class="week-num">Week 11</span>
-      <span class="week-title">Threat Detection — GuardDuty + Security Hub + EventBridge</span>
+      <span class="week-title">Threat Detection — GuardDuty + Macie + Security Hub + EventBridge</span>
       <span class="week-domain"></span>
       <span class="week-chevron" id="w11-chev">▶</span>
     </div>
     <div class="week-body" id="w11">
-      <p class="week-desc">GuardDuty enabled — continuously analyzes CloudTrail events and DNS logs for threat indicators including credential exfiltration and unusual API calls. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie. EventBridge rule matches high-severity findings and invokes a Lambda remediation function. CloudTrail deep dive: management vs data events, multi-region trails, log integrity.</p>
+      <p class="week-desc">GuardDuty enabled — continuously analyzes CloudTrail events and DNS logs for threat indicators including credential exfiltration and unusual API calls. Macie enabled on the S3 bucket — detects PII and sensitive data in user-uploaded photos. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie. EventBridge rule matches high-severity findings and invokes a Lambda remediation function. CloudTrail deep dive: management vs data events, multi-region trails, log integrity.</p>
       <div class="resource-list">
         <a class="resource-link" href="week11/week11-guardduty.html">
           <span class="icon">◈</span> Threat Detection and Response — concept notes
         </a>
         <a class="resource-link" href="week11/week11-lab-assignment.html">
-          <span class="icon">◈</span> Week 11 Lab — GuardDuty + EventBridge Remediation
+          <span class="icon">◈</span> Week 11 Lab — GuardDuty + Macie + EventBridge Remediation
         </a>
         <span class="coming-soon">▸ Videos — see Canvas LMS</span>
       </div>
@@ -831,8 +831,8 @@
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Creates and secures REST APIs. Handles throttling, JWT authentication, and usage plans.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><span class="svc-abbr"> · Amazon Inspector</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 10</span></td>
+            <tr data-scope="regional" data-week="10">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/inspector/" target="_blank">Inspector</a></div><span class="svc-abbr"> · Amazon Inspector</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Automated CVE scanning for EC2 instances and Lambda functions. References NIST NVD for known vulnerabilities.</td>
             </tr>
@@ -876,13 +876,13 @@
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Stores and rotates credentials and API keys. Replaces hardcoded values in application code.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/config/" target="_blank">AWS Config</a></div><span class="svc-abbr"> · AWS Config</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 10</span></td>
+            <tr data-scope="regional" data-week="10">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/config/" target="_blank">AWS Config</a></div><span class="svc-abbr"> · AWS Config</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Continuously monitors resource configurations. Alerts when they drift from your security baseline.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/trustedadvisor/" target="_blank">Trusted Advisor</a></div><span class="svc-abbr"> · AWS Trusted Advisor</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-future">Week 10</span></td>
+            <tr data-scope="regional" data-week="10">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/trustedadvisor/" target="_blank">Trusted Advisor</a></div><span class="svc-abbr"> · AWS Trusted Advisor</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 10</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Inspects your account for security, cost, and performance improvements.</td>
             </tr>
@@ -891,8 +891,8 @@
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Creates and manages encryption keys for S3, DynamoDB, EBS, and other services.</td>
             </tr>
-            <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><span class="svc-abbr"> · Amazon Macie</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 10</span></td>
+            <tr data-scope="regional" data-week="11">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><span class="svc-abbr"> · Amazon Macie</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 11</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Machine learning discovery of PII and sensitive data in S3 buckets.</td>
             </tr>
@@ -928,7 +928,7 @@ function toggle(id) {
   chev.textContent = open ? '▶' : '▼';
 }
 
-const currentWeek = 9;
+const currentWeek = 10;
 document.querySelectorAll('.svc-table tbody tr').forEach(row => {
   const week = parseInt(row.getAttribute('data-week') || '0');
   if (week <= currentWeek) { row.classList.remove('future'); }

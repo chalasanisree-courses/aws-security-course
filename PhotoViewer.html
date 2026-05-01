@@ -814,7 +814,7 @@
             <div class="week-circle wc-building">10</div>
             <div class="ac-title-group">
               <div class="ac-title">Visibility and compliance</div>
-              <div class="ac-subtitle">Monitoring, vulnerability scanning, sensitive data discovery</div>
+              <div class="ac-subtitle">Monitoring, vulnerability scanning, configuration drift detection</div>
             </div>
           </div>
           <div class="ac-header-right">
@@ -823,7 +823,6 @@
               <span class="topic-tag">AWS Config</span>
               <span class="topic-tag">Inspector (Lambda)</span>
               <span class="topic-tag">Trusted Advisor</span>
-              <span class="topic-tag">Macie</span>
               <span class="topic-tag">CVE/NIST</span>
             </div>
           </div>
@@ -833,11 +832,11 @@
       <div class="ac-body" id="w10">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">Automated compliance checks, vulnerability scanning on the Lambda function, security best practice assessment, and sensitive data detection on the S3 bucket. Config rules alert on drift from the desired security posture. Trusted Advisor checks account-wide security best practices. Macie scans S3 for personally identifiable information in user-uploaded photos.</div>
+          <div class="ac-section-text">Automated compliance checks, vulnerability scanning on the Lambda function, and security best practice assessment. Config rules alert on drift from the desired security posture. Trusted Advisor checks account-wide security best practices.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce S3 public access block, KMS encryption on DynamoDB, and CloudTrail enabled. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Trusted Advisor reviews security checks — unrestricted security groups, MFA on root, S3 bucket permissions. Macie monitors the S3 bucket and generates findings when it detects PII. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture context for Inspector.</div>
+          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce S3 public access block, KMS encryption on DynamoDB, and CloudTrail enabled. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Trusted Advisor reviews security checks — unrestricted security groups, MFA on root, S3 bucket permissions. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture context for Inspector.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html" target="_blank">📄 Concept notes</a>
@@ -860,6 +859,7 @@
           <div class="ac-header-right">
             <div class="tags-wrap">
               <span class="topic-tag">GuardDuty</span>
+              <span class="topic-tag">Macie</span>
               <span class="topic-tag">Security Hub</span>
               <span class="topic-tag">CloudTrail deep dive</span>
               <span class="topic-tag">EventBridge</span>
@@ -872,11 +872,11 @@
       <div class="ac-body" id="w11">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">GuardDuty continuously analyzes CloudTrail events and DNS logs for threat indicators. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into a single dashboard. EventBridge rules trigger Lambda remediation functions automatically when high-severity findings are raised.</div>
+          <div class="ac-section-text">GuardDuty continuously analyzes CloudTrail events and DNS logs for threat indicators. Macie enabled on the S3 bucket — detects PII and sensitive data in user-uploaded photos. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into a single dashboard. EventBridge rules trigger Lambda remediation functions automatically when high-severity findings are raised.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">GuardDuty enabled on the account — detects credential exfiltration, unusual API calls, and S3 data exposure. Security Hub with AWS Foundational Security Best Practices standard. EventBridge rule matches GuardDuty HIGH severity findings and invokes a Lambda function that revokes IAM credentials, isolates resources, or sends notifications via SNS.</div>
+          <div class="ac-section-text">GuardDuty enabled on the account — detects credential exfiltration, unusual API calls, and S3 data exposure. Macie monitors the S3 bucket and generates findings when it detects PII in user-uploaded photos. Security Hub with AWS Foundational Security Best Practices standard. EventBridge rule matches GuardDuty HIGH severity findings and invokes a Lambda function that revokes IAM credentials, isolates resources, or sends notifications via SNS.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-guardduty.html" target="_blank">📄 Concept notes</a>
@@ -952,6 +952,8 @@
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 8</button>
         <button class="pent-btn" data-week="9" onclick="pentSelectWeek('9')"
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 9</button>
+        <button class="pent-btn" data-week="10" onclick="pentSelectWeek('10')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 10</button>
       </div>
 
       <!-- Pentagon SVG -->
@@ -1125,6 +1127,15 @@
         security: { title:'Security issues in Week 9', bullets:[
           'No automated monitoring of security posture. Encryption, key policies, permission sets, and role-based access have been built manually. There is no mechanism to detect configuration drift — if someone modifies a key policy, disables encryption, or changes a permission set, nothing alerts the team. AWS Config, CloudWatch, and Inspector address this gap.',
           'Uploaded files are still not scanned for malicious content. Macie can detect PII in S3 objects. GuardDuty Malware Protection can scan uploads. These are detection services — a different layer from encryption and access control.'
+        ]}
+      }
+    },
+    '10': {
+      active: ['security'],
+      issues: {
+        security: { title:'Security issues in Week 10', bullets:[
+          'Uploaded files are still not scanned for malicious content. Encryption protects confidentiality — it does not classify or inspect content. A user could upload a file containing credit card numbers or a disguised executable. Macie detects PII patterns in S3 objects. GuardDuty Malware Protection scans for malware. Both are detection services addressed in the next concept page.',
+          'No detection of adversarial behavior. This week monitors configuration drift, performance degradation, and known vulnerabilities — all inward-facing concerns. None of these tools detect an attacker. If someone exfiltrates IAM credentials and makes API calls from an unfamiliar IP, CloudWatch won\'t flag it, Config won\'t flag it, and Inspector won\'t flag it. GuardDuty detects adversarial behavior by analyzing VPC flow logs, DNS logs, and CloudTrail events.'
         ]}
       }
     }
@@ -1301,9 +1312,9 @@
         <div class="ac-section-label">Week 10: Monitoring & Compliance</div>
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
-          <ul style="margin:4px 0 10px;padding-left:18px;"><li>CloudWatch Synthetics (canary monitoring, automated user journey testing)</li><li>CloudWatch Contributor Insights (top talkers, error patterns)</li><li>Config Conformance Packs (pre-built PCI-DSS, HIPAA, CIS rule sets)</li><li>Config Aggregator (multi-account, multi-region)</li><li>Config automatic remediation via Systems Manager Automation</li><li>Inspector continuous scanning (always-on instead of on-demand)</li><li>Macie automated full-estate sensitive data discovery</li></ul>
+          <ul style="margin:4px 0 10px;padding-left:18px;"><li>CloudWatch Synthetics (canary monitoring, automated user journey testing)</li><li>CloudWatch Contributor Insights (top talkers, error patterns)</li><li>Config Conformance Packs (pre-built PCI-DSS, HIPAA, CIS rule sets)</li><li>Config Aggregator (multi-account, multi-region)</li><li>Config automatic remediation via Systems Manager Automation</li><li>Inspector continuous scanning (always-on instead of on-demand)</li></ul>
           <strong style="color:#0C447C;">Why we skipped:</strong> Synthetics and continuous scanning add cost. Conformance Packs are bundles of rules we already cover individually.<br>
-          <strong style="color:#0C447C;">When you'd use it:</strong> Synthetics for production SLA monitoring. Conformance Packs for SOC 2/ISO 27001 certification. Macie for regulated industries.
+          <strong style="color:#0C447C;">When you'd use it:</strong> Synthetics for production SLA monitoring. Conformance Packs for SOC 2/ISO 27001 certification.
         </div>
       </div>
 
@@ -1311,9 +1322,9 @@
         <div class="ac-section-label">Week 11: Threat Detection</div>
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
-          <ul style="margin:4px 0 10px;padding-left:18px;"><li>GuardDuty EKS/RDS/S3/Malware Protection (full coverage)</li><li>Trusted IP lists (whitelist office/VPN IPs)</li><li>Security Hub integrations (50+ AWS and partner services)</li><li>Security Hub standards (AWS Foundational Security Best Practices, CIS)</li><li>EventBridge advanced content-based filtering</li><li>Automated incident response (auto-isolate instances, auto-disable IAM users, auto-snapshot for forensics, auto-block IPs in WAF)</li></ul>
+          <ul style="margin:4px 0 10px;padding-left:18px;"><li>GuardDuty EKS/RDS/S3/Malware Protection (full coverage)</li><li>Trusted IP lists (whitelist office/VPN IPs)</li><li>Macie automated full-estate sensitive data discovery</li><li>Security Hub integrations (50+ AWS and partner services)</li><li>Security Hub standards (AWS Foundational Security Best Practices, CIS)</li><li>EventBridge advanced content-based filtering</li><li>Automated incident response (auto-isolate instances, auto-disable IAM users, auto-snapshot for forensics, auto-block IPs in WAF)</li></ul>
           <strong style="color:#0C447C;">Why we skipped:</strong> EKS/RDS not relevant (no EKS/RDS in Photo Viewer). Advanced auto-response risks breaking things in learning environment.<br>
-          <strong style="color:#0C447C;">When you'd use it:</strong> All GuardDuty protections in production. Automated response for 24/7 incident handling without on-call staff.
+          <strong style="color:#0C447C;">When you'd use it:</strong> All GuardDuty protections in production. Macie for regulated industries with PII requirements. Automated response for 24/7 incident handling without on-call staff.
         </div>
       </div>
 
