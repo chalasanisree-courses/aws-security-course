@@ -182,7 +182,7 @@ ls -lh image-validator.zip</pre>
   <span class="part-title">Macie &mdash; Tom uploads sensitive data</span>
 </div>
 
-<p>Tom is troubleshooting a customer support issue and needs to test a file upload. He drops a text file into the Photo Viewer&rsquo;s S3 bucket. The file happens to contain a customer&rsquo;s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled (presigned URLs) &mdash; but nobody knows the content is sensitive. Encryption protects confidentiality; Macie classifies content.</p>
+<p>Tom is troubleshooting a customer support issue and needs to test a file upload. He drops a text file into the Photo Viewer&rsquo;s S3 bucket. The file happens to contain a customer&rsquo;s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled (presigned URLs) &mdash; but nobody knows the content is sensitive. Encryption protects confidentiality; Macie detects sensitive content.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable Macie (Jerry)</span></div><div class="step-body">
 <p>Go to <strong>Amazon Macie &rarr; Get started &rarr; Enable Macie</strong>.</p>
@@ -216,6 +216,9 @@ Notes: Testing upload for support case #4472</pre>
   <li>Social Security number detected</li>
   <li>Credit card number detected</li>
 </ul>
+<div class="callout">
+  <p><strong>No findings?</strong> If the one-time job completed before Tom uploaded <code>customer-data.txt</code>, it scanned the bucket before the file existed. Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong> and run a new one-time job on the Photo Viewer bucket.</p>
+</div>
 <p>Click into a finding. Note the S3 object path, the PII type, and the severity.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>Macie detected PII in the file Tom uploaded. The finding shows the S3 object, the type of sensitive data (SSN, credit card), and the severity level.</p>
@@ -448,7 +451,7 @@ def lambda_handler(event, context):
   <li><strong>Disable Macie</strong> &mdash; free trial runs for 30 days, then charges begin. Go to Macie &rarr; Settings &rarr; Disable Macie.</li>
   <li><strong>Disable GuardDuty</strong> &mdash; free trial runs for 30 days, then charges begin. Go to GuardDuty &rarr; Settings &rarr; Suspend/Disable GuardDuty.</li>
   <li><strong>Delete test files</strong> &mdash; remove <code>suspicious.jpg</code> (Step 4), <code>test-photo.jpg</code> (Step 12), <code>malware-test.jpg</code> (Step 21), <code>customer-data.txt</code> (Step 8), and any test photos uploaded in Step 4 from both <code>photos/</code> and <code>quarantine/</code> prefixes.</li>
-  <li><strong>Keep Security Hub running</strong> &mdash; needed for the production hardening review next week.</li>
+  <li><strong>Keep Security Hub running</strong> &mdash; it provides ongoing visibility into your security posture across services.</li>
   <li><strong>Keep both Lambda functions</strong> &mdash; the image validator and quarantine Lambda demonstrate real detection and remediation.</li>
 </ul>
 
@@ -492,7 +495,7 @@ def lambda_handler(event, context):
     <tr><td><strong>Quarantine Lambda deployed</strong></td><td>4</td><td>Screenshot: Lambda console showing <code>photoviewer-quarantine</code> function.</td></tr>
     <tr><td><strong>Malware quarantine rule</strong></td><td>3</td><td>Screenshot: EventBridge rule <code>guardduty-malware-quarantine</code> showing Malware Protection scan result pattern with two targets &mdash; SNS and Lambda.</td></tr>
     <tr><td><strong>Automated quarantine works</strong></td><td>6</td><td>Screenshot: EICAR file moved from <code>photos/</code> to <code>quarantine/</code> automatically after GuardDuty malware scan.</td></tr>
-    <tr><td><strong>Reflection Q1 &mdash; encryption vs classification</strong></td><td>8</td><td>Encryption protects <em>confidentiality</em> &mdash; unauthorized users cannot read the data. Macie detects <em>content</em> &mdash; it classifies what kind of data is present. Encryption does not prevent authorized services (like Macie) from reading and classifying the data. Different problems, different tools.</td></tr>
+    <tr><td><strong>Reflection Q1 &mdash; encryption vs detection</strong></td><td>8</td><td>Encryption protects <em>confidentiality</em> &mdash; unauthorized users cannot read the data. Macie detects <em>sensitive content</em> &mdash; it identifies what kind of data is present (PII, credentials, etc.). Encryption does not prevent authorized services (like Macie) from reading and scanning the data. Different problems, different tools.</td></tr>
     <tr><td><strong>Reflection Q2 &mdash; upgrade despite unused code path</strong></td><td>7</td><td>Yes, upgrade. Future code changes might use the vulnerable function. Automated compliance tools flag the version regardless. An attacker who gains code execution could import and call any function in the package. Defense in depth means not relying on one layer of protection.</td></tr>
     <tr><td><strong>Reflection Q3 &mdash; multi-service incident</strong></td><td>7</td><td>Example: An attacker exploits the Pillow CVE (Inspector flagged it) to execute code, disables S3 encryption (Config detects drift), and exfiltrates data (GuardDuty detects unusual API calls). One incident, three services, three perspectives.</td></tr>
     <tr><td><strong>Reflection Q4 &mdash; notification vs remediation</strong></td><td>9</td><td>Notification (SNS) tells a human something happened &mdash; response depends on someone reading the email and acting. Remediation (Lambda quarantine) acts immediately without waiting. Tradeoff: automated remediation can cause false-positive outages (quarantining a legitimate file). Start with notification, graduate to remediation as confidence in detection rules grows.</td></tr>

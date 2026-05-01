@@ -158,12 +158,12 @@
 <ul>
   <li>Distinguish between monitoring (inward-facing) and detection (adversary-facing)</li>
   <li>Identify three threat categories addressed this week: careless data exposure, malicious content, and vulnerable dependencies</li>
-  <li>Explain how Macie classifies sensitive data in S3 objects by scanning content patterns</li>
+  <li>Explain how Macie detects sensitive data in S3 objects using managed data identifiers (regex patterns + machine learning)</li>
   <li>Explain how GuardDuty detects threats by analyzing CloudTrail, VPC flow logs, DNS logs, and S3 object scans</li>
   <li>Explain how Security Hub normalizes findings from multiple services into a single dashboard using ASFF</li>
   <li>Describe how EventBridge event patterns enable automated response to security findings</li>
   <li>Implement automated remediation by wiring a quarantine Lambda as an EventBridge target</li>
-  <li>Distinguish between encryption (protects confidentiality) and classification (identifies content)</li>
+  <li>Explain why KMS encryption does not prevent Macie from detecting sensitive data</li>
 </ul>
 
 
@@ -287,10 +287,128 @@ function showPillar(idx) {
 </script>
 
 
+
+
 <!-- ═══════════════ SECTION 3 ═══════════════ -->
 <h2>3. This week&rsquo;s solution</h2>
 
-<p>Three things go wrong. Each involves a different actor, a different kind of bad behavior, and a different detection service. Click any scenario to see how it is detected.</p>
+<h3>Detection</h3>
+
+<p>AWS offers three detection services, each addressing a different dimension of risk. Security Hub aggregates their findings at the center. Click any region to explore.</p>
+
+<style>
+  .venn-click { cursor: pointer; transition: opacity 0.2s; }
+</style>
+
+<div style="margin:1.5rem 0 0.5rem;">
+<svg viewBox="0 0 600 510" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:520px;margin:0 auto;" role="img" aria-label="Risk equation Venn diagram — click circles to explore detection services">
+
+  <!-- Visual circles -->
+  <circle id="venn-v" cx="300" cy="170" r="150" fill="none" stroke="#1F4E79" stroke-width="2.5" opacity="0.8"/>
+  <circle id="venn-i" cx="210" cy="330" r="150" fill="none" stroke="#1F4E79" stroke-width="2.5" opacity="0.8"/>
+  <circle id="venn-t" cx="390" cy="330" r="150" fill="none" stroke="#1F4E79" stroke-width="2.5" opacity="0.8"/>
+
+  <!-- Center intersection fill -->
+  <defs>
+    <clipPath id="clip-impact"><circle cx="210" cy="330" r="149"/></clipPath>
+    <clipPath id="clip-threat"><circle cx="390" cy="330" r="149"/></clipPath>
+  </defs>
+  <g id="venn-center-fill" clip-path="url(#clip-impact)">
+    <g clip-path="url(#clip-threat)">
+      <circle cx="300" cy="170" r="149" fill="#1F4E79"/>
+    </g>
+  </g>
+
+  <!-- VULNERABILITY label (top) -->
+  <text x="300" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="16" font-weight="700" fill="#1F4E79">VULNERABILITY</text>
+  <text x="300" y="125" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" fill="#555">Weakness in the system</text>
+
+  <!-- IMPACT label (bottom left) -->
+  <text x="160" y="350" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="16" font-weight="700" fill="#1F4E79">IMPACT</text>
+  <text x="160" y="370" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" fill="#555">What&apos;s at stake</text>
+  <text x="160" y="385" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" fill="#555">if it&apos;s exploited</text>
+
+  <!-- THREAT label (bottom right) -->
+  <text x="440" y="350" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="16" font-weight="700" fill="#1F4E79">THREAT</text>
+  <text x="440" y="370" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" fill="#555">Actor or action</text>
+  <text x="440" y="385" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" fill="#555">that causes harm</text>
+
+  <!-- RISK label (center) -->
+  <text x="300" y="265" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="700" fill="#fff">RISK</text>
+  <text x="300" y="284" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="rgba(255,255,255,0.8)">Security Hub</text>
+
+  <!-- Service badges -->
+  <rect id="badge-v" x="237" y="56" width="126" height="26" rx="13" fill="#1F4E79"/>
+  <text x="300" y="74" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#fff" pointer-events="none">Inspector</text>
+
+  <rect id="badge-i" x="92" y="415" width="126" height="26" rx="13" fill="#1F4E79"/>
+  <text x="155" y="433" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#fff" pointer-events="none">Macie</text>
+
+  <rect id="badge-t" x="382" y="415" width="126" height="26" rx="13" fill="#1F4E79"/>
+  <text x="445" y="433" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" font-weight="600" fill="#fff" pointer-events="none">GuardDuty</text>
+
+  <!-- Caption -->
+  <text x="300" y="498" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" fill="#666" font-style="italic">Risk exists where all three intersect</text>
+
+  <!-- Transparent clickable overlays (top layer) -->
+  <circle cx="210" cy="330" r="150" fill="transparent" stroke="none" onclick="showRisk(0)" class="venn-click"/>
+  <circle cx="390" cy="330" r="150" fill="transparent" stroke="none" onclick="showRisk(1)" class="venn-click"/>
+  <circle cx="300" cy="170" r="150" fill="transparent" stroke="none" onclick="showRisk(2)" class="venn-click"/>
+  <circle cx="300" cy="277" r="60" fill="transparent" stroke="none" onclick="showRisk(3)" class="venn-click"/>
+</svg>
+</div>
+
+<div class="threat-reveal" id="risk-reveal">
+  <div style="text-align:center;color:#aaa;font-size:0.88rem;font-style:italic;padding:0.5rem 0;" id="risk-hint">&#8593; Click any circle &mdash; or the center &mdash; to explore</div>
+  <div id="risk-content" style="display:none;"></div>
+</div>
+
+<script>
+var riskData = [
+  {
+    subtitle: "Impact \u2014 Macie",
+    text: '<p>An employee uploads a file containing customer Social Security numbers. The file is encrypted at rest and access-controlled \u2014 but nobody knows the content is sensitive. Encryption controls who can read the data \u2014 it does not detect what kind of data is stored. <strong>Macie</strong> scans S3 objects for PII patterns and flags what\u2019s at stake \u2014 the impact dimension of risk.</p>'
+  },
+  {
+    subtitle: "Threat \u2014 GuardDuty",
+    text: '<p>A suspicious file disguised as a photo lands in the bucket. An attacker makes API calls from an unfamiliar IP using exfiltrated credentials. <strong>GuardDuty</strong> analyzes CloudTrail events, VPC flow logs, DNS queries, and scans uploads for malware \u2014 the threat dimension of risk.</p>'
+  },
+  {
+    subtitle: "Vulnerability \u2014 Inspector",
+    text: '<p>A Lambda uses an external library with a known security flaw. The code works correctly, but the library version has a published CVE that an attacker could exploit. <strong>Inspector</strong> scans software packages against CVE databases and flags the weakness \u2014 the vulnerability dimension of risk.</p>'
+  },
+  {
+    subtitle: "Aggregation \u2014 Security Hub",
+    text: '<p>Risk is where all three dimensions meet. Findings from Inspector, Macie, and GuardDuty \u2014 plus Config and CloudWatch from the prior week \u2014 are scattered across five different dashboards. <strong>Security Hub</strong> aggregates them all, normalizing every finding to a standard schema called ASFF so they can be sorted, filtered, and prioritized in one place.</p>'
+  }
+];
+
+function showRisk(idx) {
+  var d = riskData[idx];
+  document.getElementById('risk-hint').style.display = 'none';
+  var content = document.getElementById('risk-content');
+  content.style.display = 'block';
+  content.innerHTML =
+    '<div class="threat-reveal-subtitle">' + d.subtitle + '</div>' + d.text;
+  document.getElementById('risk-reveal').classList.add('visible');
+
+  var map = {0:'venn-i', 1:'venn-t', 2:'venn-v'};
+  var badgeMap = {0:'badge-i', 1:'badge-t', 2:'badge-v'};
+  for (var k in map) {
+    document.getElementById(map[k]).setAttribute('stroke-width', k == idx ? '4' : '2');
+    document.getElementById(map[k]).setAttribute('opacity', k == idx ? '1' : '0.45');
+    document.getElementById(badgeMap[k]).setAttribute('opacity', k == idx ? '1' : '0.45');
+  }
+  if (idx === 3) {
+    for (var k in map) {
+      document.getElementById(map[k]).setAttribute('opacity', '0.45');
+      document.getElementById(badgeMap[k]).setAttribute('opacity', '0.45');
+    }
+  }
+}
+</script>
+
+<p style="margin-top:2rem;">Three things go wrong in the Photo Viewer this week. Each involves a different actor, a different kind of bad behavior, and a different detection service. Click any scenario to see how it works.</p>
 
 <div class="agg-wrapper">
   <div class="agg-badge">Security Hub aggregates all findings</div>
@@ -327,9 +445,9 @@ var threatData = [
   {
     title: "Amazon Macie",
     subtitle: "Sensitive Data Exposure",
-    overview: '<p><strong>Scenario:</strong> Tom (customer support) is troubleshooting a user issue and drops a text file into the Photo Viewer S3 bucket. The file contains a customer\u2019s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled \u2014 but nobody knows the content is sensitive.</p><p><strong>Detection:</strong> Macie scans S3 objects for sensitive data patterns \u2014 SSNs, credit card numbers, API keys, email addresses. It uses managed data identifiers (regex patterns + machine learning) to classify content. Macie generates a finding with the PII type detected, the S3 object path, and the severity.</p>',
+    overview: '<p><strong>Scenario:</strong> Tom (customer support) is troubleshooting a user issue and drops a text file into the Photo Viewer S3 bucket. The file contains a customer\u2019s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled \u2014 but nobody knows the content is sensitive.</p><p><strong>Detection:</strong> Macie scans S3 objects for sensitive data patterns \u2014 SSNs, credit card numbers, API keys, email addresses. It uses managed data identifiers \u2014 AWS-maintained rules (regex patterns + machine learning) that recognize common PII formats. Macie generates a finding with the PII type detected, the S3 object path, and the severity.</p>',
     deepDiveTitle: "How Macie works \u2014 discovery jobs and data identifiers",
-    deepDive: '<p>Macie operates in two modes: <strong>automated discovery</strong> (continuously samples objects across all buckets) and <strong>discovery jobs</strong> (targeted scans of specific buckets or prefixes). Both use the same detection engine.</p><p>The engine applies <strong>managed data identifiers</strong> \u2014 AWS-maintained patterns for common PII types (SSN, credit card, passport numbers, etc.) across multiple countries and formats. You can also create <strong>custom data identifiers</strong> using regex patterns for organization-specific sensitive data like internal account numbers or project codes.</p><p>A critical distinction: <strong>encryption does not prevent classification.</strong> Macie has permission to read S3 objects (via its service role). KMS encryption protects against unauthorized access \u2014 Macie is an authorized service. Encryption and classification solve different problems: encryption controls <em>who can read</em>; Macie identifies <em>what is being stored</em>.</p><div class="demo-tie"><strong>In the lab:</strong> Jerry enables Macie and creates a discovery job on the Photo Viewer bucket. Tom uploads a file with fake SSN and credit card data. Macie flags the PII and generates a finding that flows to Security Hub.</div>'
+    deepDive: '<p>Macie operates in two modes: <strong>automated discovery</strong> (continuously samples objects across all buckets) and <strong>discovery jobs</strong> (targeted scans of specific buckets or prefixes). Both use the same detection engine.</p><p>The engine applies <strong>managed data identifiers</strong> \u2014 AWS-maintained rules for common PII types (SSN, credit card, passport numbers, etc.) across multiple countries and formats. These combine regex patterns (matching known formats like XXX-XX-XXXX) with machine learning (reducing false positives \u2014 distinguishing a real SSN from a random nine-digit number). You can also create <strong>custom data identifiers</strong> using your own regex patterns for organization-specific sensitive data like internal account numbers or project codes.</p><p>A common question: <strong>how can Macie read files that are encrypted with KMS?</strong> Because Macie has a service-linked role with permission to call <code>kms:Decrypt</code>. Encryption controls <em>who can read</em> the data \u2014 Macie is an authorized reader. Encryption does not prevent authorized AWS services with the right permissions from scanning the content.</p><div class="demo-tie"><strong>In the lab:</strong> Jerry enables Macie and creates a discovery job on the Photo Viewer bucket. Tom uploads a file with fake SSN and credit card data. Macie flags the PII and generates a finding that flows to Security Hub.</div>'
   },
   {
     title: "Amazon GuardDuty + Image Validator Lambda",
@@ -341,11 +459,12 @@ var threatData = [
   {
     title: "Amazon Inspector",
     subtitle: "Vulnerable Dependency",
-    overview: '<p><strong>Scenario:</strong> Jerry deploys an image-validation Lambda that uses Pillow 9.5.0 to verify uploaded files are real images. The Lambda works correctly \u2014 but the Pillow version has known CVEs (including CVE-2023-50447, arbitrary code execution, CVSS 8.1).</p><p><strong>Detection:</strong> Inspector has been running since the prior week. It automatically scans the new Lambda\u2019s deployment package, identifies Pillow 9.5.0, cross-references it against the NIST NVD, and generates a finding with the CVE ID, severity score, affected package, and remediation guidance.</p>',
-    deepDiveTitle: "Why upgrade if the vulnerable code path is never called?",
-    deepDive: '<p>The Lambda only calls <code>Image.open()</code>. The CVE is in <code>ImageMath.eval</code> \u2014 a function the code never uses. So why does Inspector flag it, and why should you upgrade?</p><p><strong>Inspector flags package versions, not code paths.</strong> Static analysis of which functions your code calls is a much harder problem (and one Inspector does not attempt). It takes the conservative approach: if the version has a known vulnerability, flag it.</p><p><strong>You should still upgrade.</strong> Three reasons: (1) Future code changes might use the vulnerable function. (2) An attacker who gains code execution through another vector could call any function in the package. (3) Automated compliance tools and auditors flag the version regardless of usage \u2014 you will need to explain or remediate.</p><p>This mirrors real production environments. Most Lambda functions carry dependencies with CVEs in code paths they never invoke. The responsible practice is to upgrade anyway.</p><div class="demo-tie"><strong>In the lab:</strong> Inspector finds the Pillow CVE in <code>photoviewer-image-validator</code> automatically. The finding flows to Security Hub alongside Macie and GuardDuty findings.</div>'
+    overview: '<p><strong>Scenario:</strong> Jerry deploys an image-validation Lambda that uses an external library called Pillow 9.5.0 to verify uploaded files are real images. The Lambda works correctly \u2014 but the Pillow version has known CVEs (including CVE-2023-50447, arbitrary code execution, CVSS 8.1).</p><p><strong>Detection:</strong> Inspector has been running since the prior week. It automatically scans the new Lambda\u2019s deployment package, identifies Pillow 9.5.0, cross-references it against the NIST NVD, and generates a finding with the CVE ID, severity score, affected package, and remediation guidance.</p><div class="demo-tie"><strong>In the lab:</strong> Inspector finds the Pillow CVE in <code>photoviewer-image-validator</code> automatically. The finding flows to Security Hub alongside Macie and GuardDuty findings.</div>',
+    deepDiveTitle: "How Inspector works \u2014 CVE databases and continuous scanning",
+    deepDive: '<p>Inspector continuously scans Lambda deployment packages (and EC2 instances and container images) for known vulnerabilities. It does not run code or execute tests \u2014 it reads the package manifest, identifies every dependency and version, and cross-references them against the <strong>National Vulnerability Database (NVD)</strong> maintained by NIST.</p><p>Each known vulnerability has a unique <strong>CVE identifier</strong> (e.g., CVE-2023-50447). Inspector matches package versions against these CVEs and scores each finding using the <strong>Common Vulnerability Scoring System (CVSS)</strong> \u2014 a 0\u201310 scale where 7+ is High and 9+ is Critical. The finding includes the CVE ID, the CVSS score, the affected package and version, and remediation guidance (typically: upgrade to version X).</p><p>Inspector also <strong>auto-rescans</strong>. When NIST publishes a new CVE, Inspector re-evaluates all previously scanned packages without any action from you. A Lambda that was clean yesterday can generate a new finding today \u2014 not because anything changed in your code, but because a vulnerability was discovered in a dependency you already use.</p><div class="demo-tie"><strong>In the lab:</strong> Inspector finds CVE-2023-50447 in Pillow 9.5.0 inside the <code>photoviewer-image-validator</code> Lambda automatically. The finding includes the CVSS score (8.1 \u2014 High), the affected function, and a recommendation to upgrade.</div>'
   }
 ];
+
 function showThreat(idx) {
   var d = threatData[idx];
   document.getElementById('threat-hint').style.display = 'none';
@@ -355,8 +474,8 @@ function showThreat(idx) {
     '<div class="threat-reveal-subtitle">' + d.subtitle + '</div>' +
     '<div class="threat-reveal-title">' + d.title + '</div>' +
     d.overview +
-    '<details><summary>' + d.deepDiveTitle + '</summary>' +
-    '<div class="accordion-body">' + d.deepDive + '</div></details>';
+    (d.deepDiveTitle ? '<details><summary>' + d.deepDiveTitle + '</summary>' +
+    '<div class="accordion-body">' + d.deepDive + '</div></details>' : '');
   var panel = document.getElementById('threat-reveal');
   panel.classList.add('visible');
   var boxes = document.querySelectorAll('.threat-box');
@@ -365,62 +484,99 @@ function showThreat(idx) {
 }
 </script>
 
-<h3>Aggregation &mdash; Security Hub</h3>
 
-<p>After the three detection scenarios, Jerry has findings scattered across Inspector, Macie, and GuardDuty &mdash; plus Config and CloudWatch findings from the prior week. Five different dashboards. Security Hub aggregates them all.</p>
+<h3>Response</h3>
 
-<p>Security Hub normalizes every finding to the <strong>AWS Security Finding Format (ASFF)</strong> &mdash; a standard schema with consistent fields for severity, resource identifiers, remediation recommendations, and compliance status. A GuardDuty malware finding and a Macie PII finding look structurally the same in Security Hub, making it possible to sort, filter, and prioritize across services.</p>
+<p>Detection generates findings. Response acts on them. EventBridge connects the two &mdash; matching finding events against rules and routing them to targets automatically.</p>
 
-<h3>Response &mdash; EventBridge</h3>
+<svg viewBox="0 0 740 195" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:640px;margin:1.2rem auto;">
+  <defs>
+    <marker id="eb-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1F4E79"/>
+    </marker>
+  </defs>
 
-<p>Security Hub shows findings in a dashboard. But dashboards require someone watching. EventBridge closes the loop by matching finding events against patterns and routing them to targets automatically.</p>
+  <!-- Photo Viewer box -->
+  <rect x="6" y="32" width="115" height="86" rx="10" fill="#fff" stroke="#1F4E79" stroke-width="2"/>
+  <text x="63" y="66" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#1F4E79">Photo Viewer</text>
+  <text x="63" y="84" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#555">user uploads</text>
+  <text x="63" y="98" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#555">to S3</text>
+
+  <!-- Arrow PV → Detection -->
+  <line x1="121" y1="75" x2="173" y2="75" stroke="#1F4E79" stroke-width="2" marker-end="url(#eb-arrow)"/>
+
+  <!-- Detection box -->
+  <rect x="175" y="32" width="130" height="86" rx="10" fill="#f0f4f8" stroke="#1F4E79" stroke-width="2"/>
+  <text x="240" y="62" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#1F4E79">Detection</text>
+  <text x="240" y="82" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#555">GuardDuty &middot; Macie</text>
+  <text x="240" y="96" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#555">Inspector</text>
+
+  <!-- Arrow Detection → EventBridge -->
+  <line x1="305" y1="75" x2="357" y2="75" stroke="#1F4E79" stroke-width="2" marker-end="url(#eb-arrow)"/>
+
+  <!-- EventBridge box -->
+  <rect x="359" y="27" width="155" height="96" rx="10" fill="#1F4E79"/>
+  <text x="436" y="64" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#fff">Event Routing</text>
+  <text x="436" y="86" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" fill="rgba(255,255,255,0.75)">EventBridge</text>
+
+  <!-- Arrow EB → Notification -->
+  <line x1="514" y1="55" x2="560" y2="38" stroke="#1F4E79" stroke-width="2" marker-end="url(#eb-arrow)"/>
+
+  <!-- Arrow EB → Remediation -->
+  <line x1="514" y1="95" x2="560" y2="115" stroke="#1F4E79" stroke-width="2" marker-end="url(#eb-arrow)"/>
+
+  <!-- Notification box -->
+  <rect x="562" y="10" width="162" height="52" rx="10" fill="#FFF8E1" stroke="#F9A825" stroke-width="2"/>
+  <text x="643" y="33" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#e65100">Notification</text>
+  <text x="643" y="51" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#666">SNS &#8594; Email</text>
+
+  <!-- Remediation box -->
+  <rect x="562" y="92" width="162" height="52" rx="10" fill="#E8F5E9" stroke="#4CAF50" stroke-width="2"/>
+  <text x="643" y="115" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#2E7D32">Remediation</text>
+  <text x="643" y="133" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#666">Lambda &#8594; quarantine</text>
+
+  <!-- Return arrow: Remediation → Photo Viewer (feedback loop) -->
+  <path d="M 643 144 L 643 175 L 63 175 L 63 118" fill="none" stroke="#1F4E79" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#eb-arrow)"/>
+  <text x="355" y="188" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#555" font-style="italic">file quarantined in S3 bucket</text>
+
+  <!-- Step number circles -->
+  <circle cx="147" cy="65" r="9" fill="#1F4E79"/>
+  <text x="147" y="69" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700" fill="#fff">1</text>
+
+  <circle cx="331" cy="65" r="9" fill="#1F4E79"/>
+  <text x="331" y="69" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700" fill="#fff">2</text>
+
+  <circle cx="496" cy="108" r="9" fill="#1F4E79"/>
+  <text x="496" y="112" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700" fill="#fff">3</text>
+
+  <circle cx="570" cy="18" r="9" fill="#1F4E79"/>
+  <text x="570" y="22" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700" fill="#fff">4</text>
+
+  <circle cx="570" cy="100" r="9" fill="#1F4E79"/>
+  <text x="570" y="104" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700" fill="#fff">5</text>
+
+  <circle cx="63" cy="150" r="9" fill="#1F4E79"/>
+  <text x="63" y="154" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700" fill="#fff">6</text>
+</svg>
 
 <div class="flow-container">
   <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>Event source:</strong> GuardDuty Malware Protection scans an uploaded S3 object and publishes a scan result.</div></div>
   <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>Event bus:</strong> The scan result is published to the default EventBridge event bus as a structured JSON event.</div></div>
   <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>Rule matches:</strong> An EventBridge rule matches on <code>source = aws.guardduty</code> and <code>scanResultStatus = THREATS_FOUND</code>.</div></div>
   <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>Target 1 &mdash; notification:</strong> The rule sends the event to an SNS topic. SNS delivers an email to Jerry.</div></div>
-  <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Target 2 &mdash; remediation:</strong> The same rule triggers a quarantine Lambda that moves the flagged S3 object from <code>photos/</code> to <code>quarantine/</code>.</div></div>
-  <div class="flow-step"><div class="flow-num">6</div><div class="flow-text"><strong>At 3 AM:</strong> Nobody is watching the dashboard. The email arrives, and the malicious file is already quarantined. Jerry wakes up and the situation is already contained.</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Target 2 &mdash; remediation:</strong> The same rule triggers the quarantine Lambda.</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-text"><strong>File quarantined:</strong> The Lambda moves the flagged object from <code>photos/</code> to <code>quarantine/</code> in the Photo Viewer&rsquo;s S3 bucket. At 3 AM, nobody is watching the dashboard. The email arrives, and the malicious file is already gone. Jerry wakes up and the situation is contained.</div></div>
 </div>
 
-<p>One rule, two targets, two response types running simultaneously. Notification tells a human; remediation acts immediately. A second EventBridge rule matches standard GuardDuty findings (credential compromise, unusual API calls) at severity &ge; 7, routing those to SNS for notification. Different event types require separate rules &mdash; but the pattern is the same. In production, automated remediation requires careful tuning &mdash; quarantining a legitimate file is a false-positive outage. Most organizations start with notifications and graduate to automated remediation as they gain confidence in their detection rules.</p>
+<p>EventBridge can match different event types, each with its own rule. In this lab, two rules handle two different scenarios. The <strong>malware quarantine rule</strong> matches Malware Protection scan results where threats were found &mdash; it has two targets (SNS and Lambda) running simultaneously. The <strong>high-severity findings rule</strong> matches standard GuardDuty findings (credential compromise, unusual API calls) at severity &ge; 7 &mdash; it routes to SNS only. Different event types require separate rules, but the pattern is the same: match on structure, route to targets.</p>
 
-
-<!-- ═══════════════ SECTION 4 ═══════════════ -->
-<h2>4. Key concepts</h2>
-
-<p>The threat scenarios above explain the detection services. The concepts below go deeper into the patterns that connect them.</p>
-
-<details>
-  <summary>Encryption vs classification &mdash; why KMS does not prevent Macie from reading</summary>
-  <div class="accordion-body">
-    <p>KMS encryption controls <em>who can decrypt</em>. Macie has a service-linked role with permission to call <code>kms:Decrypt</code> &mdash; it is an authorized reader. Encryption prevents unauthorized access (an attacker without the key). Classification identifies what kind of data is stored (PII, financial data, credentials). These are orthogonal concerns.</p>
-    <p>An analogy: a locked filing cabinet (encryption) prevents someone from opening the drawer. A classification label on the folder inside (Macie) tells authorized people that the contents are sensitive. You need both. The lock without the label means authorized users do not know to handle the file carefully. The label without the lock means anyone can access it.</p>
-  </div>
-</details>
-
-<details>
-  <summary>ASFF &mdash; how Security Hub normalizes findings</summary>
-  <div class="accordion-body">
-    <p>The AWS Security Finding Format (ASFF) is a JSON schema that standardizes how findings are represented. Every finding &mdash; regardless of source &mdash; has the same fields:</p>
-    <table>
-      <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
-      <tr><td><code>Severity.Label</code></td><td>Normalized severity</td><td>HIGH, CRITICAL, MEDIUM</td></tr>
-      <tr><td><code>Resources</code></td><td>Affected AWS resources</td><td>S3 bucket ARN, Lambda function ARN</td></tr>
-      <tr><td><code>ProductName</code></td><td>Which service generated it</td><td>Macie, GuardDuty, Inspector</td></tr>
-      <tr><td><code>Remediation</code></td><td>How to fix it</td><td>Upgrade Pillow, delete PII file</td></tr>
-      <tr><td><code>Compliance.Status</code></td><td>Compliance state</td><td>FAILED, PASSED</td></tr>
-    </table>
-    <p>This normalization is what makes Security Hub more than just a dashboard &mdash; it enables filtering, sorting, and automated workflows across services that otherwise have completely different finding formats.</p>
-  </div>
-</details>
+<p>In production, automated remediation requires careful tuning &mdash; quarantining a legitimate file is a false-positive outage. Most organizations start with notifications only and add automated remediation as they gain confidence in their detection rules.</p>
 
 <details>
   <summary>EventBridge event patterns &mdash; matching on structure, not strings</summary>
   <div class="accordion-body">
-    <p>EventBridge rules match events by their JSON structure, not by string searching. GuardDuty emits two different event types, each requiring its own pattern:</p>
-    <p><strong>Standard findings</strong> (credential compromise, unusual API calls):</p>
+    <p>EventBridge rules match events by their JSON structure, not by string searching. GuardDuty emits two different event types, each requiring its own rule:</p>
+    <p><strong>High-severity findings rule</strong> (credential compromise, unusual API calls):</p>
     <pre><code>{
   "source": ["aws.guardduty"],
   "detail-type": ["GuardDuty Finding"],
@@ -428,7 +584,7 @@ function showThreat(idx) {
     "severity": [{ "numeric": [">=", 7] }]
   }
 }</code></pre>
-    <p><strong>Malware Protection scan results</strong> (malicious files in S3):</p>
+    <p><strong>Malware quarantine rule</strong> (malicious files in S3):</p>
     <pre><code>{
   "source": ["aws.guardduty"],
   "detail-type": ["GuardDuty Malware Protection Object Scan Result"],
@@ -443,18 +599,52 @@ function showThreat(idx) {
   </div>
 </details>
 
+
+<!-- ═══════════════ SECTION 4 ═══════════════ -->
+<h2>4. Key concepts</h2>
+
+<p>Stepping back from the individual services to see how they fit together.</p>
+
 <details>
-  <summary>The detection spectrum &mdash; from passive scanning to automated response</summary>
+  <summary>The detection spectrum &mdash; from manual response to automated remediation</summary>
   <div class="accordion-body">
-    <p>The detection services in this course form a spectrum from passive to active:</p>
-    <table>
-      <tr><th>Service</th><th>When it runs</th><th>What it does</th><th>Response</th></tr>
-      <tr><td>Inspector</td><td>Continuous (background)</td><td>Scans packages against CVE databases</td><td>Finding only &mdash; human decides</td></tr>
-      <tr><td>Macie</td><td>Scheduled or on-demand</td><td>Scans S3 content for PII patterns</td><td>Finding only &mdash; human decides</td></tr>
-      <tr><td>GuardDuty</td><td>Continuous (real-time)</td><td>Analyzes logs for threat patterns</td><td>Finding + optional EventBridge automation</td></tr>
-      <tr><td>EventBridge + Lambda</td><td>Event-driven (instant)</td><td>Matches findings against rules</td><td>Automated &mdash; SNS notification + Lambda quarantine</td></tr>
-    </table>
-    <p>Moving right on this spectrum means faster response and less human intervention &mdash; but also more risk of false positives triggering automated actions. In the lab, both notification and remediation are wired to the same EventBridge rule. Most organizations start with notifications only and add automated remediation as they gain confidence in their detection rules.</p>
+    <p>The detection services in this course form a spectrum. Moving from left to right: faster response, less human intervention &mdash; but more risk of false positives triggering automated actions.</p>
+    <div style="position:relative;margin:1.5rem 0 1rem;">
+      <!-- Gradient bar -->
+      <div style="height:4px;background:linear-gradient(to right,#b0c4de,#1F4E79);border-radius:2px;margin:0 2rem;"></div>
+      <!-- Labels -->
+      <div style="display:flex;justify-content:space-between;margin:0 0 0.8rem;font-size:0.72rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
+        <span>Human decides</span><span>System acts</span>
+      </div>
+      <!-- Four stops -->
+      <div style="display:flex;justify-content:space-between;text-align:center;gap:0.5rem;">
+        <div style="flex:1;">
+          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #b0c4de;background:#fff;margin:0 auto 0.5rem;"></div>
+          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">Inspector</div>
+          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Background scanning</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Finding only &mdash; human decides</div>
+        </div>
+        <div style="flex:1;">
+          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #7a9ec2;background:#fff;margin:0 auto 0.5rem;"></div>
+          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">Macie</div>
+          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Scheduled or on-demand</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Finding only &mdash; human decides</div>
+        </div>
+        <div style="flex:1;">
+          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #3a6f9e;background:#3a6f9e;margin:0 auto 0.5rem;"></div>
+          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">GuardDuty</div>
+          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Continuous, real-time</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Finding + EventBridge automation</div>
+        </div>
+        <div style="flex:1;">
+          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #1F4E79;background:#1F4E79;margin:0 auto 0.5rem;"></div>
+          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">EventBridge + Lambda</div>
+          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Event-driven, instant</div>
+          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Automated &mdash; notify + quarantine</div>
+        </div>
+      </div>
+    </div>
+    <p>Most organizations start on the left &mdash; enabling detection services and reviewing findings manually. As confidence grows, they move right &mdash; wiring EventBridge rules that notify on high-severity findings, then adding automated remediation for well-understood threat patterns.</p>
   </div>
 </details>
 
@@ -462,7 +652,7 @@ function showThreat(idx) {
 <!-- ═══════════════ SECTION 5 ═══════════════ -->
 <h2>5. What&rsquo;s still missing</h2>
 
-<p>One pillar remains on the running side of the diagram.</p>
+<p>One issue remains.</p>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('wsm1')">
@@ -470,7 +660,7 @@ function showThreat(idx) {
     <span style="color:#aaa;font-size:0.8rem;">&#x25BC;</span>
   </div>
   <div class="vuln-body" id="wsm1">
-    <p>Everything built so far applies to a single AWS account. In production, workloads run across multiple accounts &mdash; production, staging, development, audit. A single misconfigured account can compromise the entire organization. Service Control Policies (SCPs) enforce guardrails that no individual account can override &mdash; preventing CloudTrail deletion, public S3 buckets, or resource creation in unauthorized regions. Control Tower automates the creation of new accounts with baseline security controls already in place.</p>
+    <p>Everything built so far applies to a single AWS account. Three problems follow from this. Development and production share the same account &mdash; a bad deployment takes the app down for real users. The same person who sets up security controls can also delete them &mdash; there is no separation between rule-makers and rule-followers. And the application runs entirely in <code>us-east-1</code> &mdash; it is not set up for regional scaling or data sovereignty requirements. AWS Organizations, Service Control Policies (SCPs), Control Tower, and Route 53 address these gaps.</p>
   </div>
 </div>
 
