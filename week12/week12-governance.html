@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Governance — CS 55D Week 12</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#fff;max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+  h1{font-size:2rem;font-weight:700;line-height:1.2;margin-bottom:0.4rem;color:#111;}
+  .subtitle{font-size:1.05rem;color:#555;margin-bottom:2rem;border-bottom:1px solid #e8e8e8;padding-bottom:1.5rem;}
+  h2{font-size:1.3rem;font-weight:700;margin:2.5rem 0 1rem;color:#1F4E79;padding-bottom:0.4rem;border-bottom:3px solid #1F4E79;}
+  h3{font-size:1.05rem;font-weight:600;margin:1.5rem 0 0.5rem;color:#222;}
+  h4{font-size:0.95rem;font-weight:600;margin:1.2rem 0 0.4rem;color:#333;}
+  p{margin-bottom:0.9rem;color:#333;}
+  strong{font-weight:600;color:#111;}
+  ul,ol{padding-left:1.4rem;margin-bottom:1rem;color:#333;}
+  li{margin-bottom:0.35rem;}
+  code{font-family:'SF Mono','Fira Code',monospace;font-size:0.87em;background:#f0f0f0;padding:0.15em 0.4em;border-radius:3px;color:#c7254e;}
+  pre{background:#1e1e1e;color:#d4d4d4;padding:1.2rem 1.4rem;border-radius:8px;font-size:0.84rem;overflow-x:auto;margin:0.8rem 0 1.2rem;line-height:1.6;}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1rem 0 1.5rem;font-size:0.93rem;}
+  th{background:#f0f4f8;text-align:left;padding:0.65rem 1rem;font-weight:600;color:#333;border-bottom:2px solid #d0d8e0;}
+  td{padding:0.6rem 1rem;border-bottom:1px solid #e8e8e8;vertical-align:top;color:#444;}
+  tr:last-child td{border-bottom:none;}
+
+  .callout{border-left:4px solid #e8a000;background:#fffbf0;padding:1rem 1.2rem;margin:1.2rem 0;border-radius:0 6px 6px 0;}
+  .callout.info{border-color:#0066cc;background:#f0f6ff;}
+  .callout p:last-child{margin-bottom:0;}
+  .objectives{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem 1.5rem;margin:1rem 0 1.5rem;}
+  .objectives ul{margin:0.5rem 0 0 1.2rem;}
+  .objectives li{margin-bottom:0.4rem;color:#333;}
+
+  /* Issue cards */
+  .issues-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin:1rem 0;}
+  .issue-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1rem;cursor:pointer;transition:box-shadow 0.15s;}
+  .issue-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+  .issue-card .icon{font-size:1.4rem;margin-bottom:0.4rem;}
+  .issue-card .label{font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em;}
+  .issue-card .title{font-size:0.9rem;font-weight:600;color:#1a1a1a;margin:0.2rem 0;}
+  .issue-card .desc{font-size:0.8rem;color:#666;}
+  .issue-detail{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1.2rem 1.5rem;margin:0.5rem 0 1rem;display:none;}
+  .issue-detail.active{display:block;}
+  .issue-detail h4{margin:0 0 0.5rem;color:#1F4E79;}
+  .fixed-badge{display:inline-block;background:#d4edda;color:#155724;font-size:0.75rem;padding:2px 8px;border-radius:12px;font-weight:600;margin-left:0.5rem;}
+
+  /* Comparison table */
+  .compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;}
+  .compare-table th{background:#1F4E79;color:#fff;padding:8px 12px;text-align:left;font-weight:500;}
+  .compare-table td{padding:8px 12px;border-bottom:1px solid #e0eaf4;vertical-align:top;}
+  .compare-table tr:nth-child(even) td{background:#f8fafc;}
+  .compare-table tr:last-child td{border-bottom:none;}
+
+  /* Governance category cards */
+  .gov-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem;margin:1rem 0;}
+  .gov-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;padding:1rem;border-left:4px solid #1F4E79;}
+  .gov-card .gov-icon{font-size:1.3rem;margin-bottom:0.4rem;}
+  .gov-card .gov-title{font-weight:700;font-size:0.9rem;color:#1F4E79;margin-bottom:0.3rem;}
+  .gov-card .gov-question{font-size:0.85rem;font-style:italic;color:#555;margin-bottom:0.3rem;}
+  .gov-card .gov-example{font-size:0.82rem;color:#666;}
+  @media(max-width:600px){.gov-grid{grid-template-columns:1fr;}}
+
+  /* Solution cards */
+  .solution-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0 0.5rem;}
+  .solution-box{border:2px solid #d0dce8;border-radius:10px;padding:1.2rem;background:#fff;text-align:center;cursor:pointer;transition:border-color 0.2s,transform 0.15s,box-shadow 0.2s;display:flex;flex-direction:column;align-items:center;}
+  .solution-box:hover{border-color:#1F4E79;transform:translateY(-2px);box-shadow:0 4px 12px rgba(31,78,121,0.1);}
+  .solution-box.selected{border-color:#1F4E79;background:#f0f6ff;box-shadow:0 2px 8px rgba(31,78,121,0.15);}
+  .solution-box .sol-icon{font-size:2rem;margin-bottom:0.5rem;}
+  .solution-box .sol-title{font-weight:700;font-size:0.95rem;color:#1F4E79;margin-bottom:0.4rem;min-height:2.6em;display:flex;align-items:center;}
+  .solution-box .sol-problem{font-size:0.82rem;color:#555;font-style:italic;line-height:1.4;flex:1;display:flex;align-items:center;}
+  .solution-box .sol-service{font-size:0.82rem;font-weight:600;color:#111;margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid #d0dce8;width:100%;}
+  @media(max-width:600px){.solution-grid{grid-template-columns:1fr;}}
+  .solution-reveal{display:none;background:#fff;border:1px solid #d0dce8;border-radius:10px;padding:1.2rem 1.5rem;margin-top:0.8rem;}
+  .solution-reveal.visible{display:block;}
+  .solution-reveal-title{font-size:1.05rem;font-weight:700;color:#1F4E79;margin-bottom:0.2rem;}
+  .solution-reveal-subtitle{font-size:0.82rem;color:#888;margin-bottom:0.8rem;}
+  .solution-reveal p{font-size:0.93rem;}
+
+  /* Architecture diagram */
+  .arch-diagram{background:#f8fafc;border:2px solid #d0dce8;border-radius:12px;padding:1.5rem;margin:1.5rem 0 1rem;}
+  .arch-title{text-align:center;font-size:1rem;font-weight:700;color:#1F4E79;margin-bottom:1.2rem;}
+  .arch-mgmt{border:2px solid #1F4E79;border-radius:10px;padding:0.8rem 1rem;background:#f0f6ff;margin-bottom:1rem;cursor:pointer;transition:box-shadow 0.2s;}
+  .arch-mgmt:hover{box-shadow:0 2px 8px rgba(31,78,121,0.15);}
+  .arch-mgmt.selected{box-shadow:0 0 0 3px #1F4E79;background:#e0ecf5;}
+  .arch-mgmt-label{font-weight:700;font-size:0.9rem;color:#1F4E79;display:flex;align-items:center;gap:0.5rem;}
+  .arch-mgmt-desc{font-size:0.82rem;color:#555;margin-top:0.3rem;}
+  .arch-router{text-align:center;margin:0.8rem 0;}
+  .arch-router-box{display:inline-block;background:#1F4E79;color:#fff;padding:0.5rem 1.5rem;border-radius:20px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:box-shadow 0.2s;}
+  .arch-router-box:hover{box-shadow:0 2px 8px rgba(31,78,121,0.3);}
+  .arch-router-box.selected{box-shadow:0 0 0 3px rgba(251,191,36,0.5);}
+  .arch-router-sub{font-size:0.7rem;opacity:0.8;font-weight:500;}
+  .arch-latency-row{display:flex;justify-content:space-around;margin:0.3rem 0 0;}
+  .arch-latency-label{font-size:0.72rem;font-weight:600;color:#888;display:flex;align-items:center;gap:0.4rem;}
+  .arch-latency-label .arrow{color:#b0b0b0;}
+  .arch-accounts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
+  .arch-account{border:2px solid #d0dce8;border-radius:10px;padding:1rem;background:#fff;cursor:pointer;transition:box-shadow 0.2s,border-color 0.2s;display:flex;flex-direction:column;}
+  .arch-account:hover{border-color:#1F4E79;box-shadow:0 2px 8px rgba(31,78,121,0.1);}
+  .arch-account.selected{border-color:#1F4E79;box-shadow:0 0 0 3px #1F4E79;background:#f0f6ff;}
+  .arch-account-name{font-weight:700;font-size:0.9rem;color:#1F4E79;display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;}
+  .arch-account-region{font-size:0.75rem;font-weight:600;color:#fff;padding:0.15rem 0.5rem;border-radius:3px;display:inline-block;margin-bottom:0.5rem;}
+  .arch-account-region.us{background:#3b82f6;}
+  .arch-account-region.asia{background:#10b981;}
+  .arch-account-info{font-size:0.82rem;color:#555;flex:1;}
+  .arch-scp-group{margin-top:0.7rem;display:flex;flex-direction:column;gap:0.4rem;}
+  .arch-scp{padding:0.4rem 0.6rem;border-radius:5px;font-size:0.75rem;font-weight:600;text-align:center;}
+  .arch-scp.region{background:#e0f2fe;color:#075985;border:1px solid #7dd3fc;}
+  .arch-scp.deny{background:#fde8e8;color:#991b1b;border:1px solid #fca5a5;}
+  .arch-baseline{margin-top:1rem;padding:0.5rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:600;text-align:center;background:#1F4E79;color:#fff;}
+  .arch-detail{background:#fff;border:1px solid #d0dce8;border-left:4px solid #1F4E79;border-radius:10px;padding:1.2rem 1.5rem;margin-top:1rem;display:none;}
+  .arch-detail.visible{display:block;}
+  .arch-detail-title{font-weight:700;font-size:1rem;color:#1F4E79;margin-bottom:0.5rem;}
+  .arch-detail p{font-size:0.9rem;}
+  .arch-detail p:last-child{margin-bottom:0;}
+  @media(max-width:600px){.arch-accounts{grid-template-columns:1fr;}}
+
+  /* Concept cards */
+  .concept-card{background:#fff;border:1px solid #d0dce8;border-radius:8px;margin:0.8rem 0;overflow:hidden;}
+  .concept-header{display:flex;align-items:center;gap:0.8rem;padding:1rem 1.2rem;cursor:pointer;user-select:none;}
+  .concept-header:hover{background:#f5f8fc;}
+  .concept-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0;}
+  .concept-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+  .concept-subtitle{font-size:0.8rem;color:#888;}
+  .concept-chevron{color:#888;font-size:0.8rem;transition:transform 0.2s;}
+  .concept-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #e0eaf4;}
+  .concept-body.open{display:block;}
+  .concept-body p:first-child{margin-top:1rem;}
+
+  /* Complete cards (green) */
+  .complete-card{background:#fff;border:1px solid #c3e6cb;border-left:4px solid #28a745;border-radius:0 8px 8px 0;margin:0.8rem 0;overflow:hidden;}
+  .complete-header{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.2rem;cursor:pointer;user-select:none;}
+  .complete-header:hover{background:#f0fff4;}
+  .complete-title{font-weight:600;font-size:0.95rem;color:#155724;flex:1;}
+  .complete-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #c3e6cb;}
+  .complete-body.open{display:block;}
+  .complete-body p:first-child{margin-top:1rem;}
+
+  /* Vuln cards (red) */
+  .vuln-card{background:#fff;border:1px solid #d0dce8;border-left:4px solid #dc3545;border-radius:0 8px 8px 0;margin:0.8rem 0;overflow:hidden;}
+  .vuln-header{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.2rem;cursor:pointer;user-select:none;}
+  .vuln-header:hover{background:#fff8f8;}
+  .vuln-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
+  .vuln-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #f0d0d0;}
+  .vuln-body.open{display:block;}
+  .vuln-body p:first-child{margin-top:1rem;}
+
+  .demo-tie{background:#FFF8E1;border-left:4px solid #F9A825;padding:0.8rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;font-size:0.9rem;}
+  .demo-tie strong{color:#e65100;}
+
+  /* Download btn */
+  .download-btn{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#1F4E79;text-decoration:none;padding:8px 14px;border-radius:6px;border:1px solid #B5D4F4;background:#E6F1FB;transition:background 0.15s;}
+  .download-btn:hover{background:#B5D4F4;}
+
+  .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;}
+  .course-nav a{font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;}
+  .course-nav a:hover{color:#fff;}
+  .course-nav-right{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+  .page-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:3rem;padding-top:1.5rem;border-top:1px solid #e8e8e8;font-size:0.9rem;}
+  .page-nav a{color:#1F4E79;text-decoration:none;}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid #e8e8e8;font-size:0.82rem;color:#999;text-align:center;}
+  footer a{color:#1F4E79;text-decoration:none;}
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Security Governance</h1>
+<p class="subtitle">This course builds a Photo Viewer application across twelve weeks, adding one AWS security layer per week. This final page addresses the seventh pillar &mdash; organizational guardrails that ensure what you built cannot be undone by a single misconfigured account.</p>
+
+<div class="objectives">
+  <strong>Learning objectives</strong>
+  <ul>
+    <li>Distinguish between enforcement (Config rules) and governance (SCPs) &mdash; who makes the rules, and can they be bypassed?</li>
+    <li>Identify four categories of governance: security, data, identity, and cost</li>
+    <li>Describe how SCPs create a ceiling that no IAM principal in a member account can exceed</li>
+    <li>Explain the management account exemption and why workloads should never run there</li>
+    <li>Describe how data sovereignty requirements drive multi-region, multi-account design</li>
+    <li>Explain how Control Tower automates Landing Zone creation with baseline guardrails</li>
+    <li>Explain Route 53 concepts: latency-based routing, geolocation routing, health checks, DNSSEC</li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. Where we left off</h2>
+
+<p>The Photo Viewer is a secure application with detection and response mechanisms in place. If someone uploads malware, GuardDuty catches it. If sensitive data lands in the bucket, Macie flags it. If a dependency has a known vulnerability, Inspector finds it. Security Hub aggregates everything. EventBridge automates the response.</p>
+
+<p>But all of this exists in the context of a single AWS account. The prior concept page flagged this: <em>&ldquo;Everything built so far applies to a single AWS account. A single misconfigured account can compromise the entire organization.&rdquo;</em> Three specific gaps remain. Click each to expand.</p>
+
+<div class="issues-grid">
+  <div class="issue-card" onclick="toggleIssue('i1')">
+    <div class="icon">&#128736;</div>
+    <div class="label">Issue 1</div>
+    <div class="title">No separation between dev and production</div>
+    <div class="desc">Development and live users share the same account</div>
+  </div>
+  <div class="issue-card" onclick="toggleIssue('i2')">
+    <div class="icon">&#128275;</div>
+    <div class="label">Issue 2</div>
+    <div class="title">No separation between rule-makers and rule-followers</div>
+    <div class="desc">The people who enforce the rules can also delete them</div>
+  </div>
+  <div class="issue-card" onclick="toggleIssue('i3')">
+    <div class="icon">&#127760;</div>
+    <div class="label">Issue 3</div>
+    <div class="title">Not set up for regional scaling</div>
+    <div class="desc">Different regions have different rules and regulations</div>
+  </div>
+</div>
+
+<div class="issue-detail" id="i1">
+  <h4>No separation between development and production <span class="fixed-badge">Addressed this week</span></h4>
+  <p><strong>The problem:</strong> The Photo Viewer &mdash; the live application serving real users &mdash; runs in the same account where you develop, test, and experiment. A bad Lambda deployment takes the app down for customers. A developer testing IAM policies could accidentally open S3 to the public. There is no boundary between &ldquo;trying things out&rdquo; and &ldquo;serving real traffic.&rdquo;</p>
+  <p><strong>The gap:</strong> In the Identity Center lab, you moved your account into the Production OU. But that account is also the <strong>management account</strong> &mdash; the account that owns Organizations, manages Identity Center, and handles billing. It defines the organizational policies. In production, the management account should not also be the account running workloads &mdash; the organization that defines the rules should not also be the one following them.</p>
+  <p><strong>A quick refresher:</strong> When you created Organizations in the Identity Center lab, your account became the <strong>management account</strong>. This is the single account that controls the organization. Any other account you create or invite becomes a <strong>member account</strong> &mdash; an account that runs workloads and is subject to organizational policies. Right now, you have one management account and zero member accounts.</p>
+  <p><strong>Addressed this week:</strong> In the production architecture, a dedicated management account handles governance only. The Photo Viewer runs in a member account inside the Production OU. A separate staging member account in the Staging OU gives the team a safe place to test.</p>
+</div>
+
+<div class="issue-detail" id="i2">
+  <h4>No separation between rule-makers and rule-followers <span class="fixed-badge">Addressed this week</span></h4>
+  <p><strong>The problem:</strong> Jerry set up Config rules, CloudWatch alarms, Inspector scanning, Macie discovery jobs, and GuardDuty. But Jerry can also delete all of them. The same person who enforces the rules can remove the enforcement. If Jerry&rsquo;s credentials are compromised, the attacker can disable every security control and delete the evidence.</p>
+  <p><strong>Why this is hard to fix in a single account:</strong> In a single account, any administrator can change any policy. There is no &ldquo;higher authority&rdquo; that prevents an admin from undoing security controls. Even the root user &mdash; the most powerful principal &mdash; operates within the same account. You need a mechanism that sits <em>above</em> individual accounts and defines limits that nobody inside the account can override. That mechanism is called a <strong>Service Control Policy (SCP)</strong> &mdash; explained in Section 2.</p>
+  <p><strong>The deeper issue:</strong> The management account &mdash; the account that would define these organizational policies &mdash; is exempt from them. Organizational policies only restrict member accounts. Since the Photo Viewer runs in the management account, it cannot be governed by its own policies.</p>
+  <p><strong>Addressed this week:</strong> In production, the management account is dedicated to governance &mdash; it runs zero workloads and defines the rules. Member accounts run the Photo Viewer and follow the rules. The people operating the Photo Viewer cannot change or remove the organizational policies that govern them.</p>
+</div>
+
+<div class="issue-detail" id="i3">
+  <h4>Not set up for regional scaling <span class="fixed-badge">Addressed this week</span></h4>
+  <p><strong>The problem:</strong> The Photo Viewer runs entirely in <code>us-east-1</code>. Users in Asia experience 400ms latency. More critically, data sovereignty laws in several Asian jurisdictions require that user-uploaded photos and account data remain within local borders.</p>
+  <p><strong>Why not just deploy in a second region within the same account?</strong> Because data sovereignty is not just about where data is stored &mdash; it is about who can access it. An IAM admin in a single account can read S3 objects in any region. Separate accounts create a hard boundary that IAM alone cannot provide.</p>
+  <p><strong>Addressed this week:</strong> This issue requires both previous solutions working together. Separate member accounts per region provide account-level isolation. Organizational policies lock each account to a single region so data cannot accidentally (or deliberately) leave its jurisdiction. Route 53 latency-based routing connects users to the closest deployment automatically.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. This week&rsquo;s solution</h2>
+
+<p>Governance answers one question: <strong>who gets to set the rules, and can they be bypassed?</strong> In every prior week, the person who built the control is the same person who can remove it. Governance introduces a hierarchy: the organization sets the rules, the accounts operate within those rules, and nobody in the account can exceed the ceiling.</p>
+
+<h3>Enforcement vs governance</h3>
+
+<table class="compare-table">
+  <thead><tr><th></th><th>Enforcement (Config)</th><th>Governance (SCPs)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Who creates the rule?</strong></td><td>Same person who operates the system</td><td>A separate organizational authority</td></tr>
+    <tr><td><strong>Can the rule be deleted?</strong></td><td>Yes &mdash; by any admin in the account</td><td>No &mdash; only the management account can change SCPs</td></tr>
+    <tr><td><strong>Does root bypass it?</strong></td><td>Yes &mdash; root can delete Config rules</td><td>No &mdash; root in member accounts is subject to SCPs</td></tr>
+    <tr><td><strong>What happens if credentials are compromised?</strong></td><td>Attacker can disable enforcement</td><td>Attacker is still bound by the SCP ceiling</td></tr>
+  </tbody>
+</table>
+
+<h3>Three components of the solution</h3>
+
+<p>The three issues build on each other &mdash; and so do the solutions. Each layer requires the previous one. Click any card to explore.</p>
+
+<div class="solution-grid">
+  <div class="solution-box" onclick="showSolution(0)">
+    <div class="sol-icon">&#127963;</div>
+    <div class="sol-title">1. Organizations + Multi-Account</div>
+    <div class="sol-problem">Separate dev from production with account boundaries</div>
+    <div class="sol-service">Foundation &mdash; everything builds on this</div>
+  </div>
+  <div class="solution-box" onclick="showSolution(1)">
+    <div class="sol-icon">&#128220;</div>
+    <div class="sol-title">2. Service Control Policies</div>
+    <div class="sol-problem">Define rules that member accounts cannot override</div>
+    <div class="sol-service">Requires Organizations</div>
+  </div>
+  <div class="solution-box" onclick="showSolution(2)">
+    <div class="sol-icon">&#127760;</div>
+    <div class="sol-title">3. Regional Scaling</div>
+    <div class="sol-problem">Expand to Asia with data sovereignty compliance</div>
+    <div class="sol-service">Requires Organizations + SCPs + Route 53</div>
+  </div>
+</div>
+
+<div class="solution-reveal" id="solution-reveal">
+  <div style="text-align:center;color:#aaa;font-size:0.88rem;font-style:italic;padding:0.3rem 0;" id="sol-hint">&#8593; Click a card to explore</div>
+  <div id="sol-content" style="display:none;"></div>
+</div>
+
+<script>
+var solutionData = [
+  {
+    title: "1. Organizations + Multi-Account Architecture",
+    subtitle: "The foundation \u2014 without this, nothing else works",
+    content: '<p><strong>The problem:</strong> Everything runs in one account. Development and production share the same IAM policies, the same S3 buckets, the same CloudTrail trail. A mistake in development can break the live application.</p><p><strong>The solution:</strong> Create separate member accounts for each environment. The Photo Viewer production workload runs in a member account inside the Production OU. A staging account in the Staging OU gives the team a safe place to test. Account boundaries are the strongest isolation mechanism AWS provides \u2014 harder to cross than IAM policies are to misconfigure.</p><p><strong>Management vs member accounts:</strong> In the Identity Center lab, your account became the management account and was moved into the Production OU. But the management account is exempt from SCPs \u2014 it cannot be governed. In production, the management account runs zero workloads and sits above the OU structure. All workloads run in <strong>member accounts</strong> that are subject to SCPs.</p><p><strong>What this enables:</strong> Once you have separate accounts, you can apply different rules to different accounts. That\u2019s where SCPs come in \u2014 the next layer.</p>'
+  },
+  {
+    title: "2. Service Control Policies (SCPs)",
+    subtitle: "Builds on Organizations \u2014 the ceiling IAM cannot exceed",
+    content: '<p><strong>The problem:</strong> Even with separate accounts, the people operating the Photo Viewer can disable CloudTrail, remove encryption, or open S3 to the public. The same person who enforces the rules can delete them.</p><p><strong>The solution:</strong> SCPs are defined in the management account and applied to member accounts. The people operating the Photo Viewer cannot change or remove the SCPs that govern them. Even root in a member account is subject to SCPs.</p><p><strong>Baseline SCPs (all member accounts):</strong> Deny CloudTrail deletion, deny public S3, deny Identity Center administration. No member account can disable audit logging, expose data publicly, or create local identity management.</p><p><strong>The management account exemption:</strong> SCPs do not apply to the management account \u2014 by design. An overly broad SCP could otherwise lock out the entire organization. This is why the management account must run zero workloads.</p><p><strong>What this enables:</strong> Once you have SCPs, you can enforce region-specific restrictions \u2014 the foundation for regional scaling.</p>'
+  },
+  {
+    title: "3. Regional Scaling",
+    subtitle: "Builds on Organizations + SCPs \u2014 adds Route 53 for user routing",
+    content: '<p><strong>The problem:</strong> The Photo Viewer runs in <code>us-east-1</code> only. Asia users have 400ms latency. Data sovereignty laws require local storage. You need a second deployment \u2014 but with guarantees that data stays in-region.</p><p><strong>The solution uses all three layers:</strong></p><ul><li><strong>Organizations</strong> provides separate member accounts per region \u2014 a compromised US account cannot access Asia data</li><li><strong>Regional SCPs</strong> on each regional OU restrict resource creation to a single region \u2014 no principal in the Asia account can create an S3 bucket in <code>us-east-1</code>, even accidentally</li><li><strong>Route 53</strong> latency-based routing connects users to the closest deployment automatically \u2014 a user in Tokyo gets <code>ap-southeast-1</code>, a user in New York gets <code>us-east-1</code></li></ul><p><strong>Route 53 is a global service</strong> managed from the management account. Hosted zones, routing policies, and health checks are configured centrally. If the Asia deployment goes down, health checks detect it and fail over to the US deployment.</p><p>This is the cumulative payoff: Organizations provides the account structure, SCPs enforce the rules, and Route 53 connects users to the right deployment. None works alone.</p>'
+  }
+];
+
+function showSolution(idx) {
+  var d = solutionData[idx];
+  document.getElementById('sol-hint').style.display = 'none';
+  var content = document.getElementById('sol-content');
+  content.style.display = 'block';
+  content.innerHTML = '<div class="solution-reveal-subtitle">' + d.subtitle + '</div><div class="solution-reveal-title">' + d.title + '</div>' + d.content;
+  document.getElementById('solution-reveal').classList.add('visible');
+  var boxes = document.querySelectorAll('.solution-box');
+  for (var i = 0; i < boxes.length; i++) { boxes[i].classList.remove('selected'); }
+  boxes[idx].classList.add('selected');
+}
+</script>
+
+<h3>Four categories of governance</h3>
+
+<p>The three solutions above address governance across four distinct categories:</p>
+
+<div class="gov-grid">
+  <div class="gov-card">
+    <div class="gov-icon">&#128274;</div>
+    <div class="gov-title">Security governance</div>
+    <div class="gov-question">&ldquo;What security controls must always exist?&rdquo;</div>
+    <div class="gov-example">CloudTrail cannot be disabled. S3 buckets cannot be public. <em>(Layer 2 &mdash; baseline SCPs)</em></div>
+  </div>
+  <div class="gov-card">
+    <div class="gov-icon">&#127757;</div>
+    <div class="gov-title">Data governance</div>
+    <div class="gov-question">&ldquo;Where can data live, and who can access it?&rdquo;</div>
+    <div class="gov-example">Asia user data stays in <code>ap-southeast-1</code>. No cross-region access. <em>(Layer 3 &mdash; regional SCPs + account isolation)</em></div>
+  </div>
+  <div class="gov-card">
+    <div class="gov-icon">&#128101;</div>
+    <div class="gov-title">Identity governance</div>
+    <div class="gov-question">&ldquo;Who can grant access, and from where?&rdquo;</div>
+    <div class="gov-example">Identity Center is centralized. No local identity providers in member accounts. <em>(Layer 2 &mdash; baseline SCP + centralized Identity Center)</em></div>
+  </div>
+  <div class="gov-card">
+    <div class="gov-icon">&#128176;</div>
+    <div class="gov-title">Cost governance</div>
+    <div class="gov-question">&ldquo;What services and regions are permitted?&rdquo;</div>
+    <div class="gov-example">Region-lock SCPs prevent accidental resource creation in expensive regions. <em>(Layer 3 &mdash; regional SCPs)</em></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. Architecture &mdash; Photo Viewer goes global</h2>
+
+<p>In the Identity Center lab, you created Production and Staging OUs and moved your account into Production. But your account is the management account &mdash; exempt from SCPs &mdash; and the Staging OU is empty. The production target separates governance from workloads: a dedicated management account at the top, member accounts in regional OUs below.</p>
+
+<div class="arch-diagram">
+  <div class="arch-title">Multi-Account, Multi-Region Architecture</div>
+
+  <!-- Management Account with R53 inside -->
+  <div class="arch-mgmt" onclick="showArch('mgmt')" style="padding-bottom:0.6rem;">
+    <div class="arch-mgmt-label"><span style="font-size:1.2rem;">&#127963;</span> Management Account (dedicated &mdash; no workloads)</div>
+    <div class="arch-mgmt-desc" style="margin-bottom:0.6rem;">Organizations &middot; Identity Center &middot; Consolidated billing &middot; SCP management</div>
+    <div class="arch-r53-inner" onclick="event.stopPropagation(); showArch('route53')" style="background:#fff;border:1.5px solid #1F4E79;border-radius:8px;padding:0.5rem 1rem;cursor:pointer;text-align:center;transition:box-shadow 0.2s,background 0.2s;">
+      <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">&#127760; Route 53 &nbsp;<span style="font-weight:400;font-size:0.72rem;color:#888;">global service</span></div>
+      <div style="font-size:0.72rem;color:#666;">photos.example.com &mdash; latency-based routing</div>
+    </div>
+    <div style="font-size:0.65rem;color:#94a3b8;text-align:center;margin-top:0.4rem;">Global services (IAM, STS, Route 53, Organizations) live in the management account</div>
+  </div>
+
+  <!-- Data flow arrows -->
+  <div class="arch-latency-row" style="margin:0.6rem 0;">
+    <div class="arch-latency-label"><span class="arrow">&#8595;</span> ~50 ms <span style="font-size:0.62rem;color:#aaa;margin-left:0.3rem;">user traffic</span></div>
+    <div class="arch-latency-label"><span style="font-size:0.62rem;color:#aaa;margin-right:0.3rem;">user traffic</span> ~50 ms <span class="arrow">&#8595;</span></div>
+  </div>
+
+  <!-- Two member accounts -->
+  <div class="arch-accounts">
+    <div class="arch-account" onclick="showArch('us')">
+      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#3b82f6;margin-bottom:0.3rem;">&#9632; Member Account</div>
+      <div class="arch-account-name"><span>&#127482;&#127480;</span> NA OU &rarr; Production</div>
+      <div class="arch-account-region us">us-east-1</div>
+      <div class="arch-account-info">
+        <strong>PhotoViewer US</strong><br>
+        S3, Lambda, API Gateway, CloudFront, Cognito, DynamoDB, KMS<br>
+        <strong>Data:</strong> US user photos &amp; metadata<br>
+        <strong>Access:</strong> Full Identity Center access (Tom &amp; Jerry)
+      </div>
+      <div class="arch-scp-group">
+        <div class="arch-scp region">SCP (NA OU): Restrict to us-east-1</div>
+      </div>
+    </div>
+
+    <div class="arch-account" onclick="showArch('asia')">
+      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#10b981;margin-bottom:0.3rem;">&#9632; Member Account</div>
+      <div class="arch-account-name"><span>&#127470;&#127475;</span> Asia OU &rarr; Production</div>
+      <div class="arch-account-region asia">ap-southeast-1</div>
+      <div class="arch-account-info">
+        <strong>PhotoViewer Asia</strong><br>
+        S3, Lambda, API Gateway, CloudFront, Cognito, DynamoDB, KMS<br>
+        <strong>Data:</strong> Asia user photos &amp; metadata<br>
+        <strong>Access:</strong> Read-only Identity Center (no local admin)
+      </div>
+      <div class="arch-scp-group">
+        <div class="arch-scp region">SCP (Asia OU): Restrict to ap-southeast-1</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arch-detail" id="arch-detail">
+    <div id="arch-detail-content"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. Key concepts</h2>
+
+<h3>Organizational controls</h3>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c1')">
+    <div class="concept-icon">&#128220;</div>
+    <div>
+      <div class="concept-title">SCPs &mdash; the ceiling IAM cannot exceed</div>
+      <div class="concept-subtitle">Filter, not grant &middot; applies to root in member accounts &middot; management account exempt</div>
+    </div>
+    <div class="concept-chevron" id="chev-c1">&#9660;</div>
+  </div>
+  <div class="concept-body" id="c1">
+    <p>IAM policies define what a principal <em>can</em> do. SCPs define what an account <em>cannot</em> do:</p>
+    <table>
+      <tr><th></th><th>IAM Policy</th><th>SCP</th></tr>
+      <tr><td><strong>Scope</strong></td><td>Single principal</td><td>Entire account (all principals)</td></tr>
+      <tr><td><strong>Effect</strong></td><td>Grants permissions</td><td>Restricts maximum available permissions</td></tr>
+      <tr><td><strong>Override</strong></td><td>Any admin can change</td><td>Only management account can change</td></tr>
+      <tr><td><strong>Root user</strong></td><td>Root bypasses IAM policies</td><td>Root is subject to SCPs (in member accounts)</td></tr>
+    </table>
+    <p>Example region-lock SCP:</p>
+    <pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "DenyNonApSoutheast1",
+    "Effect": "Deny",
+    "NotAction": ["iam:*", "sts:*", "organizations:*", "support:*"],
+    "Resource": "*",
+    "Condition": {
+      "StringNotEquals": {"aws:RequestedRegion": "ap-southeast-1"}
+    }
+  }]
+}</code></pre>
+    <p>The <code>NotAction</code> exclusion is critical &mdash; IAM, STS, Organizations, and Support are global services that don&rsquo;t operate in a specific region. Without this exclusion, the SCP would break basic account functionality.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c2')">
+    <div class="concept-icon">&#9888;</div>
+    <div>
+      <div class="concept-title">The management account exemption</div>
+      <div class="concept-subtitle">By design &middot; prevents organizational lockout &middot; why workloads don&rsquo;t run here</div>
+    </div>
+    <div class="concept-chevron" id="chev-c2">&#9660;</div>
+  </div>
+  <div class="concept-body" id="c2">
+    <p>The management account is exempt from all SCPs. This is by design &mdash; if SCPs could lock out the management account, an overly broad SCP could make the entire organization unrecoverable.</p>
+    <p>The consequence: <strong>any workload running in the management account operates without SCP guardrails.</strong> In this course, the Photo Viewer runs in the management account because students have a single AWS account. In production, this is unacceptable. The management account should contain only Organizations, Identity Center, and consolidated billing.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c3')">
+    <div class="concept-icon">&#127959;</div>
+    <div>
+      <div class="concept-title">Control Tower &mdash; automating what you built by hand</div>
+      <div class="concept-subtitle">Landing Zone &middot; preventive + detective guardrails &middot; account factory</div>
+    </div>
+    <div class="concept-chevron" id="chev-c3">&#9660;</div>
+  </div>
+  <div class="concept-body" id="c3">
+    <p>Over twelve weeks, you manually configured: an Organization, OUs, Identity Center, permission sets, CloudTrail, Config, and SCPs. Control Tower automates all of this. A <strong>Landing Zone</strong> creates:</p>
+    <ul>
+      <li>A multi-account structure with management, log archive, and audit accounts</li>
+      <li>Baseline SCPs (deny public S3, require CloudTrail, restrict regions)</li>
+      <li>Centralized logging (CloudTrail and Config aggregated in the log archive account)</li>
+      <li>Identity Center pre-configured with SSO groups</li>
+      <li>Guardrails categorized as <strong>preventive</strong> (SCPs) and <strong>detective</strong> (Config rules)</li>
+    </ul>
+    <p>When the Asia team needs a new account, an administrator provisions it through Control Tower. The account is created with all baseline controls already in place &mdash; region-locked, CloudTrail enabled, encryption required, Identity Center access centralized. No manual configuration, no risk of forgetting a step.</p>
+  </div>
+</div>
+
+<h3>DNS and edge networking</h3>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c4')">
+    <div class="concept-icon">&#127760;</div>
+    <div>
+      <div class="concept-title">Route 53 &mdash; routing users to the right region</div>
+      <div class="concept-subtitle">Latency-based &middot; geolocation &middot; health checks &middot; DNSSEC</div>
+    </div>
+    <div class="concept-chevron" id="chev-c4">&#9660;</div>
+  </div>
+  <div class="concept-body" id="c4">
+    <p><strong>Latency-based routing:</strong> Route 53 measures network latency from the user&rsquo;s location to each AWS region and returns the record for the lowest-latency endpoint. A user in Tokyo gets <code>ap-southeast-1</code>; a user in New York gets <code>us-east-1</code>. Performance optimization naturally aligns with data sovereignty.</p>
+    <p><strong>Geolocation routing:</strong> Routes based on the user&rsquo;s geographic location (country or continent), regardless of latency. Useful when legal requirements mandate that users in a specific country always hit a specific region &mdash; even if another region would be faster.</p>
+    <p><strong>Health checks:</strong> Route 53 monitors endpoint health and automatically routes traffic away from unhealthy regions. If the Asia deployment is down, Asia users fail over to the US deployment (with appropriate data handling considerations).</p>
+    <p><strong>DNSSEC:</strong> DNS Security Extensions that cryptographically sign DNS records. Prevents an attacker from spoofing DNS responses to redirect <code>photos.example.com</code> to a malicious server.</p>
+    <p><strong>Alias records:</strong> Route 53&rsquo;s special record type that maps a hostname directly to an AWS resource (CloudFront, ALB, S3) without a CNAME indirection.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('c5')">
+    <div class="concept-icon">&#128218;</div>
+    <div>
+      <div class="concept-title">Data sovereignty &mdash; why geography matters for security</div>
+      <div class="concept-subtitle">GDPR &middot; PDPA &middot; data localization laws</div>
+    </div>
+    <div class="concept-chevron" id="chev-c5">&#9660;</div>
+  </div>
+  <div class="concept-body" id="c5">
+    <p>Data sovereignty laws require that certain data be stored and processed within a specific geographic jurisdiction:</p>
+    <ul>
+      <li><strong>GDPR</strong> (EU) &mdash; personal data of EU residents must be protected under EU standards, with restrictions on transfer outside the EU</li>
+      <li><strong>PDPA</strong> (Singapore, Thailand) &mdash; personal data must be stored and processed domestically</li>
+      <li><strong>Data localization laws</strong> (India, Indonesia, Vietnam) &mdash; certain categories of data must remain within national borders</li>
+    </ul>
+    <p>Multi-region deployment with region-lock SCPs addresses data sovereignty at the infrastructure level. It is not enough to deploy in the right region &mdash; you must also prevent data from being copied, replicated, or accessed from another region. Region-lock SCPs enforce this: no principal in the Asia account can create an S3 bucket in <code>us-east-1</code>, even accidentally.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. Course retrospective &mdash; the complete Photo Viewer</h2>
+
+<p>Twelve weeks. Seven pillars. One application. The Photo Viewer started as a public S3 bucket with pre-seeded photos and evolved into a fully secured, monitored, and governed application.</p>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r1')"><div class="complete-title">&#10003; Authentication &amp; Access Control</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r1"><p>Cognito user pool with Google OAuth. PKCE authorization code flow. JWT-based session management. Cognito groups (free, premium) driving RBAC. Lambda authorizer validating tokens. Owner-scoped operations preventing IDOR. Identity Center with Tom (customer support) and Jerry (security engineer). Permission sets scoped to specific KMS keys.</p></div>
+</div>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r2')"><div class="complete-title">&#10003; Network Security</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r2"><p>CloudFront distribution with HTTPS enforcement and origin access control. VPC with public and private subnets. Security groups restricting traffic. WAF with rate limiting. API Gateway replacing ALB. Lambda authorizer verifying origin secret. Shield Standard for DDoS protection.</p></div>
+</div>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r3')"><div class="complete-title">&#10003; Data Encryption</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r3"><p>Customer-managed KMS keys. Two-key architecture: infra key (operational secrets) and data key (user content). SSE-KMS on S3 and DynamoDB. Secrets Manager encrypted with the infra key. Key policies creating an authorization layer independent of IAM. Separation of duties.</p></div>
+</div>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r4')"><div class="complete-title">&#10003; Update &amp; Patch Management</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r4"><p>Inspector enabled for Lambda scanning. Continuous CVE monitoring against the NIST NVD. Found real Pillow CVEs in the image validator Lambda. Findings flow to Security Hub.</p></div>
+</div>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r5')"><div class="complete-title">&#10003; Security Monitoring &amp; Auditing</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r5"><p>CloudWatch alarms on Lambda errors and duration. AWS Config with managed rules for S3 encryption, public access, CloudTrail, and root key checks. Drift detection with break/fix validation. Trusted Advisor security checks. SNS notification backbone.</p></div>
+</div>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r6')"><div class="complete-title">&#10003; Incident Detection &amp; Response</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r6"><p>Image validator Lambda using Pillow. Macie for PII detection. GuardDuty for malware and adversarial behavior. Security Hub aggregating findings from Inspector, Macie, GuardDuty, and Config. EventBridge with dual targets &mdash; SNS notification and Lambda quarantine for automated remediation.</p></div>
+</div>
+
+<div class="complete-card">
+  <div class="complete-header" onclick="toggleVuln('r7')"><div class="complete-title">&#10003; Security Governance</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
+  <div class="complete-body" id="r7"><p>AWS Organizations with OU structure. SCPs enforcing region locks, denying CloudTrail deletion, preventing public S3, and centralizing identity management. Control Tower as the automation layer for Landing Zone creation. Route 53 for latency-based routing across regions. Data sovereignty enforced at the organizational level.</p></div>
+</div>
+
+<p>The production hardening guide on the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a> documents every deliberate lab simplification &mdash; what was skipped for pedagogical reasons and what the production alternative would be.</p>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>Lab files</h2>
+<p>All lab files for this week are in the course GitHub repository.</p>
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week12" target="_blank">&#x2325; View Week 12 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-lab-assignment.html">&#x1F4CB; Week 12 Lab Assignment</a>
+</div>
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-detection.html">&larr; Week 11: Incident Detection</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+<script>
+var archData = {
+  mgmt: { title: "Management Account (dedicated)",
+    content: '<p><strong>Purpose:</strong> Governance only. Zero application workloads.</p><p>Your account became the management account in the Identity Center lab and was moved into the Production OU. But the management account is exempt from SCPs \u2014 so placing it inside an OU does not make it governed. In production, the management account sits above the OU structure and runs only Organizations, Identity Center, and consolidated billing.</p><p><strong>Global services live here:</strong> IAM, STS, Route 53, and Organizations are global services \u2014 they do not operate in a specific region. Route 53 hosted zones and latency-based routing policies are configured from this account, routing user traffic to the correct regional member account. Identity Center is also managed from here \u2014 no member account can create its own instance.</p><p><strong>SCP exemption:</strong> The management account is exempt from all SCPs. This is why it must run zero workloads \u2014 anything running here has no SCP protection.</p>' },
+  route53: { title: "Route 53 \u2014 Latency-Based Routing",
+    content: '<p><strong>How it works:</strong> A user in Tokyo requests <code>photos.example.com</code>. Route 53 measures latency to both <code>us-east-1</code> (~150ms) and <code>ap-southeast-1</code> (~20ms), and returns the IP address of the closer CloudFront distribution.</p><p><strong>Data sovereignty benefit:</strong> Asia users are naturally routed to the Asia deployment, keeping their data in-region. US users hit the US deployment. The routing policy aligns with the governance policy.</p><p><strong>Failover:</strong> Health checks monitor each region. If the Asia deployment is down, Route 53 automatically routes Asia users to the US deployment as a backup.</p>' },
+  us: { title: "NA OU \u2192 Production \u2014 PhotoViewer US",
+    content: '<p><strong>Same application</strong> built across twelve weeks. S3, Lambda, API Gateway, CloudFront, Cognito, DynamoDB, KMS \u2014 all in <code>us-east-1</code>.</p><p><strong>OU hierarchy:</strong> This member account sits inside Production, which is nested under the NA OU. The region-lock SCP on the NA OU restricts this account to <code>us-east-1</code>. The baseline SCPs on Root (deny CloudTrail disable, deny public S3, deny Identity Center admin) also apply through inheritance.</p><p><strong>Full Identity Center access:</strong> Tom (customer support) and Jerry (security engineer) sign into this account through centralized Identity Center with their respective permission sets. A staging account would sit alongside this one under the same NA OU.</p>' },
+  asia: { title: "Asia OU \u2192 Production \u2014 PhotoViewer Asia",
+    content: '<p><strong>Same application, different region.</strong> Identical architecture deployed in <code>ap-southeast-1</code>. Asia user photos and metadata stay in this region.</p><p><strong>OU hierarchy:</strong> This member account sits inside Production, nested under the Asia OU. The region-lock SCP on the Asia OU restricts it to <code>ap-southeast-1</code>. Data sovereignty is enforced at the organizational level \u2014 no principal in this account can create resources in any other region.</p><p><strong>Identity Center centralized:</strong> The baseline SCP on Root denies Identity Center administration in all member accounts \u2014 not just Asia. No member account can create its own Identity Center instance or permission sets. Jerry can sign into the Asia account through centralized Identity Center, but with a read-only permission set. Operational changes require a change request through the US team.</p>' }
+};
+function showArch(key) {
+  var d = archData[key];
+  var panel = document.getElementById('arch-detail');
+  document.getElementById('arch-detail-content').innerHTML = '<div class="arch-detail-title">' + d.title + '</div>' + d.content;
+  panel.classList.add('visible');
+  // Clear all selections
+  document.querySelectorAll('.arch-mgmt,.arch-account').forEach(function(el){ el.classList.remove('selected'); });
+  var r53 = document.querySelector('.arch-r53-inner');
+  if (r53) r53.style.boxShadow = 'none';
+  if (r53) r53.style.background = '#fff';
+  // Highlight clicked element
+  if (key === 'mgmt') {
+    document.querySelector('.arch-mgmt').classList.add('selected');
+  } else if (key === 'route53') {
+    if (r53) { r53.style.boxShadow = '0 0 0 3px #1F4E79'; r53.style.background = '#e0ecf5'; }
+  } else {
+    document.querySelectorAll('.arch-account')[key === 'us' ? 0 : 1].classList.add('selected');
+  }
+}
+function toggleIssue(id) {
+  var el = document.getElementById(id);
+  var isOpen = el.classList.contains('active');
+  document.querySelectorAll('.issue-detail').forEach(function(d){ d.classList.remove('active'); });
+  if (!isOpen) el.classList.add('active');
+}
+function toggleConcept(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.textContent = isOpen ? '\u25BC' : '\u25B2';
+}
+function toggleVuln(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+</script>
+</body>
+</html>
