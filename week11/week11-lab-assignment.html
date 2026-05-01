@@ -466,7 +466,7 @@ def lambda_handler(event, context):
 <p>The image validator Lambda uses Pillow 9.5.0, which has CVE-2023-50447 (arbitrary code execution in <code>ImageMath.eval</code>). The validator code only calls <code>Image.open()</code> &mdash; it never uses <code>ImageMath.eval</code>. Should you still upgrade Pillow? Explain your reasoning.</p>
 
 <h3>Question 3</h3>
-<p>You now have findings from five services in Security Hub: CloudWatch (alarms), Config (compliance), Inspector (CVEs), Macie (PII), and GuardDuty (threats). Describe a scenario where a single incident would generate findings in at least three of these services simultaneously.</p>
+<p>You now have findings from four services in Security Hub: Config (compliance), Inspector (CVEs), Macie (PII), and GuardDuty (threats). Describe a scenario where a single incident would generate findings in at least three of these services simultaneously.</p>
 
 <h3>Question 4</h3>
 <p>In Part 6, EventBridge sends an SNS email notification. In Part 7, EventBridge triggers a Lambda that quarantines the file. Compare these two response strategies. When would you use notification only? When would you add automated remediation? What is the risk of automating remediation too aggressively?</p>
