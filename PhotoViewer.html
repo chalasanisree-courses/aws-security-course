@@ -1146,8 +1146,9 @@
       active: ['security'],
       issues: {
         security: { title:'Security issues in Week 11', bullets:[
-          'Everything built so far applies to a single AWS account. In production, workloads run across multiple accounts — production, staging, development, audit. A single misconfigured account can compromise the entire organization.',
-          'No organizational guardrails. There is nothing preventing an administrator from deleting CloudTrail, making an S3 bucket public, or creating resources in unauthorized regions. Service Control Policies (SCPs) enforce boundaries that no individual account can override — even the root user.'
+          'Everything built so far applies to a single AWS account. Development and production share the same account — a bad deployment takes the app down for real users. There is no boundary between experimenting and serving live traffic.',
+          'No separation between rule-makers and rule-followers. The same person who sets up Config rules, GuardDuty, and CloudTrail can also delete them. If their credentials are compromised, the attacker can disable every security control and erase the evidence.',
+          'Not set up for regional scaling. The application runs entirely in us-east-1. Users in other regions experience high latency, and data sovereignty laws may require user data to stay within local borders.'
         ]}
       }
     }
