@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 11 Lab — Incident Detection &amp; Response · CS 55D</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 1.2rem 1.4rem; border-radius: 8px; font-size: 0.84rem; overflow-x: auto; margin: 0.8rem 0 1.2rem; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout.warn, .callout.warning { border-color: #dc3545; background: #fff5f5; }
+  .callout.success { border-color: #28a745; background: #f0fff4; }
+  .callout p:last-child { margin-bottom: 0; }
+  .step { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+  .step-header { display: flex; align-items: baseline; gap: 1rem; padding: 0.9rem 1.2rem; background: #f5f8fc; border-bottom: 1px solid #d0dce8; }
+  .step-num { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1F4E79; background: #dce8f5; padding: 0.2em 0.6em; border-radius: 4px; flex-shrink: 0; }
+  .step-title { font-weight: 600; font-size: 1rem; color: #111; }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body p:last-child { margin-bottom: 0; }
+  .verify { background: #f0fff4; border: 1px solid #a5d6a7; border-radius: 8px; padding: 0.9rem 1.2rem; margin: 1rem 0; }
+  .verify-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #155724; margin-bottom: 0.4rem; }
+  .verify p:last-child { margin-bottom: 0; }
+  .screenshot { background: #f8f5ff; border: 1px solid #c8b8e8; border-radius: 8px; padding: 0.8rem 1.2rem; margin: 1rem 0; font-size: 0.9rem; color: #4a148c; }
+  .screenshot::before { content: "\1F4F8 Screenshot required: "; font-weight: 600; }
+  .preflight { background: #fff8e1; border: 2px solid #f9a825; border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1.5rem 0; }
+  .preflight h3 { color: #e65100; margin-top: 0; }
+  .part-header { background: #1F4E79; color: #fff; border-radius: 8px; padding: 0.7rem 1.2rem; margin: 2rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+  .part-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+  .part-title { font-size: 1.05rem; font-weight: 600; }
+  .rubric-table th { background: #1F4E79; color: #fff; }
+  .rubric-table td:nth-child(2) { text-align: center; font-weight: 600; color: #1F4E79; }
+  .rubric-total td { font-weight: 700; background: #f0f4f8; }
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .download-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .download-btn:hover { background: #B5D4F4; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 11 Lab &mdash; Incident Detection &amp; Response</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 100 pts</p>
+
+<p><strong>Objective:</strong> Last week you set up monitoring for configuration drift, performance, and vulnerabilities &mdash; all inward-facing. This week, someone is doing something bad. An employee uploads sensitive data. A suspicious file lands in the photo bucket. A Lambda dependency has a known vulnerability. Set up Macie, GuardDuty, and Inspector to detect these threats, aggregate all findings in Security Hub, and automate alerting via EventBridge.</p>
+
+<div class="callout info">
+  <p><strong>What changes this week:</strong> A new image-validation Lambda is deployed (by Jerry) that uses Pillow to verify uploaded files are real images. This Lambda has a deliberately outdated dependency that Inspector will flag. Macie, GuardDuty, Security Hub, and EventBridge are all enabled for the first time.</p>
+</div>
+
+<div class="callout">
+  <p><strong>Roles this week:</strong> <strong>Jerry</strong> (security/infra engineer) builds the detection infrastructure &mdash; deploys the validator Lambda, enables Macie, GuardDuty, Security Hub, and EventBridge. <strong>Tom</strong> (customer support engineer) creates the incidents &mdash; uploads a file with PII and a suspicious file. Jerry&rsquo;s infrastructure catches Tom&rsquo;s mistakes.</p>
+</div>
+
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Run the pre-flight script from CloudShell before starting:</p>
+  <pre>cd ~
+git -C aws-security-course pull
+bash aws-security-course/photoviewer/week11/week11-preflight.sh</pre>
+  <p>The script verifies your Week 10 environment is intact: CloudWatch alarms, AWS Config recorder and rules, Inspector enabled, Lambda function, S3 bucket, and the SNS topic. Address any errors before proceeding.</p>
+</div>
+
+
+<!-- Part 1 -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">Deploy the image validator Lambda (Jerry)</span>
+</div>
+
+<p>The Photo Viewer accepts file uploads from premium users, but it never checks whether the uploaded file is actually an image. Someone could rename <code>malware.exe</code> to <code>vacation.jpg</code> and upload it. Jerry deploys a Lambda function that triggers on every S3 upload and uses the Pillow library to verify the file is a valid image.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Download the validator Lambda zip</span></div><div class="step-body">
+<p>The deployment package is pre-built in the course repository. From CloudShell:</p>
+<pre>cd ~/aws-security-course/photoviewer/week11/
+ls -lh image-validator.zip</pre>
+<p>This zip contains a Python Lambda function (<code>image_validator.py</code>) and the Pillow 9.5.0 library. The function uses <code>Image.open()</code> to verify uploaded files are valid images.</p>
+<div class="callout">
+  <p><strong>Why Pillow 9.5.0?</strong> This version has known CVEs (including CVE-2023-50447, arbitrary code execution, CVSS 8.1). The vulnerable code paths are in <code>ImageMath.eval</code> &mdash; a function the validator never calls. But Inspector flags the <em>package version</em>, not the code paths your function uses. This mirrors real production environments where dependencies carry vulnerabilities in code you never invoke.</p>
+</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 2</span><span class="step-title">Create the Lambda function</span></div><div class="step-body">
+<p>Go to <strong>Lambda &rarr; Create function</strong>.</p>
+<ul>
+  <li>Function name: <code>photoviewer-image-validator</code></li>
+  <li>Runtime: <strong>Python 3.12</strong></li>
+  <li>Execution role: <strong>Create a new role with basic Lambda permissions</strong></li>
+</ul>
+<p>After creation, upload the deployment package:</p>
+<ul>
+  <li>Go to <strong>Code &rarr; Upload from &rarr; .zip file</strong></li>
+  <li>Upload <code>image-validator.zip</code></li>
+  <li>Set the handler to <code>image_validator.lambda_handler</code></li>
+</ul>
+<p>Add permissions to the Lambda execution role:</p>
+<ul>
+  <li>Go to <strong>Configuration &rarr; Permissions &rarr; click the role name</strong></li>
+  <li>Attach the managed policy <code>AmazonS3FullAccess</code> (in production you would scope this down &mdash; for the lab this is sufficient)</li>
+</ul>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Configure S3 event trigger</span></div><div class="step-body">
+<p>Go to <strong>S3 &rarr; your Photo Viewer bucket &rarr; Properties &rarr; Event notifications &rarr; Create event notification</strong>.</p>
+<ul>
+  <li>Event name: <code>image-upload-validation</code></li>
+  <li>Prefix: <code>photos/</code></li>
+  <li>Event types: <strong>s3:ObjectCreated:*</strong></li>
+  <li>Destination: <strong>Lambda function &rarr; photoviewer-image-validator</strong></li>
+</ul>
+<p>Every file uploaded to the <code>photos/</code> prefix will now trigger the validator.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Test the validator</span></div><div class="step-body">
+<p>Upload two files to <code>photos/</code> via the S3 console:</p>
+<ul>
+  <li><strong>Test 1:</strong> Upload a real JPEG photo. After a few seconds, check the object&rsquo;s tags (S3 &rarr; object &rarr; Properties &rarr; Tags). You should see <code>validation: PASSED</code> and tags for image dimensions.</li>
+  <li><strong>Test 2:</strong> Create a text file, rename it to <code>suspicious.jpg</code>, and upload it. Check tags &mdash; you should see <code>validation: CAUTION</code>.</li>
+</ul>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>The real photo is tagged <code>validation: PASSED</code>. The renamed text file is tagged <code>validation: CAUTION</code>. The Lambda is actively validating every upload.</p>
+</div>
+<div class="screenshot">S3 object tags showing <code>validation: PASSED</code> on the real photo</div>
+<div class="screenshot">S3 object tags showing <code>validation: CAUTION</code> on the fake photo</div>
+</div></div>
+
+
+<!-- Part 2 -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">Inspector &mdash; vulnerability in the validator (Jerry)</span>
+</div>
+
+<p>Jerry deployed the image validator using Pillow 9.5.0. Inspector &mdash; which has been running since last week &mdash; will scan the new Lambda&rsquo;s deployment package and find the known CVEs.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Check Inspector findings</span></div><div class="step-body">
+<p>Go to <strong>Inspector &rarr; Findings &rarr; By Lambda function</strong>. Find <code>photoviewer-image-validator</code>.</p>
+<p>Inspector should report findings for Pillow 9.5.0. Look for:</p>
+<ul>
+  <li><strong>CVE-2023-50447</strong> &mdash; Arbitrary Code Execution via <code>ImageMath.eval</code> (CVSS 8.1, High)</li>
+  <li><strong>CVE-2023-44271</strong> &mdash; Denial of Service via <code>ImageFont</code> (CVSS 7.5, High)</li>
+</ul>
+<p>Click into a finding. Note the CVE ID, the CVSS score, the affected package and version, and the link to the NIST NVD entry. In production, this finding would trigger a remediation workflow &mdash; update Pillow to the latest version and redeploy.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>Inspector has found at least one CVE in the Pillow package bundled with <code>photoviewer-image-validator</code>. The finding includes severity, affected version, and remediation guidance.</p>
+</div>
+<div class="screenshot">Inspector finding showing CVE details for Pillow in photoviewer-image-validator</div>
+</div></div>
+
+
+<!-- Part 3 -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Macie &mdash; Tom uploads sensitive data</span>
+</div>
+
+<p>Tom is troubleshooting a customer support issue and needs to test a file upload. He drops a text file into the Photo Viewer&rsquo;s S3 bucket. The file happens to contain a customer&rsquo;s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled (presigned URLs) &mdash; but nobody knows the content is sensitive. Encryption protects confidentiality; Macie classifies content.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable Macie (Jerry)</span></div><div class="step-body">
+<p>Go to <strong>Amazon Macie &rarr; Get started &rarr; Enable Macie</strong>.</p>
+<p>Macie starts a 30-day free trial. It automatically discovers S3 buckets in the account.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Create a discovery job (Jerry)</span></div><div class="step-body">
+<p>Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong>.</p>
+<ul>
+  <li>Select the Photo Viewer bucket</li>
+  <li>Job type: <strong>One-time job</strong></li>
+  <li>Managed data identifiers: Leave defaults (includes SSN, credit card numbers, and other PII patterns)</li>
+  <li>Job name: <code>photoviewer-pii-scan</code></li>
+</ul>
+<p>Click <strong>Submit</strong>. The job will scan all objects in the bucket.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Tom uploads sensitive data</span></div><div class="step-body">
+<p>Switching to Tom&rsquo;s perspective. Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; photos/</strong> and upload a text file named <code>customer-data.txt</code> with the following content:</p>
+<pre>Customer: Jane Doe
+SSN: 123-45-6789
+Credit Card: 4111-1111-1111-1111
+Notes: Testing upload for support case #4472</pre>
+<p>This simulates a careless employee dropping PII into a bucket that is not designed for sensitive data.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Wait for Macie and review findings (Jerry)</span></div><div class="step-body">
+<p>Macie processing takes 5&ndash;15 minutes. While waiting, proceed to Part 4 (GuardDuty) and come back.</p>
+<p>When complete, go to <strong>Macie &rarr; Findings</strong>. Macie should flag <code>customer-data.txt</code> with findings for:</p>
+<ul>
+  <li>Social Security number detected</li>
+  <li>Credit card number detected</li>
+</ul>
+<p>Click into a finding. Note the S3 object path, the PII type, and the severity.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>Macie detected PII in the file Tom uploaded. The finding shows the S3 object, the type of sensitive data (SSN, credit card), and the severity level.</p>
+</div>
+<div class="screenshot">Macie finding showing PII detected in customer-data.txt &mdash; SSN and credit card number</div>
+</div></div>
+
+
+<!-- Part 4 -->
+<div class="part-header">
+  <span class="part-num">Part 4</span>
+  <span class="part-title">GuardDuty &mdash; Tom uploads a suspicious file</span>
+</div>
+
+<p>Tom uploads another file to help with a support case &mdash; a file he received from a customer. He does not realize it contains malware. GuardDuty Malware Protection for S3 scans newly uploaded objects and flags malicious content.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Enable GuardDuty (Jerry)</span></div><div class="step-body">
+<p>Go to <strong>Amazon GuardDuty &rarr; Get started &rarr; Enable GuardDuty</strong>.</p>
+<p>GuardDuty starts a 30-day free trial. It begins analyzing CloudTrail events, VPC flow logs, and DNS query logs for suspicious activity.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Enable Malware Protection for S3 (Jerry)</span></div><div class="step-body">
+<p>Go to <strong>GuardDuty &rarr; Protection plans &rarr; Malware Protection for S3</strong>. Enable it for the Photo Viewer bucket.</p>
+<ul>
+  <li>Select the Photo Viewer bucket</li>
+  <li>Object prefix: <code>photos/</code></li>
+</ul>
+<p>GuardDuty will now scan every new object uploaded to the <code>photos/</code> prefix.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">Tom uploads a suspicious file</span></div><div class="step-body">
+<p>Create the EICAR test file. This is a standardized anti-malware test string &mdash; not actual malware, but every malware scanner recognizes it as a test indicator.</p>
+<p>Create a file named <code>test-photo.jpg</code> with exactly this content:</p>
+<pre>X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*</pre>
+<p>Upload it to <strong>S3 &rarr; Photo Viewer bucket &rarr; photos/</strong>.</p>
+<div class="callout info">
+  <p><strong>Note:</strong> The EICAR string is an industry-standard test pattern. It is not malware and cannot harm your system. Every anti-malware product &mdash; including GuardDuty Malware Protection &mdash; is designed to recognize and flag it.</p>
+</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review GuardDuty findings (Jerry)</span></div><div class="step-body">
+<p>Wait a few minutes. Go to <strong>GuardDuty &rarr; Findings</strong>.</p>
+<p>GuardDuty should generate a finding for the EICAR file. Look for a finding type related to malware detection &mdash; it will include the S3 object path, the threat name, and the severity.</p>
+<p>Also generate sample findings for additional context: <strong>GuardDuty &rarr; Settings &rarr; Generate sample findings</strong>. This produces realistic threat indicators instantly &mdash; credential exfiltration, unusual API activity, reconnaissance. Browse three findings of different severity levels.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>GuardDuty detected the EICAR test file as malware. Sample findings show the breadth of threats GuardDuty monitors &mdash; credential compromise, unusual API calls, network reconnaissance.</p>
+</div>
+<div class="screenshot">GuardDuty finding for the EICAR malware detection in the Photo Viewer bucket</div>
+<div class="screenshot">Three sample findings of different severity levels (Low, Medium, High)</div>
+</div></div>
+
+
+<!-- Part 5 -->
+<div class="part-header">
+  <span class="part-num">Part 5</span>
+  <span class="part-title">Security Hub &mdash; single pane of glass (Jerry)</span>
+</div>
+
+<p>Jerry now has findings scattered across four dashboards: Inspector (Pillow CVE), Macie (PII in uploads), GuardDuty (malware), and Config (from last week). Security Hub aggregates them all into one place.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 14</span><span class="step-title">Enable Security Hub</span></div><div class="step-body">
+<p>Go to <strong>AWS Security Hub &rarr; Go to Security Hub &rarr; Enable Security Hub</strong>.</p>
+<p>Enable the <strong>AWS Foundational Security Best Practices</strong> standard. This adds additional automated checks on top of the findings from other services.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 15</span><span class="step-title">Wait for findings to aggregate</span></div><div class="step-body">
+<p>Security Hub takes a few minutes to ingest findings from connected services. Wait ~5 minutes, then go to <strong>Security Hub &rarr; Findings</strong>.</p>
+<p>You should see findings from multiple sources:</p>
+<ul>
+  <li><strong>Inspector:</strong> Pillow CVE in photoviewer-image-validator</li>
+  <li><strong>Macie:</strong> PII in customer-data.txt</li>
+  <li><strong>GuardDuty:</strong> Malware detection + sample findings</li>
+  <li><strong>Config:</strong> Any non-compliant rules from last week</li>
+</ul>
+<p>All findings are normalized to the AWS Security Finding Format (ASFF) with consistent severity scores, resource identifiers, and remediation recommendations.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>Security Hub shows findings from at least three different sources (Inspector, Macie, GuardDuty) in a single dashboard. One place to see everything.</p>
+</div>
+<div class="screenshot">Security Hub dashboard showing aggregated findings from multiple services</div>
+</div></div>
+
+
+<!-- Part 6 -->
+<div class="part-header">
+  <span class="part-num">Part 6</span>
+  <span class="part-title">EventBridge &mdash; automated alerting (Jerry)</span>
+</div>
+
+<p>A high-severity GuardDuty finding fires at 3 AM. Nobody is watching the Security Hub dashboard. EventBridge watches for you and sends an alert via SNS.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 16</span><span class="step-title">Create an EventBridge rule</span></div><div class="step-body">
+<p>Go to <strong>Amazon EventBridge &rarr; Rules &rarr; Create rule</strong>.</p>
+<ul>
+  <li>Name: <code>guardduty-high-severity-alert</code></li>
+  <li>Event bus: <strong>default</strong></li>
+  <li>Rule type: <strong>Rule with an event pattern</strong></li>
+</ul>
+<p>Event pattern:</p>
+<pre>{
+  "source": ["aws.guardduty"],
+  "detail-type": ["GuardDuty Finding"],
+  "detail": {
+    "severity": [{ "numeric": [">=", 7] }]
+  }
+}</pre>
+<p>This matches any GuardDuty finding with severity 7 or higher (High and Critical).</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 17</span><span class="step-title">Set the target</span></div><div class="step-body">
+<p>Target: <strong>SNS topic</strong> &mdash; select the same topic used for CloudWatch alarms and billing alerts.</p>
+<p>Click <strong>Create rule</strong>.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 18</span><span class="step-title">Test the alert</span></div><div class="step-body">
+<p>Go to <strong>GuardDuty &rarr; Settings &rarr; Generate sample findings</strong> again. This produces findings across all severity levels.</p>
+<p>Check your email. You should receive SNS notifications for the high-severity sample findings. The email contains the finding type, affected resource, severity, and a description.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>You received an email alert from EventBridge via SNS for a high-severity GuardDuty finding. At 3 AM, this would wake someone up &mdash; no dashboard-watching required.</p>
+</div>
+<div class="screenshot">Email notification showing a high-severity GuardDuty finding delivered via EventBridge &rarr; SNS</div>
+</div></div>
+
+
+<!-- Part 7 -->
+<div class="part-header">
+  <span class="part-num">Part 7</span>
+  <span class="part-title">Automated remediation &mdash; quarantine Lambda (Jerry)</span>
+</div>
+
+<p>Email notifications tell Jerry something happened. But the malicious file is still sitting in the <code>photos/</code> prefix, accessible to users, while Jerry reads his email and opens the console. Automated remediation closes this gap &mdash; a Lambda function moves the flagged object to a <code>quarantine/</code> prefix immediately, without waiting for a human.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 19</span><span class="step-title">Create the quarantine Lambda</span></div><div class="step-body">
+<p>Go to <strong>Lambda &rarr; Create function</strong>.</p>
+<ul>
+  <li>Function name: <code>photoviewer-quarantine</code></li>
+  <li>Runtime: <strong>Python 3.12</strong></li>
+  <li>Execution role: <strong>Create a new role with basic Lambda permissions</strong></li>
+</ul>
+<p>Paste the following code:</p>
+<pre>import json
+import boto3
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    detail = event.get('detail', {})
+    resource = detail.get('resource', {})
+
+    # Extract bucket and key from the GuardDuty finding
+    s3_details = resource.get('s3BucketDetails', [{}])[0]
+    bucket = s3_details.get('name', '')
+
+    # For S3 malware findings, the key is in the resource details
+    key = ''
+    for item in detail.get('resource', {}).get('s3ObjectDetails', []):
+        key = item.get('key', '')
+
+    if not bucket or not key:
+        print(f'Could not extract bucket/key from event: {json.dumps(event)}')
+        return {'statusCode': 400, 'body': 'Missing S3 details'}
+
+    # Move to quarantine
+    quarantine_key = f'quarantine/{key.split("/")[-1]}'
+
+    s3.copy_object(
+        Bucket=bucket,
+        CopySource={'Bucket': bucket, 'Key': key},
+        Key=quarantine_key
+    )
+    s3.delete_object(Bucket=bucket, Key=key)
+
+    print(f'QUARANTINED: {key} -> {quarantine_key}')
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps({
+            'action': 'quarantined',
+            'original': key,
+            'quarantine': quarantine_key
+        })
+    }</pre>
+<p>Add <code>AmazonS3FullAccess</code> to the Lambda execution role (same as the image validator).</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 20</span><span class="step-title">Add the Lambda as a second EventBridge target</span></div><div class="step-body">
+<p>Go to <strong>EventBridge &rarr; Rules &rarr; guardduty-high-severity-alert &rarr; Edit</strong>.</p>
+<p>Add a second target to the existing rule:</p>
+<ul>
+  <li>Target type: <strong>AWS service &rarr; Lambda function</strong></li>
+  <li>Function: <code>photoviewer-quarantine</code></li>
+</ul>
+<p>The rule now has two targets: SNS (notification) and Lambda (remediation). Both fire simultaneously when a high-severity finding matches.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 21</span><span class="step-title">Test the full loop</span></div><div class="step-body">
+<p>Upload a new EICAR test file to <code>photos/</code> (name it <code>malware-test.jpg</code>).</p>
+<p>Wait for GuardDuty Malware Protection to scan and generate a finding. When the finding fires:</p>
+<ul>
+  <li>EventBridge matches the pattern (severity &ge; 7)</li>
+  <li>SNS sends Jerry an email (notification)</li>
+  <li>The quarantine Lambda moves the file from <code>photos/</code> to <code>quarantine/</code> (remediation)</li>
+</ul>
+<p>Check the S3 bucket. The file should no longer be in <code>photos/</code>. It should be in <code>quarantine/</code>.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div>
+<p>The full detection-to-remediation loop works: GuardDuty detects malware &rarr; EventBridge matches &rarr; SNS notifies Jerry &rarr; Lambda quarantines the file. No human intervention required.</p>
+</div>
+<div class="screenshot">S3 bucket showing the EICAR file moved from <code>photos/</code> to <code>quarantine/</code></div>
+<div class="screenshot">Email notification AND quarantined file &mdash; both happened automatically</div>
+</div></div>
+
+
+<!-- Cleanup -->
+<h2>Cleanup</h2>
+
+<p>Disable or delete resources to avoid unexpected charges:</p>
+<ul>
+  <li><strong>Disable Macie</strong> &mdash; free trial runs for 30 days, then charges begin. Go to Macie &rarr; Settings &rarr; Disable Macie.</li>
+  <li><strong>Disable GuardDuty</strong> &mdash; free trial runs for 30 days, then charges begin. Go to GuardDuty &rarr; Settings &rarr; Suspend/Disable GuardDuty.</li>
+  <li><strong>Delete test files</strong> &mdash; remove <code>test-photo.jpg</code>, <code>malware-test.jpg</code>, and <code>customer-data.txt</code> from both <code>photos/</code> and <code>quarantine/</code> prefixes.</li>
+  <li><strong>Keep Security Hub running</strong> &mdash; needed for the production hardening review next week.</li>
+  <li><strong>Keep both Lambda functions</strong> &mdash; the image validator and quarantine Lambda demonstrate real detection and remediation.</li>
+</ul>
+
+
+<!-- Reflection -->
+<h2>Reflection Questions</h2>
+
+<h3>Question 1</h3>
+<p>In Part 3, Tom uploaded a file containing a credit card number. The file is encrypted at rest with KMS (from the earlier encryption lab). Explain why KMS encryption did not prevent Macie from detecting the PII. What problem does encryption solve, and what problem does Macie solve?</p>
+
+<h3>Question 2</h3>
+<p>The image validator Lambda uses Pillow 9.5.0, which has CVE-2023-50447 (arbitrary code execution in <code>ImageMath.eval</code>). The validator code only calls <code>Image.open()</code> &mdash; it never uses <code>ImageMath.eval</code>. Should you still upgrade Pillow? Explain your reasoning.</p>
+
+<h3>Question 3</h3>
+<p>You now have findings from five services in Security Hub: CloudWatch (alarms), Config (compliance), Inspector (CVEs), Macie (PII), and GuardDuty (threats). Describe a scenario where a single incident would generate findings in at least three of these services simultaneously.</p>
+
+<h3>Question 4</h3>
+<p>In Part 6, EventBridge sends an SNS email notification. In Part 7, EventBridge triggers a Lambda that quarantines the file. Compare these two response strategies. When would you use notification only? When would you add automated remediation? What is the risk of automating remediation too aggressively?</p>
+
+
+<!-- Rubric -->
+<h2>Grading Rubric</h2>
+
+<table class="rubric-table">
+  <thead><tr><th>Deliverable</th><th>Points</th><th>Requirements</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Validator Lambda deployed</strong></td><td>4</td><td>Screenshot: Lambda console showing <code>photoviewer-image-validator</code> with Pillow deployment package.</td></tr>
+    <tr><td><strong>S3 event trigger configured</strong></td><td>3</td><td>Screenshot: S3 event notification showing <code>photos/</code> prefix triggering the validator Lambda.</td></tr>
+    <tr><td><strong>Validator tags &mdash; PASSED</strong></td><td>4</td><td>Screenshot: S3 object tags showing <code>validation: PASSED</code> on a real photo.</td></tr>
+    <tr><td><strong>Validator tags &mdash; CAUTION</strong></td><td>4</td><td>Screenshot: S3 object tags showing <code>validation: CAUTION</code> on the fake photo.</td></tr>
+    <tr><td><strong>Inspector CVE finding</strong></td><td>6</td><td>Screenshot: Inspector finding showing CVE in Pillow for <code>photoviewer-image-validator</code> with severity and affected version.</td></tr>
+    <tr><td><strong>Macie enabled</strong></td><td>2</td><td>Screenshot: Macie dashboard showing the discovery job.</td></tr>
+    <tr><td><strong>Macie PII finding</strong></td><td>6</td><td>Screenshot: Macie finding showing SSN and/or credit card detected in <code>customer-data.txt</code>.</td></tr>
+    <tr><td><strong>GuardDuty enabled</strong></td><td>2</td><td>Screenshot: GuardDuty dashboard active with Malware Protection for S3 enabled.</td></tr>
+    <tr><td><strong>GuardDuty malware finding</strong></td><td>6</td><td>Screenshot: GuardDuty finding for EICAR test file in the Photo Viewer bucket.</td></tr>
+    <tr><td><strong>GuardDuty sample findings</strong></td><td>3</td><td>Screenshot: Three sample findings of different severity levels.</td></tr>
+    <tr><td><strong>Security Hub enabled</strong></td><td>2</td><td>Screenshot: Security Hub dashboard showing aggregated findings.</td></tr>
+    <tr><td><strong>Security Hub multi-source</strong></td><td>5</td><td>Screenshot: Security Hub findings from at least three different sources visible.</td></tr>
+    <tr><td><strong>EventBridge rule created</strong></td><td>4</td><td>Screenshot: EventBridge rule showing GuardDuty event pattern with severity &ge; 7.</td></tr>
+    <tr><td><strong>EventBridge alert received</strong></td><td>5</td><td>Screenshot: Email notification from EventBridge &rarr; SNS for a high-severity finding.</td></tr>
+    <tr><td><strong>Quarantine Lambda deployed</strong></td><td>4</td><td>Screenshot: Lambda console showing <code>photoviewer-quarantine</code> function.</td></tr>
+    <tr><td><strong>Quarantine Lambda as EventBridge target</strong></td><td>3</td><td>Screenshot: EventBridge rule showing two targets &mdash; SNS and Lambda.</td></tr>
+    <tr><td><strong>Automated quarantine works</strong></td><td>6</td><td>Screenshot: EICAR file moved from <code>photos/</code> to <code>quarantine/</code> automatically after GuardDuty finding.</td></tr>
+    <tr><td><strong>Reflection Q1 &mdash; encryption vs classification</strong></td><td>8</td><td>Encryption protects <em>confidentiality</em> &mdash; unauthorized users cannot read the data. Macie detects <em>content</em> &mdash; it classifies what kind of data is present. Encryption does not prevent authorized services (like Macie) from reading and classifying the data. Different problems, different tools.</td></tr>
+    <tr><td><strong>Reflection Q2 &mdash; upgrade despite unused code path</strong></td><td>7</td><td>Yes, upgrade. Future code changes might use the vulnerable function. Automated compliance tools flag the version regardless. An attacker who gains code execution could import and call any function in the package. Defense in depth means not relying on one layer of protection.</td></tr>
+    <tr><td><strong>Reflection Q3 &mdash; multi-service incident</strong></td><td>7</td><td>Example: An attacker exploits the Pillow CVE (Inspector flagged it) to execute code, disables S3 encryption (Config detects drift), and exfiltrates data (GuardDuty detects unusual API calls). One incident, three services, three perspectives.</td></tr>
+    <tr><td><strong>Reflection Q4 &mdash; notification vs remediation</strong></td><td>9</td><td>Notification (SNS) tells a human something happened &mdash; response depends on someone reading the email and acting. Remediation (Lambda quarantine) acts immediately without waiting. Tradeoff: automated remediation can cause false-positive outages (quarantining a legitimate file). Start with notification, graduate to remediation as confidence in detection rules grows.</td></tr>
+    <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+  </tbody>
+</table>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-detection.html">&larr; Week 11 Concept Notes</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>

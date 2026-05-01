@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Detection &amp; Response — CS 55D Week 11</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  h4 { font-size: 0.95rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: #333; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ── Pillars diagram ── */
+  .pillars-panel { background: #1e2a3a; border-radius: 12px; padding: 1.8rem 1.5rem 1.5rem; margin: 1.5rem 0 2rem; }
+  .pillars-panel .pillars-title { text-align: center; font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem; letter-spacing: 0.02em; }
+  .pillars-panel .pillars-subtitle { text-align: center; font-size: 0.82rem; color: #94a3b8; margin-bottom: 1.5rem; }
+  .phase-row { display: flex; gap: 1rem; margin-bottom: 0.8rem; }
+  .phase { flex: 1; }
+  .phase-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.35rem 0.8rem; border-radius: 6px 6px 0 0; display: inline-block; margin-bottom: 0; }
+  .phase-label.build { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .phase-label.run { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .phase-divider { width: 1px; background: #334155; margin: 1.2rem 0 0; flex-shrink: 0; }
+  .pillars-row { display: grid; gap: 0.6rem; }
+  .pillars-row.build-row { grid-template-columns: repeat(3, 1fr); }
+  .pillars-row.run-row { grid-template-columns: repeat(4, 1fr); }
+  .pillar { text-align: center; padding: 0.8rem 0.4rem; border-radius: 10px; position: relative; cursor: pointer; transition: transform 0.15s, background 0.15s; }
+  .pillar:hover { transform: translateY(-2px); background: rgba(255,255,255,0.04); }
+  .pillar.selected { background: rgba(255,255,255,0.08); }
+  .pillar-icon { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 0.6rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 2px dashed; transition: box-shadow 0.2s; }
+  .pillar-label { font-size: 0.72rem; font-weight: 600; line-height: 1.35; min-height: 2.4em; }
+  .pillar-weeks { font-size: 0.65rem; font-weight: 500; margin-top: 0.4rem; opacity: 0.7; }
+  .pillar.done .pillar-icon { border-color: #4ade80; background: rgba(74,222,128,0.1); }
+  .pillar.done .pillar-label { color: #a0aec0; }
+  .pillar.done .pillar-weeks { color: #718096; }
+  .pillar.done::after { content: "\2713"; position: absolute; top: 0.3rem; right: 0.5rem; font-size: 0.7rem; color: #4ade80; font-weight: 700; }
+  .pillar.active .pillar-icon { border-color: #fbbf24; border-style: solid; background: rgba(251,191,36,0.15); box-shadow: 0 0 12px rgba(251,191,36,0.3); }
+  .pillar.active .pillar-label { color: #fbbf24; font-weight: 700; }
+  .pillar.active .pillar-weeks { color: #fbbf24; }
+  .pillar.upcoming .pillar-icon { border-color: #4a5568; background: rgba(74,85,104,0.15); }
+  .pillar.upcoming .pillar-label { color: #4a5568; }
+  .pillar.upcoming .pillar-weeks { color: #4a5568; }
+  .pillar-detail { background: #253447; border-radius: 10px; padding: 1.2rem 1.5rem; margin-top: 1rem; display: none; border-left: 4px solid #4a5568; }
+  .pillar-detail.visible { display: block; }
+  .pillar-detail.state-done { border-left-color: #4ade80; }
+  .pillar-detail.state-active { border-left-color: #fbbf24; }
+  .pillar-detail.state-upcoming { border-left-color: #4a5568; }
+  .pillar-detail-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+  .pillar-detail-phase { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
+  .pillar-detail-phase.build { color: #4ade80; }
+  .pillar-detail-phase.run { color: #fbbf24; }
+  .pillar-detail p { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 0.6rem; }
+  .pillar-detail .detail-services { font-size: 0.85rem; color: #94a3b8; }
+  .pillar-detail .detail-services strong { color: #e2e8f0; }
+  @media (max-width: 700px) {
+    .phase-row { flex-direction: column; }
+    .phase-divider { width: 100%; height: 1px; margin: 0.5rem 0; }
+    .pillars-row.build-row { grid-template-columns: repeat(3, 1fr); }
+    .pillars-row.run-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  .nist-separator { display: flex; align-items: center; gap: 0.8rem; margin-top: 1rem; margin-bottom: 0.5rem; }
+  .nist-separator .nist-line { flex: 1; height: 1px; background: #4a5568; }
+  .nist-separator .nist-tag { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; white-space: nowrap; }
+  .nist-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3rem 0; border-radius: 4px; text-align: center; line-height: 1.3; flex: 1; }
+  .nist-label.protect { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+  .nist-label.detect { background: rgba(96,165,250,0.12); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+  .nist-label.respond { background: rgba(251,146,60,0.12); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+  .nist-label.govern { background: rgba(192,132,252,0.12); color: #c084fc; border: 1px solid rgba(192,132,252,0.3); }
+
+  /* ── Threat actor cards ── */
+  .threat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1.2rem 0 0.5rem; }
+  .threat-box { border: 2px solid #d0dce8; border-radius: 10px; padding: 1.2rem; background: #fff; text-align: center; cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s; display: flex; flex-direction: column; align-items: center; }
+  .threat-box:hover { border-color: #1F4E79; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(31,78,121,0.1); }
+  .threat-box.selected { border-color: #1F4E79; background: #f0f6ff; box-shadow: 0 2px 8px rgba(31,78,121,0.15); }
+  .threat-box .threat-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .threat-box .threat-title { font-weight: 700; font-size: 0.95rem; color: #1F4E79; margin-bottom: 0.4rem; min-height: 2.6em; display: flex; align-items: center; }
+  .threat-box .threat-actor { font-size: 0.85rem; color: #555; line-height: 1.5; flex: 1; display: flex; align-items: center; }
+  .threat-box .threat-service { font-size: 0.82rem; font-weight: 600; color: #111; margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid #d0dce8; width: 100%; }
+  @media (max-width: 600px) { .threat-grid { grid-template-columns: 1fr; } }
+  .threat-reveal { display: none; background: #fff; border: 1px solid #d0dce8; border-radius: 10px; padding: 1.2rem 1.5rem; margin-top: 0.8rem; }
+  .threat-reveal.visible { display: block; }
+  .threat-reveal-title { font-size: 1.05rem; font-weight: 700; color: #1F4E79; margin-bottom: 0.2rem; }
+  .threat-reveal-subtitle { font-size: 0.82rem; color: #888; margin-bottom: 0.8rem; }
+  .threat-reveal p { font-size: 0.93rem; }
+
+  /* ── Aggregation wrapper ── */
+  .agg-wrapper { border: 2px solid #1F4E79; border-radius: 14px; padding: 1.5rem; margin: 1.5rem 0; background: #fafcff; position: relative; }
+  .agg-badge { position: absolute; top: -0.7rem; right: 1.2rem; background: #1F4E79; color: #fff; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.7rem; border-radius: 4px; }
+
+  /* ── Flow diagram ── */
+  .flow-container { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.2rem 0; }
+  .flow-step { display: flex; align-items: flex-start; gap: 1rem; padding: 0.8rem 1rem; background: #f5f8fc; border-radius: 8px; border-left: 4px solid #1F4E79; }
+  .flow-num { font-size: 0.75rem; font-weight: 700; color: #fff; background: #1F4E79; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+  .flow-text { font-size: 0.9rem; color: #333; }
+  .flow-text strong { color: #111; }
+
+  /* ── Accordion ── */
+  details { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1rem; overflow: hidden; }
+  summary { padding: 0.9rem 1.2rem; background: #f5f8fc; cursor: pointer; font-weight: 600; font-size: 1rem; color: #111; list-style: none; display: flex; align-items: center; gap: 0.8rem; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "\25B8"; font-size: 0.9rem; color: #1F4E79; transition: transform 0.2s; flex-shrink: 0; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .accordion-body { padding: 1rem 1.2rem; border-top: 1px solid #d0dce8; }
+  .accordion-body p:last-child { margin-bottom: 0; }
+
+  .demo-tie { background: #FFF8E1; border-left: 4px solid #F9A825; padding: 0.8rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-size: 0.9rem; }
+  .demo-tie strong { color: #e65100; }
+
+  /* ── Vuln cards ── */
+  .vuln-card { border: 1px solid #e8e8e8; border-left: 4px solid #dc3545; border-radius: 0 8px 8px 0; margin: 0.8rem 0; overflow: hidden; }
+  .vuln-header { display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem 1.2rem; cursor: pointer; user-select: none; }
+  .vuln-header:hover { background: #fff8f8; }
+  .vuln-title { font-weight: 600; font-size: 0.95rem; color: #1a1a1a; flex: 1; }
+  .vuln-body { padding: 0 1.2rem 1.2rem; display: none; border-top: 1px solid #f0d0d0; }
+  .vuln-body.open { display: block; }
+  .vuln-body p:first-child { margin-top: 1rem; }
+
+  /* ── Nav + footer ── */
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  .download-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #1F4E79; text-decoration: none; padding: 8px 14px; border-radius: 6px; border: 1px solid #B5D4F4; background: #E6F1FB; transition: background 0.15s; }
+  .download-btn:hover { background: #B5D4F4; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Incident Detection &amp; Response</h1>
+<p class="subtitle">This course builds a Photo Viewer application across twelve weeks, adding one AWS security layer per week. This page shifts from inward-facing monitoring to adversarial thinking &mdash; detecting when someone is doing something bad and responding automatically.</p>
+
+<p><strong>Learning objectives</strong></p>
+<ul>
+  <li>Distinguish between monitoring (inward-facing) and detection (adversary-facing)</li>
+  <li>Identify three categories of threat actors: careless insiders, malicious uploaders, and latent dependency risks</li>
+  <li>Explain how Macie classifies sensitive data in S3 objects by scanning content patterns</li>
+  <li>Explain how GuardDuty detects threats by analyzing CloudTrail, VPC flow logs, DNS logs, and S3 object scans</li>
+  <li>Explain how Security Hub normalizes findings from multiple services into a single dashboard using ASFF</li>
+  <li>Describe how EventBridge event patterns enable automated response to security findings</li>
+  <li>Implement automated remediation by wiring a quarantine Lambda as an EventBridge target</li>
+  <li>Distinguish between encryption (protects confidentiality) and classification (identifies content)</li>
+</ul>
+
+
+<!-- ═══════════════ SECTION 1 ═══════════════ -->
+<h2>1. Where we left off</h2>
+
+<p>The monitoring infrastructure is in place. CloudWatch watches performance. Config watches configuration. Inspector watches dependencies. Trusted Advisor provides account-level health checks. But all of this is inward-facing &mdash; checking our own work. Two problems remain:</p>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('wlo1')">
+    <div class="vuln-title">Uploaded files are still not scanned for malicious content</div>
+    <span style="color:#aaa;font-size:0.8rem;">&#x25BC;</span>
+  </div>
+  <div class="vuln-body" id="wlo1">
+    <p>A user could upload a file containing credit card numbers, or an image that is actually a disguised executable. Encryption protects these files at rest, but encryption does not inspect content. Two services address this: Macie detects PII patterns (SSN, credit card numbers) and GuardDuty Malware Protection scans for malware signatures. <strong>Both are addressed this week.</strong></p>
+  </div>
+</div>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('wlo2')">
+    <div class="vuln-title">No detection of adversarial behavior</div>
+    <span style="color:#aaa;font-size:0.8rem;">&#x25BC;</span>
+  </div>
+  <div class="vuln-body" id="wlo2">
+    <p>If someone exfiltrates IAM credentials and makes API calls from an unfamiliar IP, none of the monitoring tools from the prior week would flag it. CloudWatch sees no errors. Config sees no configuration change. Inspector sees no new vulnerability. The attacker is doing something bad &mdash; but everything looks normal from the inside. GuardDuty detects adversarial behavior by analyzing patterns across CloudTrail, VPC flow logs, and DNS queries. <strong>Addressed this week.</strong></p>
+  </div>
+</div>
+
+<p>The shift this week: from <em>&ldquo;is our system healthy?&rdquo;</em> to <em>&ldquo;is someone doing something bad?&rdquo;</em></p>
+
+
+<!-- ═══════════════ SECTION 2 ═══════════════ -->
+<h2>2. The big picture &mdash; Pillar 6</h2>
+
+<p>This week addresses the sixth pillar: <strong>Incident Detection &amp; Response</strong>. The prior page covered Detect in the NIST framework &mdash; monitoring configuration and performance. This page adds the adversarial dimension of Detect and introduces Respond.</p>
+
+<div class="pillars-panel">
+  <div class="pillars-title">Seven Pillars of Enterprise Application Security</div>
+  <div class="pillars-subtitle">Click any pillar to explore what it covers in this course</div>
+
+  <div class="phase-row">
+    <div class="phase">
+      <div class="phase-label build">&#9664; Building Securely</div>
+      <div class="pillars-row build-row">
+        <div class="pillar done" onclick="showPillar(0)"><div class="pillar-icon">&#128274;</div><div class="pillar-label">Authentication &amp;&nbsp;Access Control</div><div class="pillar-weeks">W6 &middot; W7 &middot; W9</div></div>
+        <div class="pillar done" onclick="showPillar(1)"><div class="pillar-icon">&#128272;</div><div class="pillar-label">Network Security</div><div class="pillar-weeks">W3 &middot; W4 &middot; W5</div></div>
+        <div class="pillar done" onclick="showPillar(2)"><div class="pillar-icon">&#128273;</div><div class="pillar-label">Data Encryption</div><div class="pillar-weeks">W8</div></div>
+      </div>
+    </div>
+    <div class="phase-divider"></div>
+    <div class="phase">
+      <div class="phase-label run">Running Securely &#9654;</div>
+      <div class="pillars-row run-row">
+        <div class="pillar done" onclick="showPillar(3)"><div class="pillar-icon">&#128295;</div><div class="pillar-label">Update &amp; Patch Mgmt</div><div class="pillar-weeks">W10</div></div>
+        <div class="pillar done" onclick="showPillar(4)"><div class="pillar-icon">&#128269;</div><div class="pillar-label">Security Monitoring &amp;&nbsp;Auditing</div><div class="pillar-weeks">W10</div></div>
+        <div class="pillar active" onclick="showPillar(5)"><div class="pillar-icon">&#128680;</div><div class="pillar-label">Incident Detection &amp;&nbsp;Response</div><div class="pillar-weeks">W11</div></div>
+        <div class="pillar upcoming" onclick="showPillar(6)"><div class="pillar-icon">&#127963;</div><div class="pillar-label">Security Governance</div><div class="pillar-weeks">W12</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nist-separator"><div class="nist-line"></div><div class="nist-tag">NIST CSF 2.0</div><div class="nist-line"></div></div>
+  <div style="display:flex; gap:1rem;">
+    <div style="flex:1; display:flex;"><div class="nist-label protect">Protect</div></div>
+    <div style="flex:1; display:flex; gap:0.4rem;">
+      <div class="nist-label detect" style="flex:2;">Detect</div>
+      <div class="nist-label respond" style="flex:1;">Detect +&nbsp;Respond</div>
+      <div class="nist-label govern" style="flex:1;">Govern</div>
+    </div>
+  </div>
+
+  <div class="pillar-detail" id="pillar-detail">
+    <div id="pillar-detail-content" style="display:none;">
+      <div class="pillar-detail-phase" id="pd-phase"></div>
+      <div class="pillar-detail-title" id="pd-title"></div>
+      <p id="pd-desc"></p>
+      <div class="detail-services" id="pd-services"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var pillarData = [
+  { title: "Authentication & Access Control", phase: "build", phaseLabel: "Building securely", state: "done",
+    desc: "Who are you, and what are you allowed to do? Cognito handles customer authentication via Google OAuth and JWT. RBAC via Cognito groups drives capability differences (free vs premium). Ownership checks prevent BOLA/IDOR. Identity Center provides employee SSO with separation of duties scoped to KMS keys.",
+    services: "<strong>Services:</strong> Amazon Cognito, IAM Identity Center, IAM roles, STS" },
+  { title: "Network Security", phase: "build", phaseLabel: "Building securely", state: "done",
+    desc: "What traffic can reach your application, and through what path? CloudFront enforces HTTPS. VPC isolates the application tier. Security groups restrict traffic. WAF rate-limits requests. API Gateway replaces the ALB, and a Lambda authorizer restricts invocations to CloudFront-originated traffic.",
+    services: "<strong>Services:</strong> CloudFront, VPC, Security Groups, WAF, API Gateway" },
+  { title: "Data Encryption", phase: "build", phaseLabel: "Building securely", state: "done",
+    desc: "Who controls the keys that protect your data? Customer-managed KMS keys replace AWS-managed encryption across S3, DynamoDB, and Secrets Manager. Two keys enforce separation of duties. Key policies create an authorization layer independent of IAM.",
+    services: "<strong>Services:</strong> AWS KMS, S3 SSE-KMS, DynamoDB encryption, Secrets Manager" },
+  { title: "Update & Patch Management", phase: "run", phaseLabel: "Running securely", state: "done",
+    desc: "Do your dependencies have known vulnerabilities? Inspector continuously scans Lambda deployment packages against the NIST National Vulnerability Database. Completed in the prior concept page.",
+    services: "<strong>Services:</strong> Amazon Inspector, NIST NVD" },
+  { title: "Security Monitoring & Auditing", phase: "run", phaseLabel: "Running securely", state: "done",
+    desc: "Is everything still configured correctly and performing well? CloudWatch monitors Lambda performance metrics. Config continuously records resource configuration and evaluates compliance rules. Trusted Advisor provides account-level health checks. Completed in the prior concept page.",
+    services: "<strong>Services:</strong> CloudWatch, AWS Config, Trusted Advisor, SNS" },
+  { title: "Incident Detection & Response", phase: "run", phaseLabel: "Running securely", state: "active",
+    desc: "Someone is doing something bad \u2014 how do you find out and respond? Macie detects sensitive data in S3 objects. GuardDuty detects adversarial behavior and malware. Inspector finds vulnerable dependencies. Security Hub aggregates all findings into one dashboard. EventBridge automates the response.",
+    services: "<strong>Services:</strong> Macie, GuardDuty, Inspector, Security Hub, EventBridge \u2014 this page" },
+  { title: "Security Governance", phase: "run", phaseLabel: "Running securely", state: "upcoming",
+    desc: "How do you enforce security policies across an entire organization? Service Control Policies (SCPs) create guardrails that no individual account can override. Control Tower automates new account creation with baseline security already in place.",
+    services: "<strong>Services:</strong> SCPs, AWS Organizations, Control Tower" }
+];
+function showPillar(idx) {
+  var d = pillarData[idx];
+  var content = document.getElementById('pillar-detail-content');
+  content.style.display = 'block';
+  document.getElementById('pd-phase').textContent = d.phaseLabel;
+  document.getElementById('pd-phase').className = 'pillar-detail-phase ' + d.phase;
+  document.getElementById('pd-title').textContent = d.title;
+  document.getElementById('pd-desc').textContent = d.desc;
+  document.getElementById('pd-services').innerHTML = d.services;
+  var panel = document.getElementById('pillar-detail');
+  panel.className = 'pillar-detail visible state-' + d.state;
+  var all = document.querySelectorAll('.pillar');
+  for (var i = 0; i < all.length; i++) { all[i].classList.remove('selected'); }
+  all[idx].classList.add('selected');
+}
+</script>
+
+
+<!-- ═══════════════ SECTION 3 ═══════════════ -->
+<h2>3. This week&rsquo;s solution</h2>
+
+<p>Three things go wrong. Each involves a different actor, a different kind of bad behavior, and a different detection service. Click any scenario to see how it is detected.</p>
+
+<div class="agg-wrapper">
+  <div class="agg-badge">Security Hub aggregates all findings</div>
+
+  <div class="threat-grid">
+    <div class="threat-box" onclick="showThreat(0)">
+      <div class="threat-icon">&#128100;</div>
+      <div class="threat-title">Sensitive Data Exposure</div>
+      <div class="threat-actor">Employee uploads a file containing PII to S3</div>
+      <div class="threat-service">Macie</div>
+    </div>
+    <div class="threat-box" onclick="showThreat(1)">
+      <div class="threat-icon">&#128128;</div>
+      <div class="threat-title">Malware Upload</div>
+      <div class="threat-actor">Suspicious file disguised as a photo lands in the bucket</div>
+      <div class="threat-service">GuardDuty + Image Validator</div>
+    </div>
+    <div class="threat-box" onclick="showThreat(2)">
+      <div class="threat-icon">&#128027;</div>
+      <div class="threat-title">Vulnerable Dependency</div>
+      <div class="threat-actor">Lambda uses a library with a known CVE</div>
+      <div class="threat-service">Inspector</div>
+    </div>
+  </div>
+
+  <div class="threat-reveal" id="threat-reveal">
+    <div style="text-align:center;color:#aaa;font-size:0.88rem;font-style:italic;padding:0.5rem 0;" id="threat-hint">&#8593; Click a scenario to explore</div>
+    <div id="threat-content" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+var threatData = [
+  {
+    title: "Amazon Macie",
+    subtitle: "Sensitive Data Exposure",
+    overview: '<p><strong>Scenario:</strong> Tom (customer support) is troubleshooting a user issue and drops a text file into the Photo Viewer S3 bucket. The file contains a customer\u2019s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled \u2014 but nobody knows the content is sensitive.</p><p><strong>Detection:</strong> Macie scans S3 objects for sensitive data patterns \u2014 SSNs, credit card numbers, API keys, email addresses. It uses managed data identifiers (regex patterns + machine learning) to classify content. Macie generates a finding with the PII type detected, the S3 object path, and the severity.</p>',
+    deepDiveTitle: "How Macie works \u2014 discovery jobs and data identifiers",
+    deepDive: '<p>Macie operates in two modes: <strong>automated discovery</strong> (continuously samples objects across all buckets) and <strong>discovery jobs</strong> (targeted scans of specific buckets or prefixes). Both use the same detection engine.</p><p>The engine applies <strong>managed data identifiers</strong> \u2014 AWS-maintained patterns for common PII types (SSN, credit card, passport numbers, etc.) across multiple countries and formats. You can also create <strong>custom data identifiers</strong> using regex patterns for organization-specific sensitive data like internal account numbers or project codes.</p><p>A critical distinction: <strong>encryption does not prevent classification.</strong> Macie has permission to read S3 objects (via its service role). KMS encryption protects against unauthorized access \u2014 Macie is an authorized service. Encryption and classification solve different problems: encryption controls <em>who can read</em>; Macie identifies <em>what is being stored</em>.</p><div class="demo-tie"><strong>In the lab:</strong> Jerry enables Macie and creates a discovery job on the Photo Viewer bucket. Tom uploads a file with fake SSN and credit card data. Macie flags the PII and generates a finding that flows to Security Hub.</div>'
+  },
+  {
+    title: "Amazon GuardDuty + Image Validator Lambda",
+    subtitle: "Malware Upload",
+    overview: '<p><strong>Scenario:</strong> A suspicious file lands in the Photo Viewer\u2019s S3 bucket \u2014 it claims to be a photo but is actually malware. Two layers of defense catch it.</p><p><strong>Layer 1 \u2014 Image Validator Lambda:</strong> Triggered by the S3 upload event, the Lambda uses Pillow to attempt to open the file as an image. If Pillow cannot parse it, the object is tagged <code>validation: CAUTION</code>. This is a fast, custom, application-level check.</p><p><strong>Layer 2 \u2014 GuardDuty Malware Protection for S3:</strong> GuardDuty scans the uploaded object for known malware signatures \u2014 trojans, ransomware, backdoors. It detects threats that Pillow would never catch (like a valid image with an embedded payload). This is a deep, AWS-managed, security-level scan.</p>',
+    deepDiveTitle: "How GuardDuty works \u2014 threat intelligence and behavioral analysis",
+    deepDive: '<p>GuardDuty analyzes multiple data sources to detect threats:</p><ul><li><strong>CloudTrail management events:</strong> unusual API calls, logins from unexpected IPs, disabled security controls</li><li><strong>CloudTrail S3 data events:</strong> unusual access patterns to S3 objects</li><li><strong>VPC flow logs:</strong> communication with known malicious IPs, data exfiltration patterns</li><li><strong>DNS query logs:</strong> queries to known command-and-control domains</li><li><strong>S3 Malware Protection:</strong> scans newly uploaded objects for malware signatures</li></ul><p>GuardDuty uses threat intelligence feeds (AWS, CrowdStrike, Proofpoint) and machine learning models to identify anomalies. It does not require you to define rules \u2014 it learns your account\u2019s baseline behavior and flags deviations.</p><p>Finding types are categorized: <strong>Recon</strong> (port scanning, API enumeration), <strong>UnauthorizedAccess</strong> (credential compromise), <strong>Trojan</strong> (malware communication), <strong>Exfiltration</strong> (data transfer to unusual destinations).</p><div class="demo-tie"><strong>In the lab:</strong> Jerry enables GuardDuty with S3 Malware Protection. Tom uploads an EICAR test file (industry-standard malware test string). GuardDuty flags it. Jerry also generates sample findings to see the full range of threat types.</div>'
+  },
+  {
+    title: "Amazon Inspector",
+    subtitle: "Vulnerable Dependency",
+    overview: '<p><strong>Scenario:</strong> Jerry deploys an image-validation Lambda that uses Pillow 9.5.0 to verify uploaded files are real images. The Lambda works correctly \u2014 but the Pillow version has known CVEs (including CVE-2023-50447, arbitrary code execution, CVSS 8.1).</p><p><strong>Detection:</strong> Inspector has been running since the prior week. It automatically scans the new Lambda\u2019s deployment package, identifies Pillow 9.5.0, cross-references it against the NIST NVD, and generates a finding with the CVE ID, severity score, affected package, and remediation guidance.</p>',
+    deepDiveTitle: "Why upgrade if the vulnerable code path is never called?",
+    deepDive: '<p>The Lambda only calls <code>Image.open()</code>. The CVE is in <code>ImageMath.eval</code> \u2014 a function the code never uses. So why does Inspector flag it, and why should you upgrade?</p><p><strong>Inspector flags package versions, not code paths.</strong> Static analysis of which functions your code calls is a much harder problem (and one Inspector does not attempt). It takes the conservative approach: if the version has a known vulnerability, flag it.</p><p><strong>You should still upgrade.</strong> Three reasons: (1) Future code changes might use the vulnerable function. (2) An attacker who gains code execution through another vector could call any function in the package. (3) Automated compliance tools and auditors flag the version regardless of usage \u2014 you will need to explain or remediate.</p><p>This mirrors real production environments. Most Lambda functions carry dependencies with CVEs in code paths they never invoke. The responsible practice is to upgrade anyway.</p><div class="demo-tie"><strong>In the lab:</strong> Inspector finds the Pillow CVE in <code>photoviewer-image-validator</code> automatically. The finding flows to Security Hub alongside Macie and GuardDuty findings.</div>'
+  }
+];
+function showThreat(idx) {
+  var d = threatData[idx];
+  document.getElementById('threat-hint').style.display = 'none';
+  var content = document.getElementById('threat-content');
+  content.style.display = 'block';
+  content.innerHTML =
+    '<div class="threat-reveal-subtitle">' + d.subtitle + '</div>' +
+    '<div class="threat-reveal-title">' + d.title + '</div>' +
+    d.overview +
+    '<details><summary>' + d.deepDiveTitle + '</summary>' +
+    '<div class="accordion-body">' + d.deepDive + '</div></details>';
+  var panel = document.getElementById('threat-reveal');
+  panel.classList.add('visible');
+  var boxes = document.querySelectorAll('.threat-box');
+  for (var i = 0; i < boxes.length; i++) { boxes[i].classList.remove('selected'); }
+  boxes[idx].classList.add('selected');
+}
+</script>
+
+<h3>Aggregation &mdash; Security Hub</h3>
+
+<p>After the three detection scenarios, Jerry has findings scattered across Inspector, Macie, and GuardDuty &mdash; plus Config and CloudWatch findings from the prior week. Five different dashboards. Security Hub aggregates them all.</p>
+
+<p>Security Hub normalizes every finding to the <strong>AWS Security Finding Format (ASFF)</strong> &mdash; a standard schema with consistent fields for severity, resource identifiers, remediation recommendations, and compliance status. A GuardDuty malware finding and a Macie PII finding look structurally the same in Security Hub, making it possible to sort, filter, and prioritize across services.</p>
+
+<h3>Response &mdash; EventBridge</h3>
+
+<p>Security Hub shows findings in a dashboard. But dashboards require someone watching. EventBridge closes the loop by matching finding events against patterns and routing them to targets automatically.</p>
+
+<div class="flow-container">
+  <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>Event source:</strong> GuardDuty generates a finding (e.g., malware detected in S3).</div></div>
+  <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>Event bus:</strong> The finding is published to the default EventBridge event bus as a structured JSON event.</div></div>
+  <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>Rule matches:</strong> An EventBridge rule matches on <code>source = aws.guardduty</code> and <code>severity &ge; 7</code>.</div></div>
+  <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>Target 1 &mdash; notification:</strong> The rule sends the event to an SNS topic. SNS delivers an email to Jerry.</div></div>
+  <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Target 2 &mdash; remediation:</strong> The same rule triggers a quarantine Lambda that moves the flagged S3 object from <code>photos/</code> to <code>quarantine/</code>.</div></div>
+  <div class="flow-step"><div class="flow-num">6</div><div class="flow-text"><strong>At 3 AM:</strong> Nobody is watching the dashboard. The email arrives, and the malicious file is already quarantined. Jerry wakes up and the situation is already contained.</div></div>
+</div>
+
+<p>One EventBridge rule, two targets, two response types running simultaneously. Notification tells a human; remediation acts immediately. In production, automated remediation requires careful tuning &mdash; quarantining a legitimate file is a false-positive outage. Most organizations start with notifications and graduate to automated remediation as they gain confidence in their detection rules.</p>
+
+
+<!-- ═══════════════ SECTION 4 ═══════════════ -->
+<h2>4. Key concepts</h2>
+
+<p>The threat scenarios above explain the detection services. The concepts below go deeper into the patterns that connect them.</p>
+
+<details>
+  <summary>Encryption vs classification &mdash; why KMS does not prevent Macie from reading</summary>
+  <div class="accordion-body">
+    <p>KMS encryption controls <em>who can decrypt</em>. Macie has a service-linked role with permission to call <code>kms:Decrypt</code> &mdash; it is an authorized reader. Encryption prevents unauthorized access (an attacker without the key). Classification identifies what kind of data is stored (PII, financial data, credentials). These are orthogonal concerns.</p>
+    <p>An analogy: a locked filing cabinet (encryption) prevents someone from opening the drawer. A classification label on the folder inside (Macie) tells authorized people that the contents are sensitive. You need both. The lock without the label means authorized users do not know to handle the file carefully. The label without the lock means anyone can access it.</p>
+  </div>
+</details>
+
+<details>
+  <summary>ASFF &mdash; how Security Hub normalizes findings</summary>
+  <div class="accordion-body">
+    <p>The AWS Security Finding Format (ASFF) is a JSON schema that standardizes how findings are represented. Every finding &mdash; regardless of source &mdash; has the same fields:</p>
+    <table>
+      <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
+      <tr><td><code>Severity.Label</code></td><td>Normalized severity</td><td>HIGH, CRITICAL, MEDIUM</td></tr>
+      <tr><td><code>Resources</code></td><td>Affected AWS resources</td><td>S3 bucket ARN, Lambda function ARN</td></tr>
+      <tr><td><code>ProductName</code></td><td>Which service generated it</td><td>Macie, GuardDuty, Inspector</td></tr>
+      <tr><td><code>Remediation</code></td><td>How to fix it</td><td>Upgrade Pillow, delete PII file</td></tr>
+      <tr><td><code>Compliance.Status</code></td><td>Compliance state</td><td>FAILED, PASSED</td></tr>
+    </table>
+    <p>This normalization is what makes Security Hub more than just a dashboard &mdash; it enables filtering, sorting, and automated workflows across services that otherwise have completely different finding formats.</p>
+  </div>
+</details>
+
+<details>
+  <summary>EventBridge event patterns &mdash; matching on structure, not strings</summary>
+  <div class="accordion-body">
+    <p>EventBridge rules match events by their JSON structure, not by string searching. The pattern:</p>
+    <pre><code>{
+  "source": ["aws.guardduty"],
+  "detail-type": ["GuardDuty Finding"],
+  "detail": {
+    "severity": [{ "numeric": [">=", 7] }]
+  }
+}</code></pre>
+    <p>This says: match any event from GuardDuty where the severity field in the detail object is numerically 7 or higher. Only High and Critical findings trigger the rule. Low and Medium findings pass through without action.</p>
+    <p>The same pattern language works for any AWS service event. You could match Config compliance changes, Inspector findings above a threshold, or Macie findings of specific PII types. EventBridge is the universal router for security automation.</p>
+  </div>
+</details>
+
+<details>
+  <summary>The detection spectrum &mdash; from passive scanning to automated response</summary>
+  <div class="accordion-body">
+    <p>The detection services in this course form a spectrum from passive to active:</p>
+    <table>
+      <tr><th>Service</th><th>When it runs</th><th>What it does</th><th>Response</th></tr>
+      <tr><td>Inspector</td><td>Continuous (background)</td><td>Scans packages against CVE databases</td><td>Finding only &mdash; human decides</td></tr>
+      <tr><td>Macie</td><td>Scheduled or on-demand</td><td>Scans S3 content for PII patterns</td><td>Finding only &mdash; human decides</td></tr>
+      <tr><td>GuardDuty</td><td>Continuous (real-time)</td><td>Analyzes logs for threat patterns</td><td>Finding + optional EventBridge automation</td></tr>
+      <tr><td>EventBridge + Lambda</td><td>Event-driven (instant)</td><td>Matches findings against rules</td><td>Automated &mdash; SNS notification + Lambda quarantine</td></tr>
+    </table>
+    <p>Moving right on this spectrum means faster response and less human intervention &mdash; but also more risk of false positives triggering automated actions. In the lab, both notification and remediation are wired to the same EventBridge rule. Most organizations start with notifications only and add automated remediation as they gain confidence in their detection rules.</p>
+  </div>
+</details>
+
+
+<!-- ═══════════════ SECTION 5 ═══════════════ -->
+<h2>5. What&rsquo;s still missing</h2>
+
+<p>One pillar remains on the running side of the diagram.</p>
+
+<div class="vuln-card">
+  <div class="vuln-header" onclick="toggleVuln('wsm1')">
+    <div class="vuln-title">No organizational guardrails</div>
+    <span style="color:#aaa;font-size:0.8rem;">&#x25BC;</span>
+  </div>
+  <div class="vuln-body" id="wsm1">
+    <p>Everything built so far applies to a single AWS account. In production, workloads run across multiple accounts &mdash; production, staging, development, audit. A single misconfigured account can compromise the entire organization. Service Control Policies (SCPs) enforce guardrails that no individual account can override &mdash; preventing CloudTrail deletion, public S3 buckets, or resource creation in unauthorized regions. Control Tower automates the creation of new accounts with baseline security controls already in place.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ LAB FILES ═══════════════ -->
+<h2>Lab files</h2>
+
+<p>All lab files for this week are in the course GitHub repository.</p>
+<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:1rem 0;">
+  <a class="download-btn" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week11" target="_blank">&#x2325; View Week 11 files on GitHub</a>
+  <a class="download-btn" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-lab-assignment.html">&#x1F4CB; Week 11 Lab Assignment</a>
+</div>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html">&larr; Week 10: Monitoring</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-governance.html">Week 12: Governance &rarr;</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+<script>
+function toggleVuln(id) {
+  var body = document.getElementById(id);
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>
