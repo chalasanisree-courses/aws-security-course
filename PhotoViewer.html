@@ -1144,12 +1144,14 @@
       }
     },
     '11': {
-      active: ['security'],
+      active: ['security', 'performance'],
       issues: {
         security: { title:'Security issues in Week 11', bullets:[
           'Everything built so far applies to a single AWS account. Development and production share the same account — a bad deployment takes the app down for real users. There is no boundary between experimenting and serving live traffic.',
-          'No separation between rule-makers and rule-followers. The same person who sets up Config rules, GuardDuty, and CloudTrail can also delete them. If their credentials are compromised, the attacker can disable every security control and erase the evidence.',
-          'Not set up for regional scaling. The application runs entirely in us-east-1. Users in other regions experience high latency, and data sovereignty laws may require user data to stay within local borders.'
+          'No separation between rule-makers and rule-followers. The same person who sets up Config rules, GuardDuty, and CloudTrail can also delete them. If their credentials are compromised, the attacker can disable every security control and erase the evidence.'
+        ]},
+        performance: { title:'Performance issues in Week 11', bullets:[
+          'The application runs entirely in us-east-1. Users in Asia experience 400ms+ latency. Data sovereignty laws in some regions may require user-uploaded data to stay within local borders. Route 53 latency-based routing and multi-account regional deployments address both problems.'
         ]}
       }
     }
