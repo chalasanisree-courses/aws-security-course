@@ -840,6 +840,7 @@
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-lab-assignment.html" target="_blank">📋 Lab assignment</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week10" target="_blank">⌥ View Week 10 code on GitHub</a>
         </div>
       </div>
@@ -876,7 +877,7 @@
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">Image validator Lambda with Pillow 9.5.0 (deliberately outdated — Inspector flags CVE-2023-50447). S3 event notification triggers validation on every upload to photos/. Macie one-time discovery job on the Photo Viewer bucket. GuardDuty with Malware Protection for S3 enabled. Security Hub with AWS Foundational Security Best Practices standard. EventBridge rule matches GuardDuty findings with severity ≥ 7, routing to two targets: SNS topic for notification and a quarantine Lambda that moves flagged objects from photos/ to quarantine/.</div>
+          <div class="ac-section-text">Image validator Lambda with Pillow 9.5.0 (deliberately outdated — Inspector flags CVE-2023-50447). S3 event notification triggers validation on every upload to photos/. Macie one-time discovery job on the Photo Viewer bucket. GuardDuty with Malware Protection for S3 enabled. Security Hub with AWS Foundational Security Best Practices standard. Two EventBridge rules: high-severity findings rule matches standard GuardDuty findings at severity ≥ 7, routing to SNS for notification; malware quarantine rule matches Malware Protection scan results with THREATS_FOUND, routing to both SNS and a quarantine Lambda that moves flagged objects from photos/ to quarantine/.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week11/week11-detection.html" target="_blank">📄 Concept notes</a>
@@ -1137,7 +1138,7 @@
       active: ['security'],
       issues: {
         security: { title:'Security issues in Week 10', bullets:[
-          'Uploaded files are still not scanned for malicious content. Encryption protects confidentiality — it does not classify or inspect content. A user could upload a file containing credit card numbers or a disguised executable. Macie detects PII patterns in S3 objects. GuardDuty Malware Protection scans for malware. Both are detection services addressed in the next concept page.',
+          'Uploaded files are still not scanned for malicious content. Encryption protects confidentiality — it does not detect or inspect content. A user could upload a file containing credit card numbers or a disguised executable. Macie detects PII patterns in S3 objects. GuardDuty Malware Protection scans for malware. Both are detection services addressed in the next concept page.',
           'No detection of adversarial behavior. This week monitors configuration drift, performance degradation, and known vulnerabilities — all inward-facing concerns. None of these tools detect an attacker. If someone exfiltrates IAM credentials and makes API calls from an unfamiliar IP, CloudWatch won\'t flag it, Config won\'t flag it, and Inspector won\'t flag it. GuardDuty detects adversarial behavior by analyzing VPC flow logs, DNS logs, and CloudTrail events.'
         ]}
       }

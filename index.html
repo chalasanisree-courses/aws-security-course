@@ -681,7 +681,7 @@
       <span class="week-chevron" id="w11-chev">▶</span>
     </div>
     <div class="week-body" id="w11">
-      <p class="week-desc">Image validator Lambda deployed — verifies uploaded files are real images; Inspector flags known CVEs in Pillow dependency. Macie detects PII in user-uploaded files. GuardDuty Malware Protection scans uploads for malware and analyzes CloudTrail events for adversarial behavior. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into ASFF. EventBridge rule matches high-severity findings — SNS notifies, quarantine Lambda remediates automatically.</p>
+      <p class="week-desc">Image validator Lambda deployed — verifies uploaded files are real images; Inspector flags known CVEs in Pillow dependency. Macie detects PII in user-uploaded files. GuardDuty Malware Protection scans uploads for malware and analyzes CloudTrail events for adversarial behavior. Security Hub aggregates findings from GuardDuty, Config, Inspector, and Macie into ASFF. Two EventBridge rules automate response: high-severity findings trigger SNS notification; malware scan results trigger both notification and a quarantine Lambda.</p>
       <div class="resource-list">
         <a class="resource-link" href="week11/week11-detection.html">
           <span class="icon">◈</span> Incident Detection & Response — concept notes
@@ -862,14 +862,19 @@
               <td>Single sign-on for employee access. Centralizes identity for multiple roles and accounts.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/guardduty/" target="_blank">GuardDuty</a></div><span class="svc-abbr"> · Amazon GuardDuty</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 11</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/guardduty/" target="_blank">GuardDuty</a></div><span class="svc-abbr"> · Amazon GuardDuty</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 11</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
-              <td>Threat detection. Analyzes CloudTrail events and DNS logs for malicious activity and credential exfiltration.</td>
+              <td>Threat detection. Analyzes CloudTrail events, VPC flow logs, and DNS logs for malicious activity. Malware Protection for S3 scans uploads.</td>
             </tr>
             <tr data-scope="regional">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/security-hub/" target="_blank">Security Hub</a></div><span class="svc-abbr"> · AWS Security Hub</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 11</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/security-hub/" target="_blank">Security Hub</a></div><span class="svc-abbr"> · AWS Security Hub</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 11</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Unified security dashboard. Aggregates findings from GuardDuty, Inspector, Config, and Macie.</td>
+            </tr>
+            <tr data-scope="regional">
+              <td><div class="svc-name"><a href="https://aws.amazon.com/eventbridge/" target="_blank">EventBridge</a></div><span class="svc-abbr"> · Amazon EventBridge</span><br><span class="special-pill free-tier">free tier</span> <span class="week-tag week-tag-done">Week 11</span></td>
+              <td><span class="scope-pill scope-regional">Regional</span></td>
+              <td>Serverless event bus. Matches events against rules and routes them to targets like SNS or Lambda.</td>
             </tr>
             <tr data-scope="regional">
               <td><div class="svc-name"><a href="https://aws.amazon.com/secrets-manager/" target="_blank">Secrets Manager</a></div><span class="svc-abbr"> · AWS Secrets Manager</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 6</span></td>
@@ -892,7 +897,7 @@
               <td>Creates and manages encryption keys for S3, DynamoDB, EBS, and other services.</td>
             </tr>
             <tr data-scope="regional" data-week="11">
-              <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><span class="svc-abbr"> · Amazon Macie</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-future">Week 11</span></td>
+              <td><div class="svc-name"><a href="https://aws.amazon.com/macie/" target="_blank">Macie</a></div><span class="svc-abbr"> · Amazon Macie</span><br><span class="special-pill paid-only">paid</span> <span class="week-tag week-tag-done">Week 11</span></td>
               <td><span class="scope-pill scope-regional">Regional</span></td>
               <td>Machine learning discovery of PII and sensitive data in S3 buckets.</td>
             </tr>
