@@ -630,45 +630,15 @@ function showThreat(idx) {
 <p>Stepping back from the individual services to see how they fit together.</p>
 
 <details>
-  <summary>The detection spectrum &mdash; from manual response to automated remediation</summary>
+  <summary>Detection services at a glance</summary>
   <div class="accordion-body">
-    <p>The detection services in this course form a spectrum. Moving from left to right: faster response, less human intervention &mdash; but more risk of false positives triggering automated actions.</p>
-    <div style="position:relative;margin:1.5rem 0 1rem;">
-      <!-- Gradient bar -->
-      <div style="height:4px;background:linear-gradient(to right,#b0c4de,#1F4E79);border-radius:2px;margin:0 2rem;"></div>
-      <!-- Labels -->
-      <div style="display:flex;justify-content:space-between;margin:0 0 0.8rem;font-size:0.72rem;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
-        <span>Human decides</span><span>System acts</span>
-      </div>
-      <!-- Four stops -->
-      <div style="display:flex;justify-content:space-between;text-align:center;gap:0.5rem;">
-        <div style="flex:1;">
-          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #b0c4de;background:#fff;margin:0 auto 0.5rem;"></div>
-          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">Inspector</div>
-          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Background scanning</div>
-          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Finding only &mdash; human decides</div>
-        </div>
-        <div style="flex:1;">
-          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #7a9ec2;background:#fff;margin:0 auto 0.5rem;"></div>
-          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">Macie</div>
-          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Scheduled or on-demand</div>
-          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Finding only &mdash; human decides</div>
-        </div>
-        <div style="flex:1;">
-          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #3a6f9e;background:#3a6f9e;margin:0 auto 0.5rem;"></div>
-          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">GuardDuty</div>
-          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Continuous, real-time</div>
-          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Finding + EventBridge automation</div>
-        </div>
-        <div style="flex:1;">
-          <div style="width:12px;height:12px;border-radius:50%;border:2px solid #1F4E79;background:#1F4E79;margin:0 auto 0.5rem;"></div>
-          <div style="font-weight:700;font-size:0.85rem;color:#1F4E79;">EventBridge + Lambda</div>
-          <div style="font-size:0.78rem;color:#555;margin-top:0.2rem;">Event-driven, instant</div>
-          <div style="font-size:0.75rem;color:#888;margin-top:0.15rem;">Automated &mdash; notify + quarantine</div>
-        </div>
-      </div>
-    </div>
-    <p>Most organizations start on the left &mdash; enabling detection services and reviewing findings manually. As confidence grows, they move right &mdash; wiring EventBridge rules that notify on high-severity findings, then adding automated remediation for well-understood threat patterns.</p>
+    <table>
+      <tr><th>Service</th><th>What it scans</th><th>What triggers a scan</th><th>What it finds</th></tr>
+      <tr><td><strong>Inspector</strong></td><td>Lambda packages, EC2 instances, container images</td><td>New deployment, new CVE published by NIST</td><td>Known vulnerabilities (CVE ID + CVSS score)</td></tr>
+      <tr><td><strong>Macie</strong></td><td>S3 object content</td><td>Scheduled job or on-demand discovery</td><td>Sensitive data patterns (SSN, credit card, API keys)</td></tr>
+      <tr><td><strong>GuardDuty</strong></td><td>CloudTrail events, VPC flow logs, DNS logs, S3 uploads</td><td>Continuous analysis of incoming logs and events</td><td>Adversarial behavior and malware (credential theft, unusual API calls, trojans)</td></tr>
+    </table>
+    <p>All three generate findings. None of them auto-remediate on their own. Automated response &mdash; notification, quarantine, or any other action &mdash; is a separate layer: <strong>EventBridge + Lambda</strong>. Any detection service&rsquo;s findings can be wired to EventBridge for automation. In this lab we automate GuardDuty malware findings; the same pattern works for Macie PII findings or Inspector CVE findings.</p>
   </div>
 </details>
 
