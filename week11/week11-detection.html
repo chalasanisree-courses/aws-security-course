@@ -99,7 +99,8 @@
 
   /* ── Aggregation wrapper ── */
   .agg-wrapper { border: 2px solid #1F4E79; border-radius: 14px; padding: 1.5rem; margin: 1.5rem 0; background: #fafcff; position: relative; }
-  .agg-badge { position: absolute; top: -0.7rem; right: 1.2rem; background: #1F4E79; color: #fff; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.7rem; border-radius: 4px; }
+  .agg-badge { position: absolute; top: -0.7rem; right: 1.2rem; background: #1F4E79; color: #fff; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.7rem; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+  .agg-badge:hover { background: #163d61; }
 
   /* ── Flow diagram ── */
   .flow-container { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.2rem 0; }
@@ -411,7 +412,7 @@ function showRisk(idx) {
 <p style="margin-top:2rem;">Three things go wrong in the Photo Viewer this week. Each involves a different actor, a different kind of bad behavior, and a different detection service. Click any scenario to see how it works.</p>
 
 <div class="agg-wrapper">
-  <div class="agg-badge">Security Hub aggregates all findings</div>
+  <div class="agg-badge" onclick="showThreat(3)">Security Hub aggregates all findings</div>
 
   <div class="threat-grid">
     <div class="threat-box" onclick="showThreat(0)">
@@ -462,6 +463,13 @@ var threatData = [
     overview: '<p><strong>Scenario:</strong> Jerry deploys an image-validation Lambda that uses an external library called Pillow 9.5.0 to verify uploaded files are real images. The Lambda works correctly \u2014 but the Pillow version has known CVEs (including CVE-2023-50447, arbitrary code execution, CVSS 8.1).</p><p><strong>Detection:</strong> Inspector has been running since the prior week. It automatically scans the new Lambda\u2019s deployment package, identifies Pillow 9.5.0, cross-references it against the NIST NVD, and generates a finding with the CVE ID, severity score, affected package, and remediation guidance.</p><div class="demo-tie"><strong>In the lab:</strong> Inspector finds the Pillow CVE in <code>photoviewer-image-validator</code> automatically. The finding flows to Security Hub alongside Macie and GuardDuty findings.</div>',
     deepDiveTitle: "How Inspector works \u2014 CVE databases and continuous scanning",
     deepDive: '<p>Inspector continuously scans Lambda deployment packages (and EC2 instances and container images) for known vulnerabilities. It does not run code or execute tests \u2014 it reads the package manifest, identifies every dependency and version, and cross-references them against the <strong>National Vulnerability Database (NVD)</strong> maintained by NIST.</p><p>Each known vulnerability has a unique <strong>CVE identifier</strong> (e.g., CVE-2023-50447). Inspector matches package versions against these CVEs and scores each finding using the <strong>Common Vulnerability Scoring System (CVSS)</strong> \u2014 a 0\u201310 scale where 7+ is High and 9+ is Critical. The finding includes the CVE ID, the CVSS score, the affected package and version, and remediation guidance (typically: upgrade to version X).</p><p>Inspector also <strong>auto-rescans</strong>. When NIST publishes a new CVE, Inspector re-evaluates all previously scanned packages without any action from you. A Lambda that was clean yesterday can generate a new finding today \u2014 not because anything changed in your code, but because a vulnerability was discovered in a dependency you already use.</p><div class="demo-tie"><strong>In the lab:</strong> Inspector finds CVE-2023-50447 in Pillow 9.5.0 inside the <code>photoviewer-image-validator</code> Lambda automatically. The finding includes the CVSS score (8.1 \u2014 High), the affected package, and a recommendation to upgrade.</div>'
+  },
+  {
+    title: "AWS Security Hub",
+    subtitle: "Aggregation",
+    overview: '<p>Jerry now has findings from Inspector (vulnerable dependency), Macie (PII in a customer file), and GuardDuty (malware detected) \u2014 plus Config findings from the prior week. Four different services, four different dashboards, four different finding formats.</p><p><strong>Security Hub aggregates them all.</strong> It normalizes every finding to the <strong>AWS Security Finding Format (ASFF)</strong> \u2014 a standard JSON schema with consistent fields for severity, resource identifiers, remediation recommendations, and compliance status. A GuardDuty malware finding and a Macie PII finding look structurally the same in Security Hub, making it possible to sort, filter, and prioritize across services.</p>',
+    deepDiveTitle: "ASFF \u2014 how Security Hub normalizes findings",
+    deepDive: '<p>Every finding \u2014 regardless of source \u2014 has the same fields:</p><table><tr><th>Field</th><th>Purpose</th><th>Example</th></tr><tr><td><code>Severity.Label</code></td><td>Normalized severity</td><td>HIGH, CRITICAL, MEDIUM</td></tr><tr><td><code>Resources</code></td><td>Affected AWS resources</td><td>S3 bucket ARN, Lambda function ARN</td></tr><tr><td><code>ProductName</code></td><td>Which service generated it</td><td>Macie, GuardDuty, Inspector</td></tr><tr><td><code>Remediation</code></td><td>How to fix it</td><td>Upgrade Pillow, delete PII file</td></tr><tr><td><code>Compliance.Status</code></td><td>Compliance state</td><td>FAILED, PASSED</td></tr></table><p>This normalization is what makes Security Hub more than just a dashboard \u2014 it enables filtering, sorting, and automated workflows across services that otherwise have completely different finding formats.</p><div class="demo-tie"><strong>In the lab:</strong> Jerry opens Security Hub and sees findings from Inspector, Macie, and GuardDuty in a single view \u2014 all using the same ASFF schema. No switching between dashboards.</div>'
   }
 ];
 
@@ -480,7 +488,7 @@ function showThreat(idx) {
   panel.classList.add('visible');
   var boxes = document.querySelectorAll('.threat-box');
   for (var i = 0; i < boxes.length; i++) { boxes[i].classList.remove('selected'); }
-  boxes[idx].classList.add('selected');
+  if (idx < boxes.length) { boxes[idx].classList.add('selected'); }
 }
 </script>
 
