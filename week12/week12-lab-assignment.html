@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 12 Lab — Security Governance · CS 55D</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.7;color:#1a1a1a;background:#fff;max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+  h1{font-size:2rem;font-weight:700;line-height:1.2;margin-bottom:0.4rem;color:#111;}
+  .subtitle{font-size:1.05rem;color:#555;margin-bottom:2rem;border-bottom:1px solid #e8e8e8;padding-bottom:1.5rem;}
+  h2{font-size:1.3rem;font-weight:700;margin:2.5rem 0 1rem;color:#1F4E79;padding-bottom:0.4rem;border-bottom:3px solid #1F4E79;}
+  h3{font-size:1.05rem;font-weight:600;margin:1.5rem 0 0.5rem;color:#222;}
+  p{margin-bottom:0.9rem;color:#333;}
+  strong{font-weight:600;color:#111;}
+  ul,ol{padding-left:1.4rem;margin-bottom:1rem;color:#333;}
+  li{margin-bottom:0.35rem;}
+  code{font-family:'SF Mono','Fira Code',monospace;font-size:0.87em;background:#f0f0f0;padding:0.15em 0.4em;border-radius:3px;color:#c7254e;}
+  pre{background:#1e1e1e;color:#d4d4d4;padding:1.2rem 1.4rem;border-radius:8px;font-size:0.84rem;overflow-x:auto;margin:0.8rem 0 1.2rem;line-height:1.6;}
+  pre code{background:none;color:inherit;padding:0;font-size:inherit;}
+  table{width:100%;border-collapse:collapse;margin:1rem 0 1.5rem;font-size:0.93rem;}
+  th{background:#f0f4f8;text-align:left;padding:0.65rem 1rem;font-weight:600;color:#333;border-bottom:2px solid #d0d8e0;}
+  td{padding:0.6rem 1rem;border-bottom:1px solid #e8e8e8;vertical-align:top;color:#444;}
+  tr:last-child td{border-bottom:none;}
+  .callout{border-left:4px solid #e8a000;background:#fffbf0;padding:1rem 1.2rem;margin:1.2rem 0;border-radius:0 6px 6px 0;}
+  .callout.info{border-color:#0066cc;background:#f0f6ff;}
+  .callout.warn{border-color:#dc3545;background:#fff5f5;}
+  .callout p:last-child{margin-bottom:0;}
+  .step{border:1px solid #d0dce8;border-radius:10px;margin-bottom:1.5rem;overflow:hidden;}
+  .step-header{display:flex;align-items:baseline;gap:1rem;padding:0.9rem 1.2rem;background:#f5f8fc;border-bottom:1px solid #d0dce8;}
+  .step-num{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#1F4E79;background:#dce8f5;padding:0.2em 0.6em;border-radius:4px;flex-shrink:0;}
+  .step-title{font-weight:600;font-size:1rem;color:#111;}
+  .step-body{padding:1rem 1.2rem;}
+  .step-body p:last-child{margin-bottom:0;}
+  .verify{background:#f0fff4;border:1px solid #a5d6a7;border-radius:8px;padding:0.9rem 1.2rem;margin:1rem 0;}
+  .verify-label{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#155724;margin-bottom:0.4rem;}
+  .verify p:last-child{margin-bottom:0;}
+  .screenshot{background:#f8f5ff;border:1px solid #c8b8e8;border-radius:8px;padding:0.8rem 1.2rem;margin:1rem 0;font-size:0.9rem;color:#4a148c;}
+  .screenshot::before{content:"\1F4F8 Screenshot required: ";font-weight:600;}
+  .part-header{background:#1F4E79;color:#fff;border-radius:8px;padding:0.7rem 1.2rem;margin:2rem 0 1.2rem;display:flex;align-items:baseline;gap:1rem;}
+  .part-num{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.7;}
+  .part-title{font-size:1.05rem;font-weight:600;}
+  .rubric-table th{background:#1F4E79;color:#fff;}
+  .rubric-table td:nth-child(2){text-align:center;font-weight:600;color:#1F4E79;}
+  .rubric-total td{font-weight:700;background:#f0f4f8;}
+  .course-nav{position:sticky;top:0;z-index:100;background:#163756;display:flex;justify-content:space-between;align-items:center;padding:11px 28px;margin:-2rem -1.5rem 2rem;}
+  .course-nav a{font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-decoration:none;}
+  .course-nav a:hover{color:#fff;}
+  .course-nav-right{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+  .page-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:3rem;padding-top:1.5rem;border-top:1px solid #e8e8e8;font-size:0.9rem;}
+  .page-nav a{color:#1F4E79;text-decoration:none;}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid #e8e8e8;font-size:0.82rem;color:#999;text-align:center;}
+  footer a{color:#1F4E79;text-decoration:none;}
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Week 12 Lab &mdash; Security Governance</h1>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 100 pts</p>
+
+<p><strong>Objective:</strong> Design the governance layer for a multi-account, multi-region Photo Viewer deployment. Write Service Control Policies (SCPs) that enforce organizational guardrails, understand why they do not apply to the management account, and complete a capstone review of the entire application.</p>
+
+<div class="callout info">
+  <p><strong>What changes this week:</strong> No application code changes. This lab is a policy writing and architecture comprehension exercise. You will write real SCP JSON policies and attach them to OUs &mdash; but because your lab account is the management account (exempt from SCPs), and there are no member accounts in the OUs, the SCPs are not enforced on anything. That limitation is the lesson.</p>
+</div>
+
+<div class="callout">
+  <p><strong>Your account&rsquo;s role:</strong> In the Identity Center lab, your account became the <strong>management account</strong> and was moved into the Production OU. But the management account is exempt from SCPs &mdash; placing it inside an OU does not make it governed. In production, a dedicated management account would sit above the OUs running zero workloads. The Photo Viewer would run in a <strong>member account</strong> &mdash; where SCPs actually apply.</p>
+</div>
+
+
+<!-- Part 1 -->
+<div class="part-header">
+  <span class="part-num">Part 1</span>
+  <span class="part-title">Design the governance layer &mdash; write SCPs</span>
+</div>
+
+<p>The Photo Viewer is expanding to Asia. The production architecture calls for a dedicated management account (governance only) with member accounts organized by region and environment. You will write the SCPs that would govern this structure. Writing SCP JSON is the same skill as writing IAM policies &mdash; understanding the syntax, <code>NotAction</code> for global services, and condition keys for region restrictions.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Enable SCPs in Organizations</span></div><div class="step-body">
+<p>Go to <strong>AWS Organizations &rarr; Policies &rarr; Service control policies</strong>. If SCPs are not enabled, click <strong>Enable service control policies</strong>.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 2</span><span class="step-title">Write SCP 1 &mdash; Deny CloudTrail deletion (baseline)</span></div><div class="step-body">
+<p>This policy would be attached at the root of the organization, applying to every member account. No member account should ever be able to disable audit logging.</p>
+<ul><li>Policy name: <code>deny-cloudtrail-disable</code></li><li>Description: Baseline &mdash; prevents stopping or deleting CloudTrail trails in any member account</li></ul>
+<pre>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyCloudTrailDisable",
+      "Effect": "Deny",
+      "Action": [
+        "cloudtrail:StopLogging",
+        "cloudtrail:DeleteTrail"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</pre>
+<div class="screenshot">SCP <code>deny-cloudtrail-disable</code> created in the Organizations console</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Write SCP 2 &mdash; Deny public S3 (baseline)</span></div><div class="step-body">
+<p>Another baseline policy for all member accounts. This prevents anyone from disabling the S3 Block Public Access settings.</p>
+<ul><li>Policy name: <code>deny-public-s3</code></li></ul>
+<pre>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyDisablingPublicAccessBlock",
+      "Effect": "Deny",
+      "Action": "s3:PutBucketPublicAccessBlock",
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyPublicObjectACLs",
+      "Effect": "Deny",
+      "Action": "s3:PutObjectAcl",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "s3:x-amz-acl": ["public-read", "public-read-write"]
+        }
+      }
+    }
+  ]
+}</pre>
+<div class="callout info"><p><strong>Two statements, two protections:</strong> The first prevents anyone from changing the Block Public Access settings on any bucket. The second prevents setting public ACLs on individual objects. Together, they ensure no S3 resource can be made publicly accessible.</p></div>
+<div class="screenshot">SCP <code>deny-public-s3</code> created</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Write SCP 3 &mdash; Region lock (Asia OU)</span></div><div class="step-body">
+<p>This policy would be attached to the Asia OU. Every member account under this OU &mdash; both production and staging &mdash; would be restricted to <code>ap-southeast-1</code>. Data sovereignty is enforced at the organizational level: no principal in any Asia account can create resources in another region, even accidentally.</p>
+<ul><li>Policy name: <code>restrict-region-asia</code></li></ul>
+<pre>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyNonAsiaSoutheast1",
+      "Effect": "Deny",
+      "NotAction": [
+        "iam:*",
+        "sts:*",
+        "organizations:*",
+        "support:*"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": "ap-southeast-1"
+        }
+      }
+    }
+  ]
+}</pre>
+<div class="callout info"><p><strong>Why <code>NotAction</code>?</strong> IAM, STS, Organizations, and Support are global services &mdash; they do not operate in a specific region. Denying them with a region condition would break basic account functionality like creating roles or assuming cross-account permissions.</p></div>
+<div class="screenshot">SCP <code>restrict-region-asia</code> created</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Write SCP 4 &mdash; Deny Identity Center administration (all member accounts)</span></div><div class="step-body">
+<p>Identity Center lives exclusively in the management account. No member account should be able to create its own Identity Center instance, permission sets, or account assignments. All employee access is centralized.</p>
+<ul><li>Policy name: <code>deny-identity-center-admin</code></li></ul>
+<pre>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyIdentityCenterAdmin",
+      "Effect": "Deny",
+      "Action": [
+        "sso:CreateInstance",
+        "sso:DeleteInstance",
+        "sso-admin:CreatePermissionSet",
+        "sso-admin:DeletePermissionSet",
+        "sso-admin:CreateAccountAssignment"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</pre>
+<p>Even if an administrator in a member account has <code>AdministratorAccess</code>, they cannot set up local identity management. Employee access flows only through the centralized Identity Center in the management account.</p>
+<div class="screenshot">SCP <code>deny-identity-center-admin</code> created</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Attach SCPs to OUs</span></div><div class="step-body">
+<p>Go to <strong>AWS Organizations &rarr; Organize accounts</strong>. Attach the policies as follows:</p>
+<table>
+  <tr><th>SCP</th><th>Attach to</th><th>In production, this would govern</th></tr>
+  <tr><td><code>deny-cloudtrail-disable</code></td><td>Root</td><td>All member accounts</td></tr>
+  <tr><td><code>deny-public-s3</code></td><td>Root</td><td>All member accounts</td></tr>
+  <tr><td><code>restrict-region-asia</code></td><td>Production OU</td><td>Asia OU (we use Production OU as a stand-in)</td></tr>
+  <tr><td><code>deny-identity-center-admin</code></td><td>Root</td><td>All member accounts</td></tr>
+</table>
+<div class="callout"><p><strong>Note:</strong> The Production OU contains your management account (moved there in the Identity Center lab). But the management account is exempt from SCPs &mdash; so these policies have no effect on it. The baseline SCPs attached to Root also govern nothing because there are no member accounts. The policies are real; the member accounts they would protect do not yet exist.</p></div>
+<div class="verify"><div class="verify-label">&#10003; Verify</div><p>All four SCPs are attached to the correct OUs. You can see them in the Organizations console.</p></div>
+<div class="screenshot">Organizations console showing SCPs attached to Root and Production OU</div>
+</div></div>
+
+
+<!-- Part 2 -->
+<div class="part-header">
+  <span class="part-num">Part 2</span>
+  <span class="part-title">The management account exemption</span>
+</div>
+
+<p>You wrote four policies that would prevent CloudTrail deletion, public S3, off-region resources, and local identity management in any member account. Now test whether they apply to <em>your</em> account.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Try to stop CloudTrail</span></div><div class="step-body">
+<p>Go to <strong>CloudTrail &rarr; Trails &rarr; select your trail &rarr; Stop logging</strong>.</p>
+<p>The action <strong>succeeds</strong>.</p>
+<div class="callout warn">
+  <p><strong>Why?</strong> Your account is the management account. SCPs do not apply to the management account &mdash; by design. If they did, an overly broad SCP could lock out the entire organization with no way to recover.</p>
+  <p>This is the single most important lesson about SCPs: <strong>they create a ceiling for member accounts only.</strong> The management account operates above that ceiling. This is why it must run zero workloads &mdash; anything running here has no SCP protection.</p>
+  <p>In production, the Photo Viewer would run in a member account inside the NA or Asia OU. The <code>deny-cloudtrail-disable</code> SCP would block this action. An attacker who compromised the member account could not disable audit logging, even with <code>AdministratorAccess</code>, even as root.</p>
+</div>
+<p><strong>Re-enable CloudTrail logging immediately</strong> &mdash; go back to the trail and click <strong>Start logging</strong>.</p>
+<div class="verify"><div class="verify-label">&#10003; Verify</div><p>CloudTrail stop logging succeeded despite the SCP. You understand this is because the management account is exempt. You re-enabled logging.</p></div>
+<div class="screenshot">CloudTrail stop logging succeeding &mdash; demonstrating the management account exemption</div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Document the production architecture</span></div><div class="step-body">
+<p>Draw or describe the OU structure that would govern the Photo Viewer in production. Include:</p>
+<table>
+  <tr><th>Account / OU</th><th>Purpose</th><th>SCPs</th></tr>
+  <tr><td><strong>Management Account</strong></td><td>Organizations, Identity Center, billing &mdash; no workloads</td><td>Exempt &mdash; SCPs do not apply</td></tr>
+  <tr><td><strong>NA OU</strong></td><td>Regional grouping for North America</td><td>Region lock: <code>us-east-1</code></td></tr>
+  <tr><td>&nbsp;&nbsp;&nbsp;Production</td><td>PhotoViewer US &mdash; live user traffic</td><td>Inherits NA region lock + baseline</td></tr>
+  <tr><td>&nbsp;&nbsp;&nbsp;Staging</td><td>PhotoViewer US staging &mdash; testing</td><td>Inherits NA region lock + baseline</td></tr>
+  <tr><td><strong>Asia OU</strong></td><td>Regional grouping for Asia</td><td>Region lock: <code>ap-southeast-1</code></td></tr>
+  <tr><td>&nbsp;&nbsp;&nbsp;Production</td><td>PhotoViewer Asia &mdash; live user traffic</td><td>Inherits Asia region lock + baseline</td></tr>
+  <tr><td>&nbsp;&nbsp;&nbsp;Staging</td><td>PhotoViewer Asia staging &mdash; testing</td><td>Inherits Asia region lock + baseline</td></tr>
+  <tr><td><strong>Root (all)</strong></td><td>Baseline guardrails</td><td>Deny CloudTrail disable, deny public S3, deny Identity Center admin</td></tr>
+</table>
+<p>Note how SCPs inherit downward. A region-lock SCP on the Asia OU applies to both Production and Staging accounts underneath it. Baseline SCPs on Root apply to every member account in the organization.</p>
+<p><strong>Include this table in your submission.</strong></p>
+</div></div>
+
+
+<!-- Cleanup -->
+<h2>Cleanup</h2>
+<p>The SCPs you created are free and have no effect on the management account. You can leave them attached for reference or detach them from <strong>Organizations &rarr; Policies</strong>. No cost implications either way.</p>
+
+
+<!-- Part 3 -->
+<div class="part-header">
+  <span class="part-num">Part 3</span>
+  <span class="part-title">Production hardening review &mdash; capstone</span>
+</div>
+
+<p>Over twelve weeks, the Photo Viewer was built with deliberate simplifications &mdash; choices made for pedagogical clarity that would not be acceptable in production. The production hardening guide on the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a> documents each simplification.</p>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Review the production hardening accordion</span></div><div class="step-body">
+<p>Go to the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a>. Open the <strong>Production Hardening Guide</strong> accordion. Read through the items organized by week.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Select your top three priorities</span></div><div class="step-body">
+<p>From the production hardening guide, select the <strong>three simplifications you would prioritize first</strong> for production deployment. For each one, write:</p>
+<ul>
+  <li>Which simplification you selected (reference it by week and title)</li>
+  <li>Why you ranked it as a top priority (what is the risk if it remains simplified?)</li>
+  <li>What you would need to implement the production alternative (time, cost, complexity)</li>
+</ul>
+<p>There is no single correct answer &mdash; reasonable priorities depend on the threat model, user base, and compliance requirements. The quality of your reasoning matters more than which items you choose.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Identify one simplification you would keep</span></div><div class="step-body">
+<p>Select <strong>one simplification you would intentionally leave in place</strong> even in production. Explain why &mdash; some simplifications represent pragmatic trade-offs where the production alternative adds complexity not justified by the risk reduction.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">The capstone question</span></div><div class="step-body">
+<p>For each of the seven pillars, identify the <strong>single most important AWS service</strong> that provides that pillar for the Photo Viewer. Explain your choice in one sentence each.</p>
+<table>
+  <tr><th>Pillar</th><th>Your choice</th><th>Why</th></tr>
+  <tr><td>Authentication &amp; Access Control</td><td></td><td></td></tr>
+  <tr><td>Network Security</td><td></td><td></td></tr>
+  <tr><td>Data Encryption</td><td></td><td></td></tr>
+  <tr><td>Update &amp; Patch Management</td><td></td><td></td></tr>
+  <tr><td>Security Monitoring &amp; Auditing</td><td></td><td></td></tr>
+  <tr><td>Incident Detection &amp; Response</td><td></td><td></td></tr>
+  <tr><td>Security Governance</td><td></td><td></td></tr>
+</table>
+<p>Some pillars have an obvious answer. Others are genuinely debatable. Defend your choices.</p>
+</div></div>
+
+
+<!-- Reflection -->
+<h2>Reflection Questions</h2>
+
+<h3>Question 1</h3>
+<p>Explain the difference between an IAM deny policy and an SCP deny policy. If both say <code>"Effect": "Deny"</code> on <code>cloudtrail:StopLogging</code>, what makes them fundamentally different? Under what circumstances would each one fail to prevent the action?</p>
+
+<h3>Question 2</h3>
+<p>The Photo Viewer is expanding to Asia. A junior developer argues: &ldquo;We can save money by running the Asia deployment in the same account as the US deployment, just in a different region. We&rsquo;ll use IAM policies to keep the teams separate.&rdquo; Write a response explaining why you agree or disagree, with specific reference to data sovereignty requirements and the management account exemption.</p>
+
+
+<!-- Rubric -->
+<h2>Grading Rubric</h2>
+
+<table class="rubric-table">
+  <thead><tr><th>Deliverable</th><th>Points</th><th>Requirements</th></tr></thead>
+  <tbody>
+    <tr><td><strong>SCP 1 &mdash; deny CloudTrail disable</strong></td><td>5</td><td>Screenshot: SCP created with correct JSON.</td></tr>
+    <tr><td><strong>SCP 2 &mdash; deny public S3</strong></td><td>5</td><td>Screenshot: SCP created with correct JSON.</td></tr>
+    <tr><td><strong>SCP 3 &mdash; region lock</strong></td><td>5</td><td>Screenshot: SCP created with correct JSON including <code>NotAction</code> for global services.</td></tr>
+    <tr><td><strong>SCP 4 &mdash; deny Identity Center admin</strong></td><td>5</td><td>Screenshot: SCP created with correct JSON.</td></tr>
+    <tr><td><strong>SCPs attached to correct OUs</strong></td><td>5</td><td>Screenshot: Organizations console showing SCPs attached to Root and Production OU.</td></tr>
+    <tr><td><strong>Management account exemption</strong></td><td>8</td><td>Screenshot: CloudTrail stop logging succeeding. Written explanation of why SCPs did not block it.</td></tr>
+    <tr><td><strong>Production architecture table</strong></td><td>8</td><td>OU structure showing Management Account, NA OU, Asia OU, nested Production/Staging, with correct SCP inheritance.</td></tr>
+    <tr><td><strong>Top three hardening priorities</strong></td><td>18</td><td>Three simplifications selected with reasoning for priority, risk assessment, and implementation cost.</td></tr>
+    <tr><td><strong>One simplification to keep</strong></td><td>8</td><td>One simplification identified as acceptable trade-off with reasoning.</td></tr>
+    <tr><td><strong>Capstone &mdash; one service per pillar</strong></td><td>10</td><td>Seven pillars, one AWS service each, one-sentence justification. Debatable choices defended.</td></tr>
+    <tr><td><strong>Reflection Q1 &mdash; IAM deny vs SCP deny</strong></td><td>12</td><td>IAM deny applies to root, but root can delete the deny policy itself (full IAM access). SCP deny applies to root in member accounts, and root cannot delete SCPs because the Organizations API is only available from the management account. IAM deny fails when the policy is removed. SCP deny fails only in the management account (exempt by design).</td></tr>
+    <tr><td><strong>Reflection Q2 &mdash; single account vs multi-account</strong></td><td>11</td><td>Disagree. IAM policies can be changed by any admin. A single account means a US admin could access Asia user data, violating data sovereignty. Separate accounts with region-lock SCPs enforce at the organizational level. The cost savings do not justify the compliance risk.</td></tr>
+    <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+  </tbody>
+</table>
+
+
+<div class="page-nav">
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/index.html">&larr; Course home</a></div>
+  <div><a href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-governance.html">&larr; Week 12 Concept Notes</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="https://chalasanisree-courses.github.io/aws-security-course/">Course home</a>
+</footer>
+
+</body>
+</html>
