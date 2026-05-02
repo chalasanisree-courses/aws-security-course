@@ -264,10 +264,10 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 
 <!-- Cleanup -->
 <h2>Cleanup</h2>
-<p>Disable or delete resources to avoid unexpected charges:</p>
+<p>All three services from this lab are needed in Week 11. Do not disable them yet.</p>
 <ul>
-  <li><strong>Disable Inspector</strong> &mdash; free trial runs for 15 days, then charges begin. Go to Inspector &rarr; Settings &rarr; Disable Inspector.</li>
-  <li><strong>Keep AWS Config running</strong> &mdash; it is needed for Security Hub in Week 11. Cost is ~$1&ndash;2/month.</li>
+  <li><strong>Keep Inspector running</strong> &mdash; Week 11 deploys a new Lambda with a deliberately vulnerable dependency. Inspector needs to be active to scan it. Free trial runs for 15 days.</li>
+  <li><strong>Keep AWS Config running</strong> &mdash; Config findings flow into Security Hub in Week 11. Cost is ~$1&ndash;2/month.</li>
   <li><strong>Keep CloudWatch alarms</strong> &mdash; no cost for two alarms on Lambda metrics. They provide ongoing monitoring.</li>
 </ul>
 
