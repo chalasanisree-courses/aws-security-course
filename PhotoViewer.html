@@ -227,6 +227,7 @@
   }
   .wc-foundation { background: #d4edda; color: #155724; }
   .wc-building   { background: #dce8f5; color: #1F4E79; }
+  .wc-running    { background: #fff3cd; color: #856404; }
   .wc-disabled   { background: #F1EFE8; color: #888780; }
 
   /* Topic tag pills */
@@ -811,9 +812,9 @@
       <div class="ac-header" onclick="toggle('w10')" style="gap:0;">
         <div class="ac-header-inner">
           <div class="ac-header-left">
-            <div class="week-circle wc-building">10</div>
+            <div class="week-circle wc-running">10</div>
             <div class="ac-title-group">
-              <div class="ac-title">Visibility and compliance</div>
+              <div class="ac-title">Vulnerability assessment, configuration management &amp; performance monitoring</div>
               <div class="ac-subtitle">Monitoring, vulnerability scanning, configuration drift detection</div>
             </div>
           </div>
@@ -832,11 +833,11 @@
       <div class="ac-body" id="w10">
         <div class="ac-section">
           <div class="ac-section-label">What changes</div>
-          <div class="ac-section-text">Automated compliance checks, vulnerability scanning on the Lambda function, and security best practice assessment. Config rules alert on drift from the desired security posture. Trusted Advisor checks account-wide security best practices.</div>
+          <div class="ac-section-text">CloudWatch alarms notify when Lambda errors spike or response times degrade. Automated compliance checks, vulnerability scanning on the Lambda function, and security best practice assessment. Config rules alert on drift from the desired security posture. Trusted Advisor checks account-wide security best practices.</div>
         </div>
         <div class="ac-section">
           <div class="ac-section-label">How it is built on AWS</div>
-          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and DynamoDB throttling. AWS Config managed rules enforce S3 public access block, KMS encryption on DynamoDB, and CloudTrail enabled. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Trusted Advisor reviews security checks — unrestricted security groups, MFA on root, S3 bucket permissions. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture context for Inspector.</div>
+          <div class="ac-section-text">CloudWatch alarms on Lambda error rates and duration. AWS Config managed rules enforce S3 encryption, S3 public access block, CloudTrail encryption, and root access key check. Amazon Inspector scans the Lambda function for known CVEs in its dependencies. Trusted Advisor reviews security checks — unrestricted security groups, MFA on root, S3 bucket permissions. CVE, NIST, CISA, and CIS vulnerability frameworks covered as lecture context for Inspector.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
           <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week10/week10-monitoring.html" target="_blank">📄 Concept notes</a>
@@ -851,7 +852,7 @@
       <div class="ac-header" onclick="toggle('w11')" style="gap:0;">
         <div class="ac-header-inner">
           <div class="ac-header-left">
-            <div class="week-circle wc-building">11</div>
+            <div class="week-circle wc-running">11</div>
             <div class="ac-title-group">
               <div class="ac-title">Threat detection and automated response</div>
               <div class="ac-subtitle">Detect PII, malware, and vulnerable dependencies; aggregate findings; automate quarantine</div>
@@ -892,7 +893,7 @@
       <div class="ac-header" onclick="toggle('w12')" style="gap:0;">
         <div class="ac-header-inner">
           <div class="ac-header-left">
-            <div class="week-circle wc-building">12</div>
+            <div class="week-circle wc-running">12</div>
             <div class="ac-title-group">
               <div class="ac-title">Multi-account governance</div>
               <div class="ac-subtitle">SCPs, second account, Control Tower, Route 53 lecture</div>
