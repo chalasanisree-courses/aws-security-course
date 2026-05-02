@@ -168,12 +168,15 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 <p>Go to <strong>AWS Config &rarr; Rules &rarr; Add rule</strong>. Add the following four managed rules one at a time:</p>
 <table>
   <tr><th>Rule name</th><th>What it checks</th></tr>
-  <tr><td><code>s3-bucket-server-side-encryption-enabled</code></td><td>S3 buckets have default encryption configured</td></tr>
+  <tr><td><code>s3-default-encryption-kms</code></td><td>S3 buckets are encrypted with KMS (not just default SSE-S3)</td></tr>
   <tr><td><code>s3-bucket-public-read-prohibited</code></td><td>S3 buckets do not allow public read access</td></tr>
   <tr><td><code>cloud-trail-encryption-enabled</code></td><td>CloudTrail trails are encrypted with KMS</td></tr>
   <tr><td><code>iam-root-access-key-check</code></td><td>Root account does not have active access keys</td></tr>
 </table>
-<p>For each rule, accept the default parameters and click <strong>Save</strong>. These are AWS-managed rules &mdash; Config knows how to evaluate them without any custom logic.</p>
+<p>For each rule, accept the default parameters and click <strong>Save</strong>.</p>
+<div class="callout info">
+  <p><strong>Why <code>s3-default-encryption-kms</code> instead of <code>s3-bucket-server-side-encryption-enabled</code>?</strong> Since January 2023, S3 encrypts all objects with SSE-S3 by default &mdash; you cannot disable encryption. The older rule checks whether <em>any</em> encryption is enabled, which is now always true. The KMS-specific rule checks whether the bucket uses a KMS key you control &mdash; the standard you set up in Week 8.</p>
+</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Wait for evaluation and screenshot</span></div><div class="step-body">
@@ -182,18 +185,18 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 <div class="screenshot">AWS Config Rules dashboard showing all four rules with compliance status</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Break it &mdash; remove S3 encryption</span></div><div class="step-body">
-<p>Go to <strong>S3 &rarr; your Photo Viewer bucket &rarr; Properties &rarr; Default encryption &rarr; Edit</strong>. Change the encryption type from <strong>SSE-KMS</strong> to <strong>SSE-S3</strong> (or disable default encryption entirely). Click <strong>Save changes</strong>.</p>
-<p>The Photo Viewer still works &mdash; S3 does not require KMS encryption to serve existing objects. But new uploads are no longer encrypted with your customer-managed key. This is exactly the kind of silent drift that Config catches.</p>
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Break it &mdash; downgrade S3 encryption</span></div><div class="step-body">
+<p>Go to <strong>S3 &rarr; your Photo Viewer bucket &rarr; Properties &rarr; Default encryption &rarr; Edit</strong>. Change the encryption type from <strong>SSE-KMS</strong> to <strong>SSE-S3</strong>. Click <strong>Save changes</strong>.</p>
+<p>The Photo Viewer still works &mdash; objects are still encrypted, just with Amazon&rsquo;s S3-managed key instead of your customer-managed KMS key. No errors, no outages, no visible change. But you&rsquo;ve lost control of the encryption key &mdash; you can no longer audit key usage in CloudTrail, rotate on your own schedule, or revoke access by disabling the key. This is exactly the kind of silent drift that Config catches.</p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Observe Config catch the drift</span></div><div class="step-body">
-<p>Go to <strong>AWS Config &rarr; Rules &rarr; s3-bucket-server-side-encryption-enabled</strong>. Click <strong>Re-evaluate</strong> (or wait 5&ndash;10 minutes for automatic re-evaluation).</p>
+<p>Go to <strong>AWS Config &rarr; Rules &rarr; s3-default-encryption-kms</strong>. Click <strong>Re-evaluate</strong> (or wait 5&ndash;10 minutes for automatic re-evaluation).</p>
 <p>The rule transitions to <strong>Non-compliant</strong>. Click into the rule to see which resource is non-compliant &mdash; your Photo Viewer bucket.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>Config detected the encryption drift. Without Config, this change would be invisible &mdash; the app works fine, no errors, no alarms. Only Config knows the configuration has changed.</p>
 </div>
-<div class="screenshot">AWS Config showing s3-bucket-server-side-encryption-enabled as Non-compliant with the Photo Viewer bucket listed</div>
+<div class="screenshot">AWS Config showing s3-default-encryption-kms as Non-compliant with the Photo Viewer bucket listed</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Fix it &mdash; restore encryption</span></div><div class="step-body">
@@ -302,7 +305,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
     <tr><td><strong>Config enabled</strong></td><td>3</td><td>Screenshot: AWS Config Settings page showing recorder enabled.</td></tr>
     <tr><td><strong>Four Config rules added</strong></td><td>8</td><td>Screenshot: AWS Config Rules dashboard showing all four managed rules.</td></tr>
     <tr><td><strong>Rules show Compliant</strong></td><td>5</td><td>Screenshot: Config Rules dashboard with rules in Compliant status (before removing encryption).</td></tr>
-    <tr><td><strong>Non-compliant after drift</strong></td><td>10</td><td>Screenshot: <code>s3-bucket-server-side-encryption-enabled</code> showing Non-compliant after removing S3 encryption. The non-compliant resource (Photo Viewer bucket) is visible.</td></tr>
+    <tr><td><strong>Non-compliant after drift</strong></td><td>10</td><td>Screenshot: <code>s3-default-encryption-kms</code> showing Non-compliant after downgrading S3 encryption. The non-compliant resource (Photo Viewer bucket) is visible.</td></tr>
     <tr><td><strong>Compliant after fix</strong></td><td>5</td><td>Screenshot: Rule back to Compliant after restoring KMS encryption.</td></tr>
     <tr><td><strong>Inspector enabled</strong></td><td>3</td><td>Screenshot: Inspector dashboard showing Lambda scanning active.</td></tr>
     <tr><td><strong>Inspector findings</strong></td><td>8</td><td>Screenshot: Inspector findings for photoviewer-lambda &mdash; either CVE findings with details or a documented clean scan.</td></tr>
