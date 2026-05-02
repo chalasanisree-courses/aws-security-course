@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding Vulnerabilities — CS 55D Week 10</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.7; color: #1a1a1a; background: #fff; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; color: #111; }
+  .subtitle { font-size: 1.05rem; color: #555; margin-bottom: 2rem; border-bottom: 1px solid #e8e8e8; padding-bottom: 1.5rem; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem; color: #1F4E79; padding-bottom: 0.4rem; border-bottom: 3px solid #1F4E79; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: #222; }
+  p { margin-bottom: 0.9rem; color: #333; }
+  strong { font-weight: 600; color: #111; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: #333; }
+  li { margin-bottom: 0.35rem; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.87em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.93rem; }
+  th { background: #f0f4f8; text-align: left; padding: 0.65rem 1rem; font-weight: 600; color: #333; border-bottom: 2px solid #d0d8e0; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #e8e8e8; vertical-align: top; color: #444; }
+  tr:last-child td { border-bottom: none; }
+  a { color: #1F4E79; }
+  .callout { border-left: 4px solid #e8a000; background: #fffbf0; padding: 1rem 1.2rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+  .callout.info { border-color: #0066cc; background: #f0f6ff; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ── Risk equation panel ── */
+  .risk-panel { background: #1e2a3a; border-radius: 12px; padding: 1.8rem 1.5rem; margin: 1.5rem 0 2rem; text-align: center; }
+  .risk-panel .risk-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
+  .risk-eq { display: flex; align-items: center; justify-content: center; gap: 0.8rem; flex-wrap: nowrap; }
+  .risk-box { padding: 0.9rem 1.4rem; border-radius: 10px; text-align: center; flex: 1; max-width: 200px; }
+  .risk-box .risk-term { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .risk-box .risk-def { font-size: 0.78rem; line-height: 1.4; opacity: 0.85; }
+  .risk-box.threat { background: rgba(220,53,69,0.15); border: 2px solid rgba(220,53,69,0.4); }
+  .risk-box.threat .risk-term { color: #f87171; }
+  .risk-box.threat .risk-def { color: #fca5a5; }
+  .risk-box.vuln { background: rgba(251,191,36,0.15); border: 2px solid rgba(251,191,36,0.4); }
+  .risk-box.vuln .risk-term { color: #fbbf24; }
+  .risk-box.vuln .risk-def { color: #fde68a; }
+  .risk-box.risk { background: rgba(96,165,250,0.15); border: 2px solid rgba(96,165,250,0.4); }
+  .risk-box.risk .risk-term { color: #60a5fa; }
+  .risk-box.risk .risk-def { color: #93c5fd; }
+  .risk-op { font-size: 1.6rem; font-weight: 700; color: #64748b; }
+
+  /* ── Type cards ── */
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1.2rem 0; }
+  @media (max-width: 600px) { .type-grid { grid-template-columns: 1fr; } }
+  .type-card { border: 2px solid #d0dce8; border-radius: 10px; padding: 1.2rem; background: #fff; cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s; }
+  .type-card:hover { border-color: #1F4E79; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(31,78,121,0.1); }
+  .type-card.selected { border-color: #1F4E79; background: #f0f6ff; }
+  .type-card .type-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .type-card .type-name { font-weight: 700; font-size: 0.95rem; color: #1F4E79; margin-bottom: 0.3rem; }
+  .type-card .type-summary { font-size: 0.85rem; color: #555; line-height: 1.5; }
+  .type-detail { display: none; background: #fff; border: 1px solid #d0dce8; border-radius: 10px; padding: 1.2rem 1.5rem; margin-top: 0.8rem; }
+  .type-detail.visible { display: block; }
+  .type-detail-title { font-size: 1.05rem; font-weight: 700; color: #1F4E79; margin-bottom: 0.6rem; }
+  .type-detail p { font-size: 0.93rem; }
+
+  /* ── Flow diagram ── */
+  .flow-container { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.2rem 0; }
+  .flow-step { display: flex; align-items: flex-start; gap: 1rem; padding: 0.8rem 1rem; background: #f5f8fc; border-radius: 8px; border-left: 4px solid #1F4E79; }
+  .flow-num { font-size: 0.75rem; font-weight: 700; color: #fff; background: #1F4E79; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+  .flow-text { font-size: 0.9rem; color: #333; }
+  .flow-text strong { color: #111; }
+  .flow-step.danger { border-left-color: #dc3545; }
+  .flow-step.danger .flow-num { background: #dc3545; }
+  .flow-step.success { border-left-color: #28a745; }
+  .flow-step.success .flow-num { background: #28a745; }
+
+  /* ── CVSS color scale ── */
+  .cvss-scale { display: flex; gap: 0; margin: 1rem 0 1.5rem; border-radius: 8px; overflow: hidden; }
+  .cvss-band { padding: 0.6rem 0; text-align: center; flex: 1; font-size: 0.78rem; font-weight: 600; }
+  .cvss-band .cvss-range { display: block; font-size: 0.72rem; font-weight: 400; margin-top: 0.2rem; opacity: 0.85; }
+
+  /* ── Tool mapping ── */
+  .tool-row { display: flex; align-items: flex-start; gap: 1.2rem; margin: 1.2rem 0; padding: 1rem 1.2rem; border: 1px solid #e0e0e0; border-radius: 10px; background: #fafafa; }
+  .tool-icon { font-size: 1.4rem; flex-shrink: 0; width: 2.5rem; text-align: center; padding-top: 0.2rem; }
+  .tool-content { flex: 1; }
+  .tool-name { font-weight: 700; font-size: 1rem; color: #1F4E79; margin-bottom: 0.3rem; }
+  .tool-desc { font-size: 0.9rem; color: #444; margin-bottom: 0; }
+
+  /* ── Accordion ── */
+  details { border: 1px solid #d0dce8; border-radius: 10px; margin-bottom: 1rem; overflow: hidden; }
+  summary { padding: 0.9rem 1.2rem; background: #f5f8fc; cursor: pointer; font-weight: 600; font-size: 1rem; color: #111; list-style: none; display: flex; align-items: center; gap: 0.8rem; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "\25B8"; font-size: 0.9rem; color: #1F4E79; transition: transform 0.2s; flex-shrink: 0; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .accordion-body { padding: 1rem 1.2rem; border-top: 1px solid #d0dce8; }
+  .accordion-body p:last-child { margin-bottom: 0; }
+
+  /* ── Demo tie ── */
+  .demo-tie { background: #FFF8E1; border-left: 4px solid #F9A825; padding: 0.8rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-size: 0.9rem; }
+  .demo-tie strong { color: #e65100; }
+
+  /* ── Nav + footer ── */
+  .course-nav { position: sticky; top: 0; z-index: 100; background: #163756; display: flex; justify-content: space-between; align-items: center; padding: 11px 28px; margin: -2rem -1.5rem 2rem; }
+  .course-nav a { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.85); text-decoration: none; }
+  .course-nav a:hover { color: #fff; }
+  .course-nav-right { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .page-nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.9rem; }
+  .page-nav a { color: #1F4E79; text-decoration: none; }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e8e8e8; font-size: 0.82rem; color: #999; text-align: center; }
+  footer a { color: #1F4E79; text-decoration: none; }
+</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6BVW2TTTLE"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6BVW2TTTLE');</script>
+</head>
+<body>
+
+<nav class="course-nav">
+  <a href="../index.html">&larr; Course home</a>
+  <div class="course-nav-right">CS 55D &nbsp;&middot;&nbsp; Foothill College</div>
+</nav>
+
+<h1>Understanding Vulnerabilities</h1>
+<p class="subtitle">What vulnerabilities are, how they are classified and scored, and how AWS services detect them. Background reading for the Week 10 vulnerability assessment lab.</p>
+
+
+<!-- ═══════════════ SECTION 1 ═══════════════ -->
+<h2>1. Threat, vulnerability, and risk</h2>
+
+<p>These three terms are distinct. A <strong>threat</strong> is anything that can cause harm &mdash; an attacker, a natural disaster, a careless employee. A <strong>vulnerability</strong> is a weakness in a system that could be exploited. A vulnerability exists whether or not anyone exploits it. <strong>Risk</strong> is what happens when the two meet: the likelihood and impact of a threat exploiting a vulnerability.</p>
+
+<div class="risk-panel">
+  <div class="risk-title">The risk equation</div>
+  <div class="risk-eq">
+    <div class="risk-box threat">
+      <div class="risk-term">Threat</div>
+      <div class="risk-def">What can cause harm</div>
+    </div>
+    <div class="risk-op">&times;</div>
+    <div class="risk-box vuln">
+      <div class="risk-term">Vulnerability</div>
+      <div class="risk-def">Weakness that makes harm possible</div>
+    </div>
+    <div class="risk-op">=</div>
+    <div class="risk-box risk">
+      <div class="risk-term">Risk</div>
+      <div class="risk-def">Likelihood &amp; impact of harm</div>
+    </div>
+  </div>
+</div>
+
+<p>A vulnerability does not cause harm by itself. An attacker scanning the internet is a threat, but harmless if there is no vulnerability to exploit. Risk only exists when both are present.</p>
+
+
+<!-- ═══════════════ SECTION 2 ═══════════════ -->
+<h2>2. Three types of vulnerabilities</h2>
+
+<p>Vulnerabilities fall into three categories. Click each card to see examples and the AWS service that detects it.</p>
+
+<div class="type-grid">
+  <div class="type-card" onclick="showType('config')">
+    <div class="type-icon">&#9881;</div>
+    <div class="type-name">Configuration</div>
+    <div class="type-summary">The system is set up incorrectly</div>
+  </div>
+  <div class="type-card" onclick="showType('software')">
+    <div class="type-icon">&#128027;</div>
+    <div class="type-name">Software</div>
+    <div class="type-summary">The code has a known flaw</div>
+  </div>
+  <div class="type-card" onclick="showType('arch')">
+    <div class="type-icon">&#127959;</div>
+    <div class="type-name">Architectural</div>
+    <div class="type-summary">The design itself is flawed</div>
+  </div>
+</div>
+
+<div class="type-detail" id="detail-config">
+  <div class="type-detail-title">Configuration vulnerabilities</div>
+  <p>The system works, but it is not set up correctly. These are the most common real-world vulnerabilities and are often the easiest to fix.</p>
+  <p><strong>Examples:</strong> An S3 bucket with public read access enabled. A Lambda function with an overly permissive IAM role. An RDS instance using default credentials. A security group allowing SSH from 0.0.0.0/0. CloudTrail encryption downgraded from KMS to SSE-S3.</p>
+  <p><strong>Why they&rsquo;re dangerous:</strong> The application keeps working. No errors, no outages. The misconfiguration is invisible until someone exploits it &mdash; or until a monitoring tool catches it.</p>
+  <div class="demo-tie"><strong>In the course:</strong> AWS Config detects configuration vulnerabilities. You define rules that describe the desired configuration, and Config flags any resource that drifts. AWS Trusted Advisor checks a fixed set of configuration best practices across the account.</div>
+</div>
+
+<div class="type-detail" id="detail-software">
+  <div class="type-detail-title">Software vulnerabilities</div>
+  <p>The code &mdash; either yours or a dependency you included &mdash; has a flaw that can be exploited. Not all bugs are vulnerabilities; only bugs that can be used to cause harm qualify.</p>
+  <p><strong>Examples:</strong> A Python library (Pillow 9.5.0) with a known arbitrary code execution flaw in <code>ImageMath.eval</code>. Apache Log4j 2.14.1 allowing remote code execution via crafted log messages. A buffer overflow in an HTTP server.</p>
+  <p><strong>Why they&rsquo;re dangerous:</strong> You may not even know the vulnerability exists. It lives inside a dependency you imported, in code you never read. Attackers can find it by checking the CVE databases and matching it against your exposed software versions.</p>
+  <div class="demo-tie"><strong>In the course:</strong> Amazon Inspector detects software vulnerabilities. It scans your Lambda deployment packages against the National Vulnerability Database, identifying which packages have known CVEs, what severity they carry, and how to remediate them.</div>
+</div>
+
+<div class="type-detail" id="detail-arch">
+  <div class="type-detail-title">Architectural vulnerabilities</div>
+  <p>The design of the system itself creates weakness. Individual components may be configured correctly and running clean code, but the way they connect creates exposure.</p>
+  <p><strong>Examples:</strong> A flat network where a compromised vendor system can reach the point-of-sale system (Target, 2013). An IAM role on an EC2 instance with access to every S3 bucket in the account (Capital One, 2019). Implicit trust inside a VPC with no segmentation.</p>
+  <p><strong>Why they&rsquo;re dangerous:</strong> Architectural vulnerabilities magnify the impact of other failures. A single compromised component can reach everything because the design didn&rsquo;t enforce boundaries. These are the hardest to fix because they require redesigning the system, not just changing a setting.</p>
+  <div class="demo-tie"><strong>In the course:</strong> Architectural vulnerabilities are addressed through design decisions across the entire course &mdash; VPC segmentation, least-privilege IAM, defense-in-depth layering, CloudFront + OAC instead of direct S3 access. The AWS Well-Architected Framework is the methodology for identifying these weaknesses.</div>
+</div>
+
+
+<!-- ═══════════════ SECTION 3 ═══════════════ -->
+<h2>3. CVE, CVSS, and the National Vulnerability Database</h2>
+
+<p>When a vulnerability is discovered, it needs a name, a severity score, and a public record. Three systems provide this.</p>
+
+<h3>CVE &mdash; Common Vulnerabilities and Exposures</h3>
+
+<p>A CVE is a unique identifier for a specific vulnerability. The format is <code>CVE-YYYY-NNNNN</code> &mdash; year of assignment followed by a sequence number. A CVE is not an exploit; it is a label. Two examples from the course:</p>
+
+<table>
+  <tr><th>CVE</th><th>Name</th><th>What it affects</th><th>Impact</th></tr>
+  <tr><td><code>CVE-2021-44228</code></td><td>Log4Shell</td><td>Apache Log4j (Java logging library)</td><td>Remote code execution via crafted log messages</td></tr>
+  <tr><td><code>CVE-2023-50447</code></td><td>&mdash;</td><td>Pillow (Python imaging library)</td><td>Arbitrary code execution in <code>ImageMath.eval</code></td></tr>
+</table>
+
+<h3>CVSS &mdash; Common Vulnerability Scoring System</h3>
+
+<p>CVSS assigns a severity score from 0.0 to 10.0 based on how easily the vulnerability can be exploited and how much damage it can cause. The score determines how urgently you need to respond.</p>
+
+<div class="cvss-scale">
+  <div class="cvss-band" style="background:#c8e6c9;color:#2e7d32;">None<span class="cvss-range">0.0</span></div>
+  <div class="cvss-band" style="background:#fff9c4;color:#f57f17;">Low<span class="cvss-range">0.1&ndash;3.9</span></div>
+  <div class="cvss-band" style="background:#ffe0b2;color:#e65100;">Medium<span class="cvss-range">4.0&ndash;6.9</span></div>
+  <div class="cvss-band" style="background:#ffccbc;color:#bf360c;">High<span class="cvss-range">7.0&ndash;8.9</span></div>
+  <div class="cvss-band" style="background:#ef9a9a;color:#b71c1c;">Critical<span class="cvss-range">9.0&ndash;10.0</span></div>
+</div>
+
+<p>Log4Shell scored 10.0 &mdash; the maximum. Remote code execution, no authentication required, trivially exploitable. The Pillow vulnerability (CVE-2023-50447) scored 8.1 &mdash; high, but not critical, because the vulnerable code path (<code>ImageMath.eval</code>) is not commonly used.</p>
+
+<h3>NVD &mdash; National Vulnerability Database</h3>
+
+<p>The <a href="https://nvd.nist.gov/" target="_blank">NVD</a>, maintained by NIST, is the public database where CVEs are recorded with full details: affected products, severity scores, references to vendor advisories, and remediation guidance. When Amazon Inspector finds a vulnerability in your Lambda function, the CVE identifier it reports links back to this database.</p>
+
+<p>Other useful resources: <a href="https://www.cvedetails.com/" target="_blank">CVE Details</a> provides a searchable interface for browsing vulnerabilities by vendor, product, or year. <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank">CISA&rsquo;s Known Exploited Vulnerabilities (KEV) catalog</a> lists CVEs that are confirmed to be actively exploited in the wild &mdash; these are the ones that demand immediate attention.</p>
+
+
+<!-- ═══════════════ SECTION 4 ═══════════════ -->
+<h2>4. Vulnerability lifecycle</h2>
+
+<p>Every vulnerability follows a lifecycle. Understanding where a vulnerability sits in this lifecycle determines how you respond.</p>
+
+<div class="flow-container">
+  <div class="flow-step">
+    <div class="flow-num">1</div>
+    <div class="flow-text"><strong>Introduction:</strong> The vulnerability is created &mdash; a developer writes a bug, an administrator misconfigures a setting, or an architect makes a design decision that creates exposure. Nobody knows it exists yet.</div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">2</div>
+    <div class="flow-text"><strong>Silent existence:</strong> The vulnerability is live in production. The application works fine. Months or years may pass. The longer this phase lasts, the greater the risk &mdash; attackers are always looking.</div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num">3</div>
+    <div class="flow-text"><strong>Discovery:</strong> Someone finds the vulnerability. This could be a security researcher (good), Google&rsquo;s Project Zero team (good), or an attacker (bad). If the good guys find it first, there is time to prepare a fix before disclosure.</div>
+  </div>
+  <div class="flow-step danger">
+    <div class="flow-num">4</div>
+    <div class="flow-text"><strong>Disclosure:</strong> The vulnerability is publicly documented &mdash; a CVE is assigned, the NVD entry is created. Ideally, the vendor releases a patch at the same time. If no patch is available at disclosure, it is a <strong>zero-day</strong> &mdash; every affected system is exposed with no fix. Log4Shell was a zero-day.</div>
+  </div>
+  <div class="flow-step success">
+    <div class="flow-num">5</div>
+    <div class="flow-text"><strong>Patch available:</strong> The vendor releases a fix. The vulnerability is no longer a mystery &mdash; the CVE is public, the patch is public, and the clock is ticking. Attackers now know exactly what to look for in unpatched systems.</div>
+  </div>
+  <div class="flow-step danger">
+    <div class="flow-num">6</div>
+    <div class="flow-text"><strong>Unpatched window:</strong> Some systems are patched. Others are not. Known vulnerabilities are exploited <strong>long after disclosure</strong> because organizations are slow to patch. The Equifax breach (2017) exploited a vulnerability that had been patched two months earlier.</div>
+  </div>
+</div>
+
+<div class="callout">
+  <p><strong>Why this matters for the lab:</strong> Amazon Inspector continuously scans your Lambda functions for known CVEs. It catches vulnerabilities in phase 5 &mdash; the patch exists but you haven&rsquo;t applied it yet. Without Inspector, your functions sit in phase 2 indefinitely: vulnerable, working fine, and invisible.</p>
+</div>
+
+
+<!-- ═══════════════ SECTION 5 ═══════════════ -->
+<h2>5. How vulnerabilities are discovered</h2>
+
+<p>Both attackers and defenders use the same techniques to find vulnerabilities. The difference is what they do with the information.</p>
+
+<details>
+  <summary>Port scanning</summary>
+  <div class="accordion-body">
+    <p>Scanning a target system to identify open network ports and the services running on them. An open port running an outdated web server version tells an attacker exactly which CVEs to try. In AWS, security groups and NACLs control which ports are exposed. Trusted Advisor checks for unrestricted security groups as one of its fixed best-practice rules.</p>
+  </div>
+</details>
+
+<details>
+  <summary>Reconnaissance</summary>
+  <div class="accordion-body">
+    <p>Gathering information about a target&rsquo;s internal architecture without directly attacking it. What operating system is the server running? What web server version? What frameworks? Attackers use HTTP response headers, error messages, and DNS records to build a picture of the target. In AWS, services like CloudFront strip server headers and error details to reduce the information available to attackers.</p>
+  </div>
+</details>
+
+<details>
+  <summary>Vulnerability scanning</summary>
+  <div class="accordion-body">
+    <p>Automated tools that inventory your software and compare versions against the National Vulnerability Database. This is exactly what Amazon Inspector does for Lambda functions and EC2 instances. The scanner doesn&rsquo;t try to exploit anything &mdash; it checks whether the version you are running has known CVEs.</p>
+  </div>
+</details>
+
+<details>
+  <summary>Penetration testing</summary>
+  <div class="accordion-body">
+    <p>Authorized simulated attacks against your own systems to find vulnerabilities before real attackers do. Unlike scanning, penetration testing actually attempts to exploit weaknesses. AWS allows penetration testing on your own resources without prior approval for most services, but some activities (like DDoS simulation) require authorization.</p>
+  </div>
+</details>
+
+
+<!-- ═══════════════ SECTION 6 ═══════════════ -->
+<h2>6. AWS tool mapping</h2>
+
+<p>In AWS, the three vulnerability types map to specific services:</p>
+
+<div class="tool-row">
+  <div class="tool-icon">&#9881;</div>
+  <div class="tool-content">
+    <div class="tool-name">AWS Config + AWS Trusted Advisor &rarr; Configuration vulnerabilities</div>
+    <p class="tool-desc">Config continuously records resource configuration and evaluates managed rules to detect drift. Trusted Advisor runs a fixed set of best-practice checks &mdash; unrestricted security groups, MFA on root, S3 bucket permissions. Together, they catch misconfigured knobs &mdash; the settings AWS exposes to you.</p>
+  </div>
+</div>
+
+<div class="tool-row">
+  <div class="tool-icon">&#128027;</div>
+  <div class="tool-content">
+    <div class="tool-name">Amazon Inspector &rarr; Software vulnerabilities</div>
+    <p class="tool-desc">Inspector scans your Lambda deployment packages and EC2 instances against the NVD. It identifies CVEs in your dependencies &mdash; the code you bring to AWS. It reports the CVE identifier, CVSS score, affected package version, and remediation guidance.</p>
+  </div>
+</div>
+
+<div class="tool-row">
+  <div class="tool-icon">&#127959;</div>
+  <div class="tool-content">
+    <div class="tool-name">AWS Well-Architected Framework &rarr; Architectural vulnerabilities</div>
+    <p class="tool-desc">Architectural vulnerabilities require human judgment, not automated scanning. The Well-Architected Framework provides the methodology &mdash; six pillars of review questions that surface design-level weaknesses like missing network segmentation, implicit trust, and excessive permissions.</p>
+  </div>
+</div>
+
+<div class="callout info">
+  <p><strong>The boundary:</strong> Config and Trusted Advisor watch the knobs that AWS exposes to you &mdash; are they set correctly? Inspector watches what you bring to AWS &mdash; are your dependencies secure? The Well-Architected Framework evaluates how you connect everything together &mdash; is the design sound?</p>
+</div>
+
+
+<div class="page-nav">
+  <div><a href="../index.html">&larr; Course home</a></div>
+  <div><a href="week10-monitoring.html">Monitoring &amp; Compliance &rarr;</a></div>
+  <div><a href="week10-lab-assignment.html">Week 10 Lab &rarr;</a></div>
+</div>
+
+<footer>
+  CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp;
+  <a href="../index.html">Course home</a>
+</footer>
+
+<script>
+function showType(type) {
+  ['config','software','arch'].forEach(t => {
+    document.getElementById('detail-' + t).classList.remove('visible');
+    document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  });
+  document.getElementById('detail-' + type).classList.add('visible');
+  const cards = document.querySelectorAll('.type-card');
+  const idx = type === 'config' ? 0 : type === 'software' ? 1 : 2;
+  cards[idx].classList.add('selected');
+}
+</script>
+
+</body>
+</html>
