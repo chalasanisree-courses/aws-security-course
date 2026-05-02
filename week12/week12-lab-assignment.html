@@ -270,11 +270,7 @@
 <p>There is no single correct answer &mdash; reasonable priorities depend on the threat model, user base, and compliance requirements. The quality of your reasoning matters more than which items you choose.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Identify one simplification you would keep</span></div><div class="step-body">
-<p>Select <strong>one simplification you would intentionally leave in place</strong> even in production. Explain why &mdash; some simplifications represent pragmatic trade-offs where the production alternative adds complexity not justified by the risk reduction.</p>
-</div></div>
-
-<div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">The capstone question</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">The capstone question</span></div><div class="step-body">
 <p>For each of the seven pillars, identify the <strong>single most important AWS service</strong> that provides that pillar for the Photo Viewer. Explain your choice in one sentence each.</p>
 <table>
   <tr><th>Pillar</th><th>Your choice</th><th>Why</th></tr>
@@ -313,9 +309,8 @@
     <tr><td><strong>SCPs attached to correct OUs</strong></td><td>5</td><td>Screenshot: Organizations console showing SCPs attached to Root and Production OU.</td></tr>
     <tr><td><strong>Management account exemption</strong></td><td>8</td><td>Screenshot: CloudTrail stop logging succeeding. Written explanation of why SCPs did not block it.</td></tr>
     <tr><td><strong>Production architecture table</strong></td><td>8</td><td>OU structure showing Management Account, NA OU, Asia OU, nested Production/Staging, with correct SCP inheritance.</td></tr>
-    <tr><td><strong>Top three hardening priorities</strong></td><td>18</td><td>Three simplifications selected with reasoning for priority, risk assessment, and implementation cost.</td></tr>
-    <tr><td><strong>One simplification to keep</strong></td><td>8</td><td>One simplification identified as acceptable trade-off with reasoning.</td></tr>
-    <tr><td><strong>Capstone &mdash; one service per pillar</strong></td><td>10</td><td>Seven pillars, one AWS service each, one-sentence justification. Debatable choices defended.</td></tr>
+    <tr><td><strong>Top three hardening priorities</strong></td><td>22</td><td>Three simplifications selected with reasoning for priority, risk assessment, and implementation cost.</td></tr>
+    <tr><td><strong>Capstone &mdash; one service per pillar</strong></td><td>14</td><td>Seven pillars, one AWS service each, one-sentence justification. Debatable choices defended.</td></tr>
     <tr><td><strong>Reflection Q1 &mdash; IAM deny vs SCP deny</strong></td><td>12</td><td>IAM deny applies to root, but root can delete the deny policy itself (full IAM access). SCP deny applies to root in member accounts, and root cannot delete SCPs because the Organizations API is only available from the management account. IAM deny fails when the policy is removed. SCP deny fails only in the management account (exempt by design).</td></tr>
     <tr><td><strong>Reflection Q2 &mdash; single account vs multi-account</strong></td><td>11</td><td>Disagree. IAM policies can be changed by any admin. A single account means a US admin could access Asia user data, violating data sovereignty. Separate accounts with region-lock SCPs enforce at the organizational level. The cost savings do not justify the compliance risk.</td></tr>
     <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>

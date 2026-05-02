@@ -231,14 +231,14 @@
   <div class="issue-card" onclick="toggleIssue('i1')">
     <div class="icon">&#128736;</div>
     <div class="label">Issue 1</div>
-    <div class="title">No separation between dev and production</div>
-    <div class="desc">Development and live users share the same account</div>
+    <div class="title">No account-level separation</div>
+    <div class="desc">Dev teams and security management share one account</div>
   </div>
   <div class="issue-card" onclick="toggleIssue('i2')">
     <div class="icon">&#128275;</div>
     <div class="label">Issue 2</div>
-    <div class="title">No separation between rule-makers and rule-followers</div>
-    <div class="desc">The people who enforce the rules can also delete them</div>
+    <div class="title">No separation between boundary-setters and operators</div>
+    <div class="desc">The people who set up security controls can also remove them</div>
   </div>
   <div class="issue-card" onclick="toggleIssue('i3')">
     <div class="icon">&#127760;</div>
@@ -249,37 +249,35 @@
 </div>
 
 <div class="issue-detail" id="i1">
-  <h4>No separation between development and production <span class="fixed-badge">Addressed this week</span></h4>
-  <p><strong>The problem:</strong> The Photo Viewer &mdash; the live application serving real users &mdash; runs in the same account where you develop, test, and experiment. A bad Lambda deployment takes the app down for customers. A developer testing IAM policies could accidentally open S3 to the public. There is no boundary between &ldquo;trying things out&rdquo; and &ldquo;serving real traffic.&rdquo;</p>
-  <p><strong>The gap:</strong> In the Identity Center lab, you moved your account into the Production OU. But that account is also the <strong>management account</strong> &mdash; the account that owns Organizations, manages Identity Center, and handles billing. It defines the organizational policies. In production, the management account should not also be the account running workloads &mdash; the organization that defines the rules should not also be the one following them.</p>
+  <h4>No account-level separation <span class="fixed-badge">Addressed this week</span></h4>
+  <p><strong>The problem:</strong> The development team building the Photo Viewer, the operations staff running it, and the security team governing it all share the same AWS account. A developer testing a new Lambda deployment can break the live application. An operations engineer troubleshooting an issue can accidentally weaken a security control. There is no boundary between the people who set the rules and the people who operate under them.</p>
+  <p><strong>The gap:</strong> In the Identity Center lab, you moved your account into the Production OU. But that account is also the <strong>management account</strong> &mdash; the account that owns Organizations, manages Identity Center, and handles billing. It defines the organizational boundaries. The people who define the policies and the people who operate under them are the same people in the same account.</p>
   <p><strong>A quick refresher:</strong> When you created Organizations in the Identity Center lab, your account became the <strong>management account</strong>. This is the single account that controls the organization. Any other account you create or invite becomes a <strong>member account</strong> &mdash; an account that runs workloads and is subject to organizational policies. Right now, you have one management account and zero member accounts.</p>
-  <p><strong>Addressed this week:</strong> In the production architecture, a dedicated management account handles governance only. The Photo Viewer runs in a member account inside the Production OU. A separate staging member account in the Staging OU gives the team a safe place to test.</p>
+  <p><strong>Addressed this week:</strong> The security management team gets a dedicated management account (governance only, zero workloads). The development teams get their own member accounts inside Production and Staging OUs. The account that defines the boundaries is separate from the accounts that operate within them.</p>
 </div>
 
 <div class="issue-detail" id="i2">
-  <h4>No separation between rule-makers and rule-followers <span class="fixed-badge">Addressed this week</span></h4>
-  <p><strong>The problem:</strong> Jerry set up Config rules, CloudWatch alarms, Inspector scanning, Macie discovery jobs, and GuardDuty. But Jerry can also delete all of them. The same person who enforces the rules can remove the enforcement. If Jerry&rsquo;s credentials are compromised, the attacker can disable every security control and delete the evidence.</p>
-  <p><strong>Why this is hard to fix in a single account:</strong> In a single account, any administrator can change any policy. There is no &ldquo;higher authority&rdquo; that prevents an admin from undoing security controls. Even the root user &mdash; the most powerful principal &mdash; operates within the same account. You need a mechanism that sits <em>above</em> individual accounts and defines limits that nobody inside the account can override. That mechanism is called a <strong>Service Control Policy (SCP)</strong> &mdash; explained in Section 3.</p>
-  <p><strong>The deeper issue:</strong> The management account &mdash; the account that would define these organizational policies &mdash; is exempt from them. Organizational policies only restrict member accounts. Since the Photo Viewer runs in the management account, it cannot be governed by its own policies.</p>
-  <p><strong>Addressed this week:</strong> In production, the management account is dedicated to governance &mdash; it runs zero workloads and defines the rules. Member accounts run the Photo Viewer and follow the rules. The people operating the Photo Viewer cannot change or remove the organizational policies that govern them.</p>
+  <h4>No separation between boundary-setters and operators <span class="fixed-badge">Addressed this week</span></h4>
+  <p><strong>The problem:</strong> Jerry set up Config rules, CloudWatch alarms, Inspector scanning, Macie discovery jobs, and GuardDuty. But Jerry can also delete all of them. The same person who set up the security controls can remove them. If Jerry&rsquo;s credentials are compromised, the attacker can disable every security control and delete the evidence.</p>
+  <p><strong>Why this is hard to fix in a single account:</strong> In a single account, any administrator can change any policy. There is no &ldquo;higher authority&rdquo; that prevents an admin from undoing security controls. You need a mechanism that sits <em>above</em> individual accounts and defines boundaries that nobody inside the account can override. That mechanism is called a <strong>Service Control Policy (SCP)</strong> &mdash; explained in Section 2.</p>
+  <p><strong>The deeper issue:</strong> The management account &mdash; the account that would define these boundaries &mdash; is exempt from them. Organizational policies only restrict member accounts. Since the Photo Viewer runs in the management account, it cannot be governed by its own policies.</p>
+  <p><strong>Addressed this week:</strong> Once the accounts are separated (Issue 1), the security management team in the management account can write SCPs that restrict what the development teams can and cannot do in their member accounts. The operators cannot change or remove these boundaries &mdash; even with <code>AdministratorAccess</code>, even as root.</p>
 </div>
 
 <div class="issue-detail" id="i3">
   <h4>Not set up for regional scaling <span class="fixed-badge">Addressed this week</span></h4>
   <p><strong>The problem:</strong> The Photo Viewer runs entirely in <code>us-east-1</code>. Users in Asia experience 400ms latency. More critically, data sovereignty laws in several Asian jurisdictions require that user-uploaded photos and account data remain within local borders.</p>
   <p><strong>Why not just deploy in a second region within the same account?</strong> Because data sovereignty is not just about where data is stored &mdash; it is about who can access it. An IAM admin in a single account can read S3 objects in any region. Separate accounts create a hard boundary that IAM alone cannot provide.</p>
-  <p><strong>Addressed this week:</strong> This issue requires both previous solutions working together. Separate member accounts per region provide account-level isolation. Organizational policies lock each account to a single region so data cannot accidentally (or deliberately) leave its jurisdiction. Route 53 latency-based routing connects users to the closest deployment automatically.</p>
+  <p><strong>Addressed this week:</strong> This requires both previous solutions. Separate member accounts per region provide account-level isolation (Issue 1). The security management team applies different boundaries for different regional teams &mdash; region-lock SCPs for data sovereignty, centralized identity management to ensure compliance with local regulations (Issue 2). Route 53 latency-based routing connects users to the closest deployment automatically.</p>
 </div>
 
+<h3>Where Pillar 7 fits</h3>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<h2>2. The big picture &mdash; Pillar 7</h2>
-
-<p>This week completes the seventh and final pillar: <strong>Security Governance</strong>. All prior pillars are now green.</p>
+<p>Six pillars are complete. But every one of them can be undone by a principal with sufficient permissions in the same account. Pillar 7 &mdash; Security Governance &mdash; is the layer that prevents the other six from being removed.</p>
 
 <div class="pillars-panel">
   <div class="pillars-title">Seven Pillars of Enterprise Application Security</div>
-  <div class="pillars-subtitle">All seven pillars complete</div>
+  <div class="pillars-subtitle">Six complete &mdash; all vulnerable without governance</div>
   <div class="phase-row">
     <div class="phase">
       <div class="phase-label build">&#9664; Building Securely</div>
@@ -311,11 +309,9 @@
   </div>
 </div>
 
-<p>Governance is the final pillar &mdash; but it is different from the others. It is not another security control you build into the application. It is the <strong>organizational layer</strong> that prevents the other six pillars from being undone.</p>
-
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>3. This week&rsquo;s solution</h2>
+<h2>2. This week&rsquo;s solution</h2>
 
 <h3>Three components of the solution</h3>
 
@@ -325,13 +321,13 @@
   <div class="solution-box" onclick="showSolution(0)">
     <div class="sol-icon">&#127963;</div>
     <div class="sol-title">1. Organizations + Multi-Account</div>
-    <div class="sol-problem">Separate dev from production with account boundaries</div>
+    <div class="sol-problem">Separate dev teams from security management with account boundaries</div>
     <div class="sol-service">Foundation &mdash; everything builds on this</div>
   </div>
   <div class="solution-box" onclick="showSolution(1)">
     <div class="sol-icon">&#128220;</div>
     <div class="sol-title">2. Service Control Policies</div>
-    <div class="sol-problem">Define rules that member accounts cannot override</div>
+    <div class="sol-problem">Set boundaries that member accounts cannot exceed</div>
     <div class="sol-service">Requires Organizations</div>
   </div>
   <div class="solution-box" onclick="showSolution(2)">
@@ -357,12 +353,12 @@ var solutionData = [
   {
     title: "2. Service Control Policies (SCPs)",
     subtitle: "Builds on Organizations \u2014 the ceiling IAM cannot exceed",
-    content: '<svg viewBox="0 0 560 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;display:block;margin:0.5rem auto 1rem;"><rect x="175" y="8" width="180" height="46" rx="8" fill="#1a1a1a"/><text x="265" y="28" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Management</text><text x="265" y="44" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Account</text><line x1="265" y1="54" x2="140" y2="90" stroke="#4a7cad" stroke-width="1.5"/><line x1="265" y1="54" x2="390" y2="90" stroke="#4a7cad" stroke-width="1.5"/><rect x="20" y="90" width="250" height="100" rx="10" fill="none" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="145" y="112" text-anchor="middle" fill="#333" font-size="12" font-weight="700">Production OU</text><rect x="50" y="125" width="170" height="36" rx="6" fill="#6b7280"/><text x="135" y="148" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Member Account</text><rect x="280" y="90" width="250" height="100" rx="10" fill="none" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="405" y="112" text-anchor="middle" fill="#333" font-size="12" font-weight="700">Staging OU</text><rect x="310" y="125" width="170" height="36" rx="6" fill="#6b7280"/><text x="395" y="148" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Member Account</text><text x="265" y="215" text-anchor="middle" fill="#3b82f6" font-size="11" font-weight="600">Management account sets rules (SCPs) \u2022 Member accounts enforce rules</text></svg><p><strong>The problem:</strong> Even with separate accounts, the people operating the Photo Viewer can disable CloudTrail, remove encryption, or open S3 to the public. The same person who enforces the rules can delete them.</p><p><strong>The solution:</strong> SCPs are defined in the management account and applied to member accounts. The people operating the Photo Viewer cannot change or remove the SCPs that govern them. Even root in a member account is subject to SCPs.</p><p><strong>Baseline SCPs (all member accounts):</strong> Deny CloudTrail deletion, deny public S3, deny Identity Center administration. No member account can disable audit logging, expose data publicly, or create local identity management.</p><p><strong>The management account exemption:</strong> SCPs do not apply to the management account \u2014 by design. An overly broad SCP could otherwise lock out the entire organization. This is why the management account must run zero workloads.</p><p><strong>What this enables:</strong> Once you have SCPs, you can enforce region-specific restrictions \u2014 the foundation for regional scaling.</p>'
+    content: '<svg viewBox="0 0 560 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;display:block;margin:0.5rem auto 1rem;"><rect x="175" y="8" width="180" height="46" rx="8" fill="#1a1a1a"/><text x="265" y="28" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Management</text><text x="265" y="44" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Account</text><line x1="265" y1="54" x2="140" y2="90" stroke="#4a7cad" stroke-width="1.5"/><line x1="265" y1="54" x2="390" y2="90" stroke="#4a7cad" stroke-width="1.5"/><rect x="20" y="90" width="250" height="100" rx="10" fill="none" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="145" y="112" text-anchor="middle" fill="#333" font-size="12" font-weight="700">Production OU</text><rect x="50" y="125" width="170" height="36" rx="6" fill="#6b7280"/><text x="135" y="148" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Member Account</text><rect x="280" y="90" width="250" height="100" rx="10" fill="none" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="405" y="112" text-anchor="middle" fill="#333" font-size="12" font-weight="700">Staging OU</text><rect x="310" y="125" width="170" height="36" rx="6" fill="#6b7280"/><text x="395" y="148" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Member Account</text><text x="265" y="215" text-anchor="middle" fill="#3b82f6" font-size="11" font-weight="600">Management account sets boundaries (SCPs) \u2022 Member accounts operate within them</text></svg><p><strong>The problem:</strong> Even with separate accounts, the people operating the Photo Viewer can disable CloudTrail, remove encryption, or open S3 to the public. The same person who set the boundaries can remove them.</p><p><strong>The solution:</strong> SCPs are defined in the management account and applied to member accounts. The people operating the Photo Viewer cannot change or remove the SCPs that constrain them. Even root in a member account is subject to SCPs.</p><p><strong>Baseline SCPs (all member accounts):</strong> Deny CloudTrail deletion, deny public S3, deny Identity Center administration. No member account can disable audit logging, expose data publicly, or create local identity management.</p><p><strong>The management account exemption:</strong> SCPs do not apply to the management account \u2014 by design. An overly broad SCP could otherwise lock out the entire organization. This is why the management account must run zero workloads.</p><p><strong>What this enables:</strong> Once you have SCPs, you can enforce region-specific restrictions \u2014 the foundation for regional scaling.</p>'
   },
   {
     title: "3. Regional Scaling",
     subtitle: "Builds on Organizations + SCPs \u2014 adds Route 53 for user routing",
-    content: '<svg viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0.5rem auto 1rem;"><rect x="210" y="5" width="180" height="46" rx="8" fill="#1a1a1a"/><text x="300" y="25" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Management</text><text x="300" y="41" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Account</text><line x1="300" y1="51" x2="150" y2="82" stroke="#4a7cad" stroke-width="1.5"/><line x1="300" y1="51" x2="450" y2="82" stroke="#4a7cad" stroke-width="1.5"/><rect x="5" y="82" width="290" height="148" rx="10" fill="#eef4fa" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="150" y="100" text-anchor="middle" fill="#1F4E79" font-size="12" font-weight="700">NA OU</text><rect x="18" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="83" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Production OU</text><rect x="30" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="83" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><rect x="155" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="220" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Staging OU</text><rect x="167" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="220" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><rect x="305" y="82" width="290" height="148" rx="10" fill="#eef9f0" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="450" y="100" text-anchor="middle" fill="#10b981" font-size="12" font-weight="700">ASIA OU</text><rect x="318" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="383" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Production OU</text><rect x="330" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="383" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><rect x="455" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="520" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Staging OU</text><rect x="467" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="520" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><text x="150" y="210" text-anchor="middle" fill="#3b82f6" font-size="10" font-weight="600">Region: us-east-1</text><text x="450" y="210" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">Region: ap-southeast-1</text></svg><p><strong>The problem:</strong> The Photo Viewer runs in <code>us-east-1</code> only. Asia users have 400ms latency. Data sovereignty laws require local storage. You need a second deployment \u2014 but with guarantees that data stays in-region.</p><p><strong>The solution uses all three layers:</strong></p><ul><li><strong>Organizations</strong> provides separate member accounts per region \u2014 a compromised US account cannot access Asia data</li><li><strong>Regional SCPs</strong> on each regional OU restrict resource creation to a single region \u2014 no principal in the Asia account can create an S3 bucket in <code>us-east-1</code>, even accidentally</li><li><strong>Route 53</strong> latency-based routing connects users to the closest deployment automatically \u2014 a user in Tokyo gets <code>ap-southeast-1</code>, a user in New York gets <code>us-east-1</code></li></ul><p><strong>Route 53 is a global service</strong> managed from the management account. Hosted zones, routing policies, and health checks are configured centrally. If the Asia deployment goes down, health checks detect it and fail over to the US deployment.</p><p>This is the cumulative payoff: Organizations provides the account structure, SCPs enforce the rules, and Route 53 connects users to the right deployment. None works alone.</p>'
+    content: '<svg viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0.5rem auto 1rem;"><rect x="210" y="5" width="180" height="46" rx="8" fill="#1a1a1a"/><text x="300" y="25" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Management</text><text x="300" y="41" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Account</text><line x1="300" y1="51" x2="150" y2="82" stroke="#4a7cad" stroke-width="1.5"/><line x1="300" y1="51" x2="450" y2="82" stroke="#4a7cad" stroke-width="1.5"/><rect x="5" y="82" width="290" height="148" rx="10" fill="#eef4fa" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="150" y="100" text-anchor="middle" fill="#1F4E79" font-size="12" font-weight="700">NA OU</text><rect x="18" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="83" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Production OU</text><rect x="30" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="83" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><rect x="155" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="220" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Staging OU</text><rect x="167" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="220" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><rect x="305" y="82" width="290" height="148" rx="10" fill="#eef9f0" stroke="#4a7cad" stroke-width="1.5" stroke-dasharray="6,4"/><text x="450" y="100" text-anchor="middle" fill="#10b981" font-size="12" font-weight="700">ASIA OU</text><rect x="318" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="383" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Production OU</text><rect x="330" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="383" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><rect x="455" y="110" width="130" height="65" rx="7" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/><text x="520" y="127" text-anchor="middle" fill="#555" font-size="10" font-weight="600">Staging OU</text><rect x="467" y="137" width="106" height="28" rx="5" fill="#6b7280"/><text x="520" y="156" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Member Acct</text><text x="150" y="210" text-anchor="middle" fill="#3b82f6" font-size="10" font-weight="600">Region: us-east-1</text><text x="450" y="210" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">Region: ap-southeast-1</text></svg><p><strong>The problem:</strong> The Photo Viewer runs in <code>us-east-1</code> only. Asia users have 400ms latency. Data sovereignty laws require local storage. You need a second deployment \u2014 but with guarantees that data stays in-region.</p><p><strong>The solution uses all three layers:</strong></p><ul><li><strong>Organizations</strong> provides separate member accounts per region \u2014 a compromised US account cannot access Asia data</li><li><strong>Regional SCPs</strong> on each regional OU restrict resource creation to a single region \u2014 no principal in the Asia account can create an S3 bucket in <code>us-east-1</code>, even accidentally</li><li><strong>Route 53</strong> latency-based routing connects users to the closest deployment automatically \u2014 a user in Tokyo gets <code>ap-southeast-1</code>, a user in New York gets <code>us-east-1</code></li></ul><p><strong>Route 53 is a global service</strong> managed from the management account. Hosted zones, routing policies, and health checks are configured centrally. If the Asia deployment goes down, health checks detect it and fail over to the US deployment.</p><p>This is the cumulative payoff: Organizations provides the account structure, SCPs enforce the boundaries, and Route 53 connects users to the right deployment. None works alone.</p>'
   }
 ];
 
@@ -381,7 +377,7 @@ function showSolution(idx) {
 
 <h3>Enforcement vs Governance</h3>
 
-<p>Governance answers one question: <strong>who gets to set the rules, and can they be bypassed?</strong> In every prior week, the person who built the control is the same person who can remove it. Governance introduces a hierarchy: the organization sets the rules, the accounts operate within those rules, and nobody in the account can exceed the ceiling.</p>
+<p>Governance answers one question: <strong>who gets to set the boundaries, and can they be bypassed?</strong> In every prior week, the person who built the control is the same person who can remove it. Governance introduces a hierarchy: the organization sets the boundaries, the accounts operate within those boundaries, and nobody in the account can exceed the ceiling.</p>
 
 <table class="compare-table">
   <thead><tr><th></th><th>Enforcement (Config)</th><th>Governance (SCPs)</th></tr></thead>
@@ -401,8 +397,8 @@ function showSolution(idx) {
   <div class="gov-card">
     <div class="gov-icon">&#128274;</div>
     <div class="gov-title">Security governance</div>
-    <div class="gov-question">&ldquo;What security controls must always exist?&rdquo;</div>
-    <div class="gov-example">CloudTrail cannot be disabled. S3 buckets cannot be public. <em>(Solution 2 &mdash; baseline SCPs)</em></div>
+    <div class="gov-question">&ldquo;What security controls cannot be removed?&rdquo;</div>
+    <div class="gov-example">CloudTrail logging cannot be stopped. S3 public access block cannot be weakened. <em>(Solution 2 &mdash; baseline SCPs)</em></div>
   </div>
   <div class="gov-card">
     <div class="gov-icon">&#127757;</div>
@@ -426,7 +422,7 @@ function showSolution(idx) {
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>4. Architecture &mdash; Photo Viewer goes global</h2>
+<h2>3. Architecture &mdash; Photo Viewer goes global</h2>
 
 <p>The diagram below shows the full production architecture with all three solution components working together. Route 53 routes user traffic from the management account. Member accounts run the Photo Viewer in isolated regions. Click any element to learn more.</p>
 
@@ -490,7 +486,7 @@ function showSolution(idx) {
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>5. Key concepts</h2>
+<h2>4. Key concepts</h2>
 
 <h3>Organizational controls</h3>
 
@@ -602,7 +598,7 @@ function showSolution(idx) {
 
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>6. Course retrospective &mdash; the complete Photo Viewer</h2>
+<h2>5. Course retrospective &mdash; the complete Photo Viewer</h2>
 
 <p>Twelve weeks. Seven pillars. One application. The Photo Viewer started as a public S3 bucket with pre-seeded photos and evolved into a fully secured, monitored, and governed application.</p>
 
