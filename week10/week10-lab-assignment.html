@@ -116,11 +116,11 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <li>Select metric: <strong>Lambda &rarr; By Function Name &rarr; photoviewer-lambda &rarr; Duration</strong></li>
   <li>Statistic: <strong>Average</strong></li>
   <li>Period: <strong>5 minutes</strong></li>
-  <li>Threshold: <strong>Static &rarr; Greater &rarr; 5000</strong> (5 seconds in milliseconds)</li>
+  <li>Threshold: <strong>Static &rarr; Greater &rarr; 2000</strong> (2 seconds in milliseconds)</li>
   <li>Notification: Same <strong>SNS topic</strong></li>
   <li>Alarm name: <code>photoviewer-lambda-duration</code></li>
 </ul>
-<p>This catches performance degradation &mdash; if average response time exceeds 5 seconds, something is wrong.</p>
+<p>The Lambda timeout is 3 seconds &mdash; if it takes longer than that, the invocation is killed and the error alarm fires. Setting the duration threshold at 2 seconds gives you an early warning: something is degrading, investigate before it starts timing out.</p>
 <div class="screenshot">CloudWatch Alarms console showing both alarms in OK state</div>
 </div></div>
 
