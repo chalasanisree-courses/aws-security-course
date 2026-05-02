@@ -112,7 +112,7 @@ ls -lh image-validator.zip</pre>
 <p>Go to <strong>Lambda &rarr; Create function</strong>.</p>
 <ul>
   <li>Function name: <code>photoviewer-image-validator</code></li>
-  <li>Runtime: <strong>Python 3.12</strong></li>
+  <li>Runtime: <strong>Python 3.11</strong> (Pillow 9.5.0 requires 3.11 — it predates Python 3.12)</li>
   <li>Execution role: <strong>Create a new role with basic Lambda permissions</strong></li>
 </ul>
 <p>After creation, upload the deployment package:</p>
