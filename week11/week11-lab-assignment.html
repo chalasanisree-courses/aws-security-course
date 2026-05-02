@@ -446,14 +446,20 @@ def lambda_handler(event, context):
 <!-- Cleanup -->
 <h2>Cleanup</h2>
 
-<p>Disable or delete resources to avoid unexpected charges:</p>
-<ul>
-  <li><strong>Disable Macie</strong> &mdash; free trial runs for 30 days, then charges begin. Go to Macie &rarr; Settings &rarr; Disable Macie.</li>
-  <li><strong>Disable GuardDuty</strong> &mdash; free trial runs for 30 days, then charges begin. Go to GuardDuty &rarr; Settings &rarr; Suspend/Disable GuardDuty.</li>
-  <li><strong>Delete test files</strong> &mdash; remove <code>suspicious.jpg</code> (Step 4), <code>test-photo.jpg</code> (Step 12), <code>malware-test.jpg</code> (Step 21), <code>customer-data.txt</code> (Step 8), and any test photos uploaded in Step 4 from both <code>photos/</code> and <code>quarantine/</code> prefixes.</li>
-  <li><strong>Keep Security Hub running</strong> &mdash; it provides ongoing visibility into your security posture across services.</li>
-  <li><strong>Keep both Lambda functions</strong> &mdash; the image validator and quarantine Lambda demonstrate real detection and remediation.</li>
-</ul>
+<p>Week 12 does not depend on any services from this lab. Disable or delete everything below to avoid charges. Keep CloudTrail, Config, Inspector, and CloudWatch &mdash; they remain useful.</p>
+
+<ol>
+  <li><strong>Disable Macie</strong> &mdash; Go to <strong>Macie &rarr; Settings &rarr; Disable Macie</strong>. Free trial runs for 30 days, then charges begin.</li>
+  <li><strong>Disable GuardDuty</strong> &mdash; Go to <strong>GuardDuty &rarr; Settings &rarr; Suspend &rarr; Disable GuardDuty</strong>. This also disables Malware Protection for S3.</li>
+  <li><strong>Disable Security Hub</strong> &mdash; Go to <strong>Security Hub &rarr; Settings &rarr; General &rarr; Disable Security Hub</strong>.</li>
+  <li><strong>Delete EventBridge rules</strong> &mdash; Go to <strong>EventBridge &rarr; Rules</strong>. Delete both <code>guardduty-high-severity-alert</code> and <code>guardduty-malware-quarantine</code>. (Remove targets first, then delete the rule.)</li>
+  <li><strong>Delete Lambda functions</strong> &mdash; Go to <strong>Lambda &rarr; Functions</strong>. Delete <code>photoviewer-image-validator</code> and <code>photoviewer-quarantine</code>.</li>
+  <li><strong>Remove S3 event notification</strong> &mdash; Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; Properties &rarr; Event notifications</strong>. Delete the <code>image-upload-validation</code> notification.</li>
+  <li><strong>Delete test files</strong> &mdash; Remove <code>suspicious.jpg</code>, <code>test-photo.jpg</code>, <code>malware-test.jpg</code>, <code>customer-data.txt</code>, and any test photos from both <code>photos/</code> and <code>quarantine/</code> prefixes.</li>
+</ol>
+
+<p>Run the post-flight script from CloudShell to verify cleanup is complete:</p>
+<pre>bash ~/aws-security-course/photoviewer/week11/week11-postflight.sh</pre>
 
 
 <!-- Reflection -->
