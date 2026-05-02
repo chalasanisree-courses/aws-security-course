@@ -603,7 +603,23 @@ function showThreat(idx) {
   }
 }</code></pre>
     <p>The first pattern matches on severity &mdash; only High and Critical findings trigger the rule. The second matches on scan result &mdash; only objects where threats were found. Different event types, different JSON structures, but the same pattern-matching language.</p>
-    <p>This pattern language works for any AWS service event. You could match Config compliance changes, Inspector findings above a threshold, or Macie findings of specific PII types. EventBridge is the universal router for security automation.</p>
+    <p>This pattern language works for any AWS service event &mdash; not just GuardDuty. Every detection service publishes events to EventBridge: Macie findings, Inspector findings, Config compliance changes. You can write rules against any of them.</p>
+    <p>There are two automation paths. In the <strong>direct path</strong>, you match on each service&rsquo;s native event fields:</p>
+    <pre><code>// GuardDuty native event
+"detail": {
+  "severity": 8,
+  "type": "Trojan:S3/DropPoint"
+}</code></pre>
+    <p>In the <strong>Security Hub path</strong>, Security Hub normalizes findings to ASFF and re-publishes them as events. You match on normalized fields instead:</p>
+    <pre><code>// Security Hub ASFF event
+"detail": {
+  "findings": [{
+    "Severity": { "Label": "HIGH" },
+    "ProductName": "GuardDuty"
+  }]
+}</code></pre>
+    <p>EventBridge is schema-agnostic &mdash; it matches whatever JSON fields you point it at. The advantage of the Security Hub path is consistency: you write rules against normalized labels like <code>HIGH</code> and <code>CRITICAL</code> instead of remembering that GuardDuty uses 0&ndash;10 numbers, Inspector uses CVSS scores, and Macie uses its own severity scale. One vocabulary for all services.</p>
+    <p>In this lab we use the direct path &mdash; students see the native event structure and learn what each service actually emits. Production environments often use the Security Hub path to manage automation from a single source.</p>
   </div>
 </details>
 
