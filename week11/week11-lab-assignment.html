@@ -73,11 +73,11 @@
 <p><strong>Objective:</strong> Last week you set up monitoring for configuration drift, performance, and vulnerabilities &mdash; all inward-facing. This week, someone is doing something bad. An employee uploads sensitive data. A suspicious file lands in the photo bucket. A Lambda dependency has a known vulnerability. Set up Macie, GuardDuty, and Inspector to detect these threats, aggregate all findings in Security Hub, and automate alerting via EventBridge.</p>
 
 <div class="callout info">
-  <p><strong>What changes this week:</strong> A new image-validation Lambda is deployed (by Jerry) that uses Pillow to verify uploaded files are real images. This Lambda has a deliberately outdated dependency that Inspector will flag. Macie, GuardDuty, Security Hub, and EventBridge are all enabled for the first time.</p>
+  <p><strong>What changes this week:</strong> A new image-validation Lambda is deployed that uses Pillow to verify uploaded files are real images. This Lambda has a deliberately outdated dependency that Inspector will flag. Macie, GuardDuty, Security Hub, and EventBridge are all enabled for the first time.</p>
 </div>
 
 <div class="callout">
-  <p><strong>Roles this week:</strong> <strong>Jerry</strong> (security/infra engineer) builds the detection infrastructure &mdash; deploys the validator Lambda, enables Macie, GuardDuty, Security Hub, and EventBridge. <strong>Tom</strong> (customer support engineer) creates the incidents &mdash; uploads a file with PII and a suspicious file. Jerry&rsquo;s infrastructure catches Tom&rsquo;s mistakes.</p>
+  <p><strong>Scenario this week:</strong> You play both sides &mdash; first you build the detection infrastructure (Macie, GuardDuty, Inspector, Security Hub, EventBridge), then you simulate the incidents (uploading PII and a suspicious file) and watch your own detections catch them.</p>
 </div>
 
 <div class="preflight">
@@ -93,10 +93,10 @@ bash aws-security-course/photoviewer/week11/week11-preflight.sh</pre>
 <!-- Part 1 -->
 <div class="part-header">
   <span class="part-num">Part 1</span>
-  <span class="part-title">Deploy the image validator Lambda (Jerry)</span>
+  <span class="part-title">Deploy the image validator Lambda</span>
 </div>
 
-<p>The Photo Viewer accepts file uploads from premium users, but it never checks whether the uploaded file is actually an image. Someone could rename <code>malware.exe</code> to <code>vacation.jpg</code> and upload it. Jerry deploys a Lambda function that triggers on every S3 upload and uses the Pillow library to verify the file is a valid image.</p>
+<p>The Photo Viewer accepts file uploads from premium users, but it never checks whether the uploaded file is actually an image. Someone could rename <code>malware.exe</code> to <code>vacation.jpg</code> and upload it. Deploy a Lambda function that triggers on every S3 upload and uses the Pillow library to verify the file is a valid image.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Download the validator Lambda zip</span></div><div class="step-body">
 <p>The deployment package is pre-built in the course repository. From CloudShell:</p>
@@ -119,13 +119,51 @@ ls -lh image-validator.zip</pre>
 <ul>
   <li>Go to <strong>Code &rarr; Upload from &rarr; .zip file</strong></li>
   <li>Upload <code>image-validator.zip</code></li>
-  <li>Set the handler to <code>image_validator.lambda_handler</code></li>
 </ul>
+<p>Update the handler (the zip uses <code>image_validator.py</code>, not Lambda&rsquo;s default <code>lambda_function.py</code>):</p>
+<ul>
+  <li>Scroll down to <strong>Runtime settings &rarr; Edit</strong></li>
+  <li>Change Handler from <code>lambda_function.lambda_handler</code> to <code>image_validator.lambda_handler</code></li>
+  <li>Click <strong>Save</strong></li>
+</ul>
+<div class="callout">
+  <p><strong>Editor warning is expected.</strong> After uploading the zip, the Code tab will show &ldquo;The editor could not be opened because the file was not found.&rdquo; This is normal &mdash; the zip (3.2 MB) exceeds Lambda&rsquo;s 3 MB inline editor limit. The function is deployed correctly; you just cannot view the code in the browser editor.</p>
+</div>
 <p>Add permissions to the Lambda execution role:</p>
 <ul>
   <li>Go to <strong>Configuration &rarr; Permissions &rarr; click the role name</strong></li>
-  <li>Attach the managed policy <code>AmazonS3FullAccess</code> (in production you would scope this down &mdash; for the lab this is sufficient)</li>
+  <li>In IAM, choose <strong>Add permissions &rarr; Create inline policy &rarr; JSON</strong></li>
+  <li>Paste the following policy, then click <strong>Next &rarr;</strong> name it <code>photoviewer-validator-s3</code> <strong>&rarr; Create policy</strong></li>
 </ul>
+<pre>
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObjectTagging"
+      ],
+      "Resource": "arn:aws:s3:::photoviewer-9876543210/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "*"
+    }
+  ]
+}</pre>
+<p>Add the validator role to the KMS data key policy:</p>
+<ul>
+  <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong></li>
+  <li>Find the <code>&quot;Allow use of the key&quot;</code> statement</li>
+  <li>Add the validator Lambda&rsquo;s execution role ARN to the <code>Principal</code> list (copy it from the role you just edited in IAM)</li>
+  <li>Click <strong>Save changes</strong></li>
+</ul>
+<div class="callout info">
+  <p><strong>Least privilege + KMS dual authorization.</strong> The validator needs <code>GetObject</code> to download the file, <code>PutObjectTagging</code> to write validation tags, and <code>kms:Decrypt</code> because the bucket uses SSE-KMS with <code>photoviewer-data-key</code> (from the Week 8 encryption lab). Remember: KMS requires authorization from <em>both</em> the IAM policy and the key policy. The IAM policy alone is not enough &mdash; the role must also appear in the key policy.</p>
+</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Configure S3 event trigger</span></div><div class="step-body">
@@ -143,7 +181,7 @@ ls -lh image-validator.zip</pre>
 <p>Upload two files to <code>photos/</code> via the S3 console:</p>
 <ul>
   <li><strong>Test 1:</strong> Upload a real JPEG photo. After a few seconds, check the object&rsquo;s tags (S3 &rarr; object &rarr; Properties &rarr; Tags). You should see <code>validation: PASSED</code> and tags for image dimensions.</li>
-  <li><strong>Test 2:</strong> Create a text file, rename it to <code>suspicious.jpg</code>, and upload it. Check tags &mdash; you should see <code>validation: CAUTION</code>.</li>
+  <li><strong>Test 2:</strong> Create a text file, rename it to <code>suspicious.jpg</code>, and upload it. Check tags &mdash; you should see <code>validation: CAUTION</code>. The <code>.jpg</code> extension does not fool the validator &mdash; Pillow reads the actual file bytes and fails because the content is ASCII text, not a valid image format.</li>
 </ul>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>The real photo is tagged <code>validation: PASSED</code>. The renamed text file is tagged <code>validation: CAUTION</code>. The Lambda is actively validating every upload.</p>
@@ -156,10 +194,10 @@ ls -lh image-validator.zip</pre>
 <!-- Part 2 -->
 <div class="part-header">
   <span class="part-num">Part 2</span>
-  <span class="part-title">Inspector &mdash; vulnerability in the validator (Jerry)</span>
+  <span class="part-title">Inspector &mdash; vulnerability in the validator</span>
 </div>
 
-<p>Jerry deployed the image validator using Pillow 9.5.0. Inspector &mdash; which has been running since last week &mdash; will scan the new Lambda&rsquo;s deployment package and find the known CVEs.</p>
+<p>The image validator uses Pillow 9.5.0. Inspector &mdash; which has been running since last week &mdash; will scan the new Lambda&rsquo;s deployment package and find the known CVEs.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Check Inspector findings</span></div><div class="step-body">
 <p>Go to <strong>Inspector &rarr; Findings &rarr; By Lambda function</strong>. Find <code>photoviewer-image-validator</code>.</p>
@@ -179,17 +217,17 @@ ls -lh image-validator.zip</pre>
 <!-- Part 3 -->
 <div class="part-header">
   <span class="part-num">Part 3</span>
-  <span class="part-title">Macie &mdash; Tom uploads sensitive data</span>
+  <span class="part-title">Macie &mdash; detecting sensitive data in uploads</span>
 </div>
 
-<p>Tom is troubleshooting a customer support issue and needs to test a file upload. He drops a text file into the Photo Viewer&rsquo;s S3 bucket. The file happens to contain a customer&rsquo;s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled (presigned URLs) &mdash; but nobody knows the content is sensitive. Encryption protects confidentiality; Macie detects sensitive content.</p>
+<p>Imagine a support engineer troubleshooting a customer issue drops a text file into the Photo Viewer&rsquo;s S3 bucket. The file happens to contain a customer&rsquo;s Social Security number and credit card number. The file is encrypted at rest (KMS) and access-controlled (presigned URLs) &mdash; but nobody knows the content is sensitive. Encryption protects confidentiality; Macie detects sensitive content. You will simulate this scenario.</p>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable Macie (Jerry)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable Macie</span></div><div class="step-body">
 <p>Go to <strong>Amazon Macie &rarr; Get started &rarr; Enable Macie</strong>.</p>
 <p>Macie starts a 30-day free trial. It automatically discovers S3 buckets in the account.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Create a discovery job (Jerry)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Create a discovery job</span></div><div class="step-body">
 <p>Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong>.</p>
 <ul>
   <li>Select the Photo Viewer bucket</li>
@@ -200,8 +238,8 @@ ls -lh image-validator.zip</pre>
 <p>Click <strong>Submit</strong>. The job will scan all objects in the bucket.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Tom uploads sensitive data</span></div><div class="step-body">
-<p>Switching to Tom&rsquo;s perspective. Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; photos/</strong> and upload a text file named <code>customer-data.txt</code> with the following content:</p>
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Upload sensitive data (simulate the incident)</span></div><div class="step-body">
+<p>Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; photos/</strong> and upload a text file named <code>customer-data.txt</code> with the following content:</p>
 <pre>Customer: Jane Doe
 SSN: 123-45-6789
 Credit Card: 4111-1111-1111-1111
@@ -209,7 +247,7 @@ Notes: Testing upload for support case #4472</pre>
 <p>This simulates a careless employee dropping PII into a bucket that is not designed for sensitive data.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Wait for Macie and review findings (Jerry)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Wait for Macie and review findings</span></div><div class="step-body">
 <p>Macie processing takes 5&ndash;15 minutes. While waiting, proceed to Part 4 (GuardDuty) and come back.</p>
 <p>When complete, go to <strong>Macie &rarr; Findings</strong>. Macie should flag <code>customer-data.txt</code> with findings for:</p>
 <ul>
@@ -217,11 +255,11 @@ Notes: Testing upload for support case #4472</pre>
   <li>Credit card number detected</li>
 </ul>
 <div class="callout">
-  <p><strong>No findings?</strong> If the one-time job completed before Tom uploaded <code>customer-data.txt</code>, it scanned the bucket before the file existed. Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong> and run a new one-time job on the Photo Viewer bucket.</p>
+  <p><strong>No findings?</strong> If the one-time job completed before you uploaded <code>customer-data.txt</code>, it scanned the bucket before the file existed. Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong> and run a new one-time job on the Photo Viewer bucket.</p>
 </div>
 <p>Click into a finding. Note the S3 object path, the PII type, and the severity.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
-<p>Macie detected PII in the file Tom uploaded. The finding shows the S3 object, the type of sensitive data (SSN, credit card), and the severity level.</p>
+<p>Macie detected PII in the uploaded file. The finding shows the S3 object, the type of sensitive data (SSN, credit card), and the severity level.</p>
 </div>
 <div class="screenshot">Macie finding showing PII detected in customer-data.txt &mdash; SSN and credit card number</div>
 </div></div>
@@ -230,17 +268,17 @@ Notes: Testing upload for support case #4472</pre>
 <!-- Part 4 -->
 <div class="part-header">
   <span class="part-num">Part 4</span>
-  <span class="part-title">GuardDuty &mdash; Tom uploads a suspicious file</span>
+  <span class="part-title">GuardDuty &mdash; detecting malware in uploads</span>
 </div>
 
-<p>Tom uploads another file to help with a support case &mdash; a file he received from a customer. He does not realize it contains malware. GuardDuty Malware Protection for S3 scans newly uploaded objects and flags malicious content.</p>
+<p>Now simulate a different incident: a file received from a customer turns out to contain malware. GuardDuty Malware Protection for S3 scans newly uploaded objects and flags malicious content.</p>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Enable GuardDuty (Jerry)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Enable GuardDuty</span></div><div class="step-body">
 <p>Go to <strong>Amazon GuardDuty &rarr; Get started &rarr; Enable GuardDuty</strong>.</p>
 <p>GuardDuty starts a 30-day free trial. It begins analyzing CloudTrail events, VPC flow logs, and DNS query logs for suspicious activity.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Enable Malware Protection for S3 (Jerry)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">Enable Malware Protection for S3</span></div><div class="step-body">
 <p>Go to <strong>GuardDuty &rarr; Protection plans &rarr; Malware Protection for S3</strong>. Enable it for the Photo Viewer bucket.</p>
 <ul>
   <li>Select the Photo Viewer bucket</li>
@@ -249,7 +287,7 @@ Notes: Testing upload for support case #4472</pre>
 <p>GuardDuty will now scan every new object uploaded to the <code>photos/</code> prefix.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">Tom uploads a suspicious file</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">Upload a suspicious file (simulate the incident)</span></div><div class="step-body">
 <p>Create the EICAR test file. This is a standardized anti-malware test string &mdash; not actual malware, but every malware scanner recognizes it as a test indicator.</p>
 <p>Create a file named <code>test-photo.jpg</code> with exactly this content:</p>
 <pre>X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*</pre>
@@ -259,7 +297,7 @@ Notes: Testing upload for support case #4472</pre>
 </div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review GuardDuty findings (Jerry)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review GuardDuty findings</span></div><div class="step-body">
 <p>Wait a few minutes. Go to <strong>GuardDuty &rarr; Findings</strong>.</p>
 <p>GuardDuty should generate a finding for the EICAR file. Look for a finding type related to malware detection &mdash; it will include the S3 object path, the threat name, and the severity.</p>
 <p>Also generate sample findings for additional context: <strong>GuardDuty &rarr; Settings &rarr; Generate sample findings</strong>. This produces realistic threat indicators instantly &mdash; credential exfiltration, unusual API activity, reconnaissance. Browse three findings of different severity levels.</p>
@@ -274,10 +312,10 @@ Notes: Testing upload for support case #4472</pre>
 <!-- Part 5 -->
 <div class="part-header">
   <span class="part-num">Part 5</span>
-  <span class="part-title">Security Hub &mdash; single pane of glass (Jerry)</span>
+  <span class="part-title">Security Hub &mdash; single pane of glass</span>
 </div>
 
-<p>Jerry now has findings scattered across four dashboards: Inspector (Pillow CVE), Macie (PII in uploads), GuardDuty (malware), and Config (from last week). Security Hub aggregates them all into one place.</p>
+<p>You now have findings scattered across four dashboards: Inspector (Pillow CVE), Macie (PII in uploads), GuardDuty (malware), and Config (from last week). Security Hub aggregates them all into one place.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 14</span><span class="step-title">Enable Security Hub</span></div><div class="step-body">
 <p>Go to <strong>AWS Security Hub &rarr; Go to Security Hub &rarr; Enable Security Hub</strong>.</p>
@@ -304,7 +342,7 @@ Notes: Testing upload for support case #4472</pre>
 <!-- Part 6 -->
 <div class="part-header">
   <span class="part-num">Part 6</span>
-  <span class="part-title">EventBridge &mdash; automated alerting (Jerry)</span>
+  <span class="part-title">EventBridge &mdash; automated alerting</span>
 </div>
 
 <p>A high-severity GuardDuty finding fires at 3 AM. Nobody is watching the Security Hub dashboard. EventBridge watches for you and sends an alert via SNS.</p>
@@ -345,10 +383,10 @@ Notes: Testing upload for support case #4472</pre>
 <!-- Part 7 -->
 <div class="part-header">
   <span class="part-num">Part 7</span>
-  <span class="part-title">Automated remediation &mdash; quarantine Lambda (Jerry)</span>
+  <span class="part-title">Automated remediation &mdash; quarantine Lambda</span>
 </div>
 
-<p>Email notifications tell Jerry something happened. But the malicious file is still sitting in the <code>photos/</code> prefix, accessible to users, while Jerry reads his email and opens the console. Automated remediation closes this gap &mdash; a Lambda function moves the flagged object to a <code>quarantine/</code> prefix immediately, without waiting for a human.</p>
+<p>Email notifications tell you something happened. But the malicious file is still sitting in the <code>photos/</code> prefix, accessible to users, while you read the email and open the console. Automated remediation closes this gap &mdash; a Lambda function moves the flagged object to a <code>quarantine/</code> prefix immediately, without waiting for a human.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 19</span><span class="step-title">Create the quarantine Lambda</span></div><div class="step-body">
 <p>Go to <strong>Lambda &rarr; Create function</strong>.</p>
@@ -395,7 +433,31 @@ def lambda_handler(event, context):
             'quarantine': quarantine_key
         })
     }</pre>
-<p>Add <code>AmazonS3FullAccess</code> to the Lambda execution role (same as the image validator).</p>
+<p>Create an inline policy for the Lambda execution role (same approach as Step 2). The quarantine function needs to copy, delete, and re-encrypt objects:</p>
+<pre>
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::photoviewer-9876543210/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</pre>
+<p>Add the quarantine role to the KMS data key policy (same as Step 2 &mdash; <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong>, add the role ARN to the <code>&quot;Allow use of the key&quot;</code> statement).</p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 20</span><span class="step-title">Create an EventBridge rule for malware scan results</span></div><div class="step-body">
@@ -422,7 +484,7 @@ def lambda_handler(event, context):
   <li><strong>Target 2:</strong> Lambda function &rarr; <code>photoviewer-quarantine</code></li>
 </ul>
 <p>Click <strong>Create rule</strong>.</p>
-<p>You now have two EventBridge rules: one for standard GuardDuty findings (notification only), one for malware scan results (notification + quarantine). The malware rule has two targets &mdash; SNS tells Jerry, Lambda acts immediately.</p>
+<p>You now have two EventBridge rules: one for standard GuardDuty findings (notification only), one for malware scan results (notification + quarantine). The malware rule has two targets &mdash; SNS sends an alert, Lambda acts immediately.</p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 21</span><span class="step-title">Test the full loop</span></div><div class="step-body">
@@ -430,13 +492,13 @@ def lambda_handler(event, context):
 <p>Wait for GuardDuty Malware Protection to scan and generate a scan result (this may take several minutes). When the scan result fires:</p>
 <ul>
   <li>EventBridge matches the <code>guardduty-malware-quarantine</code> rule (scan result = THREATS_FOUND)</li>
-  <li>SNS sends Jerry an email (notification)</li>
+  <li>SNS sends an email alert (notification)</li>
   <li>The quarantine Lambda moves the file from <code>photos/</code> to <code>quarantine/</code> (remediation)</li>
 </ul>
 <p>Check the S3 bucket. The file should no longer be in <code>photos/</code>. It should be in <code>quarantine/</code>.</p>
 <p><strong>Troubleshooting:</strong> If the file does not move, check the quarantine Lambda&rsquo;s CloudWatch Logs for errors. The most common issue is missing S3 permissions on the Lambda execution role.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
-<p>The full detection-to-remediation loop works: GuardDuty detects malware &rarr; EventBridge matches &rarr; SNS notifies Jerry &rarr; Lambda quarantines the file. No human intervention required.</p>
+<p>The full detection-to-remediation loop works: GuardDuty detects malware &rarr; EventBridge matches &rarr; SNS sends an alert &rarr; Lambda quarantines the file. No human intervention required.</p>
 </div>
 <div class="screenshot">S3 bucket showing the EICAR file moved from <code>photos/</code> to <code>quarantine/</code></div>
 <div class="screenshot">Email notification AND quarantined file &mdash; both happened automatically</div>
@@ -466,7 +528,7 @@ def lambda_handler(event, context):
 <h2>Reflection Questions</h2>
 
 <h3>Question 1</h3>
-<p>In Part 3, Tom uploaded a file containing a credit card number. The file is encrypted at rest with KMS (from the earlier encryption lab). Explain why KMS encryption did not prevent Macie from detecting the PII. What problem does encryption solve, and what problem does Macie solve?</p>
+<p>In Part 3, you uploaded a file containing a credit card number. The file is encrypted at rest with KMS (from the earlier encryption lab). Explain why KMS encryption did not prevent Macie from detecting the PII. What problem does encryption solve, and what problem does Macie solve?</p>
 
 <h3>Question 2</h3>
 <p>The image validator Lambda uses Pillow 9.5.0, which has CVE-2023-50447 (arbitrary code execution in <code>ImageMath.eval</code>). The validator code only calls <code>Image.open()</code> &mdash; it never uses <code>ImageMath.eval</code>. Should you still upgrade Pillow? Explain your reasoning.</p>
