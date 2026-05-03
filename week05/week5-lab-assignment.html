@@ -328,7 +328,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 13</span><span class="part-title">Create WAF Web ACL</span></div>
-  <div class="note"><strong>Region matters:</strong> WAF for CloudFront must be created in <strong>us-east-1 (N. Virginia)</strong>. Verify the region selector in the top right of the AWS console shows N. Virginia before proceeding.</div>
+  <div class="note"><strong>Region matters:</strong> WAF for CloudFront must use the <strong>Global (CloudFront)</strong> scope. In the WAF console, switch the region dropdown to <strong>Global (CloudFront)</strong> — not US East (N. Virginia). They run on the same infrastructure, but the console treats them as separate options.</div>
   <div class="note"><strong>Use the old WAF console:</strong> AWS has introduced a new "Protection packs" interface as the default landing page. Scroll to the bottom of the left navigation panel and click <strong>"Switch to the old WAF console"</strong> — the lab instructions match the classic Web ACLs interface, not the new Protection packs wizard.</div>
   <p>Go to <strong>WAF &amp; Shield → Web ACLs → Create web ACL:</strong></p>
   <ul>
@@ -514,7 +514,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="part">
   <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">Delete WAF Web ACL</span></div>
-  <p>Go to <strong>WAF &amp; Shield → Web ACLs</strong> (region: us-east-1). Select <code>photoviewer-waf</code> → <strong>Delete</strong>. You must first disassociate the CloudFront distribution: click the ACL → <strong>Associated AWS resources</strong> tab → select the distribution → <strong>Disassociate</strong> — then delete the ACL.</p>
+  <p>Go to <strong>WAF &amp; Shield → Web ACLs</strong> (region: <strong>Global (CloudFront)</strong>). Select <code>photoviewer-waf</code> → <strong>Delete</strong>. You must first disassociate the CloudFront distribution: click the ACL → <strong>Associated AWS resources</strong> tab → select the distribution → <strong>Disassociate</strong> — then delete the ACL.</p>
   <p><strong>Cost if left running:</strong> ~$6/month (1 Web ACL + 1 rule).</p>
 </div>
 
