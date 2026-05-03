@@ -159,24 +159,6 @@
   .concept-body.open{display:block;}
   .concept-body p:first-child{margin-top:1rem;}
 
-  /* Complete cards (green) */
-  .complete-card{background:#fff;border:1px solid #c3e6cb;border-left:4px solid #28a745;border-radius:0 8px 8px 0;margin:0.8rem 0;overflow:hidden;}
-  .complete-header{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.2rem;cursor:pointer;user-select:none;}
-  .complete-header:hover{background:#f0fff4;}
-  .complete-title{font-weight:600;font-size:0.95rem;color:#155724;flex:1;}
-  .complete-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #c3e6cb;}
-  .complete-body.open{display:block;}
-  .complete-body p:first-child{margin-top:1rem;}
-
-  /* Vuln cards (red) */
-  .vuln-card{background:#fff;border:1px solid #d0dce8;border-left:4px solid #dc3545;border-radius:0 8px 8px 0;margin:0.8rem 0;overflow:hidden;}
-  .vuln-header{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.2rem;cursor:pointer;user-select:none;}
-  .vuln-header:hover{background:#fff8f8;}
-  .vuln-title{font-weight:600;font-size:0.95rem;color:#1a1a1a;flex:1;}
-  .vuln-body{padding:0 1.2rem 1.2rem;display:none;border-top:1px solid #f0d0d0;}
-  .vuln-body.open{display:block;}
-  .vuln-body p:first-child{margin-top:1rem;}
-
   .demo-tie{background:#FFF8E1;border-left:4px solid #F9A825;padding:0.8rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;font-size:0.9rem;}
   .demo-tie strong{color:#e65100;}
 
@@ -375,7 +357,7 @@ function showSolution(idx) {
 }
 </script>
 
-<h3>Enforcement vs Governance</h3>
+<h3>What is Governance?</h3>
 
 <p>Governance answers one question: <strong>who gets to set the boundaries, and can they be bypassed?</strong> In every prior week, the person who built the control is the same person who can remove it. Governance introduces a hierarchy: the organization sets the boundaries, the accounts operate within those boundaries, and nobody in the account can exceed the ceiling.</p>
 
@@ -602,39 +584,26 @@ function showSolution(idx) {
 
 <p>Twelve weeks. Seven pillars. One application. The Photo Viewer started as a public S3 bucket with pre-seeded photos and evolved into a fully secured, monitored, and governed application.</p>
 
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r1')"><div class="complete-title">&#10003; Authentication &amp; Access Control</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r1"><p>Cognito user pool with Google OAuth. PKCE authorization code flow. JWT-based session management. Cognito groups (free, premium) driving RBAC. Lambda authorizer validating tokens. Owner-scoped operations preventing IDOR. Identity Center with Tom (customer support) and Jerry (security engineer). Permission sets scoped to specific KMS keys.</p></div>
-</div>
-
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r2')"><div class="complete-title">&#10003; Network Security</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r2"><p>CloudFront distribution with HTTPS enforcement and origin access control. VPC with public and private subnets. Security groups restricting traffic. WAF with rate limiting. API Gateway replacing ALB. Lambda authorizer verifying origin secret. Shield Standard for DDoS protection.</p></div>
-</div>
-
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r3')"><div class="complete-title">&#10003; Data Encryption</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r3"><p>Customer-managed KMS keys. Two-key architecture: infra key (operational secrets) and data key (user content). SSE-KMS on S3 and DynamoDB. Secrets Manager encrypted with the infra key. Key policies creating an authorization layer independent of IAM. Separation of duties.</p></div>
-</div>
-
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r4')"><div class="complete-title">&#10003; Update &amp; Patch Management</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r4"><p>Inspector enabled for Lambda scanning. Continuous CVE monitoring against the NIST NVD. Found real Pillow CVEs in the image validator Lambda. Findings flow to Security Hub.</p></div>
-</div>
-
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r5')"><div class="complete-title">&#10003; Security Monitoring &amp; Auditing</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r5"><p>CloudWatch alarms on Lambda errors and duration. AWS Config with managed rules for S3 encryption, public access, CloudTrail, and root key checks. Drift detection with break/fix validation. Trusted Advisor security checks. SNS notification backbone.</p></div>
-</div>
-
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r6')"><div class="complete-title">&#10003; Incident Detection &amp; Response</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r6"><p>Image validator Lambda using Pillow. Macie for PII detection. GuardDuty for malware and adversarial behavior. Security Hub aggregating findings from Inspector, Macie, GuardDuty, and Config. EventBridge with dual targets &mdash; SNS notification and Lambda quarantine for automated remediation.</p></div>
-</div>
-
-<div class="complete-card">
-  <div class="complete-header" onclick="toggleVuln('r7')"><div class="complete-title">&#10003; Security Governance</div><span style="color:#aaa;font-size:0.8rem;">&#9660;</span></div>
-  <div class="complete-body" id="r7"><p>AWS Organizations with OU structure. SCPs enforcing region locks, denying CloudTrail deletion, preventing public S3, and centralizing identity management. Control Tower as the automation layer for Landing Zone creation. Route 53 geolocation routing for data sovereignty compliance across regions. Data sovereignty enforced at the organizational level.</p></div>
+<div class="concept-card" style="border-color:#1F4E79;">
+  <div class="concept-header" onclick="toggleConcept('recap')" style="background:#E6F1FB;">
+    <div class="concept-icon">&#128203;</div>
+    <div class="concept-title" style="color:#1F4E79;">Recap &mdash; all seven pillars and AWS services</div>
+    <div class="concept-chevron" id="chev-recap" style="color:#1F4E79;">&#9654;</div>
+  </div>
+  <div class="concept-body" id="recap">
+    <table>
+      <thead><tr><th>Pillar</th><th>What it does</th><th>AWS Services</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Authentication &amp; Access Control</strong></td><td>Who can access the application and what can they do</td><td>Cognito, Identity Center, Lambda Authorizer</td></tr>
+        <tr><td><strong>Network Security</strong></td><td>Protecting the application from network-level attacks</td><td>WAF, API Gateway, VPC, Shield</td></tr>
+        <tr><td><strong>Data Encryption</strong></td><td>Encrypting data at rest and managing keys</td><td>KMS, Secrets Manager, SSE-KMS</td></tr>
+        <tr><td><strong>Update &amp; Patch Management</strong></td><td>Finding vulnerable dependencies before attackers do</td><td>Inspector</td></tr>
+        <tr><td><strong>Security Monitoring &amp; Auditing</strong></td><td>Detecting configuration drift and monitoring performance</td><td>CloudWatch, Config, Trusted Advisor, SNS</td></tr>
+        <tr><td><strong>Incident Detection &amp; Response</strong></td><td>Catching threats and automating remediation</td><td>GuardDuty, Macie, Security Hub, EventBridge</td></tr>
+        <tr><td><strong>Security Governance</strong></td><td>Organizational boundaries that cannot be overridden</td><td>Organizations, SCPs, Control Tower, Route 53</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <p>The production hardening guide on the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a> documents every deliberate lab simplification &mdash; what was skipped for pedagogical reasons and what the production alternative would be.</p>
@@ -701,9 +670,7 @@ function toggleConcept(id) {
   body.classList.toggle('open', !isOpen);
   chev.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
 }
-function toggleVuln(id) {
-  document.getElementById(id).classList.toggle('open');
-}
+
 </script>
 </body>
 </html>
