@@ -156,10 +156,10 @@ ls -lh image-validator.zip</pre>
 }</pre>
 <p>Add the validator role to the KMS data key policy:</p>
 <ul>
-  <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong></li>
-  <li>Find the <code>&quot;Allow use of the key&quot;</code> statement</li>
-  <li>Add the validator Lambda&rsquo;s execution role ARN to the <code>Principal</code> list (copy it from the role you just edited in IAM)</li>
-  <li>Click <strong>Save changes</strong></li>
+  <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong></li>
+  <li>Scroll to <strong>Key users &rarr; Add</strong></li>
+  <li>Search for <code>validator</code> and select the <code>photoviewer-image-validator</code> execution role</li>
+  <li>Click <strong>Add</strong></li>
 </ul>
 <div class="callout info">
   <p><strong>Least privilege + KMS dual authorization.</strong> The validator needs <code>GetObject</code> to download the file, <code>PutObjectTagging</code> to write validation tags, and <code>kms:Decrypt</code> because the bucket uses SSE-KMS with <code>photoviewer-data-key</code> (from the Week 8 encryption lab). Remember: KMS requires authorization from <em>both</em> the IAM policy and the key policy. The IAM policy alone is not enough &mdash; the role must also appear in the key policy.</p>
@@ -227,11 +227,10 @@ ls -lh image-validator.zip</pre>
 <p>Macie starts a 30-day free trial. It automatically discovers S3 buckets in the account.</p>
 <p>Macie needs to decrypt objects in the KMS-encrypted bucket. Add the Macie service-linked role to the data key policy:</p>
 <ul>
-  <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong></li>
-  <li>Find the <code>&quot;Allow use of the key&quot;</code> statement</li>
-  <li>Add the Macie service-linked role ARN to the <code>Principal</code> list:<br>
-  <code>arn:aws:iam::644094189785:role/aws-service-role/macie.amazonaws.com/AWSServiceRoleForAmazonMacie</code></li>
-  <li>Click <strong>Save changes</strong></li>
+  <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong></li>
+  <li>Scroll to <strong>Key users &rarr; Add</strong></li>
+  <li>Search for <code>macie</code> and select <code>AWSServiceRoleForAmazonMacie</code></li>
+  <li>Click <strong>Add</strong></li>
 </ul>
 <div class="callout info">
   <p><strong>Week 8 keeps cascading.</strong> Every new service that reads objects from the KMS-encrypted bucket needs to be added to the key policy. This is the operational cost of customer-managed keys &mdash; you get fine-grained control over who can decrypt, but you must explicitly grant access to each new principal. Without this step, Macie can see that <code>customer-data.txt</code> exists but cannot read its contents to find the PII.</p>
@@ -295,11 +294,12 @@ Notes: Testing upload for support case #4472</pre>
   <li>Select the Photo Viewer bucket</li>
   <li>Object prefix: <code>photos/</code></li>
 </ul>
-<p>The setup wizard creates an IAM role for GuardDuty to read objects from the bucket. Because the bucket uses SSE-KMS, add the GuardDuty Malware Protection role to the data key policy:</p>
+<p>The setup wizard creates an IAM role for GuardDuty to read objects from the bucket. GuardDuty needs to decrypt objects in the KMS-encrypted bucket. Add the Malware Protection role to the data key policy:</p>
 <ul>
-  <li>Go to <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong></li>
-  <li>Add the GuardDuty Malware Protection role ARN (shown in the setup wizard) to the <code>&quot;Allow use of the key&quot;</code> statement</li>
-  <li>Click <strong>Save changes</strong></li>
+  <li>Go to <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy</strong></li>
+  <li>Scroll to <strong>Key users &rarr; Add</strong></li>
+  <li>Search for <code>guard</code> and select the role starting with <code>GuardDutyS3MalwareScanRole</code></li>
+  <li>Click <strong>Add</strong></li>
 </ul>
 <p>GuardDuty will now scan every new object uploaded to the <code>photos/</code> prefix.</p>
 </div></div>
@@ -474,7 +474,7 @@ def lambda_handler(event, context):
     }
   ]
 }</pre>
-<p>Add the quarantine role to the KMS data key policy (same as Step 2 &mdash; <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong>, add the role ARN to the <code>&quot;Allow use of the key&quot;</code> statement).</p>
+<p>Add the quarantine role to the KMS data key policy (same as Step 2 &mdash; <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Key users &rarr; Add</strong>, search for <code>quarantine</code> and select the execution role).</p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 20</span><span class="step-title">Create an EventBridge rule for malware scan results</span></div><div class="step-body">
