@@ -225,6 +225,17 @@ ls -lh image-validator.zip</pre>
 <div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable Macie</span></div><div class="step-body">
 <p>Go to <strong>Amazon Macie &rarr; Get started &rarr; Enable Macie</strong>.</p>
 <p>Macie starts a 30-day free trial. It automatically discovers S3 buckets in the account.</p>
+<p>Macie needs to decrypt objects in the KMS-encrypted bucket. Add the Macie service-linked role to the data key policy:</p>
+<ul>
+  <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong></li>
+  <li>Find the <code>&quot;Allow use of the key&quot;</code> statement</li>
+  <li>Add the Macie service-linked role ARN to the <code>Principal</code> list:<br>
+  <code>arn:aws:iam::644094189785:role/aws-service-role/macie.amazonaws.com/AWSServiceRoleForAmazonMacie</code></li>
+  <li>Click <strong>Save changes</strong></li>
+</ul>
+<div class="callout info">
+  <p><strong>Week 8 keeps cascading.</strong> Every new service that reads objects from the KMS-encrypted bucket needs to be added to the key policy. This is the operational cost of customer-managed keys &mdash; you get fine-grained control over who can decrypt, but you must explicitly grant access to each new principal. Without this step, Macie can see that <code>customer-data.txt</code> exists but cannot read its contents to find the PII.</p>
+</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Create a discovery job</span></div><div class="step-body">
@@ -283,6 +294,12 @@ Notes: Testing upload for support case #4472</pre>
 <ul>
   <li>Select the Photo Viewer bucket</li>
   <li>Object prefix: <code>photos/</code></li>
+</ul>
+<p>The setup wizard creates an IAM role for GuardDuty to read objects from the bucket. Because the bucket uses SSE-KMS, add the GuardDuty Malware Protection role to the data key policy:</p>
+<ul>
+  <li>Go to <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong></li>
+  <li>Add the GuardDuty Malware Protection role ARN (shown in the setup wizard) to the <code>&quot;Allow use of the key&quot;</code> statement</li>
+  <li>Click <strong>Save changes</strong></li>
 </ul>
 <p>GuardDuty will now scan every new object uploaded to the <code>photos/</code> prefix.</p>
 </div></div>

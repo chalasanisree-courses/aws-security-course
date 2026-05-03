@@ -1,0 +1,4 @@
+Customer: Jane Doe
+SSN: 123-45-6789
+Credit Card: 4111-1111-1111-1111
+Notes: Testing upload for support case #4472
