@@ -109,11 +109,11 @@ bash aws-security-course/photoviewer/audit-aws-resources.sh</pre>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">S3 buckets</span></div><div class="step-body">
-<p>Three buckets may exist. For each: open the bucket &rarr; <strong>Empty</strong> (confirm) &rarr; then go back and <strong>Delete</strong> (confirm).</p>
+<p>Three buckets may exist. For each: open the bucket &rarr; <strong>Empty</strong> &rarr; type <code>permanently delete</code> to confirm &rarr; then go back to the bucket list and <strong>Delete</strong> the bucket (type the bucket name to confirm).</p>
 <ul>
-  <li><code>photoviewer-9876543210</code> &mdash; the Photo Viewer bucket (includes <code>photos/</code>, <code>quarantine/</code>, <code>app/</code>)</li>
-  <li><code>config-bucket-644094189785</code> &mdash; created by AWS Config for delivery channel</li>
-  <li><code>aws-cloudtrail-logs-644094189785-*</code> &mdash; created by CloudTrail</li>
+  <li><code>photoviewer-*</code> &mdash; the Photo Viewer bucket (includes <code>photos/</code>, <code>quarantine/</code>, <code>app/</code>)</li>
+  <li><code>config-bucket-*</code> &mdash; created by AWS Config for delivery channel</li>
+  <li><code>aws-cloudtrail-logs-*</code> &mdash; created by CloudTrail</li>
 </ul>
 </div></div>
 
@@ -129,7 +129,7 @@ bash aws-security-course/photoviewer/audit-aws-resources.sh</pre>
   <li>Delete the <strong>VPC</strong></li>
 </ol>
 <div class="callout info">
-  <p>The second VPC (<code>vpc-04bca...</code> with no Name tag) is your account's <strong>default VPC</strong>. Do not delete it.</p>
+  <p>If you see a second VPC with no Name tag, that is your account's <strong>default VPC</strong>. Do not delete it.</p>
 </div>
 </div></div>
 
@@ -190,7 +190,8 @@ bash aws-security-course/photoviewer/audit-aws-resources.sh</pre>
     <td><strong>Security Hub</strong></td>
     <td>Still shows Enabled after running cleanup</td>
     <td>Your account is the delegated admin. Run:<br><pre>aws securityhub disable-organization-admin-account \
-  --admin-account-id YOUR_ACCOUNT_ID \
+  --admin-account-id $(aws sts get-caller-identity \
+  --query 'Account' --output text) \
   --region us-east-1</pre>Then:<pre>aws securityhub disable-security-hub \
   --region us-east-1</pre></td>
   </tr>
