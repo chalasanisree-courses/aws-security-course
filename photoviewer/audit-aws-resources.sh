@@ -134,6 +134,150 @@ aws cloudtrail describe-trails \
   --query 'trailList[].[Name,S3BucketName,IsLogging]' \
   --output table 2>/dev/null || echo "  (none)"
 
+# ── CloudWatch Alarms ─────────────────────────────────────
+echo ""
+echo "[ CloudWatch Alarms ] (free tier covers 10 alarms)"
+aws cloudwatch describe-alarms \
+  --region $REGION \
+  --query 'MetricAlarms[].[AlarmName,StateValue,MetricName]' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── AWS Config ────────────────────────────────────────────
+echo ""
+echo "[ AWS Config ] (~\$1-2/month — recorder + rules)"
+RECORDER_STATUS=$(aws configservice describe-configuration-recorder-status \
+  --region $REGION \
+  --query 'ConfigurationRecordersStatus[0].recording' \
+  --output text 2>/dev/null || echo "NONE")
+echo "  Recorder active: $RECORDER_STATUS"
+aws configservice describe-config-rules \
+  --region $REGION \
+  --query 'ConfigRules[].[ConfigRuleName,ConfigRuleState]' \
+  --output table 2>/dev/null || echo "  No Config rules"
+
+# ── Inspector ─────────────────────────────────────────────
+echo ""
+echo "[ Inspector ] (free 15-day trial, then ~\$0.15/Lambda rescan)"
+INSPECTOR_STATUS=$(aws inspector2 batch-get-account-status \
+  --region $REGION \
+  --query 'accounts[0].state.status' \
+  --output text 2>/dev/null || echo "NONE")
+echo "  Status: $INSPECTOR_STATUS"
+
+# ── GuardDuty ─────────────────────────────────────────────
+echo ""
+echo "[ GuardDuty ] (free 30-day trial, then pay per event volume)"
+GD_DETECTOR=$(aws guardduty list-detectors \
+  --region $REGION \
+  --query 'DetectorIds[0]' \
+  --output text 2>/dev/null || echo "NONE")
+if [ "$GD_DETECTOR" != "NONE" ] && [ "$GD_DETECTOR" != "None" ] && [ -n "$GD_DETECTOR" ]; then
+  echo "  Detector: $GD_DETECTOR (ACTIVE)"
+else
+  echo "  Not enabled"
+fi
+
+# ── Security Hub ──────────────────────────────────────────
+echo ""
+echo "[ Security Hub ] (free 30-day trial, then per finding)"
+SH_ARN=$(aws securityhub describe-hub \
+  --region $REGION \
+  --query 'HubArn' \
+  --output text 2>/dev/null || echo "NONE")
+if [ "$SH_ARN" != "NONE" ]; then
+  echo "  Enabled: $SH_ARN"
+else
+  echo "  Not enabled"
+fi
+
+# ── Macie ─────────────────────────────────────────────────
+echo ""
+echo "[ Macie ] (free 30-day trial, then per GB scanned)"
+MACIE_STATUS=$(aws macie2 get-macie-session \
+  --region $REGION \
+  --query 'status' \
+  --output text 2>/dev/null || echo "NONE")
+echo "  Status: $MACIE_STATUS"
+
+# ── EventBridge Rules ─────────────────────────────────────
+echo ""
+echo "[ EventBridge Rules ] (free — pay per event matched)"
+aws events list-rules \
+  --region $REGION \
+  --query 'Rules[].[Name,State]' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── SNS Topics ────────────────────────────────────────────
+echo ""
+echo "[ SNS Topics ] (free tier covers course usage)"
+aws sns list-topics \
+  --region $REGION \
+  --query 'Topics[].TopicArn' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── Cognito User Pools ────────────────────────────────────
+echo ""
+echo "[ Cognito User Pools ] (free tier covers 50k MAU)"
+aws cognito-idp list-user-pools \
+  --max-results 10 \
+  --region $REGION \
+  --query 'UserPools[].[Name,Id]' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── Secrets Manager ───────────────────────────────────────
+echo ""
+echo "[ Secrets Manager ] (~\$0.40/secret/month)"
+aws secretsmanager list-secrets \
+  --region $REGION \
+  --query 'SecretList[].[Name,CreatedDate]' \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── KMS Keys ──────────────────────────────────────────────
+echo ""
+echo "[ KMS Keys ] (\$1/month per customer-managed key)"
+aws kms list-aliases \
+  --region $REGION \
+  --query "Aliases[?starts_with(AliasName,'alias/photoviewer')].[AliasName,TargetKeyId]" \
+  --output table 2>/dev/null || echo "  (none)"
+
+# ── SCPs ──────────────────────────────────────────────────
+echo ""
+echo "[ Service Control Policies ] (free)"
+aws organizations list-policies \
+  --filter SERVICE_CONTROL_POLICY \
+  --query 'Policies[?Name!=`FullAWSAccess`].[Name,Id]' \
+  --output table 2>/dev/null || echo "  (none or Organizations not enabled)"
+
+# ── Identity Center ──────────────────────────────────────
+echo ""
+echo "[ Identity Center ] (free)"
+IC_INSTANCE=$(aws sso-admin list-instances \
+  --query 'Instances[0].InstanceArn' \
+  --output text 2>/dev/null || echo "NONE")
+if [ "$IC_INSTANCE" != "NONE" ] && [ "$IC_INSTANCE" != "None" ] && [ -n "$IC_INSTANCE" ]; then
+  echo "  Instance: $IC_INSTANCE"
+  aws sso-admin list-permission-sets \
+    --instance-arn "$IC_INSTANCE" \
+    --query 'PermissionSets' \
+    --output text 2>/dev/null | while read PS_ARN; do
+      PS_NAME=$(aws sso-admin describe-permission-set \
+        --instance-arn "$IC_INSTANCE" \
+        --permission-set-arn "$PS_ARN" \
+        --query 'PermissionSet.Name' \
+        --output text 2>/dev/null || echo "unknown")
+      echo "  Permission set: $PS_NAME"
+    done
+else
+  echo "  Not enabled"
+fi
+
+# ── IAM Roles (course-related) ───────────────────────────
+echo ""
+echo "[ IAM Roles — photoviewer/lambda ] (free)"
+aws iam list-roles \
+  --query "Roles[?contains(RoleName,'photoviewer') || contains(RoleName,'PhotoViewer') || contains(RoleName,'lambda') || contains(RoleName,'Lambda')].[RoleName,CreateDate]" \
+  --output table 2>/dev/null || echo "  (none)"
+
 # ── Summary ────────────────────────────────────────────────
 echo ""
 echo "=============================================="
@@ -142,12 +286,22 @@ echo "   NAT Gateway       ~\$32/month"
 echo "   ALB               ~\$16/month"
 echo "   Interface VPC ep  ~\$7/month each"
 echo "   EC2 t3.micro      ~\$8/month (outside free tier)"
-echo "   WAF Web ACL       ~\$5/month — delete after Week 5"
+echo "   WAF Web ACL       ~\$5/month"
 echo "   Elastic IP        ~\$4/month if unattached"
+echo "   AWS Config        ~\$1-2/month (recorder + rules)"
+echo "   KMS keys          ~\$1/month per key"
+echo "   Secrets Manager   ~\$0.40/secret/month"
 echo ""
-echo " Safe to leave running (free tier):"
+echo " Free trial (disable after trial ends):"
+echo "   GuardDuty         30-day free trial"
+echo "   Security Hub      30-day free trial"
+echo "   Macie             30-day free trial"
+echo "   Inspector         15-day free trial"
+echo ""
+echo " Safe to leave running (free tier / no cost):"
 echo "   VPC, subnets, route tables, IGW, security groups"
 echo "   S3, DynamoDB, CloudFront, IAM, Gateway endpoints"
-echo "   Lambda, API Gateway, CloudTrail"
+echo "   Lambda, API Gateway, CloudTrail, Cognito"
+echo "   EventBridge, SNS, CloudWatch alarms, SCPs"
 echo "=============================================="
 echo ""

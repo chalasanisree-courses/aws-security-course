@@ -38,7 +38,7 @@ echo "1. WEEK 12 — SCPs and Organizations policies"
 echo "────────────────────────────────────────────────────────"
 
 # Detach and delete SCPs
-SCP_NAMES=("deny-cloudtrail-disable" "deny-public-s3" "restrict-region-asia" "deny-identity-center-admin")
+SCP_NAMES=("deny-cloudtrail-disable" "deny-public-s3" "restrict-region-us-east-1" "deny-identity-center-admin")
 for SCP_NAME in "${SCP_NAMES[@]}"; do
   SCP_ID=$(aws organizations list-policies --filter SERVICE_CONTROL_POLICY --query "Policies[?Name=='$SCP_NAME'].Id" --output text 2>/dev/null || echo "")
   if [ -n "$SCP_ID" ] && [ "$SCP_ID" != "None" ]; then
