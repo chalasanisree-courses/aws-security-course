@@ -206,7 +206,19 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <span class="step-title">Deploy updated frontend</span>
   </div>
   <div class="step-body">
-    <p>The updated <code>app.js</code> reads encryption parameters from the Lambda response and includes them as headers in the PUT request to S3. Upload the Week 8 version from CloudShell:</p>
+    <p>The updated <code>app.js</code> reads encryption parameters from the Lambda response and includes them as headers in the PUT request to S3.</p>
+
+    <div class="callout warning">
+      <p><strong>Before uploading, edit <code>app.js</code></strong> and replace the three placeholders at the top with your actual values &mdash; the same ones you used in Week 7:</p>
+      <ul>
+        <li><code>YOUR_COGNITO_DOMAIN</code> &mdash; found in <strong>Cognito &rarr; User pool &rarr; App integration &rarr; Domain</strong></li>
+        <li><code>YOUR_APP_CLIENT_ID</code> &mdash; found in <strong>Cognito &rarr; User pool &rarr; App integration &rarr; App clients</strong></li>
+        <li><code>YOUR_CLOUDFRONT_DOMAIN</code> &mdash; your CloudFront distribution domain (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>)</li>
+      </ul>
+      <p>If you skip this, login and logout will redirect to a nonexistent domain and break your app.</p>
+    </div>
+
+    <p>Once the placeholders are replaced, upload from CloudShell:</p>
     <pre>cd ~/aws-security-course/photoviewer/week08/frontend
 BUCKET=$(aws s3api list-buckets --query "Buckets[].Name" --output text | tr '\t' '\n' | grep photoviewer)
 aws s3 cp app.js s3://$BUCKET/app.js --content-type "application/javascript"</pre>
