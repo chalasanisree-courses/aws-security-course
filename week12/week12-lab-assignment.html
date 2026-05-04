@@ -82,7 +82,7 @@
   <span class="part-title">Design the governance layer &mdash; write SCPs</span>
 </div>
 
-<p>The Photo Viewer is expanding to Asia. The production architecture calls for a dedicated management account (governance only) with member accounts organized by region and environment. You will write the SCPs that would govern this structure. Writing SCP JSON is the same skill as writing IAM policies &mdash; understanding the syntax, <code>NotAction</code> for global services, and condition keys for region restrictions.</p>
+<p>You will write four SCPs that enforce organizational guardrails on member accounts. Three are baselines attached at Root; one is a region lock attached to the Production OU. Writing SCP JSON is the same skill as writing IAM policies &mdash; understanding the syntax, <code>NotAction</code> for global services, and condition keys for region restrictions.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Enable SCPs in Organizations</span></div><div class="step-body">
 <p>Go to <strong>AWS Organizations &rarr; Policies &rarr; Service control policies</strong>. If SCPs are not enabled, click <strong>Enable service control policies</strong>.</p>
@@ -137,14 +137,14 @@
 <div class="screenshot">SCP <code>deny-public-s3</code> created</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Write SCP 3 &mdash; Region lock (Asia OU)</span></div><div class="step-body">
-<p>This policy would be attached to the Asia OU. Every member account under this OU &mdash; both production and staging &mdash; would be restricted to <code>ap-southeast-1</code>. Data sovereignty is enforced at the organizational level: no principal in any Asia account can create resources in another region, even accidentally.</p>
-<ul><li>Policy name: <code>restrict-region-asia</code></li></ul>
+<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Write SCP 3 &mdash; Region lock (Production OU)</span></div><div class="step-body">
+<p>This policy locks the Production OU to <code>us-east-1</code> &mdash; the region where the Photo Viewer runs. Every member account under this OU would be restricted to that single region. Data sovereignty is enforced at the organizational level: no principal in any production account can create resources in another region, even accidentally.</p>
+<ul><li>Policy name: <code>restrict-region-us-east-1</code></li></ul>
 <pre>{
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "DenyNonAsiaSoutheast1",
+      "Sid": "DenyNonUsEast1",
       "Effect": "Deny",
       "NotAction": [
         "iam:*",
@@ -155,14 +155,14 @@
       "Resource": "*",
       "Condition": {
         "StringNotEquals": {
-          "aws:RequestedRegion": "ap-southeast-1"
+          "aws:RequestedRegion": "us-east-1"
         }
       }
     }
   ]
 }</pre>
 <div class="callout info"><p><strong>Why <code>NotAction</code>?</strong> IAM, STS, Organizations, and Support are global services &mdash; they do not operate in a specific region. Denying them with a region condition would break basic account functionality like creating roles or assuming cross-account permissions.</p></div>
-<div class="screenshot">SCP <code>restrict-region-asia</code> created</div>
+<div class="screenshot">SCP <code>restrict-region-us-east-1</code> created</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Write SCP 4 &mdash; Deny Identity Center administration (all member accounts)</span></div><div class="step-body">
@@ -195,7 +195,7 @@
   <tr><th>SCP</th><th>Attach to</th><th>In production, this would govern</th></tr>
   <tr><td><code>deny-cloudtrail-disable</code></td><td>Root</td><td>All member accounts</td></tr>
   <tr><td><code>deny-public-s3</code></td><td>Root</td><td>All member accounts</td></tr>
-  <tr><td><code>restrict-region-asia</code></td><td>Production OU</td><td>Asia OU (we use Production OU as a stand-in)</td></tr>
+  <tr><td><code>restrict-region-us-east-1</code></td><td>Production OU</td><td>All member accounts running Photo Viewer workloads</td></tr>
   <tr><td><code>deny-identity-center-admin</code></td><td>Root</td><td>All member accounts</td></tr>
 </table>
 <div class="callout"><p><strong>Note:</strong> The Production OU contains your management account (moved there in the Identity Center lab). But the management account is exempt from SCPs &mdash; so these policies have no effect on it. The baseline SCPs attached to Root also govern nothing because there are no member accounts. The policies are real; the member accounts they would protect do not yet exist.</p></div>
@@ -225,22 +225,7 @@
 <div class="screenshot">CloudTrail stop logging succeeding &mdash; demonstrating the management account exemption</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Document the production architecture</span></div><div class="step-body">
-<p>Draw or describe the OU structure that would govern the Photo Viewer in production. Include:</p>
-<table>
-  <tr><th>Account / OU</th><th>Purpose</th><th>SCPs</th></tr>
-  <tr><td><strong>Management Account</strong></td><td>Organizations, Identity Center, billing &mdash; no workloads</td><td>Exempt &mdash; SCPs do not apply</td></tr>
-  <tr><td><strong>NA OU</strong></td><td>Regional grouping for North America</td><td>Region lock: <code>us-east-1</code></td></tr>
-  <tr><td>&nbsp;&nbsp;&nbsp;Production</td><td>PhotoViewer US &mdash; live user traffic</td><td>Inherits NA region lock + baseline</td></tr>
-  <tr><td>&nbsp;&nbsp;&nbsp;Staging</td><td>PhotoViewer US staging &mdash; testing</td><td>Inherits NA region lock + baseline</td></tr>
-  <tr><td><strong>Asia OU</strong></td><td>Regional grouping for Asia</td><td>Region lock: <code>ap-southeast-1</code></td></tr>
-  <tr><td>&nbsp;&nbsp;&nbsp;Production</td><td>PhotoViewer Asia &mdash; live user traffic</td><td>Inherits Asia region lock + baseline</td></tr>
-  <tr><td>&nbsp;&nbsp;&nbsp;Staging</td><td>PhotoViewer Asia staging &mdash; testing</td><td>Inherits Asia region lock + baseline</td></tr>
-  <tr><td><strong>Root (all)</strong></td><td>Baseline guardrails</td><td>Deny CloudTrail disable, deny public S3, deny Identity Center admin</td></tr>
-</table>
-<p>Note how SCPs inherit downward. A region-lock SCP on the Asia OU applies to both Production and Staging accounts underneath it. Baseline SCPs on Root apply to every member account in the organization.</p>
-<p><strong>Include this table in your submission.</strong></p>
-</div></div>
+
 
 
 <!-- Cleanup -->
@@ -256,11 +241,11 @@
 
 <p>Over twelve weeks, the Photo Viewer was built with deliberate simplifications &mdash; choices made for pedagogical clarity that would not be acceptable in production. The production hardening guide on the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a> documents each simplification.</p>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Review the production hardening accordion</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Review the production hardening accordion</span></div><div class="step-body">
 <p>Go to the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a>. Open the <strong>Production Hardening Guide</strong> accordion. Read through the items organized by week.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Select your top three priorities</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Select your top three priorities</span></div><div class="step-body">
 <p>From the production hardening guide, select the <strong>three simplifications you would prioritize first</strong> for production deployment. For each one, write:</p>
 <ul>
   <li>Which simplification you selected (reference it by week and title)</li>
@@ -270,7 +255,7 @@
 <p>There is no single correct answer &mdash; reasonable priorities depend on the threat model, user base, and compliance requirements. The quality of your reasoning matters more than which items you choose.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">The capstone question</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">The capstone question</span></div><div class="step-body">
 <p>For each of the seven pillars, identify the <strong>single most important AWS service</strong> that provides that pillar for the Photo Viewer. Explain your choice in one sentence each.</p>
 <table>
   <tr><th>Pillar</th><th>Your choice</th><th>Why</th></tr>
@@ -307,12 +292,11 @@
     <tr><td><strong>SCP 3 &mdash; region lock</strong></td><td>5</td><td>Screenshot: SCP created with correct JSON including <code>NotAction</code> for global services.</td></tr>
     <tr><td><strong>SCP 4 &mdash; deny Identity Center admin</strong></td><td>5</td><td>Screenshot: SCP created with correct JSON.</td></tr>
     <tr><td><strong>SCPs attached to correct OUs</strong></td><td>5</td><td>Screenshot: Organizations console showing SCPs attached to Root and Production OU.</td></tr>
-    <tr><td><strong>Management account exemption</strong></td><td>8</td><td>Screenshot: CloudTrail stop logging succeeding. Written explanation of why SCPs did not block it.</td></tr>
-    <tr><td><strong>Production architecture table</strong></td><td>8</td><td>OU structure showing Management Account, NA OU, Asia OU, nested Production/Staging, with correct SCP inheritance.</td></tr>
-    <tr><td><strong>Top three hardening priorities</strong></td><td>22</td><td>Three simplifications selected with reasoning for priority, risk assessment, and implementation cost.</td></tr>
+    <tr><td><strong>Management account exemption</strong></td><td>10</td><td>Screenshot: CloudTrail stop logging succeeding. Written explanation of why SCPs did not block it.</td></tr>
+    <tr><td><strong>Top three hardening priorities</strong></td><td>24</td><td>Three simplifications selected with reasoning for priority, risk assessment, and implementation cost.</td></tr>
     <tr><td><strong>Capstone &mdash; one service per pillar</strong></td><td>14</td><td>Seven pillars, one AWS service each, one-sentence justification. Debatable choices defended.</td></tr>
-    <tr><td><strong>Reflection Q1 &mdash; IAM deny vs SCP deny</strong></td><td>12</td><td>IAM deny applies to root, but root can delete the deny policy itself (full IAM access). SCP deny applies to root in member accounts, and root cannot delete SCPs because the Organizations API is only available from the management account. IAM deny fails when the policy is removed. SCP deny fails only in the management account (exempt by design).</td></tr>
-    <tr><td><strong>Reflection Q2 &mdash; single account vs multi-account</strong></td><td>11</td><td>Disagree. IAM policies can be changed by any admin. A single account means a US admin could access Asia user data, violating data sovereignty. Separate accounts with region-lock SCPs enforce at the organizational level. The cost savings do not justify the compliance risk.</td></tr>
+    <tr><td><strong>Reflection Q1 &mdash; IAM deny vs SCP deny</strong></td><td>14</td><td>IAM deny applies to root, but root can delete the deny policy itself (full IAM access). SCP deny applies to root in member accounts, and root cannot delete SCPs because the Organizations API is only available from the management account. IAM deny fails when the policy is removed. SCP deny fails only in the management account (exempt by design).</td></tr>
+    <tr><td><strong>Reflection Q2 &mdash; single account vs multi-account</strong></td><td>13</td><td>Disagree. IAM policies can be changed by any admin. A single account means a US admin could access Asia user data, violating data sovereignty. Separate accounts with region-lock SCPs enforce at the organizational level. The cost savings do not justify the compliance risk.</td></tr>
     <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
   </tbody>
 </table>
