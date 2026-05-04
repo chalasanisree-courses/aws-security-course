@@ -920,7 +920,8 @@
           <div class="ac-section-text">A second account created in the Staging OU via Organizations. Identity Center permission sets assigned to the new account — Tom and Jerry see both accounts in the SSO portal. SCPs prevent any account in the Production OU from disabling CloudTrail, leaving a specific region, or creating public S3 buckets. Control Tower provides a pre-configured landing zone with guardrails, Account Factory, and a compliance dashboard. Route 53 alias records point to CloudFront with health checks for DNS failover.</div>
         </div>
         <div class="ac-section" style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-capstone.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-governance.html" target="_blank">📄 Concept notes</a>
+          <a class="code-link" href="https://chalasanisree-courses.github.io/aws-security-course/week12/week12-lab-assignment.html" target="_blank">📋 Lab assignment</a>
           <a class="code-link" href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week12" target="_blank">⌥ View Week 12 code on GitHub</a>
         </div>
       </div>
@@ -959,6 +960,8 @@
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 10</button>
         <button class="pent-btn" data-week="11" onclick="pentSelectWeek('11')"
           style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 11</button>
+        <button class="pent-btn" data-week="12" onclick="pentSelectWeek('12')"
+          style="background:#F1EFE8;color:#444441;border-color:#D3D1C7;">Week 12</button>
       </div>
 
       <!-- Pentagon SVG -->
@@ -1153,6 +1156,15 @@
         ]},
         performance: { title:'Performance issues in Week 11', bullets:[
           'The application runs entirely in us-east-1. Users in Asia experience 400ms+ latency. Data sovereignty laws in some regions may require user-uploaded data to stay within local borders. Route 53 latency-based routing and multi-account regional deployments address both problems.'
+        ]}
+      }
+    },
+    '12': {
+      active: ['performance'],
+      issues: {
+        performance: { title:'Performance issues remaining after Week 12', bullets:[
+          'The application still runs entirely in us-east-1. Route 53 DNS security was covered as lecture — custom domains, health checks, DNSSEC — but the Photo Viewer is not deployed to multiple regions. A production multi-region deployment would use Route 53 latency-based routing with separate stacks per region.',
+          '<span style="color:#854F0B;">⚙ Permanent simplifications remain:</span> S3 presigned URLs bypass CloudFront edge caching, HTTP API uses shared secret instead of IAM resource policy, JWT stored in sessionStorage instead of HttpOnly cookies. <em>→ see Hardening Guide below</em>'
         ]}
       }
     }
