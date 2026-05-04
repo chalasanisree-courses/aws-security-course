@@ -90,6 +90,17 @@ fi
 SH_STATUS=$(aws securityhub describe-hub --region "$REGION" --query 'HubArn' --output text 2>/dev/null || echo "NONE")
 if [ "$SH_STATUS" != "NONE" ]; then
   aws securityhub disable-security-hub --region "$REGION" 2>/dev/null && deleted "Security Hub" || skipped "Security Hub (could not disable)"
+  # Security Hub creates securityhub-* Config rules — wait briefly, then force-delete any leftovers
+  info "Waiting 15 seconds for Security Hub to clean up its Config rules..."
+  sleep 15
+  SH_RULES=$(aws configservice describe-config-rules --region "$REGION" \
+    --query "ConfigRules[?starts_with(ConfigRuleName,'securityhub-')].ConfigRuleName" \
+    --output text 2>/dev/null || echo "")
+  if [ -n "$SH_RULES" ] && [ "$SH_RULES" != "None" ]; then
+    for SH_RULE in $SH_RULES; do
+      aws configservice delete-config-rule --config-rule-name "$SH_RULE" --region "$REGION" 2>/dev/null && deleted "Config rule (Security Hub leftover): $SH_RULE" || skipped "Config rule: $SH_RULE (may still be cleaning up)"
+    done
+  fi
 else
   skipped "Security Hub (not enabled)"
 fi
