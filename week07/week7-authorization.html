@@ -451,7 +451,7 @@
   </div>
   <div class="vuln-body" id="v1">
     <p><strong>The problem:</strong> Week 7 presigned URL conditions enforce Content-Type and file size at the S3 layer — a file that claims to be a 500 MB executable will be rejected. But a file that passes those checks can still be harmful: an image with embedded malware, a JPEG with a PHP payload in its EXIF data, a photo containing PII (someone's driver's license), or inappropriate content. The presigned URL conditions check the envelope, not the contents.</p>
-    <p><strong>What needs to happen:</strong> Uploaded objects need to be scanned <em>after</em> they land in S3. This is a detection problem, not an input-validation problem — the right tools are the ones that analyze object contents at rest. Future weeks will address parts of this: Macie can detect PII in S3 objects (Week 10), and GuardDuty Malware Protection can scan uploads for known malware signatures (Week 11). What remains after those weeks — magic byte verification, content moderation, image-specific validation — goes in the production hardening guide.</p>
+    <p><strong>What needs to happen:</strong> Uploaded objects need to be scanned <em>after</em> they land in S3. This is a detection problem, not an input-validation problem — the right tools are the ones that analyze object contents at rest. Future weeks will address parts of this: Macie can detect PII in S3 objects (Week 11), and GuardDuty Malware Protection can scan uploads for known malware signatures (Week 11). What remains after those weeks — magic byte verification, content moderation, image-specific validation — goes in the production hardening guide.</p>
   </div>
 </div>
 

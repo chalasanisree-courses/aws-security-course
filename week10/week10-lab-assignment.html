@@ -298,7 +298,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <tbody>
     <tr><td><strong>Lambda metrics found</strong></td><td>3</td><td>Screenshot: CloudWatch metrics dashboard showing photoviewer-lambda Errors and Duration metrics.</td></tr>
     <tr><td><strong>Error alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-errors</code> showing threshold &#8805; 1 error, 5-minute period, SNS notification target.</td></tr>
-    <tr><td><strong>Duration alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-duration</code> showing threshold &gt; 5000ms, 5-minute period.</td></tr>
+    <tr><td><strong>Duration alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-duration</code> showing threshold &gt; 2000ms, 5-minute period.</td></tr>
     <tr><td><strong>Alarm fires in ALARM state</strong></td><td>10</td><td>Screenshot: <code>photoviewer-lambda-errors</code> alarm in ALARM state (red) after changing <code>PHOTO_BUCKET</code> to wrong value.</td></tr>
     <tr><td><strong>SNS notification received</strong></td><td>5</td><td>Screenshot: Email from SNS showing the alarm notification.</td></tr>
     <tr><td><strong>Alarm returns to OK</strong></td><td>5</td><td>Screenshot: Alarm back in OK state after restoring the correct bucket name.</td></tr>
