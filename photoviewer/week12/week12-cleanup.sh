@@ -10,7 +10,7 @@
 #     Some resources require manual action (noted below).
 # ============================================================
 
-set -uo pipefail
+set +e
 REGION="us-east-1"
 DELETED=0; SKIPPED=0; MANUAL=0
 
@@ -59,18 +59,19 @@ echo ""
 echo "2. WEEK 11 — Detection and Response resources"
 echo "────────────────────────────────────────────────────────"
 
-# EventBridge rule
-RULE_NAME="guardduty-high-severity-alert"
-if aws events describe-rule --name "$RULE_NAME" --region "$REGION" &>/dev/null; then
-  # Remove targets first
-  TARGET_IDS=$(aws events list-targets-by-rule --rule "$RULE_NAME" --region "$REGION" --query 'Targets[].Id' --output text 2>/dev/null || echo "")
-  if [ -n "$TARGET_IDS" ]; then
-    aws events remove-targets --rule "$RULE_NAME" --ids $TARGET_IDS --region "$REGION" 2>/dev/null || true
+# EventBridge rules
+for RULE_NAME in "guardduty-high-severity-alert" "guardduty-malware-quarantine"; do
+  if aws events describe-rule --name "$RULE_NAME" --region "$REGION" &>/dev/null; then
+    # Remove targets first
+    TARGET_IDS=$(aws events list-targets-by-rule --rule "$RULE_NAME" --region "$REGION" --query 'Targets[].Id' --output text 2>/dev/null || echo "")
+    if [ -n "$TARGET_IDS" ]; then
+      aws events remove-targets --rule "$RULE_NAME" --ids $TARGET_IDS --region "$REGION" 2>/dev/null || true
+    fi
+    aws events delete-rule --name "$RULE_NAME" --region "$REGION" 2>/dev/null && deleted "EventBridge rule: $RULE_NAME" || skipped "EventBridge rule: $RULE_NAME"
+  else
+    skipped "EventBridge rule: $RULE_NAME (not found)"
   fi
-  aws events delete-rule --name "$RULE_NAME" --region "$REGION" 2>/dev/null && deleted "EventBridge rule: $RULE_NAME" || skipped "EventBridge rule"
-else
-  skipped "EventBridge rule: $RULE_NAME (not found)"
-fi
+done
 
 # Quarantine Lambda
 if aws lambda get-function --function-name "photoviewer-quarantine" --region "$REGION" &>/dev/null; then
@@ -89,6 +90,12 @@ fi
 # Security Hub
 SH_STATUS=$(aws securityhub describe-hub --region "$REGION" --query 'HubArn' --output text 2>/dev/null || echo "NONE")
 if [ "$SH_STATUS" != "NONE" ]; then
+  # Deregister as delegated admin first (required if account is the org admin for Security Hub)
+  ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text 2>/dev/null || echo "")
+  if [ -n "$ACCOUNT_ID" ]; then
+    aws securityhub disable-organization-admin-account --admin-account-id "$ACCOUNT_ID" --region "$REGION" 2>/dev/null || true
+  fi
+  aws organizations disable-aws-service-access --service-principal securityhub.amazonaws.com 2>/dev/null || true
   aws securityhub disable-security-hub --region "$REGION" 2>/dev/null && deleted "Security Hub" || skipped "Security Hub (could not disable)"
   # Security Hub creates securityhub-* Config rules — wait briefly, then force-delete any leftovers
   info "Waiting 15 seconds for Security Hub to clean up its Config rules..."
@@ -221,10 +228,10 @@ for SECRET in $(aws secretsmanager list-secrets --region "$REGION" --query "Secr
   fi
 done
 
-# SNS topics
+# SNS topics (only photoviewer/security-related, not billing alarms)
 for TOPIC in $(aws sns list-topics --region "$REGION" --query "Topics[].TopicArn" --output text 2>/dev/null || echo ""); do
   TOPIC_NAME=$(echo "$TOPIC" | awk -F: '{print $NF}')
-  if echo "$TOPIC_NAME" | grep -qi "photoviewer\|security\|alert"; then
+  if echo "$TOPIC_NAME" | grep -qi "photoviewer\|guardduty\|security-alert"; then
     aws sns delete-topic --topic-arn "$TOPIC" --region "$REGION" 2>/dev/null && deleted "SNS topic: $TOPIC_NAME" || skipped "SNS topic: $TOPIC_NAME"
   fi
 done
@@ -299,6 +306,14 @@ else
   skipped "PhotoViewer S3 bucket (not found)"
 fi
 
+# Config bucket (created by AWS Config)
+CONFIG_BUCKET=$(aws s3api list-buckets --query "Buckets[?contains(Name,'config-bucket')].Name" --output text 2>/dev/null || echo "")
+if [ -n "$CONFIG_BUCKET" ]; then
+  manual "S3 bucket: $CONFIG_BUCKET — created by AWS Config. Empty and delete in console if Config is disabled."
+else
+  skipped "Config S3 bucket (not found)"
+fi
+
 
 # ════════════════════════════════════════════════════════════
 echo ""
@@ -331,6 +346,21 @@ if [ -n "$LAMBDA_ROLES" ]; then
   info "Lambda execution roles found (review and delete if no longer needed):"
   for R in $LAMBDA_ROLES; do
     echo "      $R"
+  done
+fi
+
+# EventBridge invoke Lambda roles (auto-created by EventBridge)
+EB_ROLES=$(aws iam list-roles --query "Roles[?starts_with(RoleName,'Amazon_EventBridge_Invoke_Lambda')].RoleName" --output text 2>/dev/null || echo "")
+if [ -n "$EB_ROLES" ]; then
+  for EB_ROLE in $EB_ROLES; do
+    # Detach all policies first
+    for POLICY_ARN in $(aws iam list-attached-role-policies --role-name "$EB_ROLE" --query 'AttachedPolicies[].PolicyArn' --output text 2>/dev/null || echo ""); do
+      aws iam detach-role-policy --role-name "$EB_ROLE" --policy-arn "$POLICY_ARN" 2>/dev/null || true
+    done
+    for POLICY_NAME in $(aws iam list-role-policies --role-name "$EB_ROLE" --query 'PolicyNames[]' --output text 2>/dev/null || echo ""); do
+      aws iam delete-role-policy --role-name "$EB_ROLE" --policy-name "$POLICY_NAME" 2>/dev/null || true
+    done
+    aws iam delete-role --role-name "$EB_ROLE" 2>/dev/null && deleted "IAM role: $EB_ROLE" || skipped "IAM role: $EB_ROLE"
   done
 fi
 
