@@ -213,14 +213,17 @@
 <p>You wrote four policies that would prevent CloudTrail deletion, public S3, off-region resources, and local identity management in any member account. Now test whether they apply to <em>your</em> account.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Try to stop CloudTrail</span></div><div class="step-body">
-<p>Go to <strong>CloudTrail &rarr; Trails &rarr; select your trail &rarr; Stop logging</strong>.</p>
+<p>Go to <strong>CloudTrail &rarr; Trails</strong>. You will see your trail listed. Click on the <strong>trail name</strong> (the blue hyperlink) to open the trail detail page. On the detail page, click <strong>Stop logging</strong> in the top-right area, then confirm.</p>
+<div class="callout warn">
+  <p><strong>Do not delete the trail.</strong> You need to click <em>into</em> the trail to find the stop logging toggle. Do not click the delete button from the trails list. Stopping logging is reversible with one click; deleting the trail requires recreating it.</p>
+</div>
 <p>The action <strong>succeeds</strong>.</p>
 <div class="callout warn">
   <p><strong>Why?</strong> Your account is the management account. SCPs do not apply to the management account &mdash; by design. If they did, an overly broad SCP could lock out the entire organization with no way to recover.</p>
   <p>This is the single most important lesson about SCPs: <strong>they create a ceiling for member accounts only.</strong> The management account operates above that ceiling. This is why it must run zero workloads &mdash; anything running here has no SCP protection.</p>
   <p>In production, the Photo Viewer would run in a member account inside the NA or Asia OU. The <code>deny-cloudtrail-disable</code> SCP would block this action. An attacker who compromised the member account could not disable audit logging, even with <code>AdministratorAccess</code>, even as root.</p>
 </div>
-<p><strong>Re-enable CloudTrail logging immediately</strong> &mdash; go back to the trail and click <strong>Start logging</strong>.</p>
+<p><strong>Re-enable CloudTrail logging immediately</strong> &mdash; on the same trail detail page, click <strong>Start logging</strong>.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div><p>CloudTrail stop logging succeeded despite the SCP. You understand this is because the management account is exempt. You re-enabled logging.</p></div>
 <div class="screenshot">CloudTrail stop logging succeeding &mdash; demonstrating the management account exemption</div>
 </div></div>

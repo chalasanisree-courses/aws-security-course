@@ -327,42 +327,27 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 <h2>Part 5 — WAF</h2>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Step 13</span><span class="part-title">Create WAF Web ACL</span></div>
-  <div class="note"><strong>Region matters:</strong> WAF for CloudFront must use the <strong>Global (CloudFront)</strong> scope. In the WAF console, switch the region dropdown to <strong>Global (CloudFront)</strong> — not US East (N. Virginia). They run on the same infrastructure, but the console treats them as separate options.</div>
-  <div class="note"><strong>Use the old WAF console:</strong> AWS has introduced a new "Protection packs" interface as the default landing page. Scroll to the bottom of the left navigation panel and click <strong>"Switch to the old WAF console"</strong> — the lab instructions match the classic Web ACLs interface, not the new Protection packs wizard.</div>
-  <p>Go to <strong>WAF &amp; Shield → Web ACLs → Create web ACL:</strong></p>
-  <ul>
-    <li>Resource type: <strong>Amazon CloudFront distributions</strong></li>
-    <li>Name: <code>photoviewer-waf</code></li>
-    <li>Associated AWS resources: click <strong>Add AWS resources</strong> → select your CloudFront distribution → <strong>Add</strong></li>
-    <li>Click <strong>Next</strong></li>
-  </ul>
+  <div class="part-header"><span class="part-num">Step 13</span><span class="part-title">Verify WAF Web ACL</span></div>
+  <p>CloudFront automatically creates a WAF Web ACL for your distribution on the Free plan ($0/month). Verify it exists in two places:</p>
+  <p><strong>WAF console:</strong> Go to <strong>WAF &amp; Shield → Web ACLs</strong> → switch the region dropdown to <strong>Global (CloudFront)</strong>. You should see a Web ACL named <code>CreatedByCloudFront-XXXXXXXX</code>. This confirms the WAF was auto-created by CloudFront.</p>
+  <p><strong>CloudFront console:</strong> Go to <strong>CloudFront → your distribution → Security tab</strong>. You should see "Core protections: Enabled, Monitor mode" with three managed rules (AmazonIPReputationList, CommonRuleSet, KnownBadInputsRuleSet) running in Count mode. The Free plan allows up to 5 rules — you will use one of the 2 remaining slots in Step 14.</p>
+  <div class="note"><strong>Do not create a standalone WAF Web ACL.</strong> Your distribution is on the Free plan, which is locked to the bundled Web ACL. A standalone Web ACL created from the WAF console cannot be associated with a Free plan distribution.</div>
+  <div class="deliverable"><strong>Screenshot:</strong> WAF console showing the CreatedByCloudFront Web ACL under Global (CloudFront), and CloudFront Security tab showing Core protections Enabled</div>
 </div>
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 14</span><span class="part-title">Add rate-based rule</span></div>
-  <p>On the <strong>Add rules and rule groups</strong> screen:</p>
+  <p>Go to <strong>CloudFront → your distribution → Security tab → Manage protections (dropdown) → Manage rules → Add rule → Rate-based rule → Next:</strong></p>
   <ul>
-    <li>Click <strong>Add rules → Add my own rules and rule groups → Rule builder</strong></li>
-    <li>Rule type: <strong>Rate-based rule</strong></li>
-    <li>Name: <code>photos-rate-limit</code></li>
+    <li>Action: <strong>Block</strong></li>
+    <li>Rule name: <code>photos-rate-limit</code></li>
     <li>Rate limit: <code>100</code></li>
-    <li>Evaluation window: <strong>5 minutes (300 seconds)</strong></li>
-    <li>Request aggregation: <strong>Source IP address</strong></li>
-    <li>Scope of inspection: <strong>Only consider requests that match the criteria in a rule statement</strong></li>
+    <li>Evaluation window: <strong>5 minutes</strong> (cannot be changed on the Free plan)</li>
   </ul>
-  <p>In the <strong>Statement</strong> section that appears below:</p>
-  <ul>
-    <li>Inspect: <strong>URI path</strong></li>
-    <li>Match type: <strong>Starts with string</strong></li>
-    <li>String to match: <code>/photos</code></li>
-  </ul>
-  <p>Action: <strong>Block</strong> → click <strong>Add rule.</strong></p>
-  <p>On the <strong>Set rule priority</strong> screen: leave the default order → <strong>Next.</strong></p>
-  <p>On <strong>Configure metrics</strong>: leave defaults → <strong>Next.</strong></p>
-  <p>On <strong>Review and create</strong>: verify the rule and associated CloudFront distribution → <strong>Create web ACL.</strong></p>
+  <p>Expand <strong>Rule configuration</strong> if you can scope the rule to the <code>/photos</code> URI path. If that option is not available in this interface, the rule will apply to all paths — this is fine for the lab.</p>
+  <p>Click <strong>Add rule.</strong></p>
   <div class="info">A rate of 100 requests per 5 minutes is appropriate for a lab. In production you would set this based on expected legitimate traffic patterns — typically 1,000–10,000 per 5 minutes for a public API.</div>
-  <div class="deliverable"><strong>Screenshot:</strong> WAF Web ACL showing the photos-rate-limit rule and the associated CloudFront distribution</div>
+  <div class="deliverable"><strong>Screenshot:</strong> CloudFront Security tab showing the managed rules plus your photos-rate-limit rule</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
@@ -376,7 +361,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <ul>
     <li><code>Via: 1.1 XXXXXXXXXX.cloudfront.net (CloudFront)</code> — request went through CloudFront ✓</li>
     <li><strong>No</strong> <code>Server: Werkzeug</code> header — EC2 is gone ✓</li>
-    <li><code>x-amzn-requestid</code> — present, confirming the response came from API Gateway / Lambda ✓</li>
+    <li><code>Apigw-Requestid</code> — present, confirming the response came from API Gateway / Lambda ✓</li>
   </ul>
   <div class="success"><strong>Expected result:</strong> Photos load correctly and DevTools confirms the response is no longer coming from EC2.</div>
   <div class="deliverable"><strong>Screenshot:</strong> Photo Viewer loading in browser + DevTools Network tab showing the /photos request with Via: CloudFront header and no Server: Werkzeug header</div>
@@ -398,7 +383,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 17</span><span class="part-title">Verify WAF is attached</span></div>
-  <p>Go to <strong>WAF &amp; Shield → Web ACLs → photoviewer-waf → Associated AWS resources tab.</strong></p>
+  <p>Go to <strong>WAF &amp; Shield → Web ACLs</strong> (region: <strong>Global (CloudFront)</strong>) → click your <code>CreatedByCloudFront-</code> Web ACL → <strong>Associated AWS resources tab.</strong></p>
   <p>Confirm your CloudFront distribution is listed as an associated resource.</p>
   <p>Go to the <strong>Overview tab</strong> — after loading the Photo Viewer a few times you should see allow counts appearing in the traffic overview chart (it may take 1–2 minutes to update).</p>
   <div class="deliverable"><strong>Screenshot:</strong> WAF Web ACL Associated AWS resources tab showing your CloudFront distribution, and the Overview tab showing allow counts</div>
@@ -407,7 +392,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 <div class="part">
   <div class="part-header"><span class="part-num">Optional</span><span class="part-title">Enable WAF logging and observe a blocked request</span></div>
   <p>The Overview tab shows aggregate allow/block counts, but WAF can also write a full log of every evaluated request — including blocked ones — to CloudWatch Logs. Lambda logs (Step 16) only capture requests that reach Lambda; WAF-blocked requests never get that far and only appear here.</p>
-  <p><strong>Enable WAF logging:</strong> Go to <strong>WAF &amp; Shield → Web ACLs → photoviewer-waf → Logging and metrics tab → Enable logging.</strong> Choose <strong>CloudWatch Logs log group</strong> as the destination and create a new log group named <code>aws-waf-logs-photoviewer</code> (the <code>aws-waf-logs-</code> prefix is required by WAF). Click <strong>Enable logging</strong>.</p>
+  <p><strong>Enable WAF logging:</strong> Go to <strong>WAF &amp; Shield → Web ACLs</strong> (region: <strong>Global (CloudFront)</strong>) → click your <code>CreatedByCloudFront-</code> Web ACL → <strong>Logging and metrics tab → Enable logging.</strong> Choose <strong>CloudWatch Logs log group</strong> as the destination and create a new log group named <code>aws-waf-logs-photoviewer</code> (the <code>aws-waf-logs-</code> prefix is required by WAF). Click <strong>Enable logging</strong>.</p>
   <p><strong>Trigger the rate limit:</strong> In CloudShell, run a loop that exceeds the 100-request threshold:</p>
   <pre><code>for i in {1..110}; do curl -s https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/photos -o /dev/null; done</code></pre>
   <p>After the loop completes, go to <strong>CloudWatch → Log groups → aws-waf-logs-photoviewer</strong> and open the most recent log stream. Look for entries where <code>"action":"BLOCK"</code> — these are requests WAF stopped before they ever reached API Gateway or Lambda. Compare with the Lambda log group from Step 16: you will see no corresponding Lambda invocations for the blocked requests.</p>
@@ -500,7 +485,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <tr><td>API Gateway route + Lambda authorizer</td><td>20</td><td>GET /photos route visible. Lambda authorizer attached with identity source set to $request.header.x-origin-verify. Screenshot shows {"message":"Unauthorized"} when accessing API Gateway URL directly without the header.</td></tr>
   <tr><td>CloudFront origin updated to API Gateway</td><td>10</td><td>Origins tab shows photoviewer-apigw-origin with HTTPS-only protocol and x-origin-verify custom header. /photos behavior routes to the new origin with AllViewerExceptHostHeader origin request policy.</td></tr>
   <tr><td>ALB and EC2 deleted</td><td>5</td><td>EC2 in terminated state, no active load balancers visible.</td></tr>
-  <tr><td>WAF Web ACL with rate-based rule</td><td>15</td><td>Web ACL shows photos-rate-limit rule scoped to /photos URI path. CloudFront distribution listed as associated resource.</td></tr>
+  <tr><td>WAF Web ACL with rate-based rule</td><td>15</td><td>CloudFront Security tab shows managed rules plus photos-rate-limit rule. WAF console shows <code>CreatedByCloudFront-</code> Web ACL under Global (CloudFront) with CloudFront distribution as associated resource.</td></tr>
   <tr><td>End-to-end browser verification</td><td>20</td><td>Photo Viewer loads correctly. DevTools shows Via: CloudFront header and no Server: Werkzeug header on the /photos request.</td></tr>
   <tr><td>CloudWatch Logs verification</td><td>5</td><td>Log group /aws/lambda/photoviewer-lambda shows START/END/REPORT entries corresponding to page loads.</td></tr>
   <tr><td>Reflection Q1</td><td>4</td><td>Correctly explains that the secret header prevents open access but is a shared secret — anyone who discovers it can call the API directly. Correctly identifies that aws:SourceArn would be stronger as it's IAM-enforced and tied to a specific distribution ARN with no secret to discover.</td></tr>
@@ -510,12 +495,11 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 </table>
 
 <h2>Clean Up — Avoid Ongoing Charges</h2>
-<div class="note"><strong>Do this after submitting your lab.</strong> WAF costs $5/month per Web ACL plus $1/month per rule — resources left running will appear on your AWS bill. The resources below are not needed for Week 6.</div>
+<div class="note"><strong>Do this after submitting your lab.</strong> The WAF is on the Free plan at $0/month and does not need to be deleted. The resources below are not needed for Week 6.</div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">Delete WAF Web ACL</span></div>
-  <p>Go to <strong>WAF &amp; Shield → Web ACLs</strong> (region: <strong>Global (CloudFront)</strong>). Select <code>photoviewer-waf</code> → <strong>Delete</strong>. You must first disassociate the CloudFront distribution: click the ACL → <strong>Associated AWS resources</strong> tab → select the distribution → <strong>Disassociate</strong> — then delete the ACL.</p>
-  <p><strong>Cost if left running:</strong> ~$6/month (1 Web ACL + 1 rule).</p>
+  <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">WAF — no action needed</span></div>
+  <p>Your WAF Web ACL is bundled with CloudFront on the Free plan at $0/month. Do not attempt to delete or disassociate it — the Free plan requires it. It will be removed automatically when you delete the distribution at the end of the course. You can remove the <code>photos-rate-limit</code> rule you added if you want, but it does not incur any additional cost.</p>
 </div>
 
 <div class="part">

@@ -68,7 +68,7 @@
 </nav>
 
 <h1>Week 11 Lab &mdash; Incident Detection &amp; Response</h1>
-<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 100 pts</p>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;&middot;&nbsp; Foothill College &nbsp;&middot;&nbsp; 150 pts</p>
 
 <p><strong>Objective:</strong> Last week you set up monitoring for configuration drift, performance, and vulnerabilities &mdash; all inward-facing. This week, someone is doing something bad. An employee uploads sensitive data. A suspicious file lands in the photo bucket. A Lambda dependency has a known vulnerability. Set up Macie, GuardDuty, and Inspector to detect these threats, aggregate all findings in Security Hub, and automate alerting via EventBridge.</p>
 
@@ -248,6 +248,9 @@ Notes: Testing upload for support case #4472</pre>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Create a discovery job</span></div><div class="step-body">
 <p>Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong>.</p>
+<div class="callout">
+  <p><strong>Bucket not showing up?</strong> Macie needs a minute or two to inventory the S3 buckets in your account after being enabled. Click the refresh button or wait and try again.</p>
+</div>
 <ul>
   <li>Select the Photo Viewer bucket</li>
   <li>Job type: <strong>One-time job</strong></li>
@@ -352,6 +355,9 @@ Notes: Testing upload for support case #4472</pre>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 15</span><span class="step-title">Wait for findings to aggregate</span></div><div class="step-body">
 <p>Security Hub takes a few minutes to ingest findings from connected services. Wait ~5 minutes, then go to <strong>Security Hub &rarr; Findings</strong>.</p>
+<div class="callout">
+  <p><strong>Don&rsquo;t wait here.</strong> Aggregation can take 10&ndash;15 minutes or longer. Proceed with Parts 6 and 7, then come back to Security Hub at the end to take your screenshot. By then, all findings &mdash; including the GuardDuty malware finding from Step 19 &mdash; should be visible.</p>
+</div>
 <p>You should see findings from multiple sources:</p>
 <ul>
   <li><strong>Inspector:</strong> Pillow CVE in photoviewer-image-validator</li>
@@ -373,7 +379,7 @@ Notes: Testing upload for support case #4472</pre>
   <span class="part-title">Quarantine Lambda</span>
 </div>
 
-<p>Email notifications tell you something happened. But the malicious file is still sitting in the <code>photos/</code> prefix, accessible to users, while you read the email and open the console. Automated remediation closes this gap &mdash; a Lambda function moves the flagged object to a <code>quarantine/</code> prefix immediately, without waiting for a human. Build the Lambda now so it is ready when you wire up EventBridge in Part 7.</p>
+<p>Detection without response is just a dashboard nobody checks at 3 AM. Build a quarantine Lambda that moves flagged files to a <code>quarantine/</code> prefix automatically. You will wire it to EventBridge in Part 7.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 16</span><span class="step-title">Create the quarantine Lambda</span></div><div class="step-body">
 <p>Go to <strong>Lambda &rarr; Create function</strong>.</p>
@@ -427,6 +433,7 @@ def lambda_handler(event, context):
             'quarantine': quarantine_key
         })
     }</pre>
+<p>Click <strong>Deploy</strong> to save the function.</p>
 <p>Create an inline policy for the Lambda execution role (same approach as Step 2 &mdash; <strong>Add permissions &rarr; Create inline policy &rarr; JSON</strong>, name it <code>photoviewer-quarantine-s3</code>). The quarantine function copies the file to <code>quarantine/</code> then deletes the original. <code>CopyObject</code> is a compound operation that requires multiple S3 permissions (read source, write destination, copy tags, copy metadata) plus KMS permissions for the encrypted bucket:</p>
 <pre>
 {
@@ -532,7 +539,8 @@ def lambda_handler(event, context):
 
 <ol>
   <li><strong>Disable Macie</strong> &mdash; Go to <strong>Macie &rarr; Settings &rarr; Disable Macie</strong>. Free trial runs for 30 days, then charges begin.</li>
-  <li><strong>Disable GuardDuty</strong> &mdash; Go to <strong>GuardDuty &rarr; Settings &rarr; Suspend &rarr; Disable GuardDuty</strong>. This also disables Malware Protection for S3.</li>
+  <li><strong>Disable GuardDuty Malware Protection for S3</strong> &mdash; Go to <strong>GuardDuty &rarr; Protection plans &rarr; Malware Protection for S3</strong>. Select the bucket plan and click <strong>Disable</strong>.</li>
+  <li><strong>Disable GuardDuty</strong> &mdash; Go to <strong>GuardDuty &rarr; Settings &rarr; Suspend &rarr; Disable GuardDuty</strong>.</li>
   <li><strong>Disable Security Hub</strong> &mdash; Go to <strong>Security Hub &rarr; Settings &rarr; General &rarr; Disable Security Hub</strong>.</li>
   <li><strong>Delete EventBridge rules</strong> &mdash; Go to <strong>EventBridge &rarr; Rules</strong>. Delete both <code>guardduty-high-severity-alert</code> and <code>guardduty-malware-quarantine</code>. (Remove targets first, then delete the rule.)</li>
   <li><strong>Delete Lambda functions</strong> &mdash; Go to <strong>Lambda &rarr; Functions</strong>. Delete <code>photoviewer-image-validator</code> and <code>photoviewer-quarantine</code>.</li>
@@ -557,7 +565,7 @@ def lambda_handler(event, context):
 <p>You now have findings from four services in Security Hub: Config (compliance), Inspector (CVEs), Macie (PII), and GuardDuty (threats). Describe a scenario where a single incident would generate findings in at least three of these services simultaneously.</p>
 
 <h3>Question 4</h3>
-<p>In Part 6, EventBridge sends an SNS email notification. In Part 7, EventBridge triggers a Lambda that quarantines the file. Compare these two response strategies. When would you use notification only? When would you add automated remediation? What is the risk of automating remediation too aggressively?</p>
+<p>In Part 7, EventBridge sends an SNS email notification (Step 17) and triggers a Lambda that quarantines the file (Step 18). Compare these two response strategies. When would you use notification only? When would you add automated remediation? What is the risk of automating remediation too aggressively?</p>
 
 
 <!-- Rubric -->
@@ -566,28 +574,38 @@ def lambda_handler(event, context):
 <table class="rubric-table">
   <thead><tr><th>Deliverable</th><th>Points</th><th>Requirements</th></tr></thead>
   <tbody>
-    <tr><td><strong>Validator Lambda deployed</strong></td><td>4</td><td>Screenshot: Lambda console showing <code>photoviewer-image-validator</code> with Pillow deployment package.</td></tr>
-    <tr><td><strong>S3 event trigger configured</strong></td><td>3</td><td>Screenshot: S3 event notification showing <code>photos/</code> prefix triggering the validator Lambda.</td></tr>
-    <tr><td><strong>Validator tags &mdash; PASSED</strong></td><td>4</td><td>Screenshot: S3 object tags showing <code>validation: PASSED</code> on a real photo.</td></tr>
-    <tr><td><strong>Validator tags &mdash; CAUTION</strong></td><td>4</td><td>Screenshot: S3 object tags showing <code>validation: CAUTION</code> on the fake photo.</td></tr>
-    <tr><td><strong>Inspector CVE finding</strong></td><td>6</td><td>Screenshot: Inspector finding showing CVE in Pillow for <code>photoviewer-image-validator</code> with severity and affected version.</td></tr>
-    <tr><td><strong>Macie enabled</strong></td><td>2</td><td>Screenshot: Macie dashboard showing the discovery job.</td></tr>
-    <tr><td><strong>Macie PII finding</strong></td><td>6</td><td>Screenshot: Macie finding showing SSN and/or credit card detected in <code>customer-data.txt</code>.</td></tr>
-    <tr><td><strong>GuardDuty enabled</strong></td><td>2</td><td>Screenshot: GuardDuty dashboard active with Malware Protection for S3 enabled.</td></tr>
-    <tr><td><strong>GuardDuty malware finding</strong></td><td>6</td><td>Screenshot: GuardDuty finding for EICAR test file in the Photo Viewer bucket.</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 1 &mdash; Image Validator Lambda</td></tr>
+    <tr><td><strong>Validator Lambda deployed</strong></td><td>6</td><td>Screenshot: Lambda console showing <code>photoviewer-image-validator</code> with Pillow deployment package.</td></tr>
+    <tr><td><strong>S3 event trigger configured</strong></td><td>4</td><td>Screenshot: S3 event notification showing <code>photos/</code> prefix triggering the validator Lambda.</td></tr>
+    <tr><td><strong>Validator tags &mdash; PASSED</strong></td><td>5</td><td>Screenshot: S3 object tags showing <code>validation: PASSED</code> on a real photo.</td></tr>
+    <tr><td><strong>Validator tags &mdash; CAUTION</strong></td><td>5</td><td>Screenshot: S3 object tags showing <code>validation: CAUTION</code> on the fake photo.</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 2 &mdash; Inspector</td></tr>
+    <tr><td><strong>Inspector CVE finding</strong></td><td>8</td><td>Screenshot: Inspector finding showing CVE in Pillow for <code>photoviewer-image-validator</code> with severity and affected version.</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 3 &mdash; Macie</td></tr>
+    <tr><td><strong>Macie enabled + KMS</strong></td><td>4</td><td>Screenshot: Macie dashboard showing the discovery job.</td></tr>
+    <tr><td><strong>Macie PII finding</strong></td><td>8</td><td>Screenshot: Macie finding showing SSN and/or credit card detected in <code>customer-data.txt</code>.</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 4 &mdash; GuardDuty</td></tr>
+    <tr><td><strong>GuardDuty + Malware Protection enabled</strong></td><td>4</td><td>Screenshot: GuardDuty Malware Protection for S3 showing the Photo Viewer bucket with Active status.</td></tr>
+    <tr><td><strong>GuardDuty malware finding</strong></td><td>8</td><td>Screenshot: GuardDuty finding for EICAR test file in the Photo Viewer bucket.</td></tr>
     <tr><td><strong>GuardDuty sample findings</strong></td><td>3</td><td>Screenshot: Three sample findings of different severity levels.</td></tr>
-    <tr><td><strong>Security Hub enabled</strong></td><td>2</td><td>Screenshot: Security Hub dashboard showing aggregated findings.</td></tr>
-    <tr><td><strong>Security Hub multi-source</strong></td><td>5</td><td>Screenshot: Security Hub findings from at least three different sources visible.</td></tr>
-    <tr><td><strong>EventBridge rule created</strong></td><td>4</td><td>Screenshot: EventBridge rule <code>guardduty-high-severity-alert</code> showing GuardDuty Finding event pattern with severity &ge; 7.</td></tr>
-    <tr><td><strong>EventBridge alert received</strong></td><td>5</td><td>Screenshot: Email notification from EventBridge &rarr; SNS for a high-severity finding.</td></tr>
-    <tr><td><strong>Quarantine Lambda deployed</strong></td><td>4</td><td>Screenshot: Lambda console showing <code>photoviewer-quarantine</code> function.</td></tr>
-    <tr><td><strong>Malware quarantine rule</strong></td><td>3</td><td>Screenshot: EventBridge rule <code>guardduty-malware-quarantine</code> showing Malware Protection scan result pattern with two targets &mdash; SNS and Lambda.</td></tr>
-    <tr><td><strong>Automated quarantine works</strong></td><td>6</td><td>Screenshot: EICAR file moved from <code>photos/</code> to <code>quarantine/</code> automatically after GuardDuty malware scan.</td></tr>
-    <tr><td><strong>Reflection Q1 &mdash; encryption vs detection</strong></td><td>8</td><td>Encryption protects <em>confidentiality</em> &mdash; unauthorized users cannot read the data. Macie detects <em>sensitive content</em> &mdash; it identifies what kind of data is present (PII, credentials, etc.). Encryption does not prevent authorized services (like Macie) from reading and scanning the data. Different problems, different tools.</td></tr>
-    <tr><td><strong>Reflection Q2 &mdash; upgrade despite unused code path</strong></td><td>7</td><td>Yes, upgrade. Future code changes might use the vulnerable function. Automated compliance tools flag the version regardless. An attacker who gains code execution could import and call any function in the package. Defense in depth means not relying on one layer of protection.</td></tr>
-    <tr><td><strong>Reflection Q3 &mdash; multi-service incident</strong></td><td>7</td><td>Example: An attacker exploits the Pillow CVE (Inspector flagged it) to execute code, disables S3 encryption (Config detects drift), and exfiltrates data (GuardDuty detects unusual API calls). One incident, three services, three perspectives.</td></tr>
-    <tr><td><strong>Reflection Q4 &mdash; notification vs remediation</strong></td><td>9</td><td>Notification (SNS) tells a human something happened &mdash; response depends on someone reading the email and acting. Remediation (Lambda quarantine) acts immediately without waiting. Tradeoff: automated remediation can cause false-positive outages (quarantining a legitimate file). Start with notification, graduate to remediation as confidence in detection rules grows.</td></tr>
-    <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 5 &mdash; Security Hub</td></tr>
+    <tr><td><strong>Security Hub enabled</strong></td><td>2</td><td>Screenshot: Security Hub dashboard active.</td></tr>
+    <tr><td><strong>Security Hub multi-source</strong></td><td>7</td><td>Screenshot: Security Hub findings from at least three different sources visible (Inspector, Macie, GuardDuty).</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 6 &mdash; Quarantine Lambda</td></tr>
+    <tr><td><strong>Quarantine Lambda deployed</strong></td><td>6</td><td>Screenshot: Lambda console showing <code>photoviewer-quarantine</code> function.</td></tr>
+    <tr><td><strong>KMS key policy &mdash; all key users</strong></td><td>8</td><td>Screenshot: <code>photoviewer-data-key</code> key policy showing all key users added during this lab &mdash; validator role, Macie, GuardDuty, and quarantine role.</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Part 7 &mdash; EventBridge + Full Loop</td></tr>
+    <tr><td><strong>EventBridge notification rule</strong></td><td>6</td><td>Screenshot: EventBridge rule <code>guardduty-high-severity-alert</code> showing GuardDuty Finding event pattern with severity &ge; 7 and SNS target.</td></tr>
+    <tr><td><strong>EventBridge malware quarantine rule</strong></td><td>5</td><td>Screenshot: EventBridge rule <code>guardduty-malware-quarantine</code> showing Malware Protection scan result pattern with two targets &mdash; SNS and Lambda.</td></tr>
+    <tr><td><strong>SNS alert received</strong></td><td>7</td><td>Screenshot: Email notification from EventBridge &rarr; SNS showing a GuardDuty malware finding.</td></tr>
+    <tr><td><strong>Automated quarantine works</strong></td><td>8</td><td>Screenshot: S3 bucket showing the EICAR file moved from <code>photos/</code> to <code>quarantine/</code> automatically.</td></tr>
+    <tr><td><strong>Quarantine Lambda logs</strong></td><td>6</td><td>Screenshot: CloudWatch Logs for <code>photoviewer-quarantine</code> showing the <code>QUARANTINED:</code> log line confirming the Lambda executed successfully.</td></tr>
+    <tr><td colspan="3" style="background:#e8eef4; font-weight:600; color:#1F4E79;">Reflection Questions</td></tr>
+    <tr><td><strong>Q1 &mdash; encryption vs detection</strong></td><td>10</td><td>Encryption protects <em>confidentiality</em> &mdash; unauthorized users cannot read the data. Macie detects <em>sensitive content</em> &mdash; it identifies what kind of data is present (PII, credentials, etc.). Encryption does not prevent authorized services (like Macie) from reading and scanning the data. Different problems, different tools.</td></tr>
+    <tr><td><strong>Q2 &mdash; upgrade despite unused code path</strong></td><td>9</td><td>Yes, upgrade. Future code changes might use the vulnerable function. Automated compliance tools flag the version regardless. An attacker who gains code execution could import and call any function in the package. Defense in depth means not relying on one layer of protection.</td></tr>
+    <tr><td><strong>Q3 &mdash; multi-service incident</strong></td><td>9</td><td>Example: An attacker exploits the Pillow CVE (Inspector flagged it) to execute code, disables S3 encryption (Config detects drift), and exfiltrates data (GuardDuty detects unusual API calls). One incident, three services, three perspectives.</td></tr>
+    <tr><td><strong>Q4 &mdash; notification vs remediation</strong></td><td>12</td><td>Notification (SNS) tells a human something happened &mdash; response depends on someone reading the email and acting. Remediation (Lambda quarantine) acts immediately without waiting. Tradeoff: automated remediation can cause false-positive outages (quarantining a legitimate file). Start with notification, graduate to remediation as confidence in detection rules grows.</td></tr>
+    <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>150</strong></td><td></td></tr>
   </tbody>
 </table>
 
