@@ -368,7 +368,7 @@
     <div class="concept-chevron" id="chev-c1b">▼</div>
   </div>
   <div class="concept-body" id="c1b">
-    <p>Browsers enforce the <strong>same-origin policy</strong>: JavaScript on one origin (e.g. <code>https://d1234.cloudfront.net</code>) cannot make HTTP requests to a different origin (e.g. <code>https://photoviewer-9876543210.s3.us-east-1.amazonaws.com</code>) unless the target explicitly permits it. This is a browser-side security control — it does not apply to server-side calls, CLI tools, or <code>curl</code>.</p>
+    <p>Browsers enforce the <strong>same-origin policy</strong>: JavaScript on one origin (e.g. <code>https://d1234.cloudfront.net</code>) cannot make HTTP requests to a different origin (e.g. <code>https://photoviewer-XXXXXXXXXXXX.s3.us-east-1.amazonaws.com</code>) unless the target explicitly permits it. This is a browser-side security control — it does not apply to server-side calls, CLI tools, or <code>curl</code>.</p>
 
     <p>When <code>app.js</code> sends a PUT request to a presigned S3 URL, the browser sees a cross-origin request and performs a <strong>preflight check</strong>: it sends an OPTIONS request to S3 asking "does this origin allow PUT requests?" If S3 has no CORS configuration, the browser blocks the upload before it even starts — the presigned URL's authorization is irrelevant because the browser never sends the actual request.</p>
 
