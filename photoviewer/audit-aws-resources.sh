@@ -103,7 +103,9 @@ aws cloudfront list-distributions \
 
 # ── WAF Web ACLs ───────────────────────────────────────────
 echo ""
-echo "[ WAF Web ACLs ] (~\$5/month each — delete after Week 5 lab)"
+echo "[ WAF Web ACLs ]"
+echo "  CreatedByCloudFront-* = managed by CloudFront Security dashboard (FREE)"
+echo "  Custom Web ACLs       = ~\$5/month each"
 aws wafv2 list-web-acls \
   --scope CLOUDFRONT \
   --region us-east-1 \
@@ -286,7 +288,7 @@ echo "   NAT Gateway       ~\$32/month"
 echo "   ALB               ~\$16/month"
 echo "   Interface VPC ep  ~\$7/month each"
 echo "   EC2 t3.micro      ~\$8/month (outside free tier)"
-echo "   WAF Web ACL       ~\$5/month"
+echo "   WAF Web ACL       ~\$5/month (custom only — CloudFront-managed is free)"
 echo "   Elastic IP        ~\$4/month if unattached"
 echo "   AWS Config        ~\$1-2/month (recorder + rules)"
 echo "   KMS keys          ~\$1/month per key"
