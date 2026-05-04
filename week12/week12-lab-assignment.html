@@ -75,6 +75,15 @@
   <p><strong>Your account&rsquo;s role:</strong> In the Identity Center lab, your account became the <strong>management account</strong> and was moved into the Production OU. But the management account is exempt from SCPs &mdash; placing it inside an OU does not make it governed. In production, a dedicated management account would sit above the OUs running zero workloads. The Photo Viewer would run in a <strong>member account</strong> &mdash; where SCPs actually apply.</p>
 </div>
 
+<div class="preflight">
+  <h3>Pre-flight checklist</h3>
+  <p>Run the pre-flight script from CloudShell before starting:</p>
+  <pre>cd ~
+git -C aws-security-course pull
+bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
+  <p>The script verifies your Week 11 environment is intact: Organizations enabled with Production and Staging OUs, CloudTrail trail exists (needed for the management account exemption test), and Identity Center is active. Address any errors before proceeding.</p>
+</div>
+
 
 <!-- Part 1 -->
 <div class="part-header">
