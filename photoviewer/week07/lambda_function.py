@@ -10,7 +10,7 @@ Changes from Week 6:
   - Reads 'sub' from authorizer context for ownership checks
 
 Environment variables:
-  PHOTO_BUCKET  e.g. photoviewer-9876543210
+  PHOTO_BUCKET  e.g. photoviewer-XXXXXXXXXXXX
 
 DynamoDB table: photoviewer-photos
 Partition key:  photo_id (String)

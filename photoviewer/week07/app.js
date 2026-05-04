@@ -19,7 +19,7 @@
  *   YOUR_APP_CLIENT_ID     Cognito → User pool → App integration → App clients
  *                          (e.g. 7ilrlh8hpfoj87i8vtncfp126b)
  *   YOUR_CLOUDFRONT_DOMAIN Your CloudFront distribution domain
- *                          (e.g. d1kbm2nphud61r.cloudfront.net)
+ *                          (e.g. dXXXXXXXXXXXXX.cloudfront.net)
  */
 
 // ── Configuration ─────────────────────────────────────────────────────────────
