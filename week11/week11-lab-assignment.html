@@ -237,7 +237,16 @@ ls -lh image-validator.zip</pre>
 </div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Create a discovery job</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Upload sensitive data (simulate the incident)</span></div><div class="step-body">
+<p>Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; photos/</strong> and upload a text file named <code>customer-data.txt</code> with the following content:</p>
+<pre>Customer: Jane Doe
+SSN: 123-45-6789
+Credit Card: 4111-1111-1111-1111
+Notes: Testing upload for support case #4472</pre>
+<p>This simulates a careless employee dropping PII into a bucket that is not designed for sensitive data.</p>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Create a discovery job</span></div><div class="step-body">
 <p>Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong>.</p>
 <ul>
   <li>Select the Photo Viewer bucket</li>
@@ -245,16 +254,7 @@ ls -lh image-validator.zip</pre>
   <li>Managed data identifiers: Leave defaults (includes SSN, credit card numbers, and other PII patterns)</li>
   <li>Job name: <code>photoviewer-pii-scan</code></li>
 </ul>
-<p>Click <strong>Submit</strong>. The job will scan all objects in the bucket.</p>
-</div></div>
-
-<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Upload sensitive data (simulate the incident)</span></div><div class="step-body">
-<p>Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; photos/</strong> and upload a text file named <code>customer-data.txt</code> with the following content:</p>
-<pre>Customer: Jane Doe
-SSN: 123-45-6789
-Credit Card: 4111-1111-1111-1111
-Notes: Testing upload for support case #4472</pre>
-<p>This simulates a careless employee dropping PII into a bucket that is not designed for sensitive data.</p>
+<p>Click <strong>Submit</strong>. The job will scan all objects in the bucket, including the <code>customer-data.txt</code> file you just uploaded.</p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Wait for Macie and review findings</span></div><div class="step-body">
@@ -264,9 +264,6 @@ Notes: Testing upload for support case #4472</pre>
   <li>Social Security number detected</li>
   <li>Credit card number detected</li>
 </ul>
-<div class="callout">
-  <p><strong>No findings?</strong> If the one-time job completed before you uploaded <code>customer-data.txt</code>, it scanned the bucket before the file existed. Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong> and run a new one-time job on the Photo Viewer bucket.</p>
-</div>
 <p>Click into a finding. Note the S3 object path, the PII type, and the severity.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>Macie detected PII in the uploaded file. The finding shows the S3 object, the type of sensitive data (SSN, credit card), and the severity level.</p>
