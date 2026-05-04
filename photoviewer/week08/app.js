@@ -15,14 +15,14 @@
  *   YOUR_APP_CLIENT_ID     Cognito → User pool → App integration → App clients
  *                          (e.g. 7ilrlh8hpfoj87i8vtncfp126b)
  *   YOUR_CLOUDFRONT_DOMAIN Your CloudFront distribution domain
- *                          (e.g. d1kbm2nphud61r.cloudfront.net)
+ *                          (e.g. dXXXXXXXXXXXXX.cloudfront.net)
  */
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 const COGNITO_DOMAIN    = 'us-east-1gyxfdhejs';
 const APP_CLIENT_ID     = '7ilrlh8hpfoj87i8vtncfp126b';
-const CLOUDFRONT_DOMAIN = 'd1kbm2nphud61r.cloudfront.net';
+const CLOUDFRONT_DOMAIN = 'YOUR_CLOUDFRONT_DOMAIN';
 
 const COGNITO_BASE      = `https://${COGNITO_DOMAIN}.auth.us-east-1.amazoncognito.com`;
 const REDIRECT_URI      = `https://${CLOUDFRONT_DOMAIN}/callback`;

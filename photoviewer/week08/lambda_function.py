@@ -10,7 +10,7 @@ Changes from Week 6:
   - Reads 'sub' from authorizer context for ownership checks
 
 Environment variables:
-  PHOTO_BUCKET      e.g. photoviewer-9876543210
+  PHOTO_BUCKET      e.g. photoviewer-XXXXXXXXXXXX
   KMS_DATA_KEY_ID   (optional, Week 8) KMS key ID or alias for SSE-KMS encryption
 
 DynamoDB table: photoviewer-photos
