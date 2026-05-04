@@ -81,6 +81,8 @@
 <!-- ═══════════════ SECTION 1 ═══════════════ -->
 <h2>1. Where we left off</h2>
 
+<p>Two issues remain from the prior concept page. First, uploaded files are still not scanned for malicious content &mdash; encryption protects data at rest but does not inspect it. That is a detection problem addressed in later weeks (Macie and GuardDuty). Second, there is no employee access management &mdash; the KMS key policies reference infra-admin and photos-admin roles that do not yet exist as real IAM principals. This week addresses the second gap.</p>
+
 <p>The Photo Viewer has two populations of users, managed by different identity systems:</p>
 
 <div class="flow-diagram">
