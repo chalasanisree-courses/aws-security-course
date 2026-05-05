@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Identity Under Attack — Teaching Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#0f1117; --paper:#f7f4ee;
+    --red:#e05252; --red-bg:rgba(224,82,82,0.08); --red-border:rgba(224,82,82,0.22);
+    --blue:#3a7be8; --blue-bg:rgba(58,123,232,0.08); --blue-border:rgba(58,123,232,0.22);
+    --amber:#f59e0b; --amber-bg:#fff8f0; --amber-border:rgba(245,158,11,0.25);
+    --green:#38b07a; --green-bg:rgba(56,176,122,0.08); --green-border:rgba(56,176,122,0.22);
+    --muted:#6b7280; --border:#e2ddd4; --card:#ffffff;
+    --mono:'JetBrains Mono','Consolas','Courier New',monospace;
+    --sans:'Syne','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.7;}
+  header{background:var(--ink);padding:0 48px;display:flex;align-items:center;height:44px;position:sticky;top:0;z-index:100;}
+  .hd{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:0.06em;}
+  .hero{background:var(--ink);color:var(--paper);padding:56px 48px 48px;position:relative;overflow:hidden;}
+  .hgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(224,82,82,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(58,123,232,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+  .hc{position:relative;max-width:960px;margin:0 auto;}
+  .heye{font-family:var(--mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--amber);margin-bottom:12px;}
+  .hero h1{font-size:clamp(2rem,4.5vw,3rem);font-weight:800;line-height:1.1;letter-spacing:-0.02em;margin-bottom:12px;}
+  .hero h1 .hl{color:var(--amber);}
+  .wrap{max-width:960px;margin:0 auto;padding:36px 48px 60px;}
+
+  /* SECTIONS */
+  .section{margin-bottom:12px;}
+  .sec-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer;user-select:none;}
+  .sec-hd:hover{background:#faf8f4;}
+  .section.open .sec-hd{border-radius:10px 10px 0 0;border-bottom:none;background:var(--ink);}
+  .sec-label{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+  .section.open .sec-label{color:var(--amber);}
+  .sec-title{font-size:1.1rem;font-weight:700;color:var(--ink);}
+  .section.open .sec-title{color:var(--paper);}
+  .sec-chev{font-size:12px;color:var(--muted);transition:transform 0.25s;margin-left:16px;}
+  .section.open .sec-chev{transform:rotate(90deg);color:var(--amber);}
+  .sec-body{display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;padding:28px;background:var(--card);}
+  .section.open .sec-body{display:block;}
+
+  .sub-label{font-family:var(--mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);margin-bottom:12px;font-weight:600;}
+  .divider{height:1px;background:var(--border);margin:28px 0;}
+
+  /* RINGS */
+  .ring-layout{display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;}
+  .ring-layout svg{width:100%;display:block;cursor:pointer;}
+  .layer-ring{cursor:pointer;transition:opacity 0.15s;outline:none;}
+  .layer-ring:focus{outline:none;}
+  .layer-ring:hover{opacity:0.85;}
+  .layer-ring.active{filter:drop-shadow(0 0 8px rgba(0,0,0,0.3));}
+  .ring-panel{display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px 24px;}
+  .ring-panel.open{display:block;}
+  .ring-panel h4{font-size:16px;font-weight:700;margin-bottom:6px;}
+  .ring-panel p{font-size:14px;color:var(--muted);line-height:1.6;}
+  .ring-empty{display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);font-size:13px;font-style:italic;border:1px dashed var(--border);border-radius:10px;}
+
+  /* FACTORS */
+  .factors{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0;}
+  .factor{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:transform 0.15s;}
+  .factor:hover{transform:translateY(-2px);}
+  .factor.open{border-color:var(--amber);background:var(--amber-bg);}
+  .factor .ficon{font-size:36px;margin-bottom:10px;}
+  .factor h4{font-size:15px;font-weight:700;margin-bottom:4px;}
+  .factor .fsub{font-size:12px;color:var(--muted);}
+  .factor .fstatus{font-family:var(--mono);font-size:10px;margin-top:10px;padding:4px 10px;border-radius:4px;display:inline-block;}
+  .fstatus.vuln{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+  .fstatus.split{background:var(--amber-bg);color:#b45309;border:1px solid var(--amber-border);}
+  .factor-detail{display:none;text-align:left;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .factor.open .factor-detail{display:block;}
+  .fd-item{font-size:12px;color:var(--muted);line-height:1.5;padding:5px 0;border-bottom:1px solid var(--border);}
+  .fd-item:last-of-type{border-bottom:none;}
+  .fd-atk{display:inline-block;font-family:var(--mono);font-size:9px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);padding:1px 5px;border-radius:3px;margin-right:6px;}
+  .fd-ai{font-size:11px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:5px;padding:8px 10px;margin-top:10px;line-height:1.5;}
+  .fd-safe{font-size:11px;color:var(--green);background:var(--green-bg);border:1px solid var(--green-border);border-radius:5px;padding:8px 10px;margin-top:10px;line-height:1.5;}
+
+  /* TRIGGERS */
+  .triggers{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px;}
+  .trig{background:#fef2f2;border:1px solid var(--red-border);color:var(--red);font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:6px;font-weight:600;}
+
+  /* KILL CHAIN */
+  .kc{display:flex;align-items:stretch;gap:0;margin:20px 0;}
+  .kc-step{flex:1;min-width:110px;position:relative;text-align:center;}
+  .kc-step:not(:last-child)::after{content:'→';position:absolute;right:-8px;top:36px;color:var(--border);font-size:18px;z-index:1;}
+  .kc-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 8px;margin:0 5px;height:100%;display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .kc-icon{font-size:22px;}
+  .kc-label{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
+  .kc-desc{font-size:12px;color:var(--ink);font-weight:700;line-height:1.3;}
+  .kc-detail{font-size:11px;color:var(--muted);line-height:1.4;}
+
+  /* STATS */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;}
+  .stat{background:var(--ink);border-radius:10px;padding:20px;text-align:center;}
+  .stat-val{font-size:1.8rem;font-weight:800;color:var(--amber);}
+  .stat-label{font-family:var(--mono);font-size:10px;color:#666;margin-top:4px;}
+
+  /* KEY INSIGHT */
+  .ki{background:var(--ink);border-radius:10px;padding:24px 28px;margin:20px 0;}
+  .ki-label{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;}
+  .ki p{color:#cbd5e1;font-size:15px;line-height:1.7;}
+  .ki strong{color:var(--paper);}
+
+  /* AI STATS */
+  .ai-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;}
+  .ai-stat{background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;padding:20px;text-align:center;}
+  .ai-stat .val{font-size:1.8rem;font-weight:800;color:var(--red);}
+  .ai-stat .lbl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;}
+
+  /* TIMELINE */
+  .timeline{margin:20px 0;}
+  .tl-item{display:flex;gap:16px;margin-bottom:6px;position:relative;}
+  .tl-item:not(:last-child)::after{content:'';position:absolute;left:18px;top:40px;width:2px;height:calc(100% - 10px);background:var(--border);}
+  .tl-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;position:relative;z-index:1;font-weight:700;color:white;}
+  .tl-dot.red{background:var(--red);}
+  .tl-dot.green{background:var(--green);}
+  .tl-body{padding:6px 0 24px;}
+  .tl-body strong{display:block;font-size:15px;color:var(--ink);margin-bottom:4px;}
+  .tl-body p{font-size:13px;color:var(--muted);margin:0;line-height:1.6;}
+
+  /* DEFENSE LAYERS */
+  .dl{margin:14px 0;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .dl-hd{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;user-select:none;}
+  .dl-hd:hover{background:#faf8f4;}
+  .dl-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:white;flex-shrink:0;}
+  .dl-num.l1{background:var(--green);}
+  .dl-num.l2{background:var(--amber);}
+  .dl-num.l3{background:var(--blue);}
+  .dl-title h4{font-size:15px;font-weight:700;}
+  .dl-title span{font-size:12px;color:var(--muted);}
+  .dl-chev{font-size:11px;color:var(--muted);transition:transform 0.25s;margin-left:auto;}
+  .dl.open .dl-chev{transform:rotate(90deg);}
+  .dl-body{display:none;padding:0 20px 20px;border-top:1px solid var(--border);}
+  .dl.open .dl-body{display:block;padding-top:16px;}
+  .ctrl{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+  .ctrl:last-child{margin-bottom:0;}
+  .ctrl h5{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .ctrl p{font-size:13px;color:var(--muted);line-height:1.6;}
+
+  /* AI COMPARE */
+  .ai-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+  .ai-card{border-radius:8px;padding:16px 18px;}
+  .ai-card.atk{background:var(--red-bg);border:1px solid var(--red-border);}
+  .ai-card.def{background:var(--blue-bg);border:1px solid var(--blue-border);}
+  .ai-card .ai-label{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;margin-bottom:8px;font-weight:700;}
+  .ai-card.atk .ai-label{color:var(--red);}
+  .ai-card.def .ai-label{color:var(--blue);}
+  .ai-card p{font-size:14px;line-height:1.6;margin:0;}
+
+  /* TABLE */
+  .ftable{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;}
+  .ftable thead tr{background:var(--ink);}
+  .ftable th{padding:12px 16px;text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:0.06em;font-weight:500;}
+  .ftable td{padding:12px 16px;border-bottom:1px solid var(--border);}
+  .ftable td:first-child{font-weight:700;}
+
+  footer{background:var(--ink);color:#555;padding:18px 48px;font-family:var(--mono);font-size:11px;text-align:center;}
+
+  .sec-hd:focus-visible,.dl-hd:focus-visible,.factor:focus-visible{outline:3px solid var(--amber);outline-offset:2px;border-radius:4px;}
+  .layer-ring:focus-visible{outline:none;filter:drop-shadow(0 0 6px rgba(245,158,11,0.8));}
+  @media(prefers-reduced-motion:reduce){*{transition:none !important;}}
+  @media(max-width:700px){
+    header,.hero,.wrap,footer{padding-left:20px;padding-right:20px;}
+    .factors,.stats,.ai-stats,.ai-compare{grid-template-columns:1fr;}
+    .ring-layout{grid-template-columns:1fr;}
+    .kc{flex-direction:column;}.kc-step:not(:last-child)::after{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header><div class="hd">CIS Cybersecurity · Layered Security Model · Identity</div></header>
+
+<div class="hero">
+  <div class="hgrid" aria-hidden="true"></div>
+  <div class="hc">
+    <div class="heye">The Core Layer</div>
+    <h1>Identity Under Attack:<br><span class="hl">When AI Targets the Weakest Link</span></h1>
+    <p style="font-size:14px;color:#9ca3af;max-width:560px;line-height:1.8;font-weight:300;">How Generative AI is supercharging social engineering attacks on the identity layer — and what Analytical AI, physical controls, and procedural policies can do to defend. A teaching demo exploring AI on both sides of the cybersecurity arms race.</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PART 1: IDENTITY & SOCIAL ENGINEERING     -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section open" id="s1">
+  <div class="sec-hd" role="button" tabindex="0" onclick="tog('s1')">
+    <div><div class="sec-label">Part 1</div><div class="sec-title">Identity Security &amp; Social Engineering</div></div>
+    <span class="sec-chev">▶</span>
+  </div>
+  <div class="sec-body">
+
+    <div class="sub-label">Why Is Identity the Core Layer?</div>
+    <div class="ring-layout">
+      <div>
+        <svg viewBox="0 0 420 420" role="img" aria-label="Layered security model" xmlns="http://www.w3.org/2000/svg" font-family="'Syne',system-ui,sans-serif">
+          <circle class="layer-ring" id="r-net" tabindex="0" cx="210" cy="210" r="200" fill="#0e7490" onclick="ring('net')"/>
+          <circle class="layer-ring" id="r-dev" tabindex="0" cx="210" cy="210" r="162" fill="#0891b2" onclick="ring('dev')"/>
+          <circle class="layer-ring" id="r-app" tabindex="0" cx="210" cy="210" r="124" fill="#06b6d4" onclick="ring('app')"/>
+          <circle class="layer-ring" id="r-dat" tabindex="0" cx="210" cy="210" r="86" fill="#22d3ee" onclick="ring('dat')"/>
+          <circle class="layer-ring" id="r-id" tabindex="0" cx="210" cy="210" r="52" fill="#f59e0b" onclick="ring('id')"/>
+          <text x="210" y="36" text-anchor="middle" font-size="15" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Network</text>
+          <text x="210" y="76" text-anchor="middle" font-size="14" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Device</text>
+          <text x="210" y="116" text-anchor="middle" font-size="13" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Application</text>
+          <text x="210" y="152" text-anchor="middle" font-size="12.5" font-weight="600" fill="white" opacity="0.9" pointer-events="none">Data</text>
+          <text x="210" y="207" text-anchor="middle" font-size="15" font-weight="800" fill="#0f1117" pointer-events="none">Identity</text>
+        </svg>
+      </div>
+      <div id="ring-detail">
+        <div class="ring-empty">← Click a ring</div>
+        <div class="ring-panel" id="p-net"><h4>🌐 Network Security</h4><p>Firewalls, IDS/IPS — perimeter defense</p></div>
+        <div class="ring-panel" id="p-dev"><h4>💻 Device Security</h4><p>Anti-malware, EDR — endpoint protection</p></div>
+        <div class="ring-panel" id="p-app"><h4>⚙️ Application Security</h4><p>OWASP protections — SQL injection, XSS</p></div>
+        <div class="ring-panel" id="p-dat"><h4>🗄 Data Security</h4><p>Encryption, access controls — protecting the crown jewels</p></div>
+        <div class="ring-panel" id="p-id" style="border:2px solid var(--amber);background:var(--amber-bg);"><h4>🪪 Identity Security — TODAY</h4><p><strong>If this layer is breached, attackers log in rather than hack in.</strong></p></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sub-label">What Is Identity Security?</div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0;">
+      <!-- Identity Management -->
+      <div style="text-align:center;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 16px;">
+        <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" style="width:100px;margin:0 auto 12px;display:block;">
+          <!-- Laptop -->
+          <rect x="15" y="10" width="90" height="60" rx="6" fill="#e8f0fe" stroke="#3a7be8" stroke-width="2"/>
+          <rect x="5" y="70" width="110" height="8" rx="4" fill="#c4d5f0" stroke="#3a7be8" stroke-width="1.5"/>
+          <!-- Person icon with shield -->
+          <circle cx="52" cy="32" r="10" fill="none" stroke="#3a7be8" stroke-width="2"/>
+          <path d="M36,55 Q36,44 52,44 Q68,44 68,55" fill="none" stroke="#3a7be8" stroke-width="2"/>
+          <!-- Shield -->
+          <path d="M72,28 L72,44 Q72,52 80,56 Q88,52 88,44 L88,28 Z" fill="#38b07a" opacity="0.2" stroke="#38b07a" stroke-width="1.5"/>
+          <text x="80" y="45" text-anchor="middle" font-size="12" fill="#38b07a">✓</text>
+          <!-- Phone with card -->
+          <rect x="22" y="35" width="14" height="22" rx="2" fill="none" stroke="#3a7be8" stroke-width="1.5"/>
+          <rect x="24" y="39" width="10" height="6" rx="1" fill="#3a7be8" opacity="0.3"/>
+        </svg>
+        <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px;">Identity Management</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">Create, update, and remove user access</div>
+        <div style="font-size:11px;color:var(--blue);margin-top:8px;font-style:italic;">🏢 You join a company → you're added to the directory → you're issued a badge</div>
+      </div>
+
+      <!-- Authentication -->
+      <div style="text-align:center;background:var(--amber-bg);border:2px solid var(--amber);border-radius:12px;padding:24px 16px;">
+        <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" style="width:100px;margin:0 auto 12px;display:block;">
+          <!-- Laptop -->
+          <rect x="15" y="10" width="90" height="60" rx="6" fill="#fff8f0" stroke="#f59e0b" stroke-width="2"/>
+          <rect x="5" y="70" width="110" height="8" rx="4" fill="#fde8c4" stroke="#f59e0b" stroke-width="1.5"/>
+          <!-- Login form -->
+          <circle cx="60" cy="26" r="8" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+          <path d="M54,28 Q54,24 60,22 Q66,24 66,28" fill="none" stroke="#f59e0b" stroke-width="1"/>
+          <rect x="38" y="37" width="44" height="10" rx="2" fill="white" stroke="#ddd" stroke-width="1"/>
+          <text x="42" y="44" font-size="6" font-family="monospace" fill="#666">james_m</text>
+          <rect x="38" y="49" width="44" height="10" rx="2" fill="white" stroke="#ddd" stroke-width="1"/>
+          <text x="42" y="56" font-size="6" font-family="monospace" fill="#666">••••••</text>
+          <rect x="48" y="61" width="24" height="7" rx="2" fill="#f59e0b"/>
+          <text x="60" y="67" text-anchor="middle" font-size="5" fill="white" font-weight="bold">LOGIN</text>
+        </svg>
+        <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px;">Authentication</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">Verify users via passwords, biometrics, or MFA</div>
+        <div style="font-size:11px;color:#b45309;margin-top:8px;font-style:italic;">🔐 Scan badge to enter the building</div>
+      </div>
+
+      <!-- Authorization -->
+      <div style="text-align:center;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 16px;">
+        <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" style="width:100px;margin:0 auto 12px;display:block;">
+          <!-- Laptop -->
+          <rect x="15" y="10" width="90" height="60" rx="6" fill="#e8f0fe" stroke="#3a7be8" stroke-width="2"/>
+          <rect x="5" y="70" width="110" height="8" rx="4" fill="#c4d5f0" stroke="#3a7be8" stroke-width="1.5"/>
+          <!-- Checklist -->
+          <rect x="35" y="18" width="50" height="46" rx="3" fill="white" stroke="#ddd" stroke-width="1"/>
+          <text x="48" y="30" font-size="10" fill="#38b07a">✅</text><text x="58" y="30" font-size="7" fill="#333">Admin panel</text>
+          <text x="48" y="42" font-size="10" fill="#38b07a">✅</text><text x="58" y="42" font-size="7" fill="#333">Email</text>
+          <text x="48" y="54" font-size="10" fill="#e05252">❌</text><text x="58" y="54" font-size="7" fill="#999">Finance DB</text>
+        </svg>
+        <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px;">Authorization</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">Allow access based on assigned permissions</div>
+        <div style="font-size:11px;color:var(--blue);margin-top:8px;font-style:italic;">🚪 Badge determines which rooms you can enter</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:8px;">When your badge doesn't work → you go to the <strong>front desk</strong>. In IT → you call <strong>IT support</strong>. Remember that.</div>
+
+    <div class="divider"></div>
+    <div class="sub-label">Zoom In: Authentication — Three Factors</div>
+
+    <div class="factors">
+      <div class="factor" role="button" tabindex="0" onclick="tfac('fk')">
+        <div class="ficon">🧠</div><h4>What You Know</h4>
+        <div class="fsub">Passwords, PINs, security questions</div>
+        <div class="fstatus vuln">AI compromised</div>
+        <div class="factor-detail" id="fk">
+          <div class="fd-item"><span class="fd-atk">Phishing</span> Fake login pages</div>
+          <div class="fd-item"><span class="fd-atk">Vishing</span> "Read me your OTP"</div>
+          <div class="fd-item"><span class="fd-atk">Recon</span> Security questions from LinkedIn</div>
+          <div class="fd-ai">🤖 AI: LLMs craft personalized phishing at scale</div>
+        </div>
+      </div>
+      <div class="factor" role="button" tabindex="0" onclick="tfac('fh')">
+        <div class="ficon">📱</div><h4>What You Have</h4>
+        <div class="fsub">Phone (MFA), hardware key</div>
+        <div class="fstatus split">Depends on form</div>
+        <div class="factor-detail" id="fh">
+          <div class="fd-item"><span class="fd-atk">SIM swap</span> Hijack phone number</div>
+          <div class="fd-item"><span class="fd-atk">MFA reset</span> Social engineer the help desk</div>
+          <div class="fd-item"><span class="fd-atk">MFA bombing</span> Spam until user approves</div>
+          <div class="fd-safe">✅ FIDO2 hardware keys resist all of these</div>
+        </div>
+      </div>
+      <div class="factor" role="button" tabindex="0" onclick="tfac('fa')">
+        <div class="ficon">👤</div><h4>What You Are</h4>
+        <div class="fsub">Face ID, Touch ID, voice</div>
+        <div class="fstatus split">Depends on channel</div>
+        <div class="factor-detail" id="fa">
+          <div class="fd-item"><span class="fd-atk">Voice clone</span> 3 sec audio → perfect replica, ~$2</div>
+          <div class="fd-item"><span class="fd-atk">Deepfake</span> Real-time face swap on Zoom</div>
+          <div class="fd-safe">✅ Local biometrics hold — requires physical device</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sub-label">Social Engineering — Why Humans Are the Weakest Link</div>
+    <p style="font-size:15px;color:var(--ink);margin-bottom:14px;font-weight:600;">That sounds really secure. So what could go wrong?<br><span style="color:var(--red);">Humans. Humans are the weakest link in security.</span></p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Why? Because humans are driven by emotion — and attackers exploit exactly that:</p>
+
+    <div class="triggers">
+      <span class="trig">😨 Fear</span>
+      <span class="trig">👔 Authority</span>
+      <span class="trig">🤝 Trust</span>
+      <span class="trig">⏰ Urgency</span>
+      <span class="trig">💰 Greed</span>
+      <span class="trig">😩 Fatigue</span>
+    </div>
+
+    <!-- TWO TARGETS -->
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <!-- Target 1: Employee -->
+      <div style="padding:24px;background:linear-gradient(135deg,#fef2f2,#fff5f5);">
+        <div class="sub-label" style="color:var(--red);">① Target the Employee — "Steal the badge"</div>
+        <svg viewBox="0 0 860 160" role="img" aria-label="Attacker steals credential from employee" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+          <defs><marker id="a1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#e05252"/></marker></defs>
+          <circle cx="100" cy="110" r="30" fill="none" stroke="#0f1117" stroke-width="2.5"/>
+          <text x="100" y="107" text-anchor="middle" font-size="22">🙂</text>
+          <text x="100" y="155" text-anchor="middle" font-size="12" font-family="'JetBrains Mono',monospace" fill="#6b7280">Employee</text>
+          <circle cx="100" cy="35" r="30" fill="none" stroke="#e05252" stroke-width="2.5"/>
+          <text x="100" y="32" text-anchor="middle" font-size="22">😈</text>
+          <line x1="100" y1="67" x2="100" y2="77" stroke="#e05252" stroke-width="2.5" marker-end="url(#a1)"/>
+          <text x="52" y="78" text-anchor="end" font-size="11" font-family="'JetBrains Mono',monospace" fill="#e05252">steals credential</text>
+          <line x1="320" y1="10" x2="320" y2="148" stroke="#e2ddd4" stroke-width="2" stroke-dasharray="8,5"/>
+          <text x="320" y="158" text-anchor="middle" font-size="10" font-family="'JetBrains Mono',monospace" fill="#c0bbb2">auth boundary</text>
+          <line x1="134" y1="35" x2="538" y2="35" stroke="#e05252" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#a1)"/>
+          <text x="370" y="26" text-anchor="middle" font-size="11" font-family="'JetBrains Mono',monospace" fill="#e05252">attacker logs in with stolen credential</text>
+          <rect x="550" y="12" width="190" height="48" rx="6" fill="none" stroke="#0f1117" stroke-width="2.5"/>
+          <text x="645" y="42" text-anchor="middle" font-size="16" font-family="'Syne',sans-serif" font-weight="700" fill="#0f1117">Machine</text>
+        </svg>
+      </div>
+
+      <div style="height:2px;background:var(--border);"></div>
+
+      <!-- Target 2: Help Desk -->
+      <div style="padding:24px;background:linear-gradient(135deg,#fef2f2,#fff1f1);">
+        <div class="sub-label" style="color:var(--red);">② Target the IT Support — "Trick the front desk" <span style="background:var(--red);color:white;padding:2px 8px;border-radius:4px;font-size:9px;margin-left:8px;">MGM PATTERN</span></div>
+        <svg viewBox="0 0 860 180" role="img" aria-label="Attacker tricks help desk into resetting MFA" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+          <defs>
+            <marker id="a2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#e05252"/></marker>
+            <marker id="a2b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3a7be8"/></marker>
+          </defs>
+          <circle cx="100" cy="55" r="30" fill="none" stroke="#e05252" stroke-width="2.5"/>
+          <text x="100" y="52" text-anchor="middle" font-size="22">😈</text>
+          <text x="100" y="102" text-anchor="middle" font-size="12" font-family="'JetBrains Mono',monospace" fill="#e05252">Attacker</text>
+          <line x1="320" y1="10" x2="320" y2="155" stroke="#e2ddd4" stroke-width="2" stroke-dasharray="8,5"/>
+          <text x="200" y="170" text-anchor="middle" font-size="10" font-family="'JetBrains Mono',monospace" fill="#c0bbb2">outside</text>
+          <text x="560" y="170" text-anchor="middle" font-size="10" font-family="'JetBrains Mono',monospace" fill="#c0bbb2">inside</text>
+          <rect x="460" y="33" width="170" height="48" rx="6" fill="none" stroke="#0f1117" stroke-width="2.5"/>
+          <text x="545" y="63" text-anchor="middle" font-size="16" font-family="'Syne',sans-serif" font-weight="700" fill="#0f1117">Machine</text>
+          <circle cx="760" cy="55" r="30" fill="none" stroke="#3a7be8" stroke-width="2.5"/>
+          <text x="760" y="52" text-anchor="middle" font-size="22">🙂</text>
+          <text x="760" y="102" text-anchor="middle" font-size="12" font-family="'JetBrains Mono',monospace" fill="#3a7be8">Help Desk</text>
+          <path d="M 134,44 Q 430,-5 726,40" fill="none" stroke="#e05252" stroke-width="2.5" marker-end="url(#a2)"/>
+          <text x="430" y="12" text-anchor="middle" font-size="11" font-family="'JetBrains Mono',monospace" fill="#e05252">"I lost my phone — reset my MFA?"</text>
+          <line x1="728" y1="55" x2="634" y2="55" stroke="#3a7be8" stroke-width="2" marker-end="url(#a2b)"/>
+          <text x="681" y="74" text-anchor="middle" font-size="10" font-family="'JetBrains Mono',monospace" fill="#3a7be8">resets MFA</text>
+          <path d="M 114,85 Q 330,160 520,81" fill="none" stroke="#e05252" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#a2)"/>
+          <text x="320" y="145" text-anchor="middle" font-size="11" font-family="'JetBrains Mono',monospace" fill="#e05252">attacker enrolls own device → logs in</text>
+        </svg>
+      </div>
+
+      <div style="height:2px;background:var(--border);"></div>
+
+      <!-- Other attacks -->
+      <div style="padding:20px 24px;background:#f4f3f0;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">Other Cybersecurity Attacks — Target the Machine Directly</div>
+        <svg viewBox="0 0 860 90" role="img" aria-label="Attacker targets machine directly" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+          <defs><marker id="a3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#e05252"/></marker></defs>
+          <circle cx="80" cy="38" r="28" fill="none" stroke="#e05252" stroke-width="2"/>
+          <text x="80" y="35" text-anchor="middle" font-size="20">😈</text>
+          <text x="80" y="80" text-anchor="middle" font-size="11" font-family="'JetBrains Mono',monospace" fill="#e05252">Attacker</text>
+          <line x1="112" y1="35" x2="538" y2="35" stroke="#e05252" stroke-width="2" marker-end="url(#a3)"/>
+          <text x="325" y="25" text-anchor="middle" font-size="11" font-family="'JetBrains Mono',monospace" fill="#e05252">exploit / malware / injection</text>
+          <rect x="550" y="14" width="180" height="46" rx="6" fill="none" stroke="#0f1117" stroke-width="2"/>
+          <text x="640" y="43" text-anchor="middle" font-size="15" font-family="'Syne',sans-serif" font-weight="700" fill="#0f1117">Machine</text>
+        </svg>
+        <p style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center;">AI used on both sides here too — but <strong>today's focus: the human side</strong></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PART 2: MGM CASE STUDY                    -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="sec-hd" role="button" tabindex="0" onclick="tog('s2')">
+    <div><div class="sec-label">Part 2 · Case Study</div><div class="sec-title">MGM Resorts, September 2023</div></div>
+    <span class="sec-chev">▶</span>
+  </div>
+  <div class="sec-body">
+
+    <p style="font-size:14px;color:var(--muted);margin-bottom:6px;">Scattered Spider + ALPHV/BlackCat · <strong style="color:var(--red);">Voice phishing (vishing) attack</strong></p>
+    <p style="font-size:15px;color:var(--ink);font-weight:600;margin-bottom:14px;">They didn't write malware or send a phishing email — they called IT support and <span style="color:var(--red);">simply logged in</span>.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">In September 2023, a hacker collective called Scattered Spider looked up an MGM employee's public LinkedIn profile to learn their name and department. Then they called the IT help desk, pretended to be that employee, claimed they had a new phone, and convinced the agent to reset MFA. The helpful IT support person did exactly that — and the attackers walked right through the front door.</p>
+
+    <div class="kc">
+      <div class="kc-step"><div class="kc-box"><div class="kc-icon">🔍</div><div class="kc-label">Step 1</div><div class="kc-desc">LinkedIn Recon</div><div class="kc-detail">Name, department, role</div></div></div>
+      <div class="kc-step"><div class="kc-box"><div class="kc-icon">📞</div><div class="kc-label">Step 2</div><div class="kc-desc">Vishing Call</div><div class="kc-detail">"New phone — reset my MFA"</div></div></div>
+      <div class="kc-step"><div class="kc-box"><div class="kc-icon">📱</div><div class="kc-label">Step 3</div><div class="kc-desc">MFA Hijack</div><div class="kc-detail">IT support clears MFA</div></div></div>
+      <div class="kc-step"><div class="kc-box"><div class="kc-icon">👑</div><div class="kc-label">Step 4</div><div class="kc-desc">Escalation</div><div class="kc-detail">Okta → Azure Admin</div></div></div>
+      <div class="kc-step"><div class="kc-box"><div class="kc-icon">💀</div><div class="kc-label">Step 5</div><div class="kc-desc">Ransomware</div><div class="kc-detail">Vegas goes dark</div></div></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-val">10 min</div><div class="stat-label">Phone call</div></div>
+      <div class="stat"><div class="stat-val">$100M</div><div class="stat-label">Loss</div></div>
+      <div class="stat"><div class="stat-val">Zero</div><div class="stat-label">Malware to get in</div></div>
+    </div>
+
+    <div class="ki">
+      <div class="ki-label">No AI Was Used in This Attack</div>
+      <p>Scattered Spider were skilled human impersonators. Native English speakers that were able to launch a convincing attack by manipulating human emotion. <strong>What happens when Generative AI removes that barrier completely?</strong></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PART 3: AI SUPERCHARGES THE ATTACK        -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="sec-hd" role="button" tabindex="0" onclick="tog('s3')">
+    <div><div class="sec-label">Part 3</div><div class="sec-title">Supercharging Social Engineering with Generative AI</div></div>
+    <span class="sec-chev">▶</span>
+  </div>
+  <div class="sec-body">
+
+    <p style="font-size:16px;color:var(--ink);font-weight:700;margin-bottom:18px;">If social engineering <em>confuses</em> human judgment, Generative AI <span style="color:var(--red);">completely breaks it</span>.</p>
+
+    <div class="ai-stats">
+      <div class="ai-stat"><div class="val">~$2</div><div class="lbl">Cost to clone a voice</div></div>
+      <div class="ai-stat"><div class="val">3 sec</div><div class="lbl">Audio needed</div></div>
+      <div class="ai-stat"><div class="val">Any</div><div class="lbl">Language or accent</div></div>
+    </div>
+
+    <div class="sub-label" style="color:var(--red);">Real Incidents</div>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot red">✗</div>
+        <div class="tl-body">
+          <strong>Arup — Hong Kong, Feb 2024</strong>
+          <p>A finance worker at engineering firm Arup was invited to a Zoom call with the CFO and multiple senior executives to discuss an urgent payment. He wired <strong>$25 million</strong>. Every person on that Zoom call was an AI-generated deepfake — voices cloned from public conference videos, faces generated in real time. Nobody caught it.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot green">✓</div>
+        <div class="tl-body">
+          <strong>Ferrari — Italy, Jul 2024</strong>
+          <p>A senior executive received WhatsApp messages from someone claiming to be CEO Benedetto Vigna, followed by a phone call with a perfect clone of the CEO's voice — including his specific southern Italian accent. The executive got suspicious and asked a personal question: <strong>"What was the title of the book you just recommended me?"</strong> The AI couldn't answer. The attacker hung up.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot red">✗</div>
+        <div class="tl-body">
+          <strong>Singapore — Mar 2025</strong>
+          <p>Same deepfake Zoom pattern — but this time, the attackers <em>proactively suggested</em> the video call, knowing the target would feel reassured by "seeing" the executives. <strong>$499K</strong> transferred.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:8px;padding:14px 18px;margin:16px 0;">
+      <p style="font-size:14px;color:var(--ink);margin:0;line-height:1.6;">🏎 Ferrari caught it. Arup didn't. Singapore didn't. <strong>Should security depend on human judgment?</strong></p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;">
+      <div class="ki" style="margin:0;">
+        <div class="ki-label">🔴 Now — Humans Using AI as a Mask</div>
+        <p>Clone any voice from 3 seconds of audio. Generate deepfake video in real time. Run 50 campaigns simultaneously. <strong>AI didn't invent social engineering — it eliminated every constraint that used to limit it.</strong></p>
+        <p style="margin-top:10px;color:#888;font-size:12px;">A human attacker still drives the conversation — the AI generates the voice and face.</p>
+      </div>
+      <div class="ki" style="margin:0;border:1px solid var(--amber);">
+        <div class="ki-label">🟠 Next — Fully Autonomous AI Agents</div>
+        <p>AI voice agents already handle millions of customer service calls autonomously.</p>
+        <p style="margin-top:10px;"><strong style="color:var(--amber);">It's not just humans using AI to trick other humans. AI agents can automate this entirely — vishing at machine speed, <em>no human in the loop</em>.</strong></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PART 4: DEFENSE + CLOSE                   -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="sec-hd" role="button" tabindex="0" onclick="tog('s4')">
+    <div><div class="sec-label">Part 4</div><div class="sec-title">Defending Against AI-Powered Social Engineering</div></div>
+    <span class="sec-chev">▶</span>
+  </div>
+  <div class="sec-body">
+
+    <p style="font-size:15px;color:var(--ink);font-weight:600;margin-bottom:18px;">If human judgment isn't reliable — whether it's a help desk agent on the phone or a finance worker on Zoom — <span style="color:var(--blue);">how do we defend?</span></p>
+
+    <div class="dl open" id="d1">
+      <div class="dl-hd" role="button" tabindex="0" onclick="tdl('d1')">
+        <div class="dl-num l1">1</div>
+        <div class="dl-title"><h4>Lean Into the Three Factors</h4><span>Physical &amp; local over remote</span></div>
+        <span class="dl-chev">▶</span>
+      </div>
+      <div class="dl-body">
+        <p style="font-size:13px;color:var(--green);font-weight:600;margin-bottom:14px;">AI can clone a face on a Zoom call, but it cannot clone a physical FIDO2 key sitting on your desk.</p>
+        <div class="ctrl"><h5>🧠 Blind Support PINs</h5><p>Employee sets secret PIN at hire. Agent types it in → system returns Pass/Fail. Agent never knows the PIN. <strong>Can't social-engineer what the agent doesn't have.</strong></p></div>
+        <div class="ctrl"><h5>📱 FIDO2 Hardware Keys</h5><p>System asks "do you have the key?" — not "are you who you say you are?" The key generates a unique cryptographic challenge-response per service. The private key never leaves the device. Lost key = in-person replacement only. A deepfake can clone a face — it can't clone a cryptographic token.</p></div>
+        <div class="ctrl"><h5>👤 On-Device Biometrics</h5><p>FaceID on the physical device — not a face on a Zoom call the attacker controls.</p></div>
+      </div>
+    </div>
+
+    <div class="dl" id="d2">
+      <div class="dl-hd" role="button" tabindex="0" onclick="tdl('d2')">
+        <div class="dl-num l2">2</div>
+        <div class="dl-title"><h4>Policy-Based Controls</h4><span>Quorum approval · manager sign-off · cool-off sandbox</span></div>
+        <span class="dl-chev">▶</span>
+      </div>
+      <div class="dl-body">
+        <div class="ctrl"><h5>👥 Quorum / Manager Approval</h5><p>Privileged reset → two senior staff sign off. Single help desk agent can't do it alone. MGM: one agent reset an Okta admin. With quorum — impossible.</p></div>
+        <div class="ctrl"><h5>⏳ Cool-Off Sandbox</h5><p>After any MFA reset: email only for 12–24 hours. No admin consoles. Unconditional. Attacker sits in sandbox while real employee notices.</p></div>
+      </div>
+    </div>
+
+    <div class="dl" id="d3">
+      <div class="dl-hd" role="button" tabindex="0" onclick="tdl('d3')">
+        <div class="dl-num l3">3</div>
+        <div class="dl-title"><h4>AI-Driven Defense — Behavioral Analytics</h4><span>A different kind of AI</span></div>
+        <span class="dl-chev">▶</span>
+      </div>
+      <div class="dl-body">
+        <!-- Flow: Detection → Remediation -->
+        <svg viewBox="0 0 900 130" role="img" aria-label="AI anomaly detection flows to automatic remediation" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;margin-bottom:16px;">
+          <defs>
+            <marker id="aFlow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><path d="M0,0 L10,3.5 L0,7" fill="#3a7be8"/></marker>
+          </defs>
+          <!-- Detection box -->
+          <rect x="20" y="10" width="350" height="110" rx="10" fill="#e8f0fe" stroke="#3a7be8" stroke-width="2.5"/>
+          <text x="195" y="40" text-anchor="middle" font-size="16" font-weight="800" fill="#3a7be8" font-family="'Syne',sans-serif">AI-Based Anomaly</text>
+          <text x="195" y="60" text-anchor="middle" font-size="16" font-weight="800" fill="#3a7be8" font-family="'Syne',sans-serif">Detection</text>
+          <text x="195" y="82" text-anchor="middle" font-size="12" fill="#6b7280" font-family="'JetBrains Mono',monospace">(UEBA)</text>
+          <text x="195" y="105" text-anchor="middle" font-size="11" fill="#6b7280">Login time · device · location · behavior</text>
+          <!-- Arrow -->
+          <line x1="380" y1="65" x2="510" y2="65" stroke="#3a7be8" stroke-width="3" marker-end="url(#aFlow)"/>
+          <text x="445" y="55" text-anchor="middle" font-size="11" font-family="'JetBrains Mono',monospace" fill="#3a7be8">triggers</text>
+          <!-- Remediation box -->
+          <rect x="520" y="10" width="360" height="110" rx="10" fill="#e8faf0" stroke="#38b07a" stroke-width="2.5"/>
+          <text x="700" y="40" text-anchor="middle" font-size="16" font-weight="800" fill="#38b07a" font-family="'Syne',sans-serif">Automatic</text>
+          <text x="700" y="60" text-anchor="middle" font-size="16" font-weight="800" fill="#38b07a" font-family="'Syne',sans-serif">Remediation</text>
+          <text x="700" y="82" text-anchor="middle" font-size="12" fill="#6b7280" font-family="'JetBrains Mono',monospace">(SOAR)</text>
+          <text x="700" y="105" text-anchor="middle" font-size="11" fill="#6b7280">Revoke · quarantine · alert SOC</text>
+        </svg>
+        <p style="font-size:13px;color:var(--ink);font-weight:600;text-align:center;margin-bottom:14px;">The attacker's AI <span style="color:var(--red);">produces</span> the disguise. The defender's AI <span style="color:var(--blue);">catches the behavior</span> the disguise can't hide.</p>
+        <div class="ctrl"><h5>How it works</h5><p>The ML model learns what "normal" looks like per account — login times, devices, locations, typical first actions. After the MGM reset, the credential logged in from a new device, new IP, and immediately accessed admin functions the account had never touched. UEBA flags this in <strong>minutes</strong>. SOAR auto-remediates — revoke, quarantine, alert.</p></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="ki" style="margin-top:0;">
+      <div class="ki-label">Takeaway</div>
+      <div class="ai-compare" style="margin-bottom:16px;">
+        <div class="ai-card atk">
+          <div class="ai-label">🔴 Attacker — Generative AI</div>
+          <p><strong>Creates</strong> things that don't exist. Cloned voices, deepfake faces. Gave attackers scale, speed, and realism.</p>
+        </div>
+        <div class="ai-card def">
+          <div class="ai-label">🔵 Defender — Analytical AI</div>
+          <p><strong>Detects</strong> things that shouldn't exist. Anomalous logins, behavioral deviations. Detects by behavior, not appearance.</p>
+        </div>
+      </div>
+      <p><strong>Defense in depth: physical factors + procedural policies + behavioral AI. No silver bullet — multiple layers, each catching what the previous one missed.</strong></p>
+      <p style="margin-top:10px;color:var(--amber);"><strong>That's the arms race at the identity layer — and it's happening right now.</strong></p>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<footer>Teaching Demo · CIS Cybersecurity · Identity Security &amp; AI</footer>
+
+<script>
+function tog(id){var s=document.getElementById(id);s.classList.toggle('open');}
+function tdl(id){var d=document.getElementById(id);d.classList.toggle('open');}
+function tfac(id){var el=document.getElementById(id),f=el.closest('.factor'),w=f.classList.contains('open');document.querySelectorAll('.factor').forEach(function(x){x.classList.remove('open');});if(!w)f.classList.add('open');}
+var rp={net:'p-net',dev:'p-dev',app:'p-app',dat:'p-dat',id:'p-id'};
+function ring(l){document.querySelectorAll('.ring-panel').forEach(function(p){p.classList.remove('open');});document.querySelectorAll('.layer-ring').forEach(function(r){r.classList.remove('active');});var e=document.querySelector('.ring-empty'),r=document.getElementById('r-'+l),p=document.getElementById(rp[l]);if(r)r.classList.add('active');if(p){p.classList.add('open');if(e)e.style.display='none';}}
+document.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){var t=e.target;if(t.getAttribute('role')==='button'||t.classList.contains('layer-ring')){e.preventDefault();t.click();}}});
+</script>
+</body>
+</html>
