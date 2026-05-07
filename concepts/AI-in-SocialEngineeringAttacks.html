@@ -162,10 +162,27 @@
   .layer-ring:focus-visible{outline:none;filter:drop-shadow(0 0 6px rgba(245,158,11,0.8));}
   @media(prefers-reduced-motion:reduce){*{transition:none !important;}}
   @media(max-width:700px){
-    header,.hero,.wrap,footer{padding-left:20px;padding-right:20px;}
-    .factors,.stats,.ai-stats,.ai-compare{grid-template-columns:1fr;}
-    .ring-layout{grid-template-columns:1fr;}
+    header,.hero,.wrap,footer{padding-left:16px;padding-right:16px;}
+    .wrap{padding-top:24px;}
+    .hero{padding:40px 16px 36px;}
+    .sec-body{padding:20px 16px;}
+    .factors,.stats,.ai-stats{grid-template-columns:1fr !important;}
+    .ai-compare{grid-template-columns:1fr !important;}
+    .ring-layout{grid-template-columns:1fr !important;}
     .kc{flex-direction:column;}.kc-step:not(:last-child)::after{display:none;}
+    /* Three pillars */
+    [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important;}
+    /* Now/Next cards */
+    [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important;}
+    /* SVGs - ensure they don't overflow */
+    svg{max-width:100%;height:auto;}
+    /* Triggers wrap is fine via flex-wrap */
+    /* Reduce padding on cards */
+    .ctrl{padding:12px;}
+    .dl-hd{padding:12px 14px;}
+    .dl-body{padding:0 14px 14px;}
+    /* Fix hero title size */
+    .hero h1{font-size:1.6rem;}
   }
 </style>
 </head>
