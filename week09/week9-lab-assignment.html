@@ -425,6 +425,10 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
 }</code></pre>
     <p>Click <strong>Update policy</strong>. This says: <em>"I trust only the external-auditor user to assume me."</em></p>
 
+    <div class="callout">
+      <p><strong>Replace <code>ACCOUNT-ID</code></strong> with your 12-digit AWS account ID.</p>
+    </div>
+
     <p>Now attach an inline policy to the role granting DynamoDB read access:</p>
     <ol>
       <li>Click the <strong>Permissions</strong> tab</li>
@@ -478,6 +482,10 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
 }</code></pre>
     <p>This says: <em>"I am allowed to assume the photo-auditor-role."</em></p>
 
+    <div class="callout">
+      <p><strong>Replace <code>ACCOUNT-ID</code></strong> with your 12-digit AWS account ID.</p>
+    </div>
+
     <div class="callout info">
       <p><strong>Both sides must agree.</strong> The <strong>role's</strong> trust policy names who can assume it. The <strong>user's</strong> identity policy says what they're allowed to do. In this lab, we set up both for explicitness &mdash; though for same-account access, the trust policy naming a specific user is sufficient on its own.</p>
     </div>
@@ -491,6 +499,10 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   </div>
   <div class="step-body">
     <p>Open a <strong>new incognito window</strong>. Go to the regular IAM sign-in page (not the SSO portal): <code>https://ACCOUNT-ID.signin.aws.amazon.com/console</code>. Log in as <code>external-auditor</code>.</p>
+
+    <div class="callout">
+      <p><strong>Replace <code>ACCOUNT-ID</code></strong> with your 12-digit AWS account ID in the URL above.</p>
+    </div>
     <p>Try to access any service:</p>
     <ul>
       <li>DynamoDB &rarr; <strong>Access Denied</strong></li>
@@ -570,9 +582,25 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
 <pre><code>{
   "Sid": "AuditS3",
   "Effect": "Allow",
-  "Action": "s3:GetObject",
-  "Resource": "arn:aws:s3:::BUCKET-NAME/*"
+  "Action": [
+    "s3:GetObject",
+    "s3:ListBucket"
+  ],
+  "Resource": [
+    "arn:aws:s3:::BUCKET-NAME",
+    "arn:aws:s3:::BUCKET-NAME/*"
+  ]
+},
+{
+  "Sid": "AuditS3ListBuckets",
+  "Effect": "Allow",
+  "Action": "s3:ListAllMyBuckets",
+  "Resource": "*"
 }</code></pre>
+
+    <div class="callout">
+      <p><strong>Replace <code>BUCKET-NAME</code></strong> with your actual bucket name. <code>s3:ListBucket</code> lets the console display bucket contents. <code>s3:ListAllMyBuckets</code> lets the console show the bucket list. <code>s3:GetObject</code> allows downloading individual objects.</p>
+    </div>
   </div>
 </div>
 
@@ -582,11 +610,15 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Test &mdash; try to download a photo as the auditor</span>
   </div>
   <div class="step-body">
-    <p>Switch back to the auditor session (the incognito window where you're logged in as external-auditor with the role assumed). Go to S3 &rarr; navigate to the photos bucket &rarr; click on a photo &rarr; download.</p>
+    <p>Switch back to the auditor session. Confirm the region is <code>us-east-1</code>. Go to <strong>S3 &rarr;</strong> navigate to the photos bucket <strong>&rarr; uploads/ folder</strong> &rarr; click on a photo &rarr; download.</p>
     <p><strong>Access Denied.</strong></p>
-    <p>The auditor has <code>s3:GetObject</code> permission. Why doesn't it work? Because the photos are encrypted with the data key (from Week 8). When S3 tries to decrypt, it calls <code>kms:Decrypt</code> on behalf of the auditor role. The auditor role doesn't have <code>kms:Decrypt</code> permission on the data key. S3 can read the encrypted object, but KMS won't decrypt it.</p>
+    <p>The auditor has <code>s3:GetObject</code> permission. Why doesn't it work? Because the photos in <code>uploads/</code> are encrypted with the data key (SSE-KMS, from Week 8). When S3 tries to serve the object, it calls <code>kms:Decrypt</code> on behalf of the auditor role. The auditor role isn't in the data key's key policy, so KMS denies the decryption.</p>
 
-    <div class="screenshot">S3 showing Access Denied when the auditor role (with <code>s3:GetObject</code>) tries to download an encrypted photo</div>
+    <div class="callout info">
+      <p><strong>Why <code>uploads/</code> specifically?</strong> Pre-seeded photos under <code>photos/</code> were uploaded before Week 8's encryption switch &mdash; they're still SSE-S3 (AWS-managed), not SSE-KMS. Downloading those works without KMS access. Only photos in <code>uploads/</code> (uploaded after Week 8) are encrypted with the customer-managed data key. If you don't have a photo in <code>uploads/</code>, log in as your premium user in another window and upload one first.</p>
+    </div>
+
+    <div class="screenshot">S3 showing Access Denied when the auditor role (with <code>s3:GetObject</code>) tries to download an encrypted photo from <code>uploads/</code></div>
   </div>
 </div>
 
@@ -614,6 +646,11 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   "Resource": "*"
 }</code></pre>
     <p>Click <strong>Save changes</strong>.</p>
+
+    <div class="callout">
+      <p><strong>Replace <code>ACCOUNT-ID</code></strong> with your 12-digit AWS account ID.</p>
+    </div>
+
     <p>This is a <strong>resource policy</strong> on the key itself &mdash; the key is explicitly granting the auditor role permission to decrypt. This is the same pattern as the trust policy on the IAM role: the resource names who can use it.</p>
   </div>
 </div>
