@@ -107,6 +107,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <li>Notification: Select the <strong>SNS topic from Week 1</strong> (the one used for billing alarms)</li>
   <li>Alarm name: <code>photoviewer-lambda-errors</code></li>
 </ul>
+<div class="callout warning"><p><strong>Make sure to select Greater/Equal (&ge;), not Greater (&gt;).</strong> With &ldquo;Greater than,&rdquo; a single error won&rsquo;t trigger the alarm &mdash; you&rsquo;d need two errors in the window. &ldquo;Greater/Equal&rdquo; fires on the first error.</p></div>
 <p>This alarm fires if the Lambda function produces one or more errors in any 5-minute window. The SNS topic sends you an email &mdash; the same notification channel you have been using since Week 1.</p>
 </div></div>
 
