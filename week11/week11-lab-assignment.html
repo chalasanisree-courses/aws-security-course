@@ -154,6 +154,7 @@ ls -lh image-validator.zip</pre>
     }
   ]
 }</pre>
+<div class="callout"><p><strong>Replace <code>photoviewer-[your-account-id]</code></strong> with your actual bucket name (e.g. <code>photoviewer-644094189785</code>).</p></div>
 <p>Add the validator role to the KMS data key policy:</p>
 <ul>
   <li>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong></li>
@@ -454,6 +455,7 @@ def lambda_handler(event, context):
     }
   ]
 }</pre>
+<div class="callout"><p><strong>Replace <code>photoviewer-[your-account-id]</code></strong> with your actual bucket name.</p></div>
 <div class="callout info">
   <p><strong>Why <code>s3:*</code>?</strong> In the validator Lambda (Step 2), we scoped permissions to specific actions. Here, <code>CopyObject</code> internally requires a combination of read, write, tagging, and metadata permissions that is difficult to enumerate precisely. Scoping to <code>s3:*</code> on a single bucket is a pragmatic tradeoff &mdash; the bucket-level scope is the meaningful security boundary.</p>
 </div>
