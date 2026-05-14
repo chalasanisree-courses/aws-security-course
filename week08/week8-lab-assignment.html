@@ -218,13 +218,10 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
       <p>If you skip this, login and logout will redirect to a nonexistent domain and break your app.</p>
     </div>
 
-    <p>Once the placeholders are replaced, upload from CloudShell:</p>
-    <pre>cd ~/aws-security-course/photoviewer/week08/frontend
-BUCKET=$(aws s3api list-buckets --query "Buckets[].Name" --output text | tr '\t' '\n' | grep photoviewer)
-aws s3 cp app.js s3://$BUCKET/app.js --content-type "application/javascript"</pre>
-    <p>Then invalidate CloudFront:</p>
+    <p>Once the placeholders are replaced, upload <code>app.js</code> to your S3 bucket the same way you did in Week 7 &mdash; either through the S3 console Upload button or via CloudShell <code>aws s3 cp</code>. Then <strong>invalidate your CloudFront cache</strong> so the new file is served:</p>
     <pre>DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text)
 aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"</pre>
+    <p>Alternatively, you can invalidate through the CloudFront console &mdash; go to your distribution &rarr; <strong>Invalidations</strong> tab &rarr; <strong>Create invalidation</strong> &rarr; enter <code>/app.js</code>.</p>
 
     <div class="callout">
       <p><strong>What changed in app.js:</strong> The upload function reads <code>encryption</code> and <code>kmsKeyId</code> from the POST response. If present, it adds <code>x-amz-server-side-encryption</code> and <code>x-amz-server-side-encryption-aws-kms-key-id</code> headers to the PUT request. When KMS is not configured (Week 7), these fields are absent and no extra headers are sent.</p>
@@ -232,6 +229,7 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
 
     <div class="callout info">
       <p><strong>Why deploy code before switching encryption?</strong> The bucket is still using SSE-S3 at this point, so uploading <code>app.js</code> works normally. If you switched encryption first, <code>app.js</code> would be encrypted with the KMS data key. CloudFront&rsquo;s OAC is not in that key policy &mdash; and shouldn&rsquo;t be, since static assets aren&rsquo;t sensitive data &mdash; so CloudFront would get a 403 from S3 and serve an error page instead of the JavaScript file. By deploying code first, you avoid this entirely.</p>
+      <p><strong>If you need to re-upload <code>app.js</code> after Step 8</strong> (after bucket encryption is switched to SSE-KMS), add <code>--sse AES256</code> to the S3 copy command to override the bucket default: <code>aws s3 cp app.js s3://your-bucket/app.js --sse AES256 --content-type "application/javascript"</code>. Or upload through the S3 console and select <strong>SSE-S3</strong> under encryption settings. This ensures CloudFront can still serve the file.</p>
     </div>
 
     <div class="verify">
@@ -295,6 +293,10 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
         "ExposeHeaders": []
     }
 ]</pre>
+
+    <div class="callout warning">
+      <p><strong>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code></strong> in <code>AllowedOrigins</code> with your actual CloudFront domain (e.g. <code>https://dXXXXXXXXXXXXX.cloudfront.net</code>). If you already had a CORS configuration from Week 7, add the two new <code>AllowedHeaders</code> to your existing config.</p>
+    </div>
 
     <div class="callout info">
       <p><strong>Why CORS needs updating:</strong> The browser now sends two extra headers with the PUT request: <code>x-amz-server-side-encryption</code> and <code>x-amz-server-side-encryption-aws-kms-key-id</code>. S3 CORS must explicitly allow these headers, otherwise the browser's preflight check fails.</p>
