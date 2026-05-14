@@ -188,7 +188,7 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <p>These group names must match exactly — the Lambda authorizer reads the <code>cognito:groups</code> claim from the JWT and your Lambda function checks membership by name.</p>
     
     <div class="callout info">
-      <p><strong>Note for Week 6:</strong> You're creating these groups now as part of the complete Cognito setup, but this week's Lambda won't differentiate between them yet — any authenticated user will see all 6 photos. In a future week, you'll update the Lambda to use group-based filtering for different access levels.</p>
+      <p><strong>Note for Week 6:</strong> You're creating these groups now as part of the complete Cognito setup. After you sign in with Google for the first time (Step 6), you'll come back and add your user to the <code>free</code> group (Step 6.1). The Lambda checks group membership to decide what to show — a user with no group is treated the same as an unauthenticated visitor. In a future week, you'll update the Lambda to differentiate between <code>free</code> and <code>premium</code> access levels.</p>
     </div>
     
     <div class="screenshot">Cognito Groups tab showing both <code>free</code> and <code>premium</code> groups listed</div>
@@ -296,6 +296,28 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
       <p>Browser URL after login contains <code>?code=</code> — confirming the Authorization Code flow is working.</p>
     </div>
     <div class="screenshot">Browser address bar showing the callback URL with the <code>?code=</code> parameter</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Step 6.1</span>
+    <span class="step-title">Add your Google user to the <code>free</code> group</span>
+  </div>
+  <div class="step-body">
+    <p>After completing the Google login test in Step 6, your Google account now exists as a federated user in Cognito. But the user isn't in any group yet — and the Lambda uses group membership to distinguish authenticated users from unauthenticated visitors. Without a group, your JWT's <code>cognito:groups</code> claim is an empty list, and the Lambda treats you the same as someone who never logged in.</p>
+
+    <p>Go to <strong>Cognito → your User Pool → Users.</strong> You should see your Google-federated user listed (the username will look like <code>Google_&lt;id&gt;</code>). Click the username → <strong>Group memberships</strong> tab → <strong>Add user to group</strong> → select <code>free</code> → <strong>Add.</strong></p>
+
+    <div class="callout info">
+      <p><strong>Why is this a manual step?</strong> Cognito doesn't automatically assign federated users to groups — group membership is an explicit administrative action. In a production app, you'd typically handle this with a <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html" target="_blank">Pre token generation Lambda trigger</a> that auto-assigns new users to a default group. We're doing it manually here so you can see exactly what's happening and understand that group-based access is an authorization decision, not an authentication side effect.</p>
+    </div>
+
+    <div class="verify">
+      <div class="verify-label">✓ Verify</div>
+      <p>Go to the user's Group memberships tab and confirm <code>free</code> is listed.</p>
+    </div>
+    <div class="screenshot">Cognito Users page showing your Google-federated user with <code>free</code> listed under Group memberships</div>
   </div>
 </div>
 
@@ -635,7 +657,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 <p>After Google authentication, the browser is redirected to <code>https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net/callback?code=XXXX</code>. If you see a persistent 403 even after completing Steps 15 and 16, there are two possible causes: (1) the CloudFront custom error response for 403 hasn't deployed yet — wait for the distribution to show <strong>Deployed</strong> status; (2) the <code>/callback</code> behavior from Step 16 is missing — the default CloudFront Function blocks requests without the <code>x-origin-verify</code> header before they reach S3, so the custom error page never fires. Verify the <code>/callback</code> behavior exists in the Behaviors tab with no function associations.</p>
 
 <h3>Check 4 — JWT present but still seeing only 5 photos</h3>
-<p>If the Authorization header is being sent but Lambda is still filtering to public photos, check the authorizer is passing group context correctly. Go to <strong>CloudWatch → /aws/lambda/photoviewer-authorizer</strong> and look for log entries. If you see the JWT being validated but no group context, check that the user is actually in a Cognito group — go to Cognito → Users → your user → Groups tab.</p>
+<p>If the Authorization header is being sent but Lambda is still filtering to public photos, the most likely cause is that your user is not in a Cognito group. The Lambda checks the <code>cognito:groups</code> claim — if it's an empty list (which it will be if you skipped Step 6.1), the Lambda treats you the same as an unauthenticated visitor. Go to <strong>Cognito → Users → your user → Group memberships</strong> and confirm <code>free</code> is listed. If not, add the user to the <code>free</code> group, sign out of PhotoViewer, and sign back in to get a fresh JWT with the updated group claim.</p>
 
 <h3>Check 5 — JWT validation fails (invalid signature)</h3>
 <p>This usually means the <code>COGNITO_USER_POOL_ID</code> or <code>COGNITO_APP_CLIENT_ID</code> environment variable in the authorizer is wrong. The JWKS endpoint the authorizer fetches is derived from the User Pool ID — a wrong ID means the wrong public keys are used for verification. Double-check both values match exactly what's shown in the Cognito console.</p>
