@@ -20,8 +20,8 @@
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-const COGNITO_DOMAIN    = 'us-east-1gyxfdhejs';
-const APP_CLIENT_ID     = '7ilrlh8hpfoj87i8vtncfp126b';
+const COGNITO_DOMAIN    = 'YOUR_COGNITO_DOMAIN';
+const APP_CLIENT_ID     = 'YOUR_APP_CLIENT_ID';
 const CLOUDFRONT_DOMAIN = 'YOUR_CLOUDFRONT_DOMAIN';
 
 const COGNITO_BASE      = `https://${COGNITO_DOMAIN}.auth.us-east-1.amazoncognito.com`;
