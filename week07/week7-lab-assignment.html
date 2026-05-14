@@ -427,6 +427,7 @@ aws lambda update-function-code \
     --function-name photoviewer-authorizer \
     --zip-file fileb://authorizer.zip
 aws lambda wait function-updated-v2 --function-name photoviewer-authorizer</pre>
+    <p>Alternatively, you can paste the code directly in the Lambda console Code tab and click <strong>Deploy</strong> — same as you did in Week 6.</p>
     <div class="callout info">
       <p><strong>What changed:</strong> One line in the authorizer response — <code>'sub': sub</code> is added to the context dict alongside <code>'groups'</code>. The JWT validation, origin secret check, and everything else is unchanged from Week 6.</p>
     </div>
@@ -441,12 +442,13 @@ aws lambda wait function-updated-v2 --function-name photoviewer-authorizer</pre>
   <div class="step-body">
     <p>In CloudShell, run:</p>
     <pre>cd ~/aws-security-course/photoviewer/week07
-zip -j lambda-function.zip lambda/lambda_function.py
+zip -j lambda-function.zip lambda_function.py
 aws lambda update-function-code \
     --function-name photoviewer-lambda \
     --zip-file fileb://lambda-function.zip</pre>
     <p>Wait for the update to complete:</p>
     <pre>aws lambda wait function-updated-v2 --function-name photoviewer-lambda</pre>
+    <p>Alternatively, you can paste the code directly in the Lambda console Code tab and click <strong>Deploy</strong> — same as you did in Week 6.</p>
 
     <div class="callout info">
       <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for all photos — pre-seeded and uploaded.</p>
@@ -529,9 +531,10 @@ aws lambda update-function-code \
 
     <p>Once the placeholders are replaced, upload the files from CloudShell:</p>
     <pre>cd ~/aws-security-course/photoviewer/week07
-aws s3 cp frontend/index.html s3://photoviewer-[your-account-id]/index.html --content-type "text/html"
-aws s3 cp frontend/app.js s3://photoviewer-[your-account-id]/app.js --content-type "application/javascript"
-aws s3 cp frontend/style.css s3://photoviewer-[your-account-id]/style.css --content-type "text/css"</pre>
+aws s3 cp index.html s3://photoviewer-[your-account-id]/index.html --content-type "text/html"
+aws s3 cp app.js s3://photoviewer-[your-account-id]/app.js --content-type "application/javascript"
+aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type "text/css"</pre>
+    <p>Alternatively, you can upload the files through the S3 console — go to your bucket and click <strong>Upload</strong>.</p>
   </div>
 </div>
 
