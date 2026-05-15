@@ -117,9 +117,13 @@ bash aws-security-course/photoviewer/week06/week6-preflight.sh</pre>
     <li><strong>Required:</strong> DynamoDB table <code>photoviewer-photos</code> exists with ≥5 items</li>
     <li><strong>Required:</strong> S3 bucket <code>photoviewer-[your-account-id]</code> has ≥5 photo files</li>
     <li><strong>Required:</strong> CloudFront distribution pointing to your S3 bucket — the script prints your CloudFront domain, keep it handy</li>
-    <li><strong>Optional:</strong> WAF Web ACL — the lab works without it. WAF costs $5/month so it is fine to have deleted it after Week 5. The script will note it is missing but will not block you.</li>
+    <li><strong>Optional:</strong> WAF Web ACL — the lab works without it. If you created a standalone WAF Web ACL (not the one bundled with CloudFront), you may have deleted it to avoid the $5/month charge. The bundled <code>CreatedByCloudFront-</code> Web ACL is free and should still be present. The script will note it if missing but will not block you.</li>
   </ul>
   <p>Address any <strong>required</strong> failures before proceeding. If the CloudFront check fails, verify your Week 3 distribution still exists.</p>
+
+  <div class="callout warning">
+    <p><strong>If you cleaned up your AWS resources after Week 5,</strong> redo <a href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-lab-assignment.html">Week 5 Lab</a> <strong>Steps 2 through 8</strong> to reinstate them before proceeding.</p>
+  </div>
 </div>
 
 <p><strong>Files for this lab:</strong> <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week06" target="_blank">photoviewer/week06 on GitHub →</a></p>
@@ -862,6 +866,28 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
     </tr>
   </tbody>
 </table>
+
+
+<!-- ═══════════════ CLEAN UP ═══════════════ -->
+<h2>Clean Up — Avoid Ongoing Charges</h2>
+
+<div class="callout warning">
+  <p><strong>Do this after submitting your lab.</strong></p>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Cleanup 1</span>
+    <span class="step-title">Optionally disable CloudFront</span>
+  </div>
+  <div class="step-body">
+    <p>If you won't be starting Week 7 immediately, you can disable your CloudFront distribution to prevent spurious invocations from bots or crawlers between weeks. Go to <strong>CloudFront → your distribution → Disable.</strong> Lambda and API Gateway cost nothing when idle, but they do cost per invocation — disabling CloudFront ensures nothing triggers them while you're away. <strong>Remember to re-enable your distribution before starting Week 7.</strong></p>
+  </div>
+</div>
+
+<div class="callout info">
+  <p><strong>Keep for Week 7:</strong> Everything you built in Weeks 5 and 6 is reused next week — API Gateway, both Lambda functions, their IAM roles, Cognito User Pool (with groups and Google federation), Secrets Manager secret, the <code>/callback</code> CloudFront behavior, the custom error page, DynamoDB table, S3 bucket, CloudFront distribution, and VPC. Do not delete any of them.</p>
+</div>
 
 
 <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 1rem;">
