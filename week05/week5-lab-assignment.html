@@ -495,7 +495,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 </table>
 
 <h2>Clean Up — Avoid Ongoing Charges</h2>
-<div class="note"><strong>Do this after submitting your lab.</strong> The WAF is on the Free plan at $0/month and does not need to be deleted. The resources below are not needed for Week 6.</div>
+<div class="note"><strong>Do this after submitting your lab.</strong> The WAF is on the Free plan at $0/month and does not need to be deleted.</div>
 
 <div class="part">
   <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">WAF — no action needed</span></div>
@@ -503,21 +503,11 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 </div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Cleanup 2</span><span class="part-title">Delete API Gateway</span></div>
-  <p>Go to <strong>API Gateway → APIs</strong>. Select <code>photoviewer-api</code> → <strong>Actions → Delete</strong> → confirm. This removes the HTTP API and all its routes, integrations, and authorizer attachments. It does not delete the Lambda functions.</p>
+  <div class="part-header"><span class="part-num">Cleanup 2</span><span class="part-title">Optionally disable CloudFront</span></div>
+  <p>If you won't be starting Week 6 immediately, you can disable your CloudFront distribution to prevent spurious invocations from bots or crawlers between weeks. Go to <strong>CloudFront → your distribution → Disable.</strong> Lambda and API Gateway cost nothing when idle, but they do cost per invocation — disabling CloudFront ensures nothing triggers them while you're away. <strong>Remember to re-enable your distribution before starting Week 6.</strong></p>
 </div>
 
-<div class="part">
-  <div class="part-header"><span class="part-num">Cleanup 3</span><span class="part-title">Delete Lambda functions</span></div>
-  <p>Go to <strong>Lambda → Functions</strong>. Delete both:</p>
-  <ul>
-    <li><code>photoviewer-lambda</code> — select → <strong>Actions → Delete</strong></li>
-    <li><code>photoviewer-authorizer</code> — select → <strong>Actions → Delete</strong></li>
-  </ul>
-  <p>The auto-created IAM roles (<code>photoviewer-lambda-role-XXXXXXXX</code> and the authorizer role) are not deleted automatically — go to <strong>IAM → Roles</strong> and delete them if you want a clean account.</p>
-</div>
-
-<div class="info"><strong>Keep for Week 6:</strong> DynamoDB table (<code>photoviewer-photos</code>), S3 bucket, CloudFront distribution, and VPC are all reused next week. Do not delete them.</div>
+<div class="info"><strong>Keep for Week 6:</strong> API Gateway (<code>photoviewer-api</code>), both Lambda functions (<code>photoviewer-lambda</code> and <code>photoviewer-authorizer</code>), their IAM roles, DynamoDB table (<code>photoviewer-photos</code>), S3 bucket, CloudFront distribution, and VPC are all reused next week. Do not delete them.</div>
 
 <div class="page-nav" style="display:flex;justify-content:space-between;margin:2rem 0 1rem;font-size:0.88rem;">
   <a href="https://chalasanisree-courses.github.io/aws-security-course/week04/week4-lab-assignment.html">&larr; Week 4 Lab</a>
