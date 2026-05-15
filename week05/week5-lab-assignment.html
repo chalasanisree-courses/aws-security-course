@@ -495,11 +495,12 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
 </table>
 
 <h2>Clean Up — Avoid Ongoing Charges</h2>
-<div class="note"><strong>Do this after submitting your lab.</strong> The WAF is on the Free plan at $0/month and does not need to be deleted.</div>
+<div class="note"><strong>Do this after submitting your lab.</strong></div>
 
 <div class="part">
-  <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">WAF — no action needed</span></div>
-  <p>Your WAF Web ACL is bundled with CloudFront on the Free plan at $0/month. Do not attempt to delete or disassociate it — the Free plan requires it. It will be removed automatically when you delete the distribution at the end of the course. You can remove the <code>photos-rate-limit</code> rule you added if you want, but it does not incur any additional cost.</p>
+  <div class="part-header"><span class="part-num">Cleanup 1</span><span class="part-title">WAF — check which type you have</span></div>
+  <p>If you followed Step 13 and are using the WAF Web ACL bundled with CloudFront's free security protections (<code>CreatedByCloudFront-*</code>), it costs $0/month — no action needed. Do not attempt to delete or disassociate it — the Free plan requires it. It will be removed automatically when you delete the distribution at the end of the course. You can remove the <code>photos-rate-limit</code> rule you added if you want, but it does not incur any additional cost.</p>
+  <p>If you accidentally created a standalone WAF Web ACL from the WAF console instead, that costs ~$5/month. Delete it from <strong>WAF &amp; Shield → Web ACLs → Global (CloudFront)</strong> — but only delete the one you created manually, not the <code>CreatedByCloudFront-</code> one.</p>
 </div>
 
 <div class="part">
