@@ -52,7 +52,20 @@ else
 fi
 echo ""
 
-# ── 3. DynamoDB table ─────────────────────────────────────────
+# ── 3. API Gateway ────────────────────────────────────────────
+echo "[ API Gateway — photoviewer-api ]"
+API_ID=$(aws apigatewayv2 get-apis \
+  --region $REGION \
+  --query "Items[?Name=='photoviewer-api'].ApiId | [0]" \
+  --output text 2>/dev/null)
+if [ -n "$API_ID" ] && [ "$API_ID" != "None" ]; then
+  green "photoviewer-api found (API ID: $API_ID)"
+else
+  fail "photoviewer-api not found — complete Week 5 Steps 5–6 before continuing"
+fi
+echo ""
+
+# ── 4. DynamoDB table ─────────────────────────────────────────
 echo "[ DynamoDB table: $TABLE ]"
 TABLE_STATUS=$(aws dynamodb describe-table --region $REGION \
   --table-name $TABLE \
@@ -73,7 +86,7 @@ else
 fi
 echo ""
 
-# ── 4. S3 bucket — discover dynamically ─────────────────────
+# ── 5. S3 bucket — discover dynamically ─────────────────────
 echo "[ S3 bucket with photos ]"
 BUCKET=""
 PHOTO_COUNT=0
@@ -98,7 +111,7 @@ else
 fi
 echo ""
 
-# ── 5. CloudFront distribution ────────────────────────────────
+# ── 6. CloudFront distribution ────────────────────────────────
 echo "[ CloudFront distribution ]"
 CF_DOMAIN=$(aws cloudfront list-distributions \
   --query "DistributionList.Items[].{Domain:DomainName,Origins:Origins.Items[].DomainName}" \
@@ -122,7 +135,7 @@ else
 fi
 echo ""
 
-# ── 6. WAF Web ACL ────────────────────────────────────────────
+# ── 7. WAF Web ACL ────────────────────────────────────────────
 echo "[ WAF Web ACL ]"
 WAF_COUNT=$(aws wafv2 list-web-acls \
   --scope CLOUDFRONT \
