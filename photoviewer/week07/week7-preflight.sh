@@ -53,7 +53,20 @@ else
 fi
 echo ""
 
-# ── 3. DynamoDB table ─────────────────────────────────────────
+# ── 3. API Gateway ────────────────────────────────────────────
+echo "[ API Gateway — photoviewer-api ]"
+API_ID=$(aws apigatewayv2 get-apis \
+  --region $REGION \
+  --query "Items[?Name=='photoviewer-api'].ApiId | [0]" \
+  --output text 2>/dev/null)
+if [ -n "$API_ID" ] && [ "$API_ID" != "None" ]; then
+  green "photoviewer-api found (API ID: $API_ID)"
+else
+  fail "photoviewer-api not found — complete Week 5 Steps 5–6 before continuing"
+fi
+echo ""
+
+# ── 4. DynamoDB table ─────────────────────────────────────────
 echo "[ DynamoDB table: $TABLE ]"
 TABLE_STATUS=$(aws dynamodb describe-table --region $REGION \
   --table-name $TABLE \
@@ -70,7 +83,7 @@ else
 fi
 echo ""
 
-# ── 4. S3 bucket — discover dynamically ─────────────────────
+# ── 5. S3 bucket — discover dynamically ─────────────────────
 echo "[ S3 bucket with photos ]"
 BUCKET=""
 PHOTO_COUNT=0
@@ -90,7 +103,7 @@ else
 fi
 echo ""
 
-# ── 5. CloudFront distribution ────────────────────────────────
+# ── 6. CloudFront distribution ────────────────────────────────
 echo "[ CloudFront distribution ]"
 CF_DOMAIN=$(aws cloudfront list-distributions \
   --query "DistributionList.Items[].{Domain:DomainName,Origins:Origins.Items[].DomainName}" \
@@ -112,7 +125,7 @@ else
 fi
 echo ""
 
-# ── 6. Cognito User Pool ─────────────────────────────────────
+# ── 7. Cognito User Pool ─────────────────────────────────────
 echo "[ Cognito User Pool ]"
 POOL_ID=$(aws cognito-idp list-user-pools --max-results 10 --region $REGION \
   --query "UserPools[0].Id" --output text 2>/dev/null)
@@ -127,13 +140,13 @@ if [ -n "$POOL_ID" ] && [ "$POOL_ID" != "None" ]; then
   if grep -q '"free"' /tmp/pv_groups.json 2>/dev/null; then
     green "Group 'free' exists"
   else
-    fail "Group 'free' not found in User Pool"
+    fail "Group 'free' not found in User Pool (name is case-sensitive — 'Free' ≠ 'free')"
   fi
 
   if grep -q '"premium"' /tmp/pv_groups.json 2>/dev/null; then
     green "Group 'premium' exists"
   else
-    fail "Group 'premium' not found in User Pool"
+    fail "Group 'premium' not found in User Pool (name is case-sensitive — 'Premium' ≠ 'premium')"
   fi
 
   rm -f /tmp/pv_groups.json
@@ -142,7 +155,7 @@ else
 fi
 echo ""
 
-# ── 7. Secrets Manager ───────────────────────────────────────
+# ── 8. Secrets Manager ───────────────────────────────────────
 echo "[ Secrets Manager: $SECRET_NAME ]"
 SECRET_EXISTS=$(aws secretsmanager describe-secret \
   --secret-id $SECRET_NAME \
