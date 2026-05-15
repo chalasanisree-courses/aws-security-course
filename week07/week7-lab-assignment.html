@@ -109,6 +109,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
   <ul>
     <li><code>photoviewer-lambda</code> exists and is Active</li>
     <li><code>photoviewer-authorizer</code> exists and is Active</li>
+    <li>API Gateway <code>photoviewer-api</code> exists</li>
     <li>DynamoDB table <code>photoviewer-photos</code> exists</li>
     <li>S3 bucket <code>photoviewer-[your-account-id]</code> exists</li>
     <li>CloudFront distribution exists</li>
@@ -116,6 +117,10 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <li>Secrets Manager secret <code>photoviewer/origin-verify-secret</code> exists</li>
   </ul>
   <p>Address any failures before proceeding.</p>
+
+  <div class="callout warning">
+    <p><strong>If you cleaned up your AWS resources after an earlier week,</strong> redo <a href="https://chalasanisree-courses.github.io/aws-security-course/week05/week5-lab-assignment.html">Week 5 Lab</a> <strong>Steps 2 through 8</strong> to reinstate them before proceeding.</p>
+  </div>
 </div>
 
 <p><strong>Files for this lab:</strong> <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week07" target="_blank">photoviewer/week07 on GitHub →</a></p>
@@ -786,6 +791,28 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
     </tr>
   </tbody>
 </table>
+
+
+<!-- ═══════════════ CLEAN UP ═══════════════ -->
+<h2>Clean Up — Avoid Ongoing Charges</h2>
+
+<div class="callout warning">
+  <p><strong>Do this after submitting your lab.</strong></p>
+</div>
+
+<div class="step">
+  <div class="step-header">
+    <span class="step-num">Cleanup 1</span>
+    <span class="step-title">Optionally disable CloudFront</span>
+  </div>
+  <div class="step-body">
+    <p>If you won't be starting Week 8 immediately, you can disable your CloudFront distribution to prevent spurious invocations from bots or crawlers between weeks. Go to <strong>CloudFront → your distribution → Disable.</strong> Lambda and API Gateway cost nothing when idle, but they do cost per invocation — disabling CloudFront ensures nothing triggers them while you're away. <strong>Remember to re-enable your distribution before starting Week 8.</strong></p>
+  </div>
+</div>
+
+<div class="callout info">
+  <p><strong>Keep for Week 8:</strong> Everything you built in Weeks 5–7 is reused next week — API Gateway (all four routes), both Lambda functions, their IAM roles, Cognito User Pool (with groups and Google federation), Secrets Manager secret, all CloudFront behaviors (<code>/photos*</code>, <code>/callback</code>, <code>/uploads/*</code>), the CloudFront Function, DynamoDB table, S3 bucket (including <code>uploads/</code> prefix), and VPC. Do not delete any of them.</p>
+</div>
 
 
 <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin:2rem 0 1rem;">
