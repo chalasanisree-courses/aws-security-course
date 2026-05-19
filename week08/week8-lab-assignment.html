@@ -190,7 +190,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <p>Go to <strong>Lambda &rarr; Functions &rarr; photoviewer-lambda &rarr; Configuration &rarr; Environment variables &rarr; Edit</strong>. Click <strong>Add environment variable</strong>:</p>
     <ul>
       <li>Key: <code>KMS_DATA_KEY_ID</code></li>
-      <li>Value: the key ID of <code>photoviewer-data-key</code> &mdash; find it in <strong>KMS &rarr; photoviewer-data-key &rarr; Key ID</strong></li>
+      <li>Value: the Key ID of <code>photoviewer-data-key</code> &mdash; find it in <strong>KMS &rarr; photoviewer-data-key</strong>. Use the <strong>Key ID</strong> at the top of the page (the UUID-format identifier, e.g. <code>1234abcd-12ab-34cd-56ef-1234567890ab</code>). <strong>Not</strong> the alias <code>photoviewer-data-key</code>, and <strong>not</strong> the full ARN.</li>
     </ul>
     <p>Click <strong>Save</strong>.</p>
 
@@ -218,10 +218,15 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
       <p>If you skip this, login and logout will redirect to a nonexistent domain and break your app.</p>
     </div>
 
-    <p>Once the placeholders are replaced, upload <code>app.js</code> to your S3 bucket the same way you did in Week 7 &mdash; either through the S3 console Upload button or via CloudShell <code>aws s3 cp</code>. Then <strong>invalidate your CloudFront cache</strong> so the new file is served:</p>
-    <pre>DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[0].Id" --output text)
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"</pre>
-    <p>Alternatively, you can invalidate through the CloudFront console &mdash; go to your distribution &rarr; <strong>Invalidations</strong> tab &rarr; <strong>Create invalidation</strong> &rarr; enter <code>/app.js</code>.</p>
+    <p>Once the placeholders are replaced, upload <code>app.js</code> to your S3 bucket the same way you did in Week 7 &mdash; either through the S3 console Upload button or via CloudShell <code>aws s3 cp</code>. Then <strong>invalidate your CloudFront cache</strong> so the new file is served.</p>
+    <p>Go to <strong>CloudFront &rarr; your distribution &rarr; Invalidations tab &rarr; Create invalidation</strong>. In the <strong>Object paths</strong> box, enter:</p>
+    <pre>/app.js</pre>
+    <p>Click <strong>Create invalidation</strong>. Wait for the status to change to <strong>Completed</strong> &mdash; this usually takes 30&ndash;60 seconds.</p>
+    <p><em>Alternatively, in CloudShell:</em></p>
+    <pre>aws cloudfront create-invalidation \
+    --distribution-id YOUR_DISTRIBUTION_ID \
+    --paths "/app.js"</pre>
+    <p>Replace <code>YOUR_DISTRIBUTION_ID</code> with your CloudFront distribution ID (from the CloudFront console &rarr; Distributions list).</p>
 
     <div class="callout">
       <p><strong>What changed in app.js:</strong> The upload function reads <code>encryption</code> and <code>kmsKeyId</code> from the POST response. If present, it adds <code>x-amz-server-side-encryption</code> and <code>x-amz-server-side-encryption-aws-kms-key-id</code> headers to the PUT request. When KMS is not configured (Week 7), these fields are absent and no extra headers are sent.</p>
@@ -409,8 +414,9 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/app.js"<
   </div>
   <div class="step-body">
     <p>Load the Photo Viewer. The page loads (HTML/CSS/JS are served from CloudFront) but <code>GET /photos</code> returns a 500 error. Check the Lambda logs:</p>
+    <p>Go to <strong>CloudWatch &rarr; Log groups &rarr; /aws/lambda/photoviewer-lambda</strong> and open the most recent log stream. You should see an <code>AccessDeniedException</code> on a KMS operation &mdash; Lambda can still call DynamoDB and S3, but the services cannot decrypt the data because KMS denied the key usage.</p>
+    <p><em>Alternatively, in CloudShell:</em></p>
     <pre>aws logs tail /aws/lambda/photoviewer-lambda --since 5m --format short</pre>
-    <p>You should see an <code>AccessDeniedException</code> on a KMS operation &mdash; Lambda can still call DynamoDB and S3, but the services cannot decrypt the data because KMS denied the key usage.</p>
 
     <div class="screenshot">Lambda logs showing <code>AccessDeniedException</code> on <code>kms:Decrypt</code></div>
   </div>
