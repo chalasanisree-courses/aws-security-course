@@ -99,10 +99,13 @@ bash aws-security-course/photoviewer/week11/week11-preflight.sh</pre>
 <p>The Photo Viewer accepts file uploads from premium users, but it never checks whether the uploaded file is actually an image. Someone could rename <code>malware.exe</code> to <code>vacation.jpg</code> and upload it. Deploy a Lambda function that triggers on every S3 upload and uses the Pillow library to verify the file is a valid image.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Download the validator Lambda zip</span></div><div class="step-body">
-<p>The deployment package is pre-built in the course repository. From CloudShell:</p>
+<p>The deployment package is pre-built in the course repository. Download it to your local machine &mdash; you will upload it to Lambda in the next step.</p>
+<p>Open the course repo on GitHub and navigate to <strong>photoviewer/week11/image-validator.zip</strong>. Click the <strong>Download raw file</strong> button (down-arrow icon) to save the zip locally.</p>
+<p>This zip contains a Python Lambda function (<code>image_validator.py</code>) and the Pillow 9.5.0 library. The function uses <code>Image.open()</code> to verify uploaded files are valid images.</p>
+<p><em>Alternatively, if you have already cloned the course repo in CloudShell:</em></p>
 <pre>cd ~/aws-security-course/photoviewer/week11/
 ls -lh image-validator.zip</pre>
-<p>This zip contains a Python Lambda function (<code>image_validator.py</code>) and the Pillow 9.5.0 library. The function uses <code>Image.open()</code> to verify uploaded files are valid images.</p>
+<p>Then use the CloudShell <strong>Actions &rarr; Download file</strong> menu to pull <code>image-validator.zip</code> down to your local machine.</p>
 <div class="callout">
   <p><strong>Why Pillow 9.5.0?</strong> This version has known CVEs (including CVE-2023-50447, arbitrary code execution, CVSS 8.1). The vulnerable code paths are in <code>ImageMath.eval</code> &mdash; a function the validator never calls. But Inspector flags the <em>package version</em>, not the code paths your function uses. This mirrors real production environments where dependencies carry vulnerabilities in code you never invoke.</p>
 </div>
