@@ -425,14 +425,11 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <span class="step-title">Update the Lambda authorizer</span>
   </div>
   <div class="step-body">
-    <p>The authorizer from Week 6 passes only <code>groups</code> in its context. Week 7's ownership checks need the caller's <code>sub</code> (cognito:sub from the JWT) — without it, Lambda cannot verify who owns a photo. In CloudShell:</p>
-    <pre>cd ~/aws-security-course/photoviewer/week07
-zip -j authorizer.zip authorizer.py
-aws lambda update-function-code \
-    --function-name photoviewer-authorizer \
-    --zip-file fileb://authorizer.zip
-aws lambda wait function-updated-v2 --function-name photoviewer-authorizer</pre>
-    <p>Alternatively, you can paste the code directly in the Lambda console Code tab and click <strong>Deploy</strong> — same as you did in Week 6.</p>
+    <p>The authorizer from Week 6 passes only <code>groups</code> in its context. Week 7's ownership checks need the caller's <code>sub</code> (cognito:sub from the JWT) — without it, Lambda cannot verify who owns a photo.</p>
+    <p>Go to <strong>Lambda → photoviewer-authorizer → Code tab.</strong> Replace the entire contents with the code from <code>photoviewer/week07/authorizer.py</code> in the GitHub repo. Click <strong>Deploy</strong>.</p>
+    <div class="callout warning">
+      <p><strong>Click Deploy.</strong> The Lambda console is an editor — changes are not live until you deploy. If you skip this step the old code keeps running and the authorizer will fail.</p>
+    </div>
     <div class="callout info">
       <p><strong>What changed:</strong> One line in the authorizer response — <code>'sub': sub</code> is added to the context dict alongside <code>'groups'</code>. The JWT validation, origin secret check, and everything else is unchanged from Week 6.</p>
     </div>
