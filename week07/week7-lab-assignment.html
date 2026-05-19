@@ -442,24 +442,14 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     <span class="step-title">Update the main Lambda function</span>
   </div>
   <div class="step-body">
-    <p>In CloudShell, run:</p>
-    <pre>cd ~/aws-security-course/photoviewer/week07
-zip -j lambda-function.zip lambda_function.py
-aws lambda update-function-code \
-    --function-name photoviewer-lambda \
-    --zip-file fileb://lambda-function.zip</pre>
-    <p>Wait for the update to complete:</p>
-    <pre>aws lambda wait function-updated-v2 --function-name photoviewer-lambda</pre>
-    <p>Alternatively, you can paste the code directly in the Lambda console Code tab and click <strong>Deploy</strong> — same as you did in Week 6.</p>
-
+    <p>The main Lambda needs significant updates to handle Week 7's new routes and authorization logic.</p>
+    <p>Go to <strong>Lambda → photoviewer-lambda → Code tab.</strong> Replace the entire contents with the code from <code>photoviewer/week07/lambda_function.py</code> in the GitHub repo. Click <strong>Deploy</strong>.</p>
+    <div class="callout warning">
+      <p><strong>Click Deploy.</strong> The Lambda console is an editor — changes are not live until you deploy. If you skip this step the old code keeps running.</p>
+    </div>
     <div class="callout info">
       <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for all photos — pre-seeded and uploaded.</p>
       <p><strong>Presigned URL conditions:</strong> The POST handler generates the presigned PUT URL with embedded conditions: <code>Content-Type</code> must be <code>image/jpeg</code> or <code>image/png</code>, and file size must be under 5 MB. These conditions are part of the signed policy — S3 enforces them on upload and rejects requests that violate them, even though no Lambda runs during the upload itself.</p>
-    </div>
-
-    <div class="verify">
-      <div class="verify-label">✓ Verify</div>
-      <p>Run <code>aws lambda get-function --function-name photoviewer-lambda --query 'Configuration.LastModified'</code> — should show a recent timestamp.</p>
     </div>
   </div>
 </div>
@@ -519,24 +509,27 @@ aws lambda update-function-code \
     <span class="step-title">Upload updated frontend files to S3</span>
   </div>
   <div class="step-body">
-    <p>The updated frontend adds an upload form, delete button, and visibility toggle — all shown only to premium users.</p>
+    <p>The updated frontend adds an upload form, delete button, and visibility toggle — all shown only to premium users. You will edit <code>app.js</code> to add your account-specific values, then upload all three files (<code>app.js</code>, <code>index.html</code>, <code>style.css</code>) to S3 using the S3 console.</p>
+
+    <p><strong>Download the three files from GitHub.</strong> Open the <a href="https://github.com/chalasanisree-courses/aws-security-course/tree/main/photoviewer/week07" target="_blank">photoviewer/week07 folder on GitHub</a>. For each of <code>app.js</code>, <code>index.html</code>, and <code>style.css</code>: click the file → click the <strong>Raw</strong> button (or the download icon) → save it to your computer.</p>
 
     <div class="callout warning">
       <p><strong>Before uploading, edit <code>app.js</code></strong> and replace the three placeholders at the top with your actual values — the same ones you used in Week 6:</p>
       <ul>
-        <li><code>YOUR_COGNITO_DOMAIN</code> — found in <strong>Cognito → User pool → App integration → Domain</strong>. It is the prefix before <code>.auth.us-east-1.amazoncognito.com</code> (e.g. <code>us-east-1abcdefgh</code>)</li>
+        <li><code>YOUR_COGNITO_DOMAIN</code> — found in <strong>Cognito → User pool → Branding → Domain</strong>. Use the prefix only — the part before <code>.auth.us-east-1.amazoncognito.com</code> (e.g. <code>us-east-1abcdefgh</code>)</li>
         <li><code>YOUR_APP_CLIENT_ID</code> — found in <strong>Cognito → User pool → App integration → App clients</strong> (e.g. <code>7ilrlh8hpfoj87i8vtncfp126b</code>)</li>
-        <li><code>YOUR_CLOUDFRONT_DOMAIN</code> — your CloudFront distribution domain (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>)</li>
+        <li><code>YOUR_CLOUDFRONT_DOMAIN</code> — your CloudFront distribution domain (e.g. <code>dXXXXXXXXXXXXX.cloudfront.net</code>) — do not include <code>https://</code>, the code adds it</li>
       </ul>
-      <p>If you skip this, login and logout will redirect to a nonexistent domain and break your app.</p>
+      <p>Save the file. If you skip this, login and logout will redirect to a nonexistent domain and break your app.</p>
     </div>
 
-    <p>Once the placeholders are replaced, upload the files from CloudShell:</p>
+    <p><strong>Upload all three files to S3.</strong> Go to <strong>S3 → your bucket (<code>photoviewer-[your-account-id]</code>)</strong>. Click <strong>Upload</strong> → drag in or select all three files (<code>app.js</code>, <code>index.html</code>, <code>style.css</code>) → click <strong>Upload</strong>. S3 will replace the existing Week 6 versions.</p>
+
+    <p><em>Alternatively, in CloudShell:</em> the repo was cloned during pre-flight, so the files are already on the filesystem. Edit with <code>nano</code> or <code>vim</code>, then upload:</p>
     <pre>cd ~/aws-security-course/photoviewer/week07
 aws s3 cp index.html s3://photoviewer-[your-account-id]/index.html --content-type "text/html"
 aws s3 cp app.js s3://photoviewer-[your-account-id]/app.js --content-type "application/javascript"
 aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type "text/css"</pre>
-    <p>Alternatively, you can upload the files through the S3 console — go to your bucket and click <strong>Upload</strong>.</p>
   </div>
 </div>
 
@@ -546,7 +539,13 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
     <span class="step-title">Invalidate CloudFront cache</span>
   </div>
   <div class="step-body">
-    <p>CloudFront caches the old files at edge locations. Create an invalidation so edge locations fetch the updated versions:</p>
+    <p>CloudFront caches the old files at edge locations. Create an invalidation so edge locations fetch the updated versions you just uploaded.</p>
+    <p>Go to <strong>CloudFront → your distribution → Invalidations tab → Create invalidation</strong>. In the <strong>Object paths</strong> box, enter these three paths, one per line:</p>
+    <pre>/index.html
+/app.js
+/style.css</pre>
+    <p>Click <strong>Create invalidation</strong>. Wait for the status to change to <strong>Completed</strong> — this usually takes 30–60 seconds.</p>
+    <p><em>Alternatively, in CloudShell:</em></p>
     <pre>aws cloudfront create-invalidation \
     --distribution-id YOUR_DISTRIBUTION_ID \
     --paths "/index.html" "/app.js" "/style.css"</pre>
