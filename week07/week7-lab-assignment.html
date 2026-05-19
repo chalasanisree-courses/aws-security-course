@@ -306,6 +306,10 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     </div>
 
     <div class="callout warning">
+      <p><strong>Include the <code>https://</code> prefix.</strong> The <code>AllowedOrigins</code> value must be the full origin URL (e.g. <code>https://dXXXXXXXXXXXXX.cloudfront.net</code>). If you write just <code>cloudfront.net</code> or the bare domain, browsers will silently reject upload requests with a CORS preflight error visible only in the DevTools console — no useful error appears in S3 or Lambda logs.</p>
+    </div>
+
+    <div class="callout warning">
       <p><strong>Do not use <code>*</code> for AllowedOrigins.</strong> Wildcards allow any website to upload to your bucket using a presigned URL. Always restrict to your specific CloudFront domain.</p>
     </div>
     <div class="screenshot">S3 bucket Permissions tab showing the CORS configuration with your CloudFront domain</div>
@@ -633,6 +637,10 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
     <div class="verify">
       <div class="verify-label">✓ Verify</div>
       <p>Photo removed from UI. DynamoDB record deleted. S3 object deleted.</p>
+    </div>
+
+    <div class="callout warning">
+      <p><strong>If delete fails or the photo doesn't disappear:</strong> check the <code>photoviewer-dynamodb-read</code> policy on your Lambda execution role (created in Week 5). It must include both <code>dynamodb:Scan</code> and <code>dynamodb:GetItem</code>. The delete handler calls <code>GetItem</code> to verify ownership before deleting — if the policy is missing <code>GetItem</code> (e.g. from earlier cleanup, manual edits, or an older version of Week 5), the delete will fail. Go to <strong>Lambda → photoviewer-lambda → Configuration → Permissions → click the role → expand <code>photoviewer-dynamodb-read</code></strong> and add <code>"dynamodb:GetItem"</code> to the <code>Action</code> list if missing. IAM changes can take up to a minute to propagate.</p>
     </div>
     <div class="screenshot">Photo Viewer after deletion, plus CloudShell showing <code>aws s3 ls</code> output confirming the object is gone</div>
   </div>
