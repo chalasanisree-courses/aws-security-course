@@ -83,7 +83,7 @@
 </nav>
 
 <h1>Week 7 Lab — Authorization Patterns</h1>
-<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 110 pts</p>
+<p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 105 pts</p>
 
 <p><strong>Objective:</strong> Add upload, delete, and visibility-toggle capabilities to the Photo Viewer — all restricted to premium users and scoped to their own uploads. Update photo delivery so all photos (pre-seeded and uploaded) are served via presigned GET URLs instead of static CloudFront URLs. By the end of this lab, Cognito groups will drive real capability differences: premium users can upload, delete, and control visibility of their own photos, while free users can only browse.</p>
 
@@ -682,41 +682,6 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
 <!-- ═══════════════ PART 8 ═══════════════ -->
 <div class="part-header">
   <span class="part-num">Part 8</span>
-  <span class="part-title">CloudTrail verification</span>
-</div>
-
-<p>Presigned URL operations bypass API Gateway and Lambda, but they do not bypass CloudTrail. Every S3 operation is logged — the audit trail from Week 1 captures everything.</p>
-
-<div class="step">
-  <div class="step-header">
-    <span class="step-num">Step 21</span>
-    <span class="step-title">Find your upload and delete events in CloudTrail</span>
-  </div>
-  <div class="step-body">
-    <p>Go to <strong>CloudTrail → Event history</strong>. Filter by:</p>
-    <ul>
-      <li><strong>Event source:</strong> <code>s3.amazonaws.com</code></li>
-      <li><strong>Event name:</strong> <code>PutObject</code></li>
-    </ul>
-    <p>Find the event for the photo you uploaded. Click to expand it and note:</p>
-    <ul>
-      <li><strong>userIdentity → arn:</strong> This is the Lambda execution role that generated the presigned URL — not the end user. CloudTrail records the IAM principal that signed the URL.</li>
-      <li><strong>sourceIPAddress:</strong> This is the IP of the browser that used the presigned URL — the actual uploader.</li>
-      <li><strong>requestParameters → key:</strong> The S3 key (e.g. <code>uploads/{sub}/{photoId}.jpg</code>).</li>
-    </ul>
-    <p>Now filter by <code>DeleteObject</code> and find the event for the photo you deleted in Step 19. The same fields are present.</p>
-
-    <div class="callout info">
-      <p><strong>Why this matters:</strong> "Bypassing API Gateway" sounds like it might bypass audit — it does not. Every presigned URL operation is an S3 API call, and CloudTrail logs every S3 API call. The Lambda role's identity in the event tells you which function signed the URL. The source IP tells you who used it. This is the same CloudTrail trail you created in Week 1 — it has been capturing these events all along.</p>
-    </div>
-    <div class="screenshot">CloudTrail Event history showing a PutObject event with the Lambda role ARN and the uploads/ key path</div>
-  </div>
-</div>
-
-
-<!-- ═══════════════ PART 9 ═══════════════ -->
-<div class="part-header">
-  <span class="part-num">Part 9</span>
   <span class="part-title">Reflection questions</span>
 </div>
 
@@ -786,11 +751,6 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
       <td>Screenshot: logged in as free user, showing a photo they uploaded as premium, with no upload bar, delete button, or visibility toggle visible.</td>
     </tr>
     <tr>
-      <td><strong>CloudTrail audit trail</strong></td>
-      <td>5</td>
-      <td>Screenshot: CloudTrail Event history showing <code>PutObject</code> event with Lambda role ARN, source IP, and <code>uploads/</code> key path.</td>
-    </tr>
-    <tr>
       <td><strong>Reflection Q1 — presigned GET sharing</strong></td>
       <td>8</td>
       <td>Explains the URL works for anyone within the TTL window (bearer token). TTL limits exposure duration. Residual risk: during the TTL window, the photo is accessible to anyone with the URL. Regeneration on every /photos call means the window is short.</td>
@@ -802,7 +762,7 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
     </tr>
     <tr class="rubric-total">
       <td><strong>Total</strong></td>
-      <td><strong>110</strong></td>
+      <td><strong>105</strong></td>
       <td></td>
     </tr>
   </tbody>
