@@ -159,6 +159,8 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
   <div class="step-body">
     <p>Week 7 adds routes like <code>DELETE /photos/{photoId}</code>. CloudFront's exact path <code>/photos</code> won't match <code>/photos/abc123</code> — those requests would fall through to the S3 default behavior and fail. Go to <strong>CloudFront → your distribution → Behaviors tab</strong>, select the <code>/photos</code> behavior, click <strong>Edit</strong>, and change the path pattern to <code>/photos*</code>. Save changes.</p>
 
+    <p>While editing this behavior, also verify <strong>Allowed HTTP methods</strong> is set to <strong>GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE</strong>. If it's set to GET, HEAD only (the CloudFront default), Week 7's POST, DELETE, and PATCH requests will be blocked before reaching API Gateway — the symptom is a JSON parse error in the browser console (<code>Unexpected token '&lt;', "&lt;!DOCTYPE "... is not valid JSON</code>). Change it to all-methods if needed.</p>
+
     <div class="callout info">
       <p><strong>Why <code>/photos*</code> instead of <code>/photos</code>?</strong> CloudFront path matching is literal. <code>/photos</code> matches only the exact path <code>/photos</code>. The wildcard pattern <code>/photos*</code> matches both <code>/photos</code> (GET, POST) and <code>/photos/abc123</code> (DELETE, PATCH). Without this change, mutation requests would never reach API Gateway.</p>
     </div>

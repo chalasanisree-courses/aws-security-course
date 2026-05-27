@@ -294,6 +294,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <ul>
     <li>Origin and origin groups: set to <code>photoviewer-apigw-origin</code></li>
     <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+    <li>Allowed HTTP methods: <strong>GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE</strong> — if you set this in Week 4, verify it's still correct; if you're creating the behavior now, set it explicitly. Later weeks add POST, DELETE, and PATCH on this same behavior.</li>
     <li>Cache policy: <strong>CachingDisabled</strong></li>
     <li>Origin request policy: <strong>AllViewerExceptHostHeader</strong></li>
   </ul>

@@ -353,6 +353,7 @@ curl http://localhost:8000/photos</pre>
     <li>Path pattern: <code>/photos</code></li>
     <li>Origin: <code>photoviewer-alb-origin</code></li>
     <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+    <li>Allowed HTTP methods: <strong>GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE</strong> — later weeks will add POST, DELETE, and PATCH on this same behavior, so enable all methods now.</li>
     <li>Cache policy: <strong>CachingDisabled</strong></li>
     <li>Click <strong>Create behavior</strong></li>
   </ul>
