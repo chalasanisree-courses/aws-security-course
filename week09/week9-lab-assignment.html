@@ -171,6 +171,8 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <div class="callout info">
       <p><strong>Email suffix trick:</strong> Gmail treats <code>you+anything@gmail.com</code> the same as <code>you@gmail.com</code>. Both emails arrive in your inbox, but Identity Center sees them as distinct users.</p>
     </div>
+
+    <div class="screenshot">Identity Center users list showing <code>jerry</code> and <code>tom</code></div>
   </div>
 </div>
 
@@ -287,7 +289,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
       <p><strong>Why does <code>kms:Decrypt</code> in the permission set work?</strong> The KMS console wizard adds a statement to every key policy that delegates authority to IAM. This means IAM policies granting <code>kms:Decrypt</code> are honored by KMS. In Part 3, you'll see the alternative approach &mdash; adding a principal directly to the key policy instead.</p>
     </div>
 
-    <div class="screenshot">Identity Center showing both permission sets: <code>InfraAdmin</code> and <code>PhotosAdmin</code></div>
+    <div class="screenshot">Both permission sets, <code>InfraAdmin</code> and <code>PhotosAdmin</code>, with their inline policies expanded so the scoped KMS key ARNs are visible (infra key for <code>InfraAdmin</code>, data key for <code>PhotosAdmin</code>)</div>
   </div>
 </div>
 
@@ -432,6 +434,8 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <div class="callout">
       <p><strong>Replace <code>ACCOUNT-ID</code></strong> with your 12-digit AWS account ID.</p>
     </div>
+
+    <div class="screenshot"><code>photo-auditor-role</code> trust policy showing the <code>external-auditor</code> user ARN in the <code>Principal.AWS</code> field</div>
 
     <p>Now attach an inline policy to the role granting DynamoDB read access:</p>
     <ol>
