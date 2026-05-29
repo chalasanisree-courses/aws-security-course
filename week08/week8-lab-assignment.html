@@ -464,7 +464,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <ul>
       <li>Event source: <code>kms.amazonaws.com</code></li>
     </ul>
-    <p>You should see <code>Decrypt</code>, <code>GenerateDataKey</code>, and possibly <code>Encrypt</code> events. Click into a <code>Decrypt</code> event and examine the details:</p>
+    <p>You should see <code>Decrypt</code>, <code>GenerateDataKey</code>, and possibly <code>Encrypt</code> events. Click into a <strong>successful</strong> <code>Decrypt</code> event (one with <strong>no error code</strong> &mdash; there will be many of these from normal app activity) and examine the details:</p>
     <ul>
       <li><strong>userIdentity.arn</strong> &mdash; which IAM role triggered the decryption</li>
       <li><strong>requestParameters.keyId</strong> &mdash; which KMS key was used</li>
@@ -475,7 +475,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
       <p><strong>This audit trail didn't exist before.</strong> With AWS-managed keys, CloudTrail logged <code>GetObject</code> and <code>Scan</code> calls but no KMS events. You knew someone called the API &mdash; you didn't know if they decrypted the data. With customer-managed keys, every decryption is a separate, auditable event.</p>
     </div>
 
-    <div class="screenshot">CloudTrail event detail showing a <code>kms:Decrypt</code> call with the Lambda role ARN and the data key ARN</div>
+    <div class="screenshot">CloudTrail event detail showing a successful <code>kms:Decrypt</code> call (no error code) with the Lambda role ARN and the data key ARN</div>
   </div>
 </div>
 
