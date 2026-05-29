@@ -178,6 +178,8 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <div class="callout info">
       <p><strong>Why is a code change needed for S3 but not Secrets Manager?</strong> Secrets Manager handles encryption transparently &mdash; Lambda calls <code>get_secret_value()</code> and Secrets Manager decrypts internally. S3 presigned URLs are different: the browser uploads directly to S3, and the encryption parameters must be in the signed URL and the request headers. Lambda generates the URL, so Lambda must include the KMS parameters.</p>
     </div>
+
+    <div class="screenshot">Lambda code editor showing <code>config=Config(signature_version='s3v4')</code></div>
   </div>
 </div>
 
@@ -197,6 +199,8 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <div class="callout">
       <p><strong>This env var activates KMS in the Lambda code.</strong> When <code>KMS_DATA_KEY_ID</code> is empty (Week 7), the Lambda generates presigned URLs without encryption parameters. When set (Week 8), it includes <code>ServerSideEncryption</code> and <code>SSEKMSKeyId</code> in every presigned PUT URL. The same code works for both weeks.</p>
     </div>
+
+    <div class="screenshot">Lambda Environment variables panel showing <code>KMS_DATA_KEY_ID</code> set to the data key's Key ID</div>
   </div>
 </div>
 
@@ -438,6 +442,8 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <div class="callout info">
       <p><strong>The teaching moment:</strong> IAM said yes the entire time &mdash; <code>dynamodb:Scan</code> and <code>s3:GetObject</code> were never revoked. KMS said no. Two independent authorization layers. You can revoke data access by editing either one.</p>
     </div>
+
+    <div class="screenshot">Photo Viewer loading normally after re-adding Lambda role to key policy</div>
   </div>
 </div>
 
