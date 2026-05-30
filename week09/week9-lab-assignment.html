@@ -333,16 +333,16 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>Confirm the region is <code>us-east-1</code> (N. Virginia) before testing. Then test what Jerry can and cannot do:</p>
     <ul>
       <li>Go to <strong>Secrets Manager</strong> &rarr; view the <code>photoviewer/origin-verify-secret</code> value &rarr; <strong>CAN</strong> view it &#x2713;</li>
-      <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; try to download a photo &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
+      <li>Go to <strong>S3</strong> &rarr; <strong>CANNOT</strong> &mdash; Access Denied at the bucket list itself &#x2717;. InfraAdmin grants no S3 permissions, so even <code>s3:ListAllMyBuckets</code> is denied &mdash; Jerry can't see the bucket list, let alone open the bucket or download a photo. The block happens at the <em>first</em> step, not at the download step.</li>
     </ul>
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>Jerry can read Secrets Manager (has infra key decrypt) but cannot access S3 photos (no data key decrypt). The Week 8 KMS separation of duties is now enforced at the human level.</p>
+      <p>Jerry can read Secrets Manager (has infra key access) but has <strong>no S3 permissions at all</strong> &mdash; S3 denies him at the bucket-listing step, before any object or encryption is ever reached. Note this is a <em>different</em> wall from the one the auditor hits in Part 3: there, the auditor <em>has</em> <code>s3:GetObject</code> but is blocked by the data key's policy (a KMS-decrypt failure). Jerry is blocked earlier, by missing IAM permissions. The Week 8 KMS separation of duties is now enforced at the human level.</p>
     </div>
 
     <div class="screenshot">Secrets Manager showing the secret value visible to Jerry</div>
-    <div class="screenshot">S3 showing Access Denied when Jerry tries to download a photo</div>
+    <div class="screenshot">S3 showing Access Denied / no buckets listed for Jerry</div>
   </div>
 </div>
 
@@ -825,9 +825,9 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
       <td>Screenshot: Secrets Manager secret value visible to Jerry.</td>
     </tr>
     <tr>
-      <td><strong>Jerry CANNOT access S3 photos</strong></td>
+      <td><strong>Jerry CANNOT access S3</strong></td>
       <td>6</td>
-      <td>Screenshot: S3 Access Denied for Jerry.</td>
+      <td>Screenshot: S3 Access Denied / no buckets listed for Jerry (InfraAdmin has no S3 permissions).</td>
     </tr>
     <tr>
       <td><strong>Tom CAN access S3 photos</strong></td>
