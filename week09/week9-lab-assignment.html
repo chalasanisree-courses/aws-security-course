@@ -269,6 +269,15 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
       ]
     },
     {
+      "Sid": "ConsoleListing",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListAllMyBuckets",
+        "dynamodb:ListTables"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "DataKeyDecrypt",
       "Effect": "Allow",
       "Action": [
@@ -283,6 +292,10 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
 
     <div class="callout">
       <p><strong>Replace <code>BUCKET-NAME</code>, <code>ACCOUNT-ID</code>, and <code>DATA-KEY-ID</code></strong> with your actual values.</p>
+    </div>
+
+    <div class="callout info">
+      <p><strong>Why the separate <code>ConsoleListing</code> statement?</strong> The S3 and DynamoDB console <em>landing</em> pages call <code>s3:ListAllMyBuckets</code> and <code>dynamodb:ListTables</code> to render the bucket list and table list. These are account-wide actions &mdash; they can't be scoped to a single resource, so they go in their own statement with <code>Resource: "*"</code>. Without them, Tom would be denied at the landing page before he ever reaches the bucket or table (the same wall Jerry hits in Step 11). The actual data access stays scoped to the named bucket and table in the <code>DataServices</code> statement &mdash; <code>ListAllMyBuckets</code> only lets Tom <em>see the names</em> of buckets/tables, not their contents.</p>
     </div>
 
     <div class="callout info">
@@ -355,14 +368,14 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>Open a <strong>different incognito window</strong>. Log in to the SSO portal as <code>tom</code>.</p>
     <p>Test what Tom can and cannot do:</p>
     <ul>
-      <li>Go to <strong>S3</strong> &rarr; navigate to the photos bucket &rarr; download a photo &rarr; <strong>CAN</strong> view photos &#x2713;</li>
-      <li>Go to <strong>DynamoDB</strong> &rarr; scan the photoviewer-photos table &rarr; <strong>CAN</strong> see metadata &#x2713;</li>
+      <li>Go to <strong>S3</strong> &rarr; the bucket list loads (Tom has <code>s3:ListAllMyBuckets</code>) &rarr; open the photos bucket &rarr; download a photo &rarr; <strong>CAN</strong> view photos &#x2713;</li>
+      <li>Go to <strong>DynamoDB</strong> &rarr; the table list loads (Tom has <code>dynamodb:ListTables</code>) &rarr; scan the photoviewer-photos table &rarr; <strong>CAN</strong> see metadata &#x2713;</li>
       <li>Go to <strong>Secrets Manager</strong> &rarr; try to view the origin secret &rarr; <strong>CANNOT</strong> &mdash; Access Denied &#x2717;</li>
     </ul>
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>Tom can access user data (S3 photos, DynamoDB metadata) but cannot access infrastructure secrets. Separation of duties is complete &mdash; for both machines (Lambda roles from Week 8) and humans (Identity Center users from this week).</p>
+      <p>Tom can access user data (S3 photos, DynamoDB metadata) but cannot access infrastructure secrets. Note the <code>ConsoleListing</code> statement is what lets the S3 and DynamoDB landing pages load for Tom &mdash; without it he'd be denied at the bucket/table list, exactly like Jerry in Step 11, even though his scoped data permissions are correct. Separation of duties is complete &mdash; for both machines (Lambda roles from Week 8) and humans (Identity Center users from this week).</p>
     </div>
 
     <div class="screenshot">S3 showing a photo successfully downloaded by Tom</div>
