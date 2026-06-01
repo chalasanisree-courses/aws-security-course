@@ -738,12 +738,12 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <p>For each principal below, select the principal in the simulator, choose service <strong>S3</strong>, action <strong>GetObject</strong>, and resource <code>arn:aws:s3:::BUCKET-NAME/*</code>. Click <strong>Run Simulation</strong>.</p>
 
     <table>
-      <thead><tr><th>Principal</th><th>Expected result</th><th>Why</th></tr></thead>
+      <thead><tr><th>Principal</th></tr></thead>
       <tbody>
-        <tr><td>Lambda execution role</td><td><strong>Allowed</strong></td><td>Identity policy from Week 5 + key policy from Week 8</td></tr>
-        <tr><td><code>photo-auditor-role</code></td><td><strong>Allowed</strong></td><td>Identity policy updated in Part 3</td></tr>
-        <tr><td><code>external-auditor</code> (user, not role)</td><td><strong>Denied</strong></td><td>No policies &mdash; only <code>sts:AssumeRole</code></td></tr>
-        <tr><td>Lambda authorizer role</td><td><strong>Denied</strong></td><td>Only has Secrets Manager + infra key access</td></tr>
+        <tr><td>Lambda execution role</td></tr>
+        <tr><td><code>photo-auditor-role</code></td></tr>
+        <tr><td><code>external-auditor</code> (user, not role)</td></tr>
+        <tr><td>Lambda authorizer role</td></tr>
       </tbody>
     </table>
 
