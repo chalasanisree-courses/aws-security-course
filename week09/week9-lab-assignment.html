@@ -566,16 +566,16 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   <div class="step-body">
     <p>Confirm the region is <code>us-east-1</code> (N. Virginia) &mdash; it may have reset after Switch Role. Then test:</p>
     <ul>
-      <li>Go to <strong>DynamoDB</strong> &rarr; scan the photoviewer-photos table &rarr; <strong>WORKS</strong> &#x2713;</li>
+      <li>Go to <strong>DynamoDB</strong> &rarr; the table list loads and you can open <code>photoviewer-photos</code>, but <strong>scan it &rarr; Access Denied on <code>kms:Decrypt</code></strong> &#x2717;. The table is encrypted with the data key (Week 8), and the auditor role is not in the data key's policy yet &mdash; so DynamoDB cannot decrypt the metadata to return it.</li>
       <li>Go to <strong>S3</strong> &rarr; try to download a photo &rarr; <strong>Access Denied</strong> &#x2717; (role has no S3 permissions yet)</li>
     </ul>
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>The auditor can query DynamoDB metadata but cannot access S3 photos. The role's identity policy grants only what's needed for the metadata audit.</p>
+      <p>The auditor can <em>reach</em> DynamoDB &mdash; the role's identity policy grants <code>dynamodb:Scan</code> and <code>ListTables</code>, so the table is visible &mdash; but it cannot <em>decrypt</em> the metadata. This is the same KMS wall the auditor is about to hit on S3 (Step 20): the action is allowed by IAM, but the data key's policy does not yet grant this role <code>kms:Decrypt</code>. Two different services, one shared data key, and the auditor is in neither decrypt path yet.</p>
     </div>
 
-    <div class="screenshot">DynamoDB scan results showing photo metadata visible to the auditor role</div>
+    <div class="screenshot">DynamoDB scan blocked by a <code>kms:Decrypt</code> Access Denied for the auditor role</div>
   </div>
 </div>
 
@@ -673,6 +673,8 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     </div>
 
     <p>This is a <strong>resource policy</strong> on the key itself &mdash; the key is explicitly granting the auditor role permission to decrypt. This is the same pattern as the trust policy on the IAM role: the resource names who can use it.</p>
+
+    <p>Because both S3 photos <em>and</em> the DynamoDB table are encrypted with this same data key, this single key-policy edit restores decryption for <strong>both</strong> services at once &mdash; you'll confirm both in the next step.</p>
   </div>
 </div>
 
@@ -682,20 +684,24 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <span class="step-title">Test again</span>
   </div>
   <div class="step-body">
-    <p>Switch back to the auditor session. Try to download the photo again.</p>
-    <p><strong>It works.</strong> &#x2713;</p>
-    <p>Two things had to agree for this download to succeed:</p>
+    <p>Switch back to the auditor session.</p>
+    <ul>
+      <li>Try the <strong>DynamoDB</strong> scan again &rarr; it now returns the photo metadata &#x2713;</li>
+      <li>Download the photo from <strong>S3</strong> again &rarr; <strong>it works</strong> &#x2713;</li>
+    </ul>
+    <p>One key-policy change unblocked two independent services. For each one, two things had to agree:</p>
     <ul>
       <li><strong>S3 authorization:</strong> The auditor role's IAM policy grants <code>s3:GetObject</code> &mdash; S3 allows the read.</li>
       <li><strong>KMS authorization:</strong> The data key's key policy grants the auditor role <code>kms:Decrypt</code> &mdash; KMS allows the decryption.</li>
     </ul>
-    <p>S3 and KMS are two independent resources, each making their own authorization decision. Both must succeed for the download to work.</p>
+    <p>The DynamoDB scan works the same way: IAM grants <code>dynamodb:Scan</code>, and the same data key policy now grants <code>kms:Decrypt</code>. S3, DynamoDB, and KMS are independent resources, each making its own authorization decision &mdash; and the data key gates everything encrypted with it, regardless of which service asks.</p>
 
     <div class="verify">
       <div class="verify-label">&#x2713; Verify</div>
-      <p>The auditor can now download photos. S3 permission alone was not enough &mdash; the key policy had to explicitly name the auditor role as a principal allowed to decrypt.</p>
+      <p>The auditor can now download photos and scan the table. The IAM permission alone was not enough for either &mdash; the key policy had to explicitly name the auditor role as a principal allowed to decrypt.</p>
     </div>
 
+    <div class="screenshot">DynamoDB scan returning photo metadata to the auditor role after the key-policy grant</div>
     <div class="screenshot">S3 showing a photo successfully downloaded by the auditor role after adding the role to the data key's key policy</div>
   </div>
 </div>
@@ -870,7 +876,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
     <tr>
       <td><strong>Auditor CAN query DynamoDB</strong></td>
       <td>5</td>
-      <td>Screenshot: DynamoDB scan results visible to the auditor role.</td>
+      <td>Screenshot showing the auditor role's relationship to the DynamoDB table. Either is accepted: (a) the scan returning metadata after the auditor is added to the data key policy (Step 22), or (b) a successful scan at Step 18. The blocked <code>kms:Decrypt</code> scan at Step 18 is the expected intermediate state and is also acceptable as evidence of reaching the table.</td>
     </tr>
     <tr>
       <td><strong>S3 Access Denied before KMS permission</strong></td>
