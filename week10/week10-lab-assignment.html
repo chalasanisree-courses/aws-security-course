@@ -122,13 +122,15 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <li>Alarm name: <code>photoviewer-lambda-duration</code></li>
 </ul>
 <p>The Lambda timeout is 3 seconds &mdash; if it takes longer than that, the invocation is killed and the error alarm fires. Setting the duration threshold at 2 seconds gives you an early warning: something is degrading, investigate before it starts timing out.</p>
+<p><strong>This is a preventative alarm &mdash; you will not see it fire in this lab, and that is expected.</strong> Normal Photo Viewer invocations complete well under 2 seconds, and a genuinely hung invocation would time out at 3 seconds and trip the <em>error</em> alarm instead. You are creating it as a real-world early-warning control, not to trigger it here. The rubric only asks that you create it, not that it enters ALARM state.</p>
 <div class="screenshot">CloudWatch Alarms console showing both alarms in OK state</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Break the Lambda &mdash; trigger the error alarm</span></div><div class="step-body">
 <p>Go to <strong>Lambda &rarr; Functions &rarr; photoviewer-lambda &rarr; Configuration &rarr; Environment variables &rarr; Edit</strong>. Change the <code>PHOTO_BUCKET</code> value to <code>wrong-bucket-name</code>. Click <strong>Save</strong>.</p>
-<p>Now load the Photo Viewer in your browser. The page itself loads (HTML/CSS/JS from CloudFront), but the photo list fails &mdash; Lambda tries to generate presigned URLs for a bucket that does not exist.</p>
+<p>Now open the Photo Viewer in your browser and <strong>hard-refresh several times</strong> &mdash; <strong>Cmd+Shift+R</strong> (Mac) or <strong>Ctrl+Shift+R</strong> (Windows). The page shell loads from CloudFront, but each hard refresh forces the browser to re-request the photo list, which re-invokes <code>photoviewer-lambda</code> &mdash; and Lambda now errors because it is trying to generate presigned URLs for a bucket that does not exist. A normal refresh may be served from cache and never reach Lambda, which is why a hard refresh (repeated a few times) is needed to generate the errors.</p>
 <p>Wait a few minutes. Go to <strong>CloudWatch &rarr; Alarms</strong>. The <code>photoviewer-lambda-errors</code> alarm should transition to <strong>ALARM</strong> state. Check your email &mdash; the SNS notification should arrive.</p>
+<div class="callout"><p><strong>If the alarm has not fired after ~5 minutes:</strong> the requests are likely still being served from cache, so Lambda is not being invoked. Force the errors directly &mdash; go to <strong>Lambda &rarr; photoviewer-lambda &rarr; Test</strong>, create a test event, and run it a few times. Each invocation errors on the wrong bucket and counts toward the alarm threshold.</p></div>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>The error alarm is in ALARM state. You received an email notification. In production, this would wake someone up before customers start complaining.</p>
 </div>
@@ -162,7 +164,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <li>Delivery method: Create a new S3 bucket (Config stores configuration history snapshots here)</li>
 </ul>
 <p>Click <strong>Confirm</strong>. Config begins recording resource configurations across the account.</p>
-<div class="callout"><p><strong>Cost note:</strong> AWS Config charges per configuration item recorded (~$0.003 each) plus the S3 storage for history. With a small lab account, expect $1&ndash;2/month. Keep Config running through Week 11 &mdash; it is needed for Security Hub.</p></div>
+<div class="callout"><p><strong>Cost note:</strong> AWS Config bills per configuration item recorded (~$0.003 each, but the first 7,500 items in 30 days are free), per managed-rule evaluation (a few cents at lab volume; no Lambda charges for managed rules), plus minor S3 storage for history. For a low-activity lab account over the Week 10&ndash;11 window, expect this to be negligible &mdash; likely free on configuration items and only cents on rule evaluations. To minimize it further, you can set the recording strategy to specific resource types (S3, CloudTrail, IAM) instead of all resource types. Keep Config and its rules running through Week 11 &mdash; they are needed for Security Hub.</p></div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Add managed rules</span></div><div class="step-body">
@@ -182,7 +184,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Wait for evaluation and screenshot</span></div><div class="step-body">
 <p>Config evaluates rules against current resource configurations. This can take a few minutes. Go to <strong>AWS Config &rarr; Rules</strong> and wait until all four rules show a compliance status.</p>
-<p>If your environment is correctly configured from Weeks 1&ndash;9, all rules should show <strong>Compliant</strong>. If <code>cloud-trail-encryption-enabled</code> shows Non-compliant, it means your CloudTrail trail is using default encryption rather than a KMS key &mdash; this is a valid finding.</p>
+<p>If your environment is correctly configured from Weeks 1&ndash;9, the two S3 rules and the IAM root-key rule should show <strong>Compliant</strong>. <code>cloud-trail-encryption-enabled</code> will almost certainly show <strong>Non-compliant</strong> &mdash; the Weeks 1&ndash;9 labs never encrypt the CloudTrail trail with a KMS key, so it is using default encryption. This is expected and is itself a valid finding: it is exactly the kind of gap Config is meant to surface. Capture it as one of your screenshots.</p>
 <div class="screenshot">AWS Config Rules dashboard showing all four rules with compliance status</div>
 </div></div>
 
@@ -217,7 +219,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">Enable Inspector</span></div><div class="step-body">
 <p>Go to <strong>Amazon Inspector &rarr; Get Started &rarr; Enable Inspector</strong>.</p>
-<p>On the activation page, ensure <strong>Lambda standard scanning</strong> is selected. You can also enable EC2 scanning, but since we removed EC2 in Week 5, Lambda scanning is the relevant option.</p>
+<p>On the activation page, ensure <strong>Lambda standard scanning</strong> is selected. You can also enable EC2 scanning, but since Week 5 replaced the EC2-based backend with the current stateless Lambda backend, Lambda scanning is the relevant option.</p>
 <p>Inspector starts a 15-day free trial. It automatically discovers all Lambda functions in the account and begins scanning their deployment packages for known CVEs.</p>
 </div></div>
 
@@ -245,10 +247,10 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 <p>Review the checks. Common findings in a lab account include:</p>
 <ul>
   <li><strong>MFA on Root Account</strong> &mdash; should be green if you enabled MFA in Week 1</li>
-  <li><strong>Security Groups &mdash; Specific Ports Unrestricted</strong> &mdash; may flag if any security groups are too permissive</li>
   <li><strong>S3 Bucket Permissions</strong> &mdash; should be green after your bucket policy work</li>
   <li><strong>IAM Use</strong> &mdash; should be green since you have created IAM users</li>
 </ul>
+<p>You likely will <em>not</em> see a <strong>Security Groups &mdash; Specific Ports Unrestricted</strong> finding, because the EC2-based backend (and its security groups) was removed in Week 5 &mdash; the current backend is stateless Lambda. If you do still have security groups from earlier weeks, this check may appear.</p>
 <div class="callout info"><p><strong>Note:</strong> Some Trusted Advisor checks are only available with a Business or Enterprise Support plan. Free-tier accounts see a subset of checks &mdash; that is expected.</p></div>
 <div class="screenshot">Trusted Advisor Security tab showing check results &mdash; green (ok), yellow (warning), and red (action recommended)</div>
 </div></div>
@@ -262,18 +264,20 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <tr><td><strong>Customization</strong></td><td>Cannot add custom checks</td><td>Can add custom rules with Lambda</td></tr>
   <tr><td><strong>Remediation</strong></td><td>Recommendations only</td><td>Can trigger automated remediation via EventBridge</td></tr>
 </table>
-<p>Both are useful. Trusted Advisor is a quick health check. Config is continuous compliance monitoring. In Week 11, Config findings will flow into Security Hub alongside findings from GuardDuty, Inspector, and Macie.</p>
+<p>Both are useful. Trusted Advisor is a quick health check. Config is continuous compliance monitoring. In Week 11, Config findings will flow into Security Hub alongside findings from GuardDuty and Inspector.</p>
 </div></div>
 
 
 <!-- Cleanup -->
 <h2>Cleanup</h2>
-<p>All three services from this lab are needed in Week 11. Do not disable them yet.</p>
+<p>The services you set up this week are needed in Week 11. Do not disable them yet.</p>
 <ul>
   <li><strong>Keep Inspector running</strong> &mdash; Week 11 deploys a new Lambda with a deliberately vulnerable dependency. Inspector needs to be active to scan it. Free trial runs for 15 days.</li>
-  <li><strong>Keep AWS Config running</strong> &mdash; Config findings flow into Security Hub in Week 11. Cost is ~$1&ndash;2/month.</li>
+  <li><strong>Keep AWS Config running &mdash; and keep the four rules in place.</strong> Both the recorder and the rules are required in Week 11: its preflight check verifies them, and the rule findings (including <code>cloud-trail-encryption-enabled</code>) flow into Security Hub. Cost for the lab window is negligible &mdash; configuration items are very likely free under the 7,500-item / 30-day allowance for a low-activity account, and four managed rules add only a few cents in evaluations (managed rules incur no Lambda charges). You will delete everything at the end of Week 11.</li>
   <li><strong>Keep CloudWatch alarms</strong> &mdash; no cost for two alarms on Lambda metrics. They provide ongoing monitoring.</li>
 </ul>
+
+<div class="callout warn"><p style="color:#dc3545;"><strong>&#9888; Do NOT delete your AWS Config rules.</strong> Leave all four rules in place through Week 11 &mdash; Week 11 reuses these exact rules (it does not create new ones), its preflight check fails without them, and their findings feed Security Hub. You will delete them at the end of Week 11, not now.</p></div>
 
 
 <!-- Reflection -->
@@ -300,12 +304,12 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
     <tr><td><strong>Lambda metrics found</strong></td><td>3</td><td>Screenshot: CloudWatch metrics dashboard showing photoviewer-lambda Errors and Duration metrics.</td></tr>
     <tr><td><strong>Error alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-errors</code> showing threshold &#8805; 1 error, 5-minute period, SNS notification target.</td></tr>
     <tr><td><strong>Duration alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-duration</code> showing threshold &gt; 2000ms, 5-minute period.</td></tr>
-    <tr><td><strong>Alarm fires in ALARM state</strong></td><td>10</td><td>Screenshot: <code>photoviewer-lambda-errors</code> alarm in ALARM state (red) after changing <code>PHOTO_BUCKET</code> to wrong value.</td></tr>
+    <tr><td><strong>Alarm fires in ALARM state</strong></td><td>10</td><td>Screenshot: <code>photoviewer-lambda-errors</code> alarm in ALARM state (red) after setting <code>PHOTO_BUCKET</code> to a wrong value and generating errors (hard-refresh the Photo Viewer, or invoke the Lambda directly).</td></tr>
     <tr><td><strong>SNS notification received</strong></td><td>5</td><td>Screenshot: Email from SNS showing the alarm notification.</td></tr>
     <tr><td><strong>Alarm returns to OK</strong></td><td>5</td><td>Screenshot: Alarm back in OK state after restoring the correct bucket name.</td></tr>
     <tr><td><strong>Config enabled</strong></td><td>3</td><td>Screenshot: AWS Config Settings page showing recorder enabled.</td></tr>
     <tr><td><strong>Four Config rules added</strong></td><td>8</td><td>Screenshot: AWS Config Rules dashboard showing all four managed rules.</td></tr>
-    <tr><td><strong>Rules show Compliant</strong></td><td>5</td><td>Screenshot: Config Rules dashboard with rules in Compliant status (before removing encryption).</td></tr>
+    <tr><td><strong>Initial rule evaluation</strong></td><td>5</td><td>Screenshot: Config Rules dashboard before downgrading encryption &mdash; the two S3 rules and <code>iam-root-access-key-check</code> show Compliant; <code>cloud-trail-encryption-enabled</code> is expected to be Non-compliant.</td></tr>
     <tr><td><strong>Non-compliant after drift</strong></td><td>10</td><td>Screenshot: <code>s3-default-encryption-kms</code> showing Non-compliant after downgrading S3 encryption. The non-compliant resource (Photo Viewer bucket) is visible.</td></tr>
     <tr><td><strong>Compliant after fix</strong></td><td>5</td><td>Screenshot: Rule back to Compliant after restoring KMS encryption.</td></tr>
     <tr><td><strong>Inspector enabled</strong></td><td>3</td><td>Screenshot: Inspector dashboard showing Lambda scanning active.</td></tr>
