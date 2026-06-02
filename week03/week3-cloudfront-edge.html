@@ -661,7 +661,7 @@
     <p><strong>Allowlist vs blocklist:</strong> An allowlist permits only what is explicitly listed — everything else is blocked. A blocklist blocks only what is listed — everything else is permitted. Allowlists are more secure: a forgotten file type causes a blocklist to fail open, an allowlist to fail closed.</p>
     <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
-      <p style="margin:0;font-size:13px;line-height:1.6;">A function called <code>PhotoViewer-AllowList</code> was created and associated with the distribution behavior at the Viewer Request stage. Accessing <code>/confidential.txt</code> through CloudFront returned 403 — the function blocked it before the request reached S3. We then removed the function, ran an invalidation, and accessed <code>/confidential.txt</code> again — this time it returned the file successfully, demonstrating exactly why the function is necessary.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;">A function called <code>photoviewer-allowlist</code> was created and associated with the distribution behavior at the Viewer Request stage. Accessing <code>/confidential.txt</code> through CloudFront returned 403 — the function blocked it before the request reached S3. We then removed the function, ran an invalidation, and accessed <code>/confidential.txt</code> again — this time it returned the file successfully, demonstrating exactly why the function is necessary.</p>
     </div>
   </div>
 
