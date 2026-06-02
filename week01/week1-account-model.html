@@ -324,9 +324,11 @@ const info = {
     label: 'Root account',
     title: 'Root — the account owner',
     body: `Root is the original identity created when the AWS account was opened.
-           It exists completely outside of IAM — no IAM policy can restrict it, not even
-           a Service Control Policy from an AWS Organization. It represents the legal
-           contractual relationship between you and Amazon.`,
+           It exists outside of IAM — no IAM policy attached within the account can restrict it.
+           One important nuance you will revisit in Week 12: Service Control Policies (SCPs) from an
+           AWS Organization <em>do</em> restrict the root user of a <strong>member</strong> account, but they do
+           <strong>not</strong> restrict the root user of the <strong>management</strong> account, which is exempt by design.
+           Root represents the legal contractual relationship between you and Amazon.`,
     bullets: [
       'Has unrestricted access to everything in the account',
       'Cannot be restricted by any IAM policy',
