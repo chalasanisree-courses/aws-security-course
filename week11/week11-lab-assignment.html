@@ -319,6 +319,7 @@ Notes: Testing upload for support case #4472</pre>
 <p>After uploading, go to <strong>GuardDuty &rarr; Malware scans</strong> to confirm a scan was triggered. It may take a few minutes for the scan to appear and complete.</p>
 <div class="callout info">
   <p><strong>Note:</strong> The EICAR string is an industry-standard test pattern. It is not malware and cannot harm your system. Every anti-malware product &mdash; including GuardDuty Malware Protection &mdash; is designed to recognize and flag it.</p>
+  <p><strong>The string must be byte-exact.</strong> It is exactly 68 characters with <strong>no trailing newline or spaces</strong>, straight quotes only (no smart quotes), and the backslash <code>\</code> intact. A single stray character means GuardDuty will <em>silently</em> not flag it &mdash; the scan completes as clean and the rest of the lab fails with no obvious cause. If your scan does not flag the file, copy the string directly from <strong>eicar.org</strong> rather than from this page, and confirm your editor did not add a trailing newline.</p>
 </div>
 <div class="callout">
   <p><strong>No scan triggered?</strong> Delete the file from S3 and re-upload it. Malware Protection only scans on new <code>PutObject</code> events &mdash; it does not scan existing objects.</p>
