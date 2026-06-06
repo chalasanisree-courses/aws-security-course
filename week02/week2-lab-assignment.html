@@ -172,6 +172,13 @@
   <p>In CloudShell, run:</p>
   <pre>aws s3 ls s3://photoviewer-[your-account-id] --no-sign-request</pre>
   <p>This lists all files in the bucket without logging in — including files you never intended to expose.</p>
+  <div class="info"><strong>Could we have avoided this? Three policy configurations and what each one buys you:</strong>
+  <ul style="margin:0.5rem 0 0 1.2rem;">
+    <li><strong>(1) <code>s3:GetObject</code> enabled + <code>s3:ListBucket</code> enabled — what we did in this lab.</strong> Every file is readable AND the bucket is listable: an attacker doesn't have to guess anything — <code>aws s3 ls</code> hands them the full index, including <code>confidential.txt</code>. (Note: ListBucket is NOT required for website hosting — we granted it deliberately so you could demonstrate enumeration.)</li>
+    <li><strong>(2) <code>s3:GetObject</code> enabled + <code>s3:ListBucket</code> disabled — how a public website bucket should be configured.</strong> This is what AWS's standard static-hosting policy grants. The site works, and <code>aws s3 ls</code> now fails. But every file is still readable by anyone who knows or guesses its name — and <code>confidential.txt</code> is very guessable. Removing ListBucket fixes discoverability, not exposure.</li>
+    <li><strong>(3) <code>s3:GetObject</code> disabled — not an option here.</strong> The bucket serves the website; without public read, the site is down. So within this architecture there is no policy setting that protects <code>confidential.txt</code> — the only real fix is to not store non-public files in the website bucket at all. Keep that conclusion in mind: Week 3 rebuilds this so the bucket isn't public in the first place.</li>
+  </ul>
+</div>
 
   <h3>Vulnerability 3 — HTTP only, no HTTPS</h3>
   <p>The URL starts with <code>http://</code>. Try changing it to <code>https://</code> — it will fail. The S3 website endpoint has no TLS support.</p>
