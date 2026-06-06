@@ -294,7 +294,7 @@ h1 {
   <ul>
     <li>Explain what object storage is and how S3 differs from block and file storage</li>
     <li>Describe how S3 static website hosting works and what it cannot do</li>
-    <li>Explain the three layers of S3 access control and how they are evaluated</li>
+    <li>Explain the S3 access-control mechanisms (Block Public Access, bucket policy, ACLs, IAM) and how they are evaluated</li>
     <li>Describe how data is encrypted in transit and at rest in S3</li>
     <li>Identify the security problems introduced by this approach and what fixes them</li>
   </ul>
@@ -434,17 +434,18 @@ h1 {
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-access')">
-    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">Access control</span><span class="ac-sub">3 layers: Block Public Access · bucket policy · object ACL</span></div>
+    <div class="ac-left"><span class="ac-icon">🔐</span><span class="ac-name">Access control</span><span class="ac-sub">BPA guardrail · bucket policy · object ACL · IAM for authenticated callers</span></div>
     <span class="ac-chevron" id="ac-access-chev">›</span>
   </div>
   <div class="ac-body" id="ac-access">
-    <p>Every S3 request passes through three layers in order. All must allow for access to succeed.</p>
+    <p>Three mechanisms control access to a bucket. They are not a chain where each must allow — they play different roles:</p>
     <table style="font-size:0.88rem;margin:0.5rem 0;">
-      <tr><th>Layer</th><th>What it controls</th><th>Week 2 setting</th></tr>
-      <tr><td><strong>Block Public Access</strong></td><td>Prevents access from <code>Principal: *</code> (anonymous internet). On by default on new buckets.</td><td>Disabled — required for static hosting</td></tr>
-      <tr><td><strong>Bucket policy</strong></td><td>Explicit deny overrides all. Explicit allow grants. No mention → check ACL.</td><td><code>s3:GetObject</code> + <code>s3:ListBucket</code> to <code>Principal: *</code></td></tr>
-      <tr><td><strong>Object ACL</strong></td><td>Per-object control. Legacy — use bucket policies instead.</td><td>Default</td></tr>
+      <tr><th>Mechanism</th><th>What it does</th><th>Week 2 setting</th></tr>
+      <tr><td><strong>Block Public Access</strong></td><td>A <em>guardrail</em>, not a per-request check: while on, bucket policies and ACLs that grant public access simply don't take effect. On by default on new buckets.</td><td>Disabled — required for public static hosting</td></tr>
+      <tr><td><strong>Bucket policy</strong></td><td>Evaluated per request: an explicit <code>Deny</code> always wins; an explicit <code>Allow</code> grants access; otherwise the request falls through (denied unless something else allows it).</td><td><code>s3:GetObject</code> + <code>s3:ListBucket</code> to <code>Principal: *</code></td></tr>
+      <tr><td><strong>Object ACL</strong></td><td>Per-object control. Legacy — disabled by default on new buckets; use bucket policies instead.</td><td>Default (disabled)</td></tr>
     </table>
+    <p>For <strong>authenticated AWS principals</strong> (IAM users and roles) there is a fourth input: their IAM identity policies are evaluated alongside the bucket policy — within the same account an allow in <em>either</em> is sufficient, and an explicit deny anywhere wins. IAM becomes central from Week 4 onward. This week's visitors are <strong>anonymous</strong> — they have no IAM identity, so the bucket policy is the only gate that can let them in.</p>
     <p><strong>The consequence:</strong> granting <code>Principal: *</code> exposes every file — not just web files. This is one of the Week 2 vulnerabilities.</p>
   </div>
 
@@ -464,17 +465,48 @@ h1 {
   </div>
 
   <div class="ac-item" onclick="toggleAc('ac-cloudtrail')">
-    <div class="ac-left"><span class="ac-icon">📋</span><span class="ac-name">CloudTrail logging</span><span class="ac-sub">Management events logged · data events optional · anonymous access leaves a trace</span></div>
+    <div class="ac-left"><span class="ac-icon">📋</span><span class="ac-name">CloudTrail logging</span><span class="ac-sub">Two storage systems · what gets logged where · anonymous access leaves a trace</span></div>
     <span class="ac-chevron" id="ac-cloudtrail-chev">›</span>
   </div>
   <div class="ac-body" id="ac-cloudtrail">
-    <p>Even with a public bucket, access isn't invisible. CloudTrail can log S3 data events including anonymous <code>GetObject</code> and <code>ListBucket</code> calls — the <code>userIdentity</code> field shows <strong>Anonymous</strong>, which is a signal worth alerting on.</p>
-    <p><strong>Important:</strong> S3 data events are not logged by default — only management events (creating buckets, changing policies) are. Without explicit data event logging enabled, file-level access leaves no trace.</p>
-    <p>Try it: <code>aws s3 ls s3://photoviewer-[account-id] --no-sign-request</code> lists every file in the bucket. Then <code>aws s3 cp s3://photoviewer-[account-id]/confidential.txt .</code> downloads it — no credentials needed. This is what "public bucket" means in practice.</p>
-    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
-      <p style="margin:0;font-size:13px;line-height:1.6;">In the demo we ran both CLI commands above to show that anonymous access works on the public bucket. CloudTrail logged the anonymous <code>GetObject</code> — the <code>userIdentity</code> field showed <code>Anonymous</code>. S3 data event logging was confirmed enabled so access attempts are visible even from unauthenticated users.</p>
+    <p>Even with a public bucket, access isn't invisible. CloudTrail can log S3 data events including anonymous <code>GetObject</code> and <code>ListBucket</code> calls — the <code>userIdentity</code> field shows <strong>Anonymous</strong>, which is a signal worth alerting on. To understand what gets logged where, you need to know that CloudTrail is really two separate storage systems:</p>
+    <div style="margin:0.8rem 0;padding:1rem 1.1rem;background:#F4F6F8;border-left:3px solid #64748B;border-radius:0 6px 6px 0;">
+      <p style="margin:0 0 0.5rem 0;"><strong>(1) Event History</strong> — AWS-managed storage you never touch. Holds <em>only management events</em>. Always on, free, last 90 days. You view it in the CloudTrail console &rarr; Event history.</p>
+      <p style="margin:0 0 0.5rem 0;"><strong>(2) Your trail</strong> — a pipeline <em>you</em> create that captures events and writes them to your S3 bucket. By default it captures management events only (duplicating Event History, for retention beyond 90 days). You can optionally enable <em>data events</em> on the trail; then it also captures <code>GetObject</code>/<code>PutObject</code>/etc. Costs money. To view, you read the <code>.json.gz</code> files in your S3 bucket directly.</p>
+      <p style="margin:0;"><strong>The key point:</strong> these are two independent systems. Enabling data events on your trail (system&nbsp;2) does <em>not</em> make them appear in Event History (system&nbsp;1). System&nbsp;1 is hardcoded to management-events-only — there is no setting that changes that.</p>
     </div>
+    <p style="margin-bottom:0.4rem;"><strong>How S3 activity maps onto the two systems:</strong></p>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85em;margin-bottom:0.8rem;">
+      <thead>
+        <tr style="text-align:left;border-bottom:2px solid #CBD5E1;">
+          <th style="padding:6px 8px;">S3 activity</th>
+          <th style="padding:6px 8px;">CloudTrail class</th>
+          <th style="padding:6px 8px;white-space:nowrap;">(1) Event History</th>
+          <th style="padding:6px 8px;white-space:nowrap;">(2) Your trail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #E2E8F0;">
+          <td style="padding:6px 8px;">Bucket-level config calls — <code>CreateBucket</code>, <code>PutBucketPolicy</code>, <code>PutPublicAccessBlock</code></td>
+          <td style="padding:6px 8px;"><strong>Management event</strong> (control plane)</td>
+          <td style="padding:6px 8px;color:#15803D;"><strong>Yes</strong> — always, 90 days</td>
+          <td style="padding:6px 8px;color:#15803D;"><strong>Yes</strong> — by default</td>
+        </tr>
+        <tr style="border-bottom:1px solid #E2E8F0;">
+          <td style="padding:6px 8px;">Object-level calls via the <strong>REST endpoint</strong> — <code>GetObject</code>, <code>PutObject</code>, <code>DeleteObject</code></td>
+          <td style="padding:6px 8px;"><strong>Data event</strong> (data plane)</td>
+          <td style="padding:6px 8px;color:#B91C1C;"><strong>Never</strong> — hardcoded out</td>
+          <td style="padding:6px 8px;color:#B45309;"><strong>Only if enabled</strong> — opt-in, paid</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 8px;">Same objects fetched via the <strong>website endpoint</strong> (<code>s3-website-…</code>)</td>
+          <td style="padding:6px 8px;">Not an API call — invisible to CloudTrail</td>
+          <td style="padding:6px 8px;color:#B91C1C;"><strong>No</strong></td>
+          <td style="padding:6px 8px;color:#B91C1C;"><strong>No</strong> — even with data events on; use S3 server access logging instead</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Try it: <code>aws s3 ls s3://photoviewer-[account-id] --no-sign-request</code> lists every file in the bucket. Then <code>aws s3 cp s3://photoviewer-[account-id]/confidential.txt .</code> downloads it — no credentials needed. This is what "public bucket" means in practice.</p>
   </div>
 
 </div><!-- end accordion -->
