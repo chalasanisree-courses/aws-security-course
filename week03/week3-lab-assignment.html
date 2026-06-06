@@ -133,6 +133,7 @@
   <ul>
     <li>Origin domain: select your S3 bucket from the dropdown — use the <strong>REST endpoint</strong> (e.g. <code>photoviewer-xxx.s3.amazonaws.com</code>), not the website endpoint</li>
     <li>When prompted <em>"Allow private S3 bucket access to CloudFront?"</em> → click <strong>Yes, update the bucket policy</strong> — this creates OAC and updates the bucket policy automatically</li>
+    <li><em>Note: AWS occasionally rewords this part of the console.</em> If the prompt looks different, the goal is the same two things: <strong>Origin access control (OAC)</strong> enabled on the origin, and the <strong>bucket policy updated</strong> so only CloudFront can read from the bucket. If the console shows a "Copy policy" button instead, copy it and paste it into the bucket's policy in S3.</li>
   </ul>
 
   <h3>Default cache behavior</h3>
