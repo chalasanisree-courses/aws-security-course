@@ -715,7 +715,10 @@
   </div>
   <div class="ac-body" id="ac-invalidation">
     <p>After updating content in S3 — patched JavaScript, a fixed photo, new HTML — edge caches may still serve the old version until TTL expires. Create an invalidation to purge immediately: use <code>/*</code> for everything or specific paths like <code>/app.js</code> for targeted invalidation.</p>
-    <p><strong>Two different mechanisms — don't conflate them:</strong> <em>configuration</em> changes (function associations, function code, cache/response-header policies, behaviors) take effect when the distribution finishes <strong>deploying</strong> — no invalidation needed for the config itself. <em>Invalidation</em> purges cached <strong>responses</strong>. The reason to invalidate after a security change is that responses produced under the old configuration (including cached 403s) can keep being served from the cache until TTL expires.</p>
+    <p><strong>There are two types of changes in CloudFront:</strong></p>
+    <p><strong>(1) Changes to CloudFront's behavior itself</strong> — function associations, function code, cache and response-header policies, behaviors. These take effect when the distribution finishes <strong>deploying</strong>.</p>
+    <p><strong>(2) Changes to the data CloudFront serves</strong> — updated files in S3. These take effect either automatically when the cached copy's <strong>TTL (time to live)</strong> expires, or immediately if you force it with a manual <strong>cache invalidation</strong>.</p>
+    <p>The two interact: after a type-1 change deploys, responses cached under the <em>old</em> behavior (including cached 403s) can still be served until their TTL expires — which is why an invalidation is often needed alongside a behavior change.</p>
     <p><strong>Always invalidate after security-relevant changes.</strong> Without invalidation, stale cached responses — missing your new headers, function behavior, or patched code — continue to be served globally until TTL expires.</p>
     <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
