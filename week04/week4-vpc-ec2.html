@@ -744,6 +744,7 @@ h1 {
   </div>
   <div class="ac-body" id="ac-endpoints">
     <p>EC2 needs to reach AWS services — DynamoDB, S3, and SSM. Without endpoints, that traffic would go over the internet (requiring the NAT Gateway to stay running). Endpoints create private paths that stay inside AWS's network.</p>
+    <p><strong>Which way do connections flow?</strong> All VPC endpoints are meant for resources <em>inside</em> the VPC to connect <em>out</em> to AWS services outside the VPC. For example, the EC2 instance initiates the connection out to Systems Manager (SSM) — not the other way around, even when you open a Session Manager session from the console. This ensures the VPC remains private and secure unless a connection is initiated from inside the VPC.</p>
     <table style="font-size:0.88rem; margin:0.5rem 0;">
       <tr><th></th><th>Gateway endpoint</th><th>Interface endpoint</th></tr>
       <tr><td>How it works</td><td>A route table entry — a "road sign" pointing traffic to the service</td><td>An ENI with a private IP inside your subnet</td></tr>
@@ -818,7 +819,7 @@ h1 {
   <div class="ac-body" id="ac-nacl">
     <p>Network ACLs (NACLs) are stateless packet filters that apply at the subnet boundary — before traffic even reaches a resource's security group. Unlike security groups, NACLs are stateless: you must explicitly allow both inbound <em>and</em> the return traffic outbound.</p>
     <p>In Week 4 we use the <strong>default NACL</strong> which allows all inbound and outbound traffic. This is intentional — our security groups handle access control with more precision (by SG ID, not by IP). Adding custom NACL rules on top would add complexity without adding meaningful security for our architecture.</p>
-    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet (e.g. blocking a country's IP range before it hits the ALB). Security groups cannot block by IP range at scale — NACLs can. This is a Week 5 topic when we add WAF and geo-restriction.</p>
+    <p><strong>When NACLs do matter:</strong> Blocking a specific IP range across an entire subnet — e.g. a known-malicious CIDR block hammering the ALB. Security groups can't do this at all: they have no deny rules — the most a security group can do is <em>not allow</em>. A NACL is the only VPC-native place to write an explicit DENY.</p>
     <div style="margin-top:1rem;padding:1rem 1.1rem;background:#FFF8E1;border-left:3px solid #F59E0B;border-radius:0 6px 6px 0;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#92400E;margin-bottom:6px;">In the demo</div>
       <p style="margin:0;font-size:13px;line-height:1.6;">We left NACLs at the default (allow all inbound and outbound) for all four subnets. This was deliberate — adding custom NACL rules requires allowing return traffic explicitly for every rule (because NACLs are stateless), which adds complexity without meaningful additional security when security groups are already tightly chained by SG ID. All access control in Week 4 is handled by the three security groups.</p>
@@ -898,7 +899,23 @@ h1 {
   </div>
   <div class="vuln-body" id="v2">
     <p><strong>The vulnerability:</strong> The ALB has a public DNS name (<code>photoviewer-alb-XXXXXX.us-east-1.elb.amazonaws.com</code>). Anyone who discovers this name can call <code>/photos</code> directly — bypassing CloudFront, bypassing WAF, bypassing any geo-restrictions or rate limiting at the edge. The ALB will also absorb a DDoS attack directly, with no CloudFront or Shield buffering in front of it.</p>
-    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin. Configure an ALB listener rule to return 403 for any request missing that header. This is the standard production pattern — AWS has no OAC equivalent for ALB origins. Replacing the ALB with API Gateway eliminates the problem entirely: API Gateway supports a resource policy restricting access to a specific CloudFront distribution.</p>
+    <p><strong>The fix:</strong> Add a secret custom header that CloudFront sends with every request to the ALB origin. Configure an ALB listener rule to return 403 for any request missing that header. This was the standard production pattern for years — AWS had no OAC equivalent for ALB origins until late 2024 (see below). Replacing the ALB with API Gateway also solves it: API Gateway supports a resource policy restricting access to a specific CloudFront distribution.</p>
+    <div style="margin-top:1rem;padding:1rem 1.1rem;background:#F0F6FF;border-left:3px solid #0066cc;border-radius:0 6px 6px 0;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#1F4E79;margin-bottom:6px;">How AWS has since closed this gap: CloudFront VPC origins (late 2024)</div>
+      <p style="margin:0 0 0.5rem 0;font-size:13px;line-height:1.6;">In this lab we made two cost/simplicity tradeoffs:</p>
+      <ul style="margin:0 0 0.6rem 1.2rem;font-size:13px;line-height:1.6;">
+        <li>The ALB sits in a <strong>public subnet</strong> with its security group accepting <code>0.0.0.0/0</code> — so CloudFront can reach it, which also means anyone can.</li>
+        <li>The ALB listener is <strong>HTTP only</strong> — to avoid provisioning an ACM certificate.</li>
+      </ul>
+      <p style="margin:0 0 0.5rem 0;font-size:13px;line-height:1.6;"><strong>CloudFront VPC origins</strong> now eliminate both:</p>
+      <ul style="margin:0 0 0.6rem 1.2rem;font-size:13px;line-height:1.6;">
+        <li>Your CloudFront distribution can now <strong>connect directly to your ALB</strong> — the ALB no longer needs a public IP address.</li>
+        <li>That means the ALB can be deployed in a <strong>private subnet</strong>, eliminating the possibility of the ALB being directly accessible from the internet.</li>
+        <li>You can also tighten the ALB's security group to accept traffic <strong>only from your own CloudFront distributions</strong> — AWS creates a dedicated CloudFront security group for this.</li>
+        <li>This also <strong>significantly reduces the risk of the CloudFront&rarr;ALB connection being HTTP-only</strong>: that traffic now flows over the private connection into your VPC, never over the public internet.</li>
+      </ul>
+      <p style="margin:0;font-size:13px;line-height:1.6;">We keep the public-ALB design in this lab deliberately: configuring the exposure, then defending it in Weeks 5–7 with WAF, an origin secret, and API Gateway, is the point.</p>
+    </div>
   </div>
 </div>
 
@@ -937,6 +954,7 @@ h1 {
     <p><strong>The deliberate simplification:</strong> CloudFront terminates HTTPS from the browser — that hop is encrypted. But CloudFront forwards requests to the ALB over HTTP (port 80), not HTTPS. Traffic between CloudFront and the ALB travels in plaintext. An attacker with access to the network path could read or inject content into responses. We made this choice to avoid provisioning an ACM certificate for the ALB in the lab.</p>
     <p><strong>Why it matters:</strong> In most architectures this traffic stays on AWS's internal backbone, so the practical risk is low. But it violates defense-in-depth — end-to-end encryption is the correct posture for production systems handling user data.</p>
     <p><strong>The production fix:</strong> Add an HTTPS listener on the ALB with an ACM certificate and update the CloudFront origin protocol to HTTPS-only. Replacing the ALB with API Gateway eliminates this tradeoff — API Gateway only exposes an HTTPS endpoint. There is no HTTP option.</p>
+    <p style="font-size:13px;color:#555;"><em>See the "ALB is internet-facing" issue above — CloudFront VPC origins (2024) address that exposure and, as a side effect, largely retire this one too: traffic enters the VPC privately, so the HTTP hop never travels a public path.</em></p>
   </div>
 </div>
 

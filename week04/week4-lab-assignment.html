@@ -202,6 +202,7 @@ Browser → CloudFront → ALB (public subnet) → EC2 Flask (private subnet) �
     <li>Inbound: HTTP port 80 from <code>0.0.0.0/0</code></li>
     <li>Outbound: delete the default allow-all rule. Add: Custom TCP port 8000, destination: <code>photoviewer-ec2-sg</code></li>
   </ul>
+  <div class="info"><strong>Why <code>0.0.0.0/0</code>?</strong> CloudFront has to reach this ALB, and CloudFront's servers live outside your VPC — so there is no CloudFront security group you can reference here. Opening to the world is the lab's deliberate exposure (it's "ALB is internet-facing" in the lecture), and Weeks 5–7 defend it with WAF, an origin secret, and API Gateway. Worth knowing: AWS has since introduced <strong>CloudFront VPC origins</strong> (2024) — your distribution can connect directly to your ALB without the ALB needing a public IP address, so the ALB can be deployed in a private subnet and its security group locked to accept traffic only from your own CloudFront distributions. See the callout in the Week 4 lecture.</div>
 
   <h3>Step C — Add rules to <code>photoviewer-ec2-sg</code></h3>
   <ul>
@@ -209,6 +210,7 @@ Browser → CloudFront → ALB (public subnet) → EC2 Flask (private subnet) �
     <li>Outbound: leave default allow-all</li>
     <li>No port 22 — SSM Session Manager handles all remote access</li>
   </ul>
+  <div class="info"><strong>Allow-all outbound is acceptable here temporarily.</strong> Right now the private subnet routes through the NAT gateway, so this instance can reach the whole internet — that's deliberate, because bootstrap needs to <code>pip install</code> from PyPI. Later in this lab you delete the NAT route, and outbound access shrinks to just the VPC endpoints. Production systems scope outbound rules explicitly — that's the egress filtering discussed in the Week 4 wrap-up.</div>
 
   <h3>Step D — Add rules to <code>photoviewer-endpoint-sg</code></h3>
   <ul>
@@ -340,7 +342,7 @@ curl http://localhost:8000/photos</pre>
   <p>Go to <strong>CloudFront → your distribution → Origins tab → Create origin:</strong></p>
   <ul>
     <li>Origin domain: paste the ALB DNS name</li>
-    <li>Protocol: <strong>HTTP only</strong></li>
+    <li>Protocol: <strong>HTTP only</strong> <em>(this setting is the CloudFront&rarr;ALB leg. The ALB only has an HTTP:80 listener — choosing HTTPS here will cause 502 errors at the verification step.)</em></li>
     <li>Name: <code>photoviewer-alb-origin</code></li>
     <li>Click <strong>Create origin</strong></li>
   </ul>
@@ -352,7 +354,7 @@ curl http://localhost:8000/photos</pre>
   <ul>
     <li>Path pattern: <code>/photos</code></li>
     <li>Origin: <code>photoviewer-alb-origin</code></li>
-    <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong></li>
+    <li>Viewer protocol policy: <strong>Redirect HTTP to HTTPS</strong> <em>(this setting is the browser&rarr;CloudFront leg — different from the origin protocol you set in Step 13.)</em></li>
     <li>Allowed HTTP methods: <strong>GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE</strong> — later weeks will add POST, DELETE, and PATCH on this same behavior, so enable all methods now.</li>
     <li>Cache policy: <strong>CachingDisabled</strong></li>
     <li>Click <strong>Create behavior</strong></li>
