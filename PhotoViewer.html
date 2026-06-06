@@ -1276,7 +1276,7 @@
         <div class="ac-section-text">
           <strong style="color:#0C447C;">Could have done:</strong>
           <ul style="margin:4px 0 10px;padding-left:18px;"><li>VPC Flow Logs (capture all network traffic)</li><li>Network ACLs in addition to security groups (defense in depth)</li><li>IMDSv2 enforcement (prevent SSRF on instance metadata)</li><li>HTTPS listener on ALB instead of HTTP</li><li>Auto Scaling Group across multiple AZs</li></ul>
-          <strong style="color:#0C447C;">Why we skipped:</strong> Flow Logs add cost. IMDSv2 breaks some libraries. Internal ALB traffic already encrypted at CloudFront edge.<br>
+          <strong style="color:#0C447C;">Why we skipped:</strong> Flow Logs add cost. IMDSv2 breaks some libraries. User traffic is HTTPS up to CloudFront; the CloudFront&rarr;ALB hop is HTTP — acceptable risk for the lab since it rides AWS's network, and an ACM cert + HTTPS listener adds setup complexity. Production would use HTTPS to origin.<br>
           <strong style="color:#0C447C;">When you'd use it:</strong> Network forensics, zero-trust architecture, highly available production workloads.
         </div>
       </div>
