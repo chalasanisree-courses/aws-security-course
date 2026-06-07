@@ -497,6 +497,7 @@ function showSolution(idx) {
   }]
 }</code></pre>
     <p>The <code>NotAction</code> exclusion is critical — IAM, STS, Organizations, and Support are global services that don't operate in a specific region. Without this exclusion, the SCP would break basic account functionality like creating roles or assuming cross-account permissions.</p>
+    <p><strong>One more set of exemptions to know:</strong> some global services are <em>pinned to us-east-1</em> — CloudFront, Route 53, WAF (global scope), and Billing/Budgets all make their API calls there. A region-lock to any region <em>other</em> than us-east-1 (like this Asia example) would block managing them. Production region-lock SCPs either add those services to the <code>NotAction</code> list or allow-list us-east-1 alongside the target region.</p>
     <p>SCPs can only be created, modified, and attached from the management account using the Organizations API. No principal in a member account can call these APIs — they are simply not available.</p>
   </div>
 </div>
