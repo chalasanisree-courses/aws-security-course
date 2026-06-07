@@ -2,7 +2,9 @@
 # Week 11 Post-flight Check — CS 55D
 # Verifies that Week 11 lab resources have been properly cleaned up.
 
-set -euo pipefail
+# Note: no "set -e" — this script verifies absence of resources, and AWS calls on
+# deleted/empty resources can legitimately return non-zero; every check reports its own result.
+set -uo pipefail
 
 PASS="\033[0;32m✓\033[0m"
 FAIL="\033[0;31m✗\033[0m"
@@ -119,7 +121,7 @@ if [ -n "$BUCKET" ]; then
         fi
     done
     # Check quarantine/ prefix
-    QUARANTINE_COUNT=$(aws s3 ls "s3://${BUCKET}/quarantine/" 2>/dev/null | wc -l)
+    QUARANTINE_COUNT=$( (aws s3 ls "s3://${BUCKET}/quarantine/" 2>/dev/null || true) | wc -l)
 
     if [ -n "$TEST_FILES" ] || [ "$QUARANTINE_COUNT" -gt 0 ]; then
         echo -e "  ${WARN} Leftover test files found:"
@@ -136,21 +138,29 @@ else
     echo -e "  ${WARN} Skipped — no bucket found"
 fi
 
-# --- Verify Week 10 services still running ---
+# --- Verify Week 10 services were torn down (per the Week 11 cleanup) ---
 echo ""
-echo "▸ Verifying Week 10 services are still intact..."
+echo "▸ Verifying Config and Inspector were torn down (Week 12 needs neither)..."
 CONFIG_STATUS=$(aws configservice describe-configuration-recorder-status --query "ConfigurationRecordersStatus[0].recording" --output text 2>/dev/null)
-if [ "$CONFIG_STATUS" = "True" ]; then
-    echo -e "  ${PASS} Config recorder still active"
+if [ "$CONFIG_STATUS" != "True" ]; then
+    echo -e "  ${PASS} Config recorder stopped"
 else
-    echo -e "  ${WARN} Config recorder not recording — re-enable if needed for Week 12"
+    echo -e "  ${WARN} Config recorder still recording — the Week 11 cleanup says stop it; Week 12 does not use Config and the recorder bills per configuration item"
+fi
+
+RULE_COUNT=$(aws configservice describe-config-rules --query "length(ConfigRules)" --output text 2>/dev/null || echo 0)
+case "$RULE_COUNT" in (*[!0-9]*|"") RULE_COUNT=0 ;; esac   # sanitize non-numeric responses
+if [ "$RULE_COUNT" -eq 0 ]; then
+    echo -e "  ${PASS} Config rules deleted"
+else
+    echo -e "  ${WARN} ${RULE_COUNT} Config rule(s) still exist — delete them per the Week 11 cleanup (the Week 10 demo ~30:00 shows the flow)"
 fi
 
 INSPECTOR_STATUS=$(aws inspector2 batch-get-account-status --query "accounts[0].state.status" --output text 2>/dev/null)
-if [ "$INSPECTOR_STATUS" = "ENABLED" ]; then
-    echo -e "  ${PASS} Inspector still enabled"
+if [ "$INSPECTOR_STATUS" != "ENABLED" ]; then
+    echo -e "  ${PASS} Inspector deactivated"
 else
-    echo -e "  ${WARN} Inspector not enabled — re-enable if needed"
+    echo -e "  ${WARN} Inspector still enabled — deactivate it per the Week 11 cleanup; the free trial converts to charges"
 fi
 
 TRAIL=$(aws cloudtrail describe-trails --query "trailList[0].Name" --output text 2>/dev/null)
