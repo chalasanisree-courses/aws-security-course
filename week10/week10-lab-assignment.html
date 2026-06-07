@@ -80,7 +80,7 @@
   <pre>cd ~
 git -C aws-security-course pull
 bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
-  <p>The script verifies your Week 9 environment is intact: both KMS keys, S3/DynamoDB encryption, Secrets Manager encryption, Lambda function, CloudFront distribution, Identity Center, and Organizations. It also confirms the SNS topic from Week 1 exists (needed for alarm notifications). Address any errors before proceeding.</p>
+  <p>The script verifies your Week 9 environment is intact: both KMS keys, S3/DynamoDB encryption, Secrets Manager encryption, Lambda function, CloudFront distribution, Identity Center, and Organizations. It also confirms the SNS topic from Week 1 exists (needed for alarm notifications). <strong>Note:</strong> the script checks only that the topic <em>exists</em>, not that your email subscription is confirmed. Go to <strong>SNS &rarr; Topics &rarr; your topic &rarr; Subscriptions</strong> and verify your email shows <strong>Confirmed</strong> (not "Pending confirmation") &mdash; otherwise the alarm will fire but no email will arrive. Address any errors before proceeding.</p>
 </div>
 
 
@@ -127,10 +127,10 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Break the Lambda &mdash; trigger the error alarm</span></div><div class="step-body">
-<p>Go to <strong>Lambda &rarr; Functions &rarr; photoviewer-lambda &rarr; Configuration &rarr; Environment variables &rarr; Edit</strong>. Change the <code>PHOTO_BUCKET</code> value to <code>wrong-bucket-name</code>. Click <strong>Save</strong>.</p>
-<p>Now open the Photo Viewer in your browser and <strong>hard-refresh several times</strong> &mdash; <strong>Cmd+Shift+R</strong> (Mac) or <strong>Ctrl+Shift+R</strong> (Windows). The page shell loads from CloudFront, but each hard refresh forces the browser to re-request the photo list, which re-invokes <code>photoviewer-lambda</code> &mdash; and Lambda now errors because it is trying to generate presigned URLs for a bucket that does not exist. A normal refresh may be served from cache and never reach Lambda, which is why a hard refresh (repeated a few times) is needed to generate the errors.</p>
+<p>Go to <strong>Lambda &rarr; Functions &rarr; photoviewer-lambda &rarr; Configuration &rarr; Environment variables &rarr; Edit</strong>. <strong>Note the current <code>PHOTO_BUCKET</code> value</strong> (you will restore it in Step 5), then <strong>delete the <code>PHOTO_BUCKET</code> variable entirely</strong> &mdash; remove the row, do not just blank it. Click <strong>Save</strong>.</p>
+<p>Now open the Photo Viewer in your browser and <strong>hard-refresh several times</strong> &mdash; <strong>Cmd+Shift+R</strong> (Mac) or <strong>Ctrl+Shift+R</strong> (Windows). The page shell loads from CloudFront, but each hard refresh forces the browser to re-request the photo list, which re-invokes <code>photoviewer-lambda</code> &mdash; and the function now errors. It reads this variable at startup (<code>BUCKET = os.environ['PHOTO_BUCKET']</code>), so with the variable removed the function fails to initialize, and <em>every</em> invocation returns an error. A normal refresh may be served from cache and never reach Lambda, which is why a hard refresh (repeated a few times) is needed to actually invoke the function.</p>
 <p>Wait a few minutes. Go to <strong>CloudWatch &rarr; Alarms</strong>. The <code>photoviewer-lambda-errors</code> alarm should transition to <strong>ALARM</strong> state. Check your email &mdash; the SNS notification should arrive.</p>
-<div class="callout"><p><strong>If the alarm has not fired after ~5 minutes:</strong> the requests are likely still being served from cache, so Lambda is not being invoked. Force the errors directly &mdash; go to <strong>Lambda &rarr; photoviewer-lambda &rarr; Test</strong>, create a test event, and run it a few times. Each invocation errors on the wrong bucket and counts toward the alarm threshold.</p></div>
+<div class="callout"><p><strong>If the alarm has not fired after ~5 minutes:</strong> the requests are likely still being served from cache, so Lambda is not being invoked. Force the errors directly &mdash; go to <strong>Lambda &rarr; photoviewer-lambda &rarr; Test</strong>, create a test event (any payload &mdash; the contents do not matter), and run it a few times. With <code>PHOTO_BUCKET</code> removed the function fails at startup, so every invocation errors and counts toward the alarm threshold.</p></div>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>The error alarm is in ALARM state. You received an email notification. In production, this would wake someone up before customers start complaining.</p>
 </div>
@@ -139,7 +139,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Fix it &mdash; alarm returns to OK</span></div><div class="step-body">
-<p>Go back to <strong>Lambda &rarr; Environment variables &rarr; Edit</strong>. Change <code>PHOTO_BUCKET</code> back to the correct bucket name. Click <strong>Save</strong>.</p>
+<p>Go back to <strong>Lambda &rarr; Environment variables &rarr; Edit</strong>. <strong>Re-add the <code>PHOTO_BUCKET</code> variable</strong> with the correct bucket name you noted in Step 4. Click <strong>Save</strong>.</p>
 <p>Load the Photo Viewer &mdash; photos appear again. Wait for the next evaluation period (~5 minutes). The alarm transitions back to <strong>OK</strong>.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>Photo Viewer works. Alarm is back in OK state. The full cycle: break &rarr; alarm &rarr; diagnose &rarr; fix &rarr; alarm clears.</p>
@@ -154,7 +154,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <span class="part-title">AWS Config &mdash; detecting drift</span>
 </div>
 
-<p>A junior developer was troubleshooting a photo upload issue and disabled S3 default encryption to rule out KMS as the cause. They forgot to re-enable it. The Photo Viewer still works &mdash; but every new photo is now stored unencrypted. Nothing in CloudWatch would catch this. CloudWatch monitors <em>performance</em>; Config monitors <em>configuration</em>.</p>
+<p>A junior developer was troubleshooting a photo upload issue and switched the bucket's default encryption from your KMS key down to S3-managed encryption to rule out KMS as the cause. They forgot to switch it back. The Photo Viewer still works, and objects are still encrypted &mdash; but with Amazon's default S3-managed key (SSE-S3) instead of your customer-managed KMS key, so you have lost control of the encryption key. Nothing in CloudWatch would catch this. CloudWatch monitors <em>performance</em>; Config monitors <em>configuration</em>.</p>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Enable AWS Config</span></div><div class="step-body">
 <p>Go to <strong>AWS Config &rarr; Get started</strong> (or <strong>Settings</strong> if already visited).</p>
@@ -226,7 +226,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 <div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review findings</span></div><div class="step-body">
 <p>Wait a few minutes for the initial scan to complete. Go to <strong>Inspector &rarr; Findings &rarr; By Lambda function</strong>. Look for <code>photoviewer-lambda</code> and <code>photoviewer-authorizer</code>.</p>
 <p>Review any findings. Each finding includes the CVE ID, severity (Critical / High / Medium / Low), the affected package and version, and a link to the NIST NVD entry.</p>
-<p>A <strong>clean scan</strong> (no findings) is a valid and good result &mdash; document it. If there are findings, note the CVE ID and severity. In production, you would update the affected package.</p>
+<p>A <strong>clean scan</strong> (no findings) is a valid and good result &mdash; but before documenting it, confirm the function was actually scanned. Go to <strong>Inspector &rarr; Account management</strong> (or the coverage view) and verify <code>photoviewer-lambda</code> shows as <strong>Scanned / Monitored</strong>. An empty findings list with the function unscanned is <em>not</em> a clean scan &mdash; it usually means scanning has not finished or Lambda coverage is not active, which would also cause Week 11's vulnerability scan to silently miss its target. If there are findings, note the CVE ID and severity. In production, you would update the affected package.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>Inspector has scanned photoviewer-lambda. You can see either findings with CVE details or a clean scan result. Either outcome demonstrates that you now have automated vulnerability visibility.</p>
 </div>
@@ -250,7 +250,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <li><strong>S3 Bucket Permissions</strong> &mdash; should be green after your bucket policy work</li>
   <li><strong>IAM Use</strong> &mdash; should be green since you have created IAM users</li>
 </ul>
-<p>You likely will <em>not</em> see a <strong>Security Groups &mdash; Specific Ports Unrestricted</strong> finding, because the EC2-based backend (and its security groups) was removed in Week 5 &mdash; the current backend is stateless Lambda. If you do still have security groups from earlier weeks, this check may appear.</p>
+<p>The <strong>Security Groups &mdash; Specific Ports Unrestricted</strong> check will still appear even though the EC2-based backend (and its security groups) was removed in Week 5 &mdash; every account has a default VPC security group, so there is always at least one group to evaluate. It should be <strong>green</strong>: the default security group does not open specific ports to <code>0.0.0.0/0</code>. If you have leftover security groups from earlier weeks with open ports, this check would flag them.</p>
 <div class="callout info"><p><strong>Note:</strong> Some Trusted Advisor checks are only available with a Business or Enterprise Support plan. Free-tier accounts see a subset of checks &mdash; that is expected.</p></div>
 <div class="screenshot">Trusted Advisor Security tab showing check results &mdash; green (ok), yellow (warning), and red (action recommended)</div>
 </div></div>
@@ -304,7 +304,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
     <tr><td><strong>Lambda metrics found</strong></td><td>3</td><td>Screenshot: CloudWatch metrics dashboard showing photoviewer-lambda Errors and Duration metrics.</td></tr>
     <tr><td><strong>Error alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-errors</code> showing threshold &#8805; 1 error, 5-minute period, SNS notification target.</td></tr>
     <tr><td><strong>Duration alarm created</strong></td><td>5</td><td>Screenshot: CloudWatch alarm <code>photoviewer-lambda-duration</code> showing threshold &gt; 2000ms, 5-minute period.</td></tr>
-    <tr><td><strong>Alarm fires in ALARM state</strong></td><td>10</td><td>Screenshot: <code>photoviewer-lambda-errors</code> alarm in ALARM state (red) after setting <code>PHOTO_BUCKET</code> to a wrong value and generating errors (hard-refresh the Photo Viewer, or invoke the Lambda directly).</td></tr>
+    <tr><td><strong>Alarm fires in ALARM state</strong></td><td>10</td><td>Screenshot: <code>photoviewer-lambda-errors</code> alarm in ALARM state (red) after removing the <code>PHOTO_BUCKET</code> variable and generating errors (hard-refresh the Photo Viewer, or invoke the Lambda directly).</td></tr>
     <tr><td><strong>SNS notification received</strong></td><td>5</td><td>Screenshot: Email from SNS showing the alarm notification.</td></tr>
     <tr><td><strong>Alarm returns to OK</strong></td><td>5</td><td>Screenshot: Alarm back in OK state after restoring the correct bucket name.</td></tr>
     <tr><td><strong>Config enabled</strong></td><td>3</td><td>Screenshot: AWS Config Settings page showing recorder enabled.</td></tr>
@@ -316,7 +316,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
     <tr><td><strong>Inspector findings</strong></td><td>8</td><td>Screenshot: Inspector findings for photoviewer-lambda &mdash; either CVE findings with details or a documented clean scan.</td></tr>
     <tr><td><strong>Trusted Advisor security tab</strong></td><td>5</td><td>Screenshot: Trusted Advisor Security tab with check results visible.</td></tr>
     <tr><td><strong>Reflection Q1 &mdash; CloudWatch vs Config</strong></td><td>10</td><td>CloudWatch monitors <em>metrics</em> &mdash; error counts, duration, invocations. Removing encryption does not cause errors because the app still works. Config monitors <em>resource configuration</em> &mdash; it compares actual state against desired state defined by rules. Different tools for different categories of problems.</td></tr>
-    <tr><td><strong>Reflection Q2 &mdash; right tool for each scenario</strong></td><td>10</td><td>(a) CloudWatch &mdash; duration alarm catches timeouts as a metric spike. (b) Config &mdash; <code>s3-bucket-public-read-prohibited</code> rule detects the policy change. (c) Inspector &mdash; rescans Lambda packages against updated CVE databases.</td></tr>
+    <tr><td><strong>Reflection Q2 &mdash; right tool for each scenario</strong></td><td>10</td><td>(a) CloudWatch &mdash; a Lambda timeout registers as an Error, so the <code>photoviewer-lambda-errors</code> alarm fires. The duration alarm <em>may</em> also fire, but because it uses the Average statistic, intermittent timeouts (every third request) can keep the 5-minute average below the 2000ms threshold; credit answers that identify the error alarm or reason about the averaging. (b) Config &mdash; <code>s3-bucket-public-read-prohibited</code> rule detects the policy change. (c) Inspector &mdash; rescans Lambda packages against updated CVE databases.</td></tr>
     <tr class="rubric-total"><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
   </tbody>
 </table>
