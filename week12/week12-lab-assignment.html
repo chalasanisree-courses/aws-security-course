@@ -171,6 +171,7 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
   ]
 }</pre>
 <div class="callout info"><p><strong>Why <code>NotAction</code>?</strong> IAM, STS, Organizations, and Support are global services &mdash; they do not operate in a specific region. Denying them with a region condition would break basic account functionality like creating roles or assuming cross-account permissions.</p></div>
+<div class="callout"><p><strong>A warning before you ever reuse this pattern:</strong> never attach a region-lock SCP to an account you operate in unless that account actually runs in the locked region. In this lab it is safe &mdash; you attach it to the Production OU and your account is the exempt management account. But the lecture's example locks to <code>ap-southeast-1</code>; applying that pattern to a real member account running in us-east-1 would lock you out of nearly every service.</p></div>
 <div class="screenshot">SCP <code>restrict-region-us-east-1</code> created</div>
 </div></div>
 
