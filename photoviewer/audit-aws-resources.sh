@@ -51,7 +51,7 @@ aws ec2 describe-nat-gateways \
 
 # ── Elastic IPs ────────────────────────────────────────────
 echo ""
-echo "[ Elastic IPs ] (~\$4/month if unattached)"
+echo "[ Elastic IPs ] (~\$3.60/month per public IPv4 address, attached or not — since Feb 2024)"
 aws ec2 describe-addresses \
   --region $REGION \
   --query 'Addresses[].[PublicIp,AllocationId,AssociationId]' \
@@ -289,7 +289,7 @@ echo "   ALB               ~\$16/month"
 echo "   Interface VPC ep  ~\$7/month each"
 echo "   EC2 t3.micro      ~\$8/month (outside free tier)"
 echo "   WAF Web ACL       ~\$5/month (custom only — CloudFront-managed is free)"
-echo "   Elastic IP        ~\$4/month if unattached"
+echo "   Elastic IP        ~\$3.60/month per public IPv4, attached or not (since Feb 2024)"
 echo "   AWS Config        ~\$1-2/month (recorder + rules)"
 echo "   KMS keys          ~\$1/month per key"
 echo "   Secrets Manager   ~\$0.40/secret/month"

@@ -83,6 +83,11 @@ fi
 # Image validator Lambda
 if aws lambda get-function --function-name "photoviewer-image-validator" --region "$REGION" &>/dev/null; then
   aws lambda delete-function --function-name "photoviewer-image-validator" --region "$REGION" 2>/dev/null && deleted "Lambda: photoviewer-image-validator" || skipped "Lambda: photoviewer-image-validator"
+  # The bucket's event notification still points at this (now deleted) Lambda — remove it
+  NOTIF_BUCKET=$(aws s3api list-buckets --query "Buckets[?starts_with(Name,'photoviewer-')].Name" --output text 2>/dev/null | head -1)
+  if [ -n "$NOTIF_BUCKET" ]; then
+    aws s3api put-bucket-notification-configuration --bucket "$NOTIF_BUCKET" --notification-configuration '{}' --region "$REGION" 2>/dev/null       && deleted "S3 event notification on $NOTIF_BUCKET (was pointing at deleted validator Lambda)"       || skipped "S3 event notification (could not clear)"
+  fi
 else
   skipped "Lambda: photoviewer-image-validator (not found)"
 fi
@@ -97,9 +102,16 @@ if [ "$SH_STATUS" != "NONE" ]; then
   fi
   aws organizations disable-aws-service-access --service-principal securityhub.amazonaws.com 2>/dev/null || true
   aws securityhub disable-security-hub --region "$REGION" 2>/dev/null && deleted "Security Hub" || skipped "Security Hub (could not disable)"
-  # Security Hub creates securityhub-* Config rules — wait briefly, then force-delete any leftovers
-  info "Waiting 15 seconds for Security Hub to clean up its Config rules..."
-  sleep 15
+  # Security Hub creates securityhub-* Config rules — it can take 10+ minutes to remove them.
+  # Poll until they are gone (or give up after ~10 minutes), then force-delete any leftovers.
+  info "Waiting for Security Hub to clean up its Config rules (can take 10+ minutes)..."
+  for attempt in $(seq 1 20); do
+    SH_REMAINING=$(aws configservice describe-config-rules --region "$REGION"       --query "length(ConfigRules[?starts_with(ConfigRuleName,'securityhub-')])"       --output text 2>/dev/null || echo 0)
+    case "$SH_REMAINING" in (*[!0-9]*|"") SH_REMAINING=0 ;; esac
+    if [ "$SH_REMAINING" -eq 0 ]; then break; fi
+    info "  ...${SH_REMAINING} securityhub-* rule(s) remain (check ${attempt}/20), waiting 30s"
+    sleep 30
+  done
   SH_RULES=$(aws configservice describe-config-rules --region "$REGION" \
     --query "ConfigRules[?starts_with(ConfigRuleName,'securityhub-')].ConfigRuleName" \
     --output text 2>/dev/null || echo "")
