@@ -166,6 +166,9 @@ ls -lh image-validator.zip</pre>
   <li>Click <strong>Add</strong></li>
 </ul>
 <div class="callout info">
+  <p><strong>Verify the grant landed:</strong> after clicking Add, scroll the key policy and confirm the role now appears under &ldquo;Allow use of the key.&rdquo; The console's <em>Key users</em> panel only works while the key policy keeps its default structure from Week 8 &mdash; if you edited the policy during the Week 8 revocation exercise and didn't fully restore it, the panel may not render; in that case add the role by editing the policy JSON directly. You will repeat this grant for other roles this week &mdash; verify each one the same way.</p>
+</div>
+<div class="callout info">
   <p><strong>Least privilege + KMS dual authorization.</strong> The validator needs <code>GetObject</code> to download the file, <code>PutObjectTagging</code> to write validation tags, and <code>kms:Decrypt</code> because the bucket uses SSE-KMS with <code>photoviewer-data-key</code> (from the Week 8 encryption lab). Remember: KMS requires authorization from <em>both</em> the IAM policy and the key policy. The IAM policy alone is not enough &mdash; the role must also appear in the key policy.</p>
 </div>
 </div></div>
@@ -178,7 +181,7 @@ ls -lh image-validator.zip</pre>
   <li>Event types: <strong>s3:ObjectCreated:*</strong></li>
   <li>Destination: <strong>Lambda function &rarr; photoviewer-image-validator</strong></li>
 </ul>
-<p>Every file uploaded to the <code>photos/</code> prefix will now trigger the validator.</p>
+<p>Every file uploaded to the <code>photos/</code> prefix will now trigger the validator. <em>Note: this lab points the trigger (and the malware scan you configure later) at <code>photos/</code> for simplicity — you will upload the test files there manually. In the app's real flow, user uploads land under <code>uploads/</code>; production would cover that prefix too (or the whole bucket).</em></p>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Test the validator</span></div><div class="step-body">
@@ -319,7 +322,7 @@ Notes: Testing upload for support case #4472</pre>
 <p>After uploading, go to <strong>GuardDuty &rarr; Malware scans</strong> to confirm a scan was triggered. It may take a few minutes for the scan to appear and complete.</p>
 <div class="callout info">
   <p><strong>Note:</strong> The EICAR string is an industry-standard test pattern. It is not malware and cannot harm your system. Every anti-malware product &mdash; including GuardDuty Malware Protection &mdash; is designed to recognize and flag it.</p>
-  <p><strong>The string must be byte-exact.</strong> It is exactly 68 characters with <strong>no trailing newline or spaces</strong>, straight quotes only (no smart quotes), and the backslash <code>\</code> intact. A single stray character means GuardDuty will <em>silently</em> not flag it &mdash; the scan completes as clean and the rest of the lab fails with no obvious cause. If your scan does not flag the file, copy the string directly from <strong>eicar.org</strong> rather than from this page, and confirm your editor did not add a trailing newline.</p>
+  <p><strong>Copy the string carefully: 68 characters, straight quotes only (no smart quotes), and the backslash <code>\</code> intact. GuardDuty matches the EICAR signature and tolerates minor whitespace — a trailing newline is fine (the test files in the course repo have one and are detected reliably) — but altered characters or smart quotes will make the scan come back clean, and the rest of the lab will fail with no obvious cause. If your scan does not flag the file, copy the string directly from <strong>eicar.org</strong> rather than from this page, and confirm your editor did not add a trailing newline.</p>
 </div>
 <div class="callout">
   <p><strong>No scan triggered?</strong> Delete the file from S3 and re-upload it. Malware Protection only scans on new <code>PutObject</code> events &mdash; it does not scan existing objects.</p>
@@ -523,7 +526,7 @@ def lambda_handler(event, context):
 
 <div class="step"><div class="step-header"><span class="step-num">Step 19</span><span class="step-title">Test the full loop</span></div><div class="step-body">
 <p>Upload a new EICAR test file to <code>photos/</code> (name it <code>malware-test.jpg</code>). This is the same EICAR content from Step 12, but a fresh upload is needed &mdash; GuardDuty only scans on new <code>PutObject</code> events, and the Step 12 upload happened before EventBridge and the quarantine Lambda existed.</p>
-<p>Wait for GuardDuty Malware Protection to scan and generate a scan result (this may take several minutes). When the scan result fires, both EventBridge rules activate:</p>
+<p>When the scan result fires, the <code>guardduty-malware-quarantine</code> rule matches it &rarr; SNS sends an email and the quarantine Lambda runs. <em>Don't expect a second email from <code>guardduty-high-severity-alert</code>:</em> a Malware Protection scan result is its own event type and does not reliably generate a separate high-severity GuardDuty <em>Finding</em> &mdash; the high-severity email you saw earlier came from the sample findings in Step 13. One email here means it worked.</p>
 <ul>
   <li><code>guardduty-high-severity-alert</code> matches the high-severity finding &rarr; SNS sends an email</li>
   <li><code>guardduty-malware-quarantine</code> matches the scan result &rarr; SNS sends an email AND the quarantine Lambda moves the file from <code>photos/</code> to <code>quarantine/</code></li>
@@ -541,13 +544,16 @@ def lambda_handler(event, context):
 <!-- Cleanup -->
 <h2>Cleanup</h2>
 
-<p>Week 12 does not depend on any services from this lab. Disable or delete everything below to avoid charges. Keep CloudTrail, Config, Inspector, and CloudWatch &mdash; they remain useful.</p>
+<p>Week 12 does not depend on any services from this lab &mdash; or on Config or Inspector from Week 10. Disable or delete everything below to avoid charges. Keep <strong>CloudTrail</strong> and your <strong>CloudWatch alarms</strong> &mdash; CloudTrail is required for Week 12, and the alarms cost nothing.</p>
 
 <ol>
   <li><strong>Disable Macie</strong> &mdash; Go to <strong>Macie &rarr; Settings &rarr; Disable Macie</strong>. Free trial runs for 30 days, then charges begin.</li>
   <li><strong>Disable GuardDuty Malware Protection for S3</strong> &mdash; Go to <strong>GuardDuty &rarr; Protection plans &rarr; Malware Protection for S3</strong>. Select the bucket plan and click <strong>Disable</strong>.</li>
   <li><strong>Disable GuardDuty</strong> &mdash; Go to <strong>GuardDuty &rarr; Settings &rarr; Suspend &rarr; Disable GuardDuty</strong>.</li>
   <li><strong>Disable Security Hub</strong> &mdash; Go to <strong>Security Hub &rarr; Settings &rarr; General &rarr; Disable Security Hub</strong>.</li>
+  <li><strong>Delete the four Config rules</strong> &mdash; Go to <strong>Config &rarr; Rules</strong> and delete <code>s3-default-encryption-kms</code>, <code>s3-bucket-public-read-prohibited</code>, <code>cloud-trail-encryption-enabled</code>, and <code>iam-root-access-key-check</code>. This is the deletion the Week 10 lab told you to hold off on &mdash; <em>now</em> is the right time, and the Week 10 demo video (~30:00) shows the exact flow. Do this <em>after</em> disabling Security Hub, so its auto-created <code>securityhub-*</code> rules are already gone.</li>
+  <li><strong>Stop the Config recorder</strong> &mdash; Go to <strong>Config &rarr; Settings &rarr; Edit</strong> and turn recording off. Config charges per configuration item recorded; with the course winding down there is nothing left for it to watch.</li>
+  <li><strong>Disable Inspector</strong> &mdash; Go to <strong>Inspector &rarr; Settings &rarr; General &rarr; Deactivate Inspector</strong>. Its 15-day free trial converts to real charges, and Week 12 does not use it.</li>
   <li><strong>Delete EventBridge rules</strong> &mdash; Go to <strong>EventBridge &rarr; Rules</strong>. Delete both <code>guardduty-high-severity-alert</code> and <code>guardduty-malware-quarantine</code>. (Remove targets first, then delete the rule.)</li>
   <li><strong>Delete Lambda functions</strong> &mdash; Go to <strong>Lambda &rarr; Functions</strong>. Delete <code>photoviewer-image-validator</code> and <code>photoviewer-quarantine</code>.</li>
   <li><strong>Remove S3 event notification</strong> &mdash; Go to <strong>S3 &rarr; Photo Viewer bucket &rarr; Properties &rarr; Event notifications</strong>. Delete the <code>image-upload-validation</code> notification.</li>
