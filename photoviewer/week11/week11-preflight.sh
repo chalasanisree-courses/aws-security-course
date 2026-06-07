@@ -2,7 +2,8 @@
 # Week 11 Pre-flight Check — CS 55D
 # Verifies the Week 10 environment is intact before starting Week 11.
 
-set -euo pipefail
+# Note: no "set -e" — each check reports its own failure; the script must run to completion.
+set -uo pipefail
 
 PASS="\033[0;32m✓\033[0m"
 FAIL="\033[0;31m✗\033[0m"
@@ -28,7 +29,7 @@ fi
 # --- photos/ prefix ---
 if [ -n "$BUCKET" ]; then
     PHOTO_COUNT=$(aws s3 ls "s3://${BUCKET}/photos/" 2>/dev/null | wc -l)
-    if [ "$PHOTO_COUNT" -gt 0 ]; then
+    if [ "${PHOTO_COUNT:-0}" -gt 0 ]; then
         echo -e "  ${PASS} photos/ prefix exists (${PHOTO_COUNT} objects)"
     else
         echo -e "  ${WARN} photos/ prefix is empty — upload a test photo before starting"
@@ -53,7 +54,7 @@ TOPIC=$(aws sns list-topics --query "Topics[0].TopicArn" --output text 2>/dev/nu
 if [ -n "$TOPIC" ] && [ "$TOPIC" != "None" ]; then
     echo -e "  ${PASS} SNS topic found: $(echo $TOPIC | awk -F: '{print $NF}')"
     SUB_COUNT=$(aws sns list-subscriptions-by-topic --topic-arn "$TOPIC" --query "length(Subscriptions)" --output text 2>/dev/null)
-    if [ "$SUB_COUNT" -gt 0 ]; then
+    if [ "${SUB_COUNT:-0}" -gt 0 ]; then
         echo -e "  ${PASS} Topic has ${SUB_COUNT} subscription(s)"
     else
         echo -e "  ${WARN} Topic has no subscriptions — you may not receive email alerts"
@@ -67,7 +68,7 @@ fi
 echo ""
 echo "▸ Checking Lambda functions..."
 LAMBDA_COUNT=$(aws lambda list-functions --query "length(Functions)" --output text 2>/dev/null)
-if [ "$LAMBDA_COUNT" -gt 0 ]; then
+if [ "${LAMBDA_COUNT:-0}" -gt 0 ]; then
     echo -e "  ${PASS} ${LAMBDA_COUNT} Lambda function(s) found"
     aws lambda list-functions --query "Functions[].FunctionName" --output text 2>/dev/null | tr '\t' '\n' | while read fn; do
         echo "      · ${fn}"
@@ -86,6 +87,20 @@ else
     echo -e "  ${FAIL} Config recorder is not recording — enable it before starting"
     errors=$((errors + 1))
 fi
+
+# --- Week 10 Config rules (Security Hub ingests their findings in Step 14) ---
+EXPECTED_RULES="s3-default-encryption-kms s3-bucket-public-read-prohibited cloud-trail-encryption-enabled iam-root-access-key-check"
+EXISTING_RULES=$(aws configservice describe-config-rules --query "ConfigRules[].ConfigRuleName" --output text 2>/dev/null || true)
+missing=0
+for rule in $EXPECTED_RULES; do
+    if echo "$EXISTING_RULES" | grep -qw "$rule"; then
+        echo -e "  ${PASS} Config rule present: ${rule}"
+    else
+        echo -e "  ${FAIL} Config rule MISSING: ${rule} — Week 10 said keep all four rules through Week 11. Re-create it (Week 10 lab Step 7) or your Security Hub dashboard will have no Config findings."
+        missing=$((missing + 1))
+    fi
+done
+if [ "$missing" -gt 0 ]; then errors=$((errors + missing)); fi
 
 # --- Inspector ---
 echo ""
@@ -109,7 +124,7 @@ fi
 echo ""
 echo "▸ Checking CloudWatch alarms..."
 ALARM_COUNT=$(aws cloudwatch describe-alarms --query "length(MetricAlarms)" --output text 2>/dev/null)
-if [ "$ALARM_COUNT" -gt 0 ]; then
+if [ "${ALARM_COUNT:-0}" -gt 0 ]; then
     echo -e "  ${PASS} ${ALARM_COUNT} CloudWatch alarm(s) found"
 else
     echo -e "  ${WARN} No CloudWatch alarms found — expected from Week 10"
