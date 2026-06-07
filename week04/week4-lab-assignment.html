@@ -291,6 +291,23 @@ curl http://localhost:8000/health
 curl http://localhost:8000/photos</pre>
   <p>You should see <code>{"status": "ok"}</code> from health and a JSON array of 5 photos from /photos.</p>
   <div class="deliverable"><strong>Screenshot:</strong> SSM terminal showing systemctl status active and curl /photos returning JSON</div>
+  <div class="note"><strong>Troubleshooting — "photoviewer service not starting"</strong><br>
+  If <code>systemctl status photoviewer</code> shows <code>code=exited, status=2</code>, Python is crashing before the Flask app can start. Work through these steps in order.
+  <p style="margin:0.6rem 0 0.2rem;"><strong>1. Check S3 first.</strong> The Flask application (<code>app.py</code>) must be in your S3 bucket under the <code>app/</code> folder. If it's not there, go back to Part 2 (Step 3) and upload it.</p>
+  <p style="margin:0.6rem 0 0.2rem;"><strong>2. Check if it landed on your EC2.</strong> If it's in S3, did it actually download during bootstrap? In your SSM session, run:</p>
+  <pre>ls -la /home/ec2-user/photoviewer/</pre>
+  <p style="margin:0.2rem 0;">If <code>app.py</code> is there, make sure the file size is non-zero. If it's missing or zero bytes, the download failed — check the bucket name in your user data script against your actual bucket name. It must match exactly, including capitalization: S3 names are case-sensitive, so <code>Photoviewer</code>, <code>PhotoViewer</code>, and <code>photoviewer</code> are all different. Also double-check the account ID in the bucket name. Once confirmed, pull it down manually:</p>
+  <pre>aws s3 cp s3://photoviewer-[your-account-id]/app/app.py /home/ec2-user/photoviewer/app.py
+sudo systemctl restart photoviewer</pre>
+  <p style="margin:0.6rem 0 0.2rem;"><strong>3. Try running it manually.</strong> If the file is there with a valid size, run it directly to see the actual error:</p>
+  <pre>python3 /home/ec2-user/photoviewer/app.py</pre>
+  <p style="margin:0.2rem 0;">If it shows a <code>ModuleNotFoundError</code> for flask, run:</p>
+  <pre>sudo pip3 install flask boto3
+sudo systemctl restart photoviewer</pre>
+  <p style="margin:0.2rem 0;">Optional: check the service logs for the error history — same error, but with timestamps, useful if the app crashes too fast to catch manually:</p>
+  <pre>journalctl -u photoviewer -n 30</pre>
+  <p style="margin:0.6rem 0 0;"><strong>4. Verify the fix.</strong> Re-run the three commands from the start of this step — you should see <code>active (running)</code> and JSON responses from both curls.</p>
+  </div>
 </div>
 
 <div class="part">
