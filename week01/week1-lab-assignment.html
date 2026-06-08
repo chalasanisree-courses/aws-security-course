@@ -186,6 +186,7 @@
   <p>Go to <strong>CloudWatch → Alarms → Create alarm → Select metric → Billing → Total Estimated Charge:</strong></p>
   <ul>
     <li>Select <strong>EstimatedCharges</strong> with Currency: USD → <strong>Select metric</strong></li>
+    <li><em>On a brand-new account, this metric may show no data yet — billing metrics only start publishing after your first charges accrue, and update only a few times per day. Your alarm may sit in "Insufficient data" for a while. That is expected and does not mean you set it up wrong.</em></li>
     <li>Threshold: Greater than <code>10</code></li>
     <li>Click <strong>Next</strong></li>
   </ul>
@@ -230,7 +231,8 @@
 <div class="part">
   <div class="part-header"><span class="part-num">Step 10</span><span class="part-title">Clone the course repo</span></div>
   <p>Clone the course GitHub repository into CloudShell. You only need to do this once.</p>
-  <pre>git clone https://github.com/chalasanisree-courses/aws-security-course.git</pre>
+  <pre>cd ~
+git clone https://github.com/chalasanisree-courses/aws-security-course.git</pre>
   <p>Run the resource audit script to confirm it works:</p>
   <pre>bash aws-security-course/photoviewer/audit-aws-resources.sh</pre>
   <p>At this point you should have no expensive resources running.</p>
