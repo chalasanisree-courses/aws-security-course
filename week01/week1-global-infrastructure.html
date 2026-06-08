@@ -396,7 +396,7 @@ h1 { font-size: 26px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
 
     <rect x="464" y="252" width="196" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
     <text x="562" y="268" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Complete region outage</text>
-    <text x="562" y="286" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">(Middle East example)</text>
+    <text x="562" y="286" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">(example scenario)</text>
     <text x="562" y="304" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Route 53 redirects traffic</text>
 
     <text x="118" y="330" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">FAILS ON</text>
@@ -437,7 +437,7 @@ h1 { font-size: 26px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
     </div>
 
     <div class="callout callout-warning" style="margin-top:16px">
-      <strong>The Middle East outage lesson:</strong> Customers who had only deployed in that region were simply down until AWS restored service. Customers with Tier 3 architecture failed over automatically. AWS was not at fault — they restored the region. Customers with no multi-region architecture had no recourse except to wait.
+      <strong>The region-outage lesson (illustrative scenario):</strong> When a region suffers a complete outage, customers who only deployed in that region are simply down until AWS restores service. Customers with Tier 3 architecture failed over automatically. AWS was not at fault — they restored the region. Customers with no multi-region architecture had no recourse except to wait.
     </div>
   </div>
 
@@ -474,7 +474,7 @@ const info = {
       'When you create a resource like an EC2 instance, you choose which region it lives in',
       'Most AWS services are regional — your Lambda function in us-east-1 is separate from one in us-west-2',
       'Data does not automatically replicate between regions — you control this explicitly',
-      'Pricing varies between regions — us-east-1 is typically the cheapest'
+      'Pricing varies between regions — us-east-1 is often among the cheapest'
     ]
   },
   az: {
