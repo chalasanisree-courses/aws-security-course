@@ -349,6 +349,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <p>Click <strong>Add rule.</strong></p>
   <div class="info">A rate of 100 requests per 5 minutes is appropriate for a lab. In production you would set this based on expected legitimate traffic patterns — typically 1,000–10,000 per 5 minutes for a public API.</div>
   <div class="deliverable"><strong>Screenshot:</strong> CloudFront Security tab showing the managed rules plus your photos-rate-limit rule</div>
+  <div class="note"><strong>Optional &mdash; switch the managed rules from monitor to blocking.</strong> The three AWS managed rules that came with your distribution (IP reputation, Core Rule Set, Known Bad Inputs) start in <em>Count</em> (monitor) mode &mdash; they log what they <em>would</em> catch but don&rsquo;t block it. If you want them to actively block SQL-injection / XSS-style requests, go to <strong>CloudFront &rarr; your distribution &rarr; Security &rarr; Manage protections &rarr; Manage rules</strong>, open each managed rule, and change its action from <strong>Count</strong> to <strong>Block</strong>. There is no extra charge on the Free plan, and because this app only serves <code>GET /photos</code> with no user input, false positives are very unlikely. In production you would normally watch the Count metrics first &mdash; to confirm legitimate traffic isn&rsquo;t being flagged &mdash; and then flip to Block.</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
