@@ -396,7 +396,7 @@ h1 { font-size: 26px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
 
     <rect x="464" y="252" width="196" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
     <text x="562" y="268" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Complete region outage</text>
-    <text x="562" y="286" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">(example scenario)</text>
+    <text x="562" y="286" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">(Middle East, 2026)</text>
     <text x="562" y="304" text-anchor="middle" font-size="11" fill="#085041" font-family="system-ui,sans-serif">Route 53 redirects traffic</text>
 
     <text x="118" y="330" text-anchor="middle" font-size="11" font-weight="600" fill="#888780" font-family="system-ui,sans-serif">FAILS ON</text>
@@ -437,7 +437,9 @@ h1 { font-size: 26px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
     </div>
 
     <div class="callout callout-warning" style="margin-top:16px">
-      <strong>The region-outage lesson (illustrative scenario):</strong> When a region suffers a complete outage, customers who only deployed in that region are simply down until AWS restores service. Customers with Tier 3 architecture failed over automatically. AWS was not at fault — they restored the region. Customers with no multi-region architecture had no recourse except to wait.
+      <strong>The Middle East outage — a real example:</strong> On March 1, 2026, drone strikes hit three AWS data centers in the UAE and Bahrain, part of a retaliatory campaign following U.S. and Israeli strikes on Iran. The attacks knocked out <strong>two of the three availability zones</strong> in the UAE region (<code>me-central-1</code>) and one zone in Bahrain (<code>me-south-1</code>). Strikes continued into early April; AWS declared the affected zones &ldquo;hard down,&rdquo; with structural, fire, and water damage projected to take months to repair. Customers including Emirates NBD, First Abu Dhabi Bank, Snowflake, and Careem all went dark.
+      <br><br>
+      <strong>The lesson:</strong> Because multiple zones in the <em>same region</em> went down at once, ordinary multi-AZ redundancy was not enough. Customers deployed only in that region had no recourse but to wait for AWS to restore service. Only those running multi-region (Tier 3) architecture could fail over to another region. AWS was not at fault — they restored the region. Surviving the loss of an entire region is <em>your</em> architecture decision, not something AWS guarantees.
     </div>
   </div>
 
