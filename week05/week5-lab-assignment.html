@@ -380,6 +380,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
   <p>Count the log entries — they should correspond to the number of times you loaded the Photo Viewer.</p>
   <div class="info">Every <code>/photos</code> request that reaches Lambda is automatically logged here — no configuration required. This is your audit trail for the API. Note that WAF-blocked requests never reach Lambda and will not appear in these logs — they are captured in WAF logs instead.</div>
   <div class="deliverable"><strong>Screenshot:</strong> CloudWatch log stream showing START / END / REPORT entries for Lambda invocations</div>
+  <div class="note"><strong>Note &mdash; these debug logs are a lab convenience, not production code.</strong> The Lambda and the authorizer print the full event (and even the origin secret) to CloudWatch so you can troubleshoot. In production you would never log secrets or tokens &mdash; once Week 6 adds sign-in, the event carries a bearer JWT, and logging the full event would write tokens to CloudWatch.</div>
 </div>
 
 <div class="part">
