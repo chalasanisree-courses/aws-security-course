@@ -267,10 +267,17 @@ else
   fi
 fi
 
-# WAF Web ACL
+# WAF Web ACL — bundled (free, auto-removed with the distribution) vs custom standalone (~$5/mo)
 WAF_ACLS=$(aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1 --query "WebACLs[].Name" --output text 2>/dev/null || echo "")
 if [ -n "$WAF_ACLS" ] && [ "$WAF_ACLS" != "None" ]; then
-  manual "WAF Web ACL(s) found: $WAF_ACLS — disassociate from CloudFront first, then delete in console"
+  for acl in $WAF_ACLS; do
+    case "$acl" in
+      CreatedByCloudFront-*)
+        skipped "WAF Web ACL $acl — bundled with the CloudFront Free plan (\$0); removed automatically when you delete the distribution, no action needed" ;;
+      *)
+        manual "WAF Web ACL $acl — custom standalone (~\$5/month): disassociate from CloudFront, then delete in console" ;;
+    esac
+  done
 else
   skipped "WAF Web ACL (not found)"
 fi
