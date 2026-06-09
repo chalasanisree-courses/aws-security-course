@@ -755,6 +755,7 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
 
     <div class="callout info">
       <p><strong>Limitation:</strong> The Policy Simulator evaluates <strong>identity-based policies only</strong>. It does not evaluate resource-based policies (bucket policies, key policies). So the simulator will show "Allowed" for principals that have <code>s3:GetObject</code> in their identity policy &mdash; but in practice, they also need the key policy to agree for encrypted objects. The Identity Center roles may not appear in the simulator directly &mdash; they are auto-generated IAM roles with names like <code>AWSReservedSSO_PhotosAdmin_...</code>.</p>
+      <p><strong>Note:</strong> the Lambda execution role has <code>s3:GetObject</code> only on the <code>uploads/*</code> and <code>photos/*</code> prefixes (least privilege, from Week 7), not the whole bucket &mdash; so against the bucket-wide <code>arn:aws:s3:::BUCKET-NAME/*</code> it shows <strong>Denied</strong>, which is expected, not an error. Point the resource at a specific covered object (e.g. <code>.../photos/photo1.jpg</code>) and it shows Allowed. Whether a principal &ldquo;has GetObject&rdquo; depends on which object you ask about.</p>
     </div>
 
     <div class="screenshot">IAM Policy Simulator showing results for <code>s3:GetObject</code> across multiple principals &mdash; some allowed, some denied</div>
