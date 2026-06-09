@@ -222,6 +222,8 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 <p>Go to <strong>Amazon Inspector &rarr; Get Started &rarr; Enable Inspector</strong>.</p>
 <p>On the activation page, ensure <strong>Lambda standard scanning</strong> is selected. You can also enable EC2 scanning, but since Week 5 replaced the EC2-based backend with the current stateless Lambda backend, Lambda scanning is the relevant option.</p>
 <p>Inspector starts a 15-day free trial. It automatically discovers all Lambda functions in the account and begins scanning their deployment packages for known CVEs.</p>
+<p>After enabling, open <strong>Inspector &rarr; Dashboard</strong> and find the <strong>Environment coverage</strong> panel. Within a few minutes your <strong>Lambda functions</strong> should read <strong>100%</strong> (for example, 2 of 2) &mdash; that confirms scanning is active. This coverage view is the &ldquo;Lambda scanning active&rdquo; screenshot the rubric asks for, and it is a <em>separate</em> deliverable from the findings screenshot you capture in Step 13.</p>
+<div class="screenshot">Inspector Dashboard &mdash; Environment coverage showing Lambda functions at 100%</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review findings</span></div><div class="step-body">
