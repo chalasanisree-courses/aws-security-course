@@ -595,7 +595,58 @@
 
 <p><strong>Step 2 — Access management</strong> happens on every API call. The signed request reaches the resource. The resource hands it to the IAM policy engine, which evaluates the requester's IAM policy and the resource's resource policy (if one exists). The engine returns allow or deny. The resource does not evaluate policies itself.</p>
 
-<p>The role of each policy differs by resource type.</p>
+<p>The role of each policy differs by resource type. The decision tree below summarizes how a resource policy and an IAM policy combine to grant access; the tables that follow give the per-resource detail.</p>
+
+<div style="margin:1.5rem 0;">
+<svg viewBox="0 0 1060 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif;" role="img" aria-label="Decision tree: a resource policy is either mandatory (key policy, trust policy) or optional (S3 bucket); mandatory policies either delegate to IAM (IAM whitelists) or name principals directly (IAM can only blacklist); optional policies let either policy whitelist or blacklist.">
+  <defs>
+    <marker id="w9arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2c6e8f"/>
+    </marker>
+  </defs>
+
+  <!-- connectors -->
+  <line x1="530" y1="70" x2="300" y2="180" stroke="#2c6e8f" stroke-width="1.5" marker-end="url(#w9arrow)"/>
+  <line x1="530" y1="70" x2="780" y2="180" stroke="#2c6e8f" stroke-width="1.5" marker-end="url(#w9arrow)"/>
+  <line x1="295" y1="226" x2="150" y2="368" stroke="#2c6e8f" stroke-width="1.5" marker-end="url(#w9arrow)"/>
+  <line x1="295" y1="226" x2="435" y2="368" stroke="#2c6e8f" stroke-width="1.5" marker-end="url(#w9arrow)"/>
+  <line x1="785" y1="226" x2="785" y2="368" stroke="#2c6e8f" stroke-width="1.5" marker-end="url(#w9arrow)"/>
+
+  <!-- top box -->
+  <rect x="430" y="20" width="200" height="50" rx="4" fill="#14536d"/>
+  <text x="530" y="51" text-anchor="middle" font-size="15" fill="#fff">Resource Policy</text>
+
+  <!-- branch labels -->
+  <text x="150" y="108" font-size="11" fill="#555"><tspan x="150" dy="0">Resource policy is <tspan font-weight="700">mandatory</tspan> &mdash;</tspan><tspan x="150" dy="15">Example: Key Policy for keys,</tspan><tspan x="150" dy="15">Trust policy for roles</tspan></text>
+  <text x="858" y="108" font-size="11" fill="#555"><tspan x="858" dy="0">Resource policy is <tspan font-weight="700">optional</tspan> &mdash;</tspan><tspan x="858" dy="15">Example: for resources like</tspan><tspan x="858" dy="15">s3 buckets</tspan></text>
+
+  <!-- category boxes -->
+  <rect x="160" y="180" width="270" height="46" rx="4" fill="#fff" stroke="#4e9a3f" stroke-width="2"/>
+  <text x="295" y="208" text-anchor="middle" font-size="13" fill="#1a1a1a">Resource Policy type = Mandatory</text>
+  <rect x="660" y="180" width="250" height="46" rx="4" fill="#fff" stroke="#4e9a3f" stroke-width="2"/>
+  <text x="785" y="208" text-anchor="middle" font-size="13" fill="#1a1a1a">Resource Policy type = Optional</text>
+
+  <!-- sub-branch labels -->
+  <text x="40" y="288" font-size="11" fill="#555"><tspan x="40" dy="0">Resource policy can</tspan><tspan x="40" dy="15">delegate to IAM policy</tspan></text>
+  <text x="560" y="262" font-size="11" fill="#555"><tspan x="560" dy="0">Resource policy names the</tspan><tspan x="560" dy="15">principals that can access</tspan><tspan x="560" dy="15">resource (i.e. whitelists</tspan><tspan x="560" dy="15">principals with access)</tspan></text>
+  <text x="925" y="280" font-size="11" fill="#555"><tspan x="925" dy="0">Resource policy can</tspan><tspan x="925" dy="15">Blacklist or Whitelist</tspan><tspan x="925" dy="15">principals</tspan></text>
+
+  <!-- leaf boxes -->
+  <rect x="40" y="368" width="220" height="52" rx="4" fill="#14536d"/>
+  <text x="150" y="399" text-anchor="middle" font-size="12" fill="#fff">IAM policy acts as a Whitelist</text>
+  <rect x="320" y="368" width="230" height="52" rx="4" fill="#14536d"/>
+  <text x="435" y="399" text-anchor="middle" font-size="12" fill="#fff">IAM policy can act as a Blacklist</text>
+  <rect x="660" y="368" width="250" height="52" rx="4" fill="#14536d"/>
+  <text x="785" y="392" text-anchor="middle" font-size="12" fill="#fff"><tspan x="785" dy="0">IAM policy can act</tspan><tspan x="785" dy="15">Whitelist or Blacklist</tspan></text>
+
+  <!-- final-access captions -->
+  <text x="40" y="440" font-size="11" fill="#444"><tspan x="40" dy="0">Final access is possible if principal</tspan><tspan x="40" dy="14">is in IAM policy Whitelist AND is</tspan><tspan x="40" dy="14">not in IAM policy Blacklist</tspan></text>
+  <text x="320" y="440" font-size="11" fill="#444"><tspan x="320" dy="0">Final access is possible if principal</tspan><tspan x="320" dy="14">is in Resource Policy Whitelist AND</tspan><tspan x="320" dy="14">not in IAM policy Blacklist</tspan></text>
+  <text x="660" y="440" font-size="11" fill="#444"><tspan x="660" dy="0">Final access is possible if principal is</tspan><tspan x="660" dy="14">in either the Resource or IAM policy</tspan><tspan x="660" dy="14">whitelist AND NOT in either Blacklist</tspan></text>
+</svg>
+</div>
+
+<p style="font-size:0.88rem;color:#666;">For <strong>mandatory</strong> resource policies (KMS key policies, role trust policies) the resource policy is the gatekeeper: it either delegates to IAM (then IAM grants access) or names the principal directly (then IAM can only deny). For <strong>optional</strong> resource policies (e.g. S3 buckets) either policy can grant.</p>
 
 <h3>Same-account access</h3>
 
