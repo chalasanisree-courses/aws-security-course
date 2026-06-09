@@ -612,13 +612,13 @@
       <td><strong>KMS key</strong></td>
       <td>Optional **</td>
       <td>Required</td>
-      <td>The key policy must explicitly name the principal and grant access. If it does, the IAM policy is not needed. The IAM policy can only close the gate (explicit deny).</td>
+      <td>The key policy is required. If it names the principal directly, the IAM policy isn&rsquo;t needed and can only deny. But if the key policy delegates to IAM (the console default &mdash; see **), an IAM policy granting access is sufficient.</td>
     </tr>
     <tr>
       <td><strong>IAM role</strong></td>
       <td>Optional *</td>
       <td>Required</td>
-      <td>The trust policy must explicitly name the principal and allow assumption. If it does, the IAM policy is not needed. The IAM policy can only close the gate (explicit deny).</td>
+      <td>The trust policy is required. If it names the principal directly, the IAM policy isn&rsquo;t needed and can only deny. But if it names the account root (the console default &mdash; see *), an IAM policy allowing <code>sts:AssumeRole</code> is also required.</td>
     </tr>
   </tbody>
 </table>
@@ -656,7 +656,7 @@
 <p>Cross-account access always requires both policies &mdash; the resource policy in the target account grants access, and the IAM policy in the caller's account allows the action. Neither alone is sufficient. This is why resource policies exist: they are the mechanism by which one account grants access to principals in another account.</p>
 
 <div class="callout">
-  <p>KMS keys and IAM roles share the same posture for same-account access: the resource policy is the gatekeeper. It must explicitly name the principal. The IAM policy cannot open a gate the resource policy hasn't opened &mdash; it can only close one. S3 is more permissive within the same account: either policy can open the gate independently. Across accounts, all three resource types require both policies.</p>
+  <p>KMS keys and IAM roles share the same posture for same-account access: the resource policy (key policy / trust policy) is mandatory. It grants access one of two ways &mdash; by naming the principal directly (then the IAM policy isn&rsquo;t needed and can only deny), or by delegating to IAM (the console default: the key policy&rsquo;s &ldquo;enable IAM policies&rdquo; statement, or a trust policy naming the account root), in which case an IAM policy granting the action does open the gate. S3 is more permissive: either policy can open the gate independently. Across accounts, all three resource types require both policies.</p>
 </div>
 
 
