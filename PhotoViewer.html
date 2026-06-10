@@ -382,10 +382,10 @@
           </div>
         </div>
         <div style="padding:9px 11px;border-top:0.5px solid rgba(0,0,0,0.08);">
-          <span style="display:inline-block;font-size:9px;background:#F1EFE8;color:#888780;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Week 7</span>
+          <span style="display:inline-block;font-size:9px;background:#EAF3DE;color:#27500A;border-radius:3px;padding:1px 5px;margin-bottom:5px;">Built — Week 7</span>
           <ul style="list-style:none;margin:0;padding:0;">
             <li style="font-size:10px;color:#5f5e5a;padding:2px 0;display:flex;gap:5px;">– Everything in free tier</li>
-            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Upload your own photos</li>
+            <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Upload your own photos <span style="font-weight:400;color:#888780;">(defaults to is_public = true)</span></li>
             <li style="font-size:10px;color:#1a1a18;font-weight:500;padding:2px 0;display:flex;gap:5px;">+ Delete your uploads</li>
           </ul>
         </div>
@@ -682,7 +682,7 @@
             <div class="week-circle wc-building">7</div>
             <div class="ac-title-group">
               <div class="ac-title">Upload & delete with access control</div>
-              <div class="ac-subtitle">Premium: upload photos · All users: delete own uploads</div>
+              <div class="ac-subtitle">Premium: upload, delete, and toggle visibility of own uploads</div>
             </div>
           </div>
           <div class="ac-header-right">
@@ -1107,7 +1107,7 @@
       active: ['security','performance'],
       issues: {
         security: { title:'Security issues in Week 7', bullets:[
-          'Uploaded files pass Content-Type and size checks but are not scanned for malicious content — an image with embedded malware or PII (e.g. a photo of a driver\'s license) will be accepted and stored.',
+          'Uploaded files pass a Content-Type check but are not scanned for malicious content — an image with embedded malware or PII (e.g. a photo of a driver\'s license) will be accepted and stored.',
           'All data at rest is encrypted with AWS-managed keys — no CloudTrail audit trail on key usage, no ability to scope decryption via key policy.'
         ]},
         performance: { title:'Performance issues in Week 7', bullets:[
