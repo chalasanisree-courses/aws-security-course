@@ -244,6 +244,10 @@
 </div>
 
 <div class="callout info">
+  <p>The Photo Viewer's requirement is that every logged-in user belongs to either the <code>free</code> or <code>premium</code> group. Since Cognito doesn't auto-assign users to groups, we explicitly add the user to the <code>free</code> group (Step 6.1 of lab). We look at the difference between <code>free</code> and <code>premium</code> membership in the following week. Hence, for Week 6, &ldquo;logged in&rdquo; means &ldquo;logged in and in the <code>free</code> group.&rdquo;</p>
+</div>
+
+<div class="callout info">
   <p><strong>Week 6 vs Week 7 distinction:</strong> In Week 6, free and premium users see identical data — all photos. The group distinction has no visible effect yet. Week 7 adds authorization: premium users gain upload and CRUD capabilities. Free users remain browse-only. The Cognito groups infrastructure set up this week is what Week 7 builds on.</p>
 </div>
 
