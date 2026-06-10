@@ -85,7 +85,7 @@
 <h1>Week 8 Lab — Encryption at Rest with KMS</h1>
 <p class="subtitle">CS 55D: Security in Amazon Web Services &nbsp;·&nbsp; Foothill College &nbsp;·&nbsp; 100 pts</p>
 
-<p><strong>Objective:</strong> Replace AWS-managed encryption with customer-managed KMS keys across S3, DynamoDB, and Secrets Manager. Create two keys with distinct key policies to enforce separation of duties. Update the Lambda function to use Signature Version 4 and include KMS encryption parameters in presigned URLs. Demonstrate that KMS key policies create an authorization layer independent of IAM, and use CloudTrail to audit decryption events.</p>
+<p><strong>Objective:</strong> Replace AWS's default encryption with customer-managed KMS keys across S3, DynamoDB, and Secrets Manager. Create two keys with distinct key policies to enforce separation of duties. Update the Lambda function to use Signature Version 4 and include KMS encryption parameters in presigned URLs. Demonstrate that KMS key policies create an authorization layer independent of IAM, and use CloudTrail to audit decryption events.</p>
 
 <div class="callout info">
   <p><strong>What changes this week:</strong> Two KMS keys are created. Encryption is switched on three services. The Lambda function is updated to use SigV4 and include KMS parameters in presigned PUT URLs. The frontend is updated to send encryption headers. S3 CORS is updated to allow encryption headers. No new API routes or UI features &mdash; the changes are invisible to the user.</p>
@@ -243,7 +243,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
 
     <div class="verify">
       <div class="verify-label">&#10003; Verify</div>
-      <p>Load the Photo Viewer in your browser. The app should work exactly as it did in Week 7. The new code is deployed but KMS encryption is not active yet &mdash; the bucket and services still use AWS-managed encryption.</p>
+      <p>Load the Photo Viewer in your browser. The app should work exactly as it did in Week 7. The new code is deployed but KMS encryption is not active yet &mdash; the bucket and services still use AWS's default encryption.</p>
     </div>
   </div>
 </div>
@@ -283,6 +283,8 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
   <span class="part-title">Encrypt S3</span>
 </div>
 
+<p>Part 4 encrypts <strong>new</strong> uploads with your data key. Note the split that the rest of the course relies on: <strong>pre-seeded photos live under the <code>photos/</code> prefix and stay on SSE-S3</strong>, while <strong>new user uploads go to <code>uploads/</code> and are encrypted with SSE-KMS</strong> (your data key). Changing the bucket's default encryption does not re-encrypt the existing <code>photos/</code> objects &mdash; both encryption types coexist in the same bucket.</p>
+
 <div class="step">
   <div class="step-header">
     <span class="step-num">Step 7</span>
@@ -305,6 +307,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
 
     <div class="callout warning">
       <p><strong>Replace <code>YOUR_CLOUDFRONT_DOMAIN</code></strong> in <code>AllowedOrigins</code> with your actual CloudFront domain (e.g. <code>https://dXXXXXXXXXXXXX.cloudfront.net</code>). If you already had a CORS configuration from Week 7, add the two new <code>AllowedHeaders</code> to your existing config.</p>
+      <p><strong>No trailing slash.</strong> <code>AllowedOrigins</code> must be your CloudFront domain with <strong>no</strong> trailing slash &mdash; <code>https://dXXXX.cloudfront.net</code>, not <code>&hellip;net/</code>. Browsers send the <code>Origin</code> header without a trailing slash and S3 does an exact-string match, so a slash breaks the match and the preflight fails. (In DevTools, &ldquo;<em>Provisional headers are shown</em>&rdquo; on the failed PUT is the signature of a blocked CORS preflight.)</p>
     </div>
 
     <div class="callout info">
@@ -470,9 +473,12 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
       <li><strong>requestParameters.keyId</strong> &mdash; which KMS key was used</li>
       <li><strong>eventTime</strong> &mdash; when it happened</li>
     </ul>
+    <div class="callout">
+      <p>A Decrypt triggered through S3 or DynamoDB often shows an <strong>assumed-role session</strong> under <code>userIdentity</code> (the Lambda execution role's session), not a plain role ARN &mdash; and occasionally the calling service. Match on the <strong>data key</strong> (<code>requestParameters.keyId</code>) and the <strong>event time</strong> rather than expecting an exact role name. This is CloudTrail <strong>Event history</strong> (the last 90 days, always on) &mdash; you didn't have to create a trail for it.</p>
+    </div>
 
     <div class="callout info">
-      <p><strong>This audit trail didn't exist before.</strong> With AWS-managed keys, CloudTrail logged <code>GetObject</code> and <code>Scan</code> calls but no KMS events. You knew someone called the API &mdash; you didn't know if they decrypted the data. With customer-managed keys, every decryption is a separate, auditable event.</p>
+      <p><strong>This audit trail is now on a key you control.</strong> Before, both S3 (<strong>SSE-S3</strong>) and DynamoDB (<strong>&ldquo;Owned by Amazon DynamoDB&rdquo;</strong>) used AWS-owned keys — no KMS events at all, so you couldn't tell whether the data was decrypted. (Secrets Manager's default AWS-managed key <em>did</em> log decrypts, but on a key you couldn't scope or revoke.) With your customer-managed key, every decryption is a separate, auditable event tied to a key whose policy you own.</p>
     </div>
 
     <div class="screenshot">CloudTrail event detail showing a successful <code>kms:Decrypt</code> call (no error code) with the Lambda role ARN and the data key ARN</div>
@@ -505,7 +511,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
 <h2>Reflection Questions</h2>
 
 <h3>Question 1</h3>
-<p>An employee with <code>s3:GetObject</code> permission downloads a private photo. With AWS-managed encryption (before this lab), how would you detect this? With customer-managed KMS keys (after this lab), how would you detect it <em>and</em> how would you prevent it?</p>
+<p>An employee with <code>s3:GetObject</code> permission downloads a private photo. With the default encryption (SSE-S3, before this lab), how would you detect this? With customer-managed KMS keys (after this lab), how would you detect it <em>and</em> how would you prevent it?</p>
 
 <h3>Question 2</h3>
 <p>This lab uses two KMS keys — <code>photoviewer-infra-key</code> and <code>photoviewer-data-key</code>. Explain the security benefit of this separation. What would be the risk of using a single key for both Secrets Manager and S3/DynamoDB?</p>
@@ -575,7 +581,7 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <tr>
       <td><strong>Reflection Q1 — detection and prevention</strong></td>
       <td>6</td>
-      <td>AWS-managed: only S3 access logs or CloudTrail <code>GetObject</code> — no KMS event. Customer-managed: CloudTrail <code>kms:Decrypt</code> shows who decrypted. Prevention: remove role from key policy — IAM still allows GetObject but data is unreadable.</td>
+      <td>Default (SSE-S3): only S3 access logs or CloudTrail <code>GetObject</code> — no KMS event. Customer-managed: CloudTrail <code>kms:Decrypt</code> shows who decrypted. Prevention: remove role from key policy — IAM still allows GetObject but data is unreadable.</td>
     </tr>
     <tr>
       <td><strong>Reflection Q2 — two keys</strong></td>
