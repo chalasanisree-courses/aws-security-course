@@ -455,7 +455,7 @@ bash aws-security-course/photoviewer/week07/week7-preflight.sh</pre>
     </div>
     <div class="callout info">
       <p><strong>What changed in the code:</strong> The handler reads <code>event['routeKey']</code> to determine which route was called (e.g. <code>GET /photos</code>, <code>POST /photos</code>, <code>DELETE /photos/{photoId}</code>). Mutation routes check <code>cognito:groups</code> from the authorizer context. DELETE and PATCH also fetch the DynamoDB item and compare <code>owner</code> to the caller's <code>sub</code>. The GET handler generates presigned GET URLs for all photos — pre-seeded and uploaded.</p>
-      <p><strong>Presigned URL conditions:</strong> The POST handler generates the presigned PUT URL with embedded conditions: <code>Content-Type</code> must be <code>image/jpeg</code> or <code>image/png</code>, and file size must be under 5 MB. These conditions are part of the signed policy — S3 enforces them on upload and rejects requests that violate them, even though no Lambda runs during the upload itself.</p>
+      <p><strong>Presigned URL conditions:</strong> The POST handler generates the presigned PUT URL with an embedded condition: <code>Content-Type</code> must be <code>image/jpeg</code> or <code>image/png</code>. This condition is part of the signed policy — S3 enforces it on upload and rejects requests that violate it, even though no Lambda runs during the upload itself.</p>
     </div>
   </div>
 </div>
@@ -633,6 +633,7 @@ aws s3 cp style.css s3://photoviewer-[your-account-id]/style.css --content-type 
   </div>
   <div class="step-body">
     <p>While logged in as your premium user, find a photo you uploaded earlier.</p>
+    <p><strong>Note:</strong> you can only delete or toggle photos you uploaded (<code>owner</code> = your <code>sub</code>). The pre-seeded photos have no real owner, so the UI shows no delete or toggle controls for them and the API would reject the attempt.</p>
     <p><strong>Before deleting</strong>, capture the current state of your S3 prefix:</p>
     <pre>aws s3 ls s3://photoviewer-[your-account-id]/uploads/YOUR_COGNITO_SUB/</pre>
     <p>You should see your uploaded photo in the listing. Screenshot this output &mdash; it is the "before" half of your evidence.</p>
