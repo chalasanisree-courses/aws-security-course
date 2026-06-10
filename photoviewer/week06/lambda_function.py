@@ -54,6 +54,10 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
+            # '*' is acceptable here only because the Lambda authorizer requires the
+            # x-origin-verify secret header (added solely by CloudFront), which blocks
+            # direct cross-origin browser calls regardless of CORS. In general — and as
+            # taught in Week 7 — you would scope this to your own domain.
             'Access-Control-Allow-Origin': '*'
         },
         'body': json.dumps(photos, default=str)
