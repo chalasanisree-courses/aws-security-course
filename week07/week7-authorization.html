@@ -210,6 +210,10 @@
   </tbody>
 </table>
 
+<div class="callout info">
+  <p><strong>What &ldquo;private&rdquo; means here:</strong> <code>is_public = false</code> hides a photo from anonymous visitors only. Any logged-in user will see all photos.</p>
+</div>
+
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>3. Architecture</h2>
@@ -283,7 +287,7 @@
   </div>
   <div class="flow-step">
     <div class="step-num auth">5</div>
-    <div class="step-body"><strong>Browser uploads directly to S3</strong><p>app.js sends a PUT request with the file bytes directly to the presigned URL &#8212; no Lambda, no API Gateway, no 6 MB payload limit. S3 validates the signature and enforces the embedded conditions (Content-Type and file size limit).</p></div>
+    <div class="step-body"><strong>Browser uploads directly to S3</strong><p>app.js sends a PUT request with the file bytes directly to the presigned URL &#8212; no Lambda, no API Gateway, no 6 MB payload limit. S3 validates the signature and enforces the embedded Content-Type condition.</p></div>
   </div>
   <div class="callout info" style="margin-top:1rem;">
     <p><strong>What if the upload never happens?</strong> The DynamoDB record is created in Step 4 before the file arrives in Step 5. If the upload fails, an orphaned metadata record exists with no backing S3 object. Production systems use S3 event notifications to create metadata only after a confirmed upload &#8212; see the production hardening guide in PhotoViewer.html.</p>
@@ -346,7 +350,7 @@
     </ul>
 
     <h4>Presigned URL conditions</h4>
-    <p>The server can embed conditions in the presigned URL that S3 enforces on upload. If a condition is violated, S3 rejects the request — even though the URL signature is otherwise valid. In this lab, uploads are restricted to <code>image/jpeg</code> or <code>image/png</code> Content-Type and a maximum file size of 5 MB. Conditions are part of the signed policy — the client cannot remove or modify them without invalidating the signature.</p>
+    <p>The server can embed conditions in the presigned URL that S3 enforces on upload. If a condition is violated, S3 rejects the request — even though the URL signature is otherwise valid. In this lab, uploads are restricted to <code>image/jpeg</code> or <code>image/png</code> Content-Type. This condition is part of the signed policy — the client cannot remove or modify it without invalidating the signature.</p>
 
     <h4>CloudTrail audit</h4>
     <p>Operations performed via presigned URLs are logged in CloudTrail just like any other S3 API call. The event records the IAM principal that generated the URL (the Lambda execution role), the S3 key, the timestamp, and the source IP of the client that used the URL. "Bypassing API Gateway" does not mean "bypassing audit."</p>
@@ -450,7 +454,7 @@
     <span style="color:#aaa;font-size:0.8rem;">click to expand</span>
   </div>
   <div class="vuln-body" id="v1">
-    <p><strong>The problem:</strong> Week 7 presigned URL conditions enforce Content-Type and file size at the S3 layer — a file that claims to be a 500 MB executable will be rejected. But a file that passes those checks can still be harmful: an image with embedded malware, a JPEG with a PHP payload in its EXIF data, a photo containing PII (someone's driver's license), or inappropriate content. The presigned URL conditions check the envelope, not the contents.</p>
+    <p><strong>The problem:</strong> Week 7 presigned URL conditions enforce Content-Type at the S3 layer — a file that is not an <code>image/jpeg</code> or <code>image/png</code> will be rejected. But a file that passes that check can still be harmful: an image with embedded malware, a JPEG with a PHP payload in its EXIF data, a photo containing PII (someone's driver's license), or inappropriate content. The presigned URL conditions check the envelope, not the contents.</p>
     <p><strong>What needs to happen:</strong> Uploaded objects need to be scanned <em>after</em> they land in S3. This is a detection problem, not an input-validation problem — the right tools are the ones that analyze object contents at rest. Future weeks will address parts of this: Macie can detect PII in S3 objects (Week 11), and GuardDuty Malware Protection can scan uploads for known malware signatures (Week 11). What remains after those weeks — magic byte verification, content moderation, image-specific validation — goes in the production hardening guide.</p>
   </div>
 </div>
