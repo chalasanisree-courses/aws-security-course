@@ -510,7 +510,7 @@ curl -s https://XXXXXXXXXX.execute-api.us-east-1.amazonaws.com/photos \
       <li>On login click: redirects the browser to the Cognito managed login page</li>
       <li>On page load: checks for a <code>?code=</code> parameter in the URL — if present, exchanges the auth code with Cognito for a JWT (ID token), stores the JWT in <code>sessionStorage</code>, and reloads the page</li>
       <li>On every <code>/photos</code> call: if a JWT is stored, sends it as <code>Authorization: Bearer &lt;token&gt;</code></li>
-      <li>Checks the JWT <code>exp</code> claim before each call and refreshes silently if expired</li>
+      <li>Checks the JWT <code>exp</code> claim before each call; if expired, clears the token and returns to the logged-out view (the user signs in again)</li>
     </ul>
     <p>Before uploading, edit <code>app.js</code> and replace these three placeholders with your actual values:</p>
     <ul>

@@ -494,7 +494,7 @@
   </div>
   <div class="flow-step">
     <div class="step-num auth">6</div>
-    <div class="step-body"><strong>JWT expires — app.js silently refreshes</strong><p>The ID token expires after 1 hour. <code>app.js</code> checks the <code>exp</code> claim before each <code>/photos</code> call. If expired, it sends the refresh token to Cognito to get a new ID token — silently, without requiring the user to log in again. The refresh token expires after 30 days, at which point the user must log in again.</p></div>
+    <div class="step-body"><strong>JWT expires — app returns to the logged-out view</strong><p>The ID token expires after 1 hour. <code>app.js</code> checks the <code>exp</code> claim before each <code>/photos</code> call; if it's expired, it clears the token and reloads, returning to the unauthenticated (public-photos) view. The user clicks Login to sign in again.</p></div>
   </div>
 </div>
 
@@ -628,7 +628,7 @@
 
     </svg>
     <p><strong>User Pool</strong> — a managed user directory. Handles login, registration, and token issuance. Users authenticate and receive a JWT that your application validates. This is the right tool when users need to access <em>your application</em>.</p>
-    <p><strong>Identity Pool</strong> (now called <strong>Cognito Federated Identities</strong>) — exchanges an identity token (from a User Pool, Google, or other IdP) for temporary AWS credentials via STS. Those credentials let the client call AWS services directly — S3, DynamoDB — without going through your backend. This is the right tool when the client needs <em>direct access to AWS resources</em>.</p>
+    <p><strong>Identity Pool</strong> (aka <strong>Cognito Federated Identities</strong>) — exchanges an identity token (from a User Pool, Google, or other IdP) for temporary AWS credentials via STS. Those credentials let the client call AWS services directly — S3, DynamoDB — without going through your backend. This is the right tool when the client needs <em>direct access to AWS resources</em>.</p>
 
     <h4>Cognito User Pool — details</h4>
     <p>A User Pool stores user accounts and handles the authentication flow. It supports two ways to manage users:</p>
@@ -855,16 +855,15 @@
       <h4>JWTs are not encrypted — only signed</h4>
       <p>The payload is Base64URL-encoded, not encrypted. Anyone with the JWT can read its claims. Never put sensitive data in a JWT payload — the signature only guarantees the claims have not been tampered with.</p>
     </div>
-    <h4>Three tokens Cognito issues at login</h4>
+    <h4>Tokens Cognito issues at login</h4>
     <table class="compare-table">
       <thead><tr><th>Token</th><th>Expiry</th><th>Purpose</th></tr></thead>
       <tbody>
         <tr><td><strong>ID token</strong></td><td>1 hour</td><td>Contains identity claims — what your Lambda authorizer validates</td></tr>
         <tr><td><strong>Access token</strong></td><td>1 hour</td><td>Used to call Cognito APIs — not used by your authorizer</td></tr>
-        <tr><td><strong>Refresh token</strong></td><td>30 days</td><td>Used to silently get new ID and access tokens — never sent to your API</td></tr>
       </tbody>
     </table>
-    <p>When the ID token expires, <code>app.js</code> uses the refresh token to get a new one from Cognito silently — no user interaction needed. When the refresh token expires after 30 days, the user must log in again. Cognito manages its own session independently of Google's — it does not go back to Google for token refresh.</p>
+    <p>When the ID token expires after 1 hour, <code>app.js</code> clears it and returns to the logged-out view, and the user clicks Login to sign in again. Cognito manages its own session independently of Google's, so signing in again is usually quick — it doesn't go back to Google.</p>
   </div>
 </div>
 
