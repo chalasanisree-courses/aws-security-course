@@ -131,7 +131,8 @@
 <div class="objectives">
   <strong>Learning objectives</strong>
   <ul>
-    <li>Explain the difference between AWS-managed keys and customer-managed KMS keys, and why the distinction matters for access control and audit</li>
+    <li>Understand AWS encryption mechanisms and their differences</li>
+    <li>Understand the role of KMS in storing encryption keys</li>
     <li>Describe how KMS key policies create an authorization layer independent of IAM — and why two independent layers are stronger than one</li>
     <li>Use CloudTrail to audit <code>kms:Decrypt</code> events and identify which principal accessed which data</li>
     <li>Demonstrate that revoking KMS key access blocks data access even when IAM permissions still allow the API call</li>
@@ -155,8 +156,8 @@
   <div class="issue-card" onclick="toggleIssue('i2')">
     <div class="icon">🔑</div>
     <div class="label">Issue 2</div>
-    <div class="title">Encryption is invisible and uncontrollable</div>
-    <div class="desc">AWS-managed keys — no audit, no key policy, no revocation</div>
+    <div class="title">Encryption is invisible and cannot be controlled</div>
+    <div class="desc">Decryption is automatic for anyone with access privileges — no independent gate</div>
   </div>
 </div>
 
@@ -166,18 +167,30 @@
 </div>
 
 <div class="issue-detail" id="i2">
-  <h4>All data at rest is encrypted with AWS-managed keys</h4>
-  <p>S3, DynamoDB, and Secrets Manager all encrypt data at rest — but with AWS-managed keys. This means there is no CloudTrail audit trail when data is decrypted, no way to scope decryption to specific IAM principals via a key policy, and no ability to revoke decryption access independently of IAM permissions. You control who can call <code>GetObject</code> — but you do not control who can decrypt what <code>GetObject</code> returns. These are two different questions, and right now only one has an answer.</p>
+  <h4>Encryption is automatic — it adds no control beyond access privileges</h4>
+  <p>S3, DynamoDB, and Secrets Manager all encrypt data at rest by default, so the data is protected from the storage layer and from anyone without access. But with the default keys, <strong>decryption is automatic</strong>: anyone with access privileges to call <code>GetObject</code> (or scan the table, or read the secret) gets the decrypted content back, with no further check. Encryption is invisible — it isn't a lever you can pull. You can't scope decryption to specific principals, and you can't revoke it, separately from their access privileges. In other words, there is <strong>no second, independent gate</strong> on who can read the data — which is exactly what a customer-managed key adds this week.</p>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>2. This week's solution</h2>
 
-<p>Week 8 replaces AWS-managed keys with customer-managed KMS keys. The data doesn't change. The encryption algorithm doesn't change. What changes is <em>who controls the keys</em> — and therefore who controls the ability to read the data.</p>
+<p>Week 8 switches S3 from its default encryption — <strong>SSE-S3</strong>, which uses AWS-owned keys — to <strong>SSE-KMS</strong>. The data and the encryption algorithm don't change; what changes is the key, and therefore who controls (and can audit) the ability to decrypt. SSE-KMS gives you a <em>choice</em> of key — an <strong>AWS-managed key</strong> or a <strong>customer-managed key (CMK)</strong> — and we choose the CMK, because it is the only option that lets us write the key policy, scope and revoke decryption per principal, and fully audit usage.</p>
 
 <table class="compare-table">
-  <thead><tr><th>Property</th><th>AWS-managed key</th><th>Customer-managed KMS key</th></tr></thead>
+  <thead><tr><th>Method</th><th>Key type</th><th>Uses KMS?</th><th>Control over USE</th><th>Control over ADMIN</th><th>Decrypts logged in CloudTrail</th></tr></thead>
+  <tbody>
+    <tr><td><strong>SSE-S3</strong> (Default)</td><td>AWS-owned</td><td>No</td><td>None</td><td>None</td><td>No</td></tr>
+    <tr><td><strong>SSE-KMS</strong> (AWS-managed)</td><td>AWS-managed</td><td>Yes</td><td>Via IAM</td><td>None</td><td>Yes</td></tr>
+    <tr><td><strong>SSE-KMS</strong> (CMK) &mdash; <em>this week</em></td><td>Customer-managed</td><td>Yes</td><td>Via key policy + IAM</td><td>You</td><td>Yes</td></tr>
+  </tbody>
+</table>
+<p style="font-size:0.9rem;color:#666;"><strong>Use</strong> = who may encrypt/decrypt with the key; <strong>Admin</strong> = who may rotate, disable, delete, or edit the key's policy.</p>
+
+<p>Within SSE-KMS, here is what the customer-managed key gives us over the AWS-managed key:</p>
+
+<table class="compare-table">
+  <thead><tr><th>Property</th><th>AWS-managed key</th><th>Customer-managed key (CMK)</th></tr></thead>
   <tbody>
     <tr>
       <td><strong>Who creates the key?</strong></td>
@@ -191,7 +204,7 @@
     </tr>
     <tr>
       <td><strong>CloudTrail audit</strong></td>
-      <td>No <code>kms:Decrypt</code> events logged</td>
+      <td>Decrypts <em>are</em> logged to CloudTrail — but you can't scope or revoke who uses the key via the key policy</td>
       <td>Every <code>Encrypt</code>, <code>Decrypt</code>, and <code>GenerateDataKey</code> call logged with principal, key ID, and timestamp</td>
     </tr>
     <tr>
@@ -287,7 +300,7 @@
   </div>
   <div class="flow-step">
     <div class="step-num">4</div>
-    <div class="step-body"><strong>CloudTrail logs the decryptions</strong><p>Each <code>kms:Decrypt</code> call — from DynamoDB and from S3 — appears as a separate event in CloudTrail with the Lambda role ARN and the key ARN. This audit trail did not exist with AWS-managed keys.</p></div>
+    <div class="step-body"><strong>CloudTrail logs the decryptions</strong><p>Each <code>kms:Decrypt</code> call — from DynamoDB and from S3 — appears as a separate event in CloudTrail with the Lambda role ARN and the key ARN. By default, S3 (SSE-S3) produced no KMS events at all; DynamoDB's AWS-managed key logged decrypts, but on a key you couldn't scope or revoke. Now the audit trail is on a key you control.</p></div>
   </div>
 </div>
 
@@ -310,7 +323,7 @@
     <div class="step-body"><strong>S3 encrypts the object with the data key</strong><p>S3 calls <code>kms:GenerateDataKey</code> to get a data encryption key, encrypts the photo, stores the encrypted object and encrypted data key together. A <code>kms:GenerateDataKey</code> event appears in CloudTrail.</p></div>
   </div>
   <div class="callout info" style="margin-top:1rem;">
-    <p><strong>Why can't S3 just apply the bucket default?</strong> With presigned URLs, the browser uploads directly to S3 — Lambda is not in the data path. S3 does not transparently apply bucket-default KMS encryption to presigned URL uploads. The encryption parameters must be explicitly included in the presigned URL and the request headers.</p>
+    <p><strong>Why sign the KMS parameters into the URL?</strong> Once the bucket default is SSE-KMS with your data key (Part 3), an upload would be encrypted with it automatically. We still bake <code>ServerSideEncryption</code> and <code>SSEKMSKeyId</code> into the presigned URL so the upload is pinned to <em>this specific key</em> regardless of the bucket's default, and so encryption is an enforced part of the signed request — the browser must send matching headers or S3 rejects the PUT.</p>
   </div>
 </div>
 
@@ -425,7 +438,7 @@
     <div class="concept-chevron" id="chev-c0">▼</div>
   </div>
   <div class="concept-body" id="c0">
-    <p>A Lambda function can have <code>s3:GetObject</code> permission — IAM says yes. But if the KMS key policy does not grant that Lambda role <code>kms:Decrypt</code>, S3 returns an error: the object is retrieved but cannot be decrypted. Two independent authorization layers, evaluated separately, both must pass. This is the same pattern as Week 7 (group check + ownership check) — applied to encryption instead of application logic.</p>
+    <p>A Lambda function can have <code>s3:GetObject</code> permission — IAM says yes. But returning the object requires S3 to call <code>kms:Decrypt</code> on the caller's behalf. If the key policy does not allow that Lambda role to use the key, the whole <code>GetObject</code> call fails with <strong>AccessDenied</strong> — an error, not ciphertext. S3 never hands back raw encrypted bytes; decryption happens server-side as part of the read, so if the caller can't decrypt, nothing leaves the bucket. Two independent authorization layers, evaluated separately, both must pass. This is the same pattern as Week 7 (group check + ownership check) — applied to encryption instead of application logic.</p>
 
     <table class="compare-table">
       <thead><tr><th>Layer</th><th>Week 7 analogy</th><th>Week 8</th></tr></thead>
@@ -482,17 +495,10 @@
     <div class="concept-chevron" id="chev-c6">▼</div>
   </div>
   <div class="concept-body" id="c6">
-    <table class="compare-table">
-      <thead><tr><th>Mode</th><th>Where encryption happens</th><th>Who manages the key</th><th>CloudTrail KMS events</th></tr></thead>
-      <tbody>
-        <tr><td><strong>CSE</strong> (client-side)</td><td>Client, before upload</td><td>You — entirely outside AWS</td><td>None — AWS never sees the plaintext</td></tr>
-        <tr><td><strong>SSE-S3</strong></td><td>S3, on write</td><td>AWS — automatic, invisible</td><td>No</td></tr>
-        <tr><td><strong>SSE-KMS</strong></td><td>S3, on write</td><td>You — customer-managed key in KMS</td><td>Yes — every encrypt/decrypt logged</td></tr>
-      </tbody>
-    </table>
+    <p>Server-side encryption comes in three flavors — <strong>SSE-S3</strong>, <strong>SSE-KMS with an AWS-managed key</strong>, and <strong>SSE-KMS with a customer-managed key (CMK)</strong> — compared in the table in Section 2 above. There is also a client-side option (CSE).</p>
 
-    <p><strong>SSE-S3</strong> is the default. Every S3 bucket encrypts objects at rest using AWS-managed AES-256 keys. You cannot see, rotate, or revoke these keys. Encryption is transparent — if you can call <code>GetObject</code>, S3 decrypts automatically.</p>
-    <p><strong>SSE-KMS</strong> is what this lab switches to. S3 encrypts using a customer-managed key stored in KMS. You write the key policy, you control who can decrypt, and every decryption is logged in CloudTrail. The data and algorithm are identical — what changes is who controls the key.</p>
+    <p><strong>SSE-S3</strong> is the default. Every S3 bucket encrypts objects at rest using AWS-owned AES-256 keys (S3-managed, outside KMS). You cannot see, rotate, or revoke these keys. Encryption is transparent — if you can call <code>GetObject</code>, S3 decrypts automatically.</p>
+    <p><strong>SSE-KMS</strong> is what this lab switches to, using a customer-managed key stored in KMS. You write the key policy, you control who can decrypt, and every decryption is logged in CloudTrail. The data and algorithm are identical — what changes is who controls the key.</p>
     <p><strong>Client-side encryption (CSE)</strong> encrypts data before it reaches AWS. S3 stores an opaque blob it cannot decrypt. Used when you don't trust the cloud provider with plaintext data at all. The Photo Viewer doesn't use CSE — the browser uploads plaintext images, and S3 encrypts on receipt.</p>
   </div>
 </div>
@@ -557,7 +563,7 @@
     <div class="concept-chevron" id="chev-c3">▼</div>
   </div>
   <div class="concept-body" id="c3">
-    <p>With AWS-managed keys, CloudTrail logs S3 API calls (<code>GetObject</code>, <code>PutObject</code>) but does not log the underlying KMS operations. You know someone accessed the object, but not whether they decrypted its contents.</p>
+    <p>With <strong>SSE-S3</strong>, CloudTrail logs the S3 API calls (<code>GetObject</code>, <code>PutObject</code>) but there are no KMS events at all. With <strong>AWS-managed KMS keys</strong>, <code>kms:Decrypt</code> <em>is</em> logged — but you can't scope or revoke who uses the key. Only a <strong>customer-managed key</strong> lets you both audit <em>and</em> control who decrypts.</p>
     <p>With customer-managed keys, every <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> call appears in CloudTrail with the principal ARN, the key ARN, and the timestamp. You can trace a specific decryption event back to a specific IAM role at a specific time.</p>
     <p>This is the audit trail that compliance frameworks (SOC 2, PCI-DSS, HIPAA) require: proof of who accessed sensitive data and when.</p>
   </div>
@@ -574,7 +580,7 @@
   </div>
   <div class="concept-body" id="c4">
     <p>KMS is a shared, multi-tenant service. AWS manages the hardware security modules (HSMs) that store your key material. You control the key policy, but AWS controls the HSM infrastructure.</p>
-    <p>CloudHSM gives you a dedicated, single-tenant HSM in your VPC. You have full control over the key material — AWS cannot access it, even under subpoena. The HSM is FIPS 140-2 Level 3 certified (tamper-evident hardware).</p>
+    <p>CloudHSM gives you a dedicated, single-tenant HSM in your VPC. You have full control over the key material — AWS cannot access it, even under subpoena. The HSM is FIPS 140-3 Level 3 certified (tamper-evident hardware). Note that AWS KMS HSMs are <em>also</em> FIPS 140-3 Level 3 validated (since 2025), so CloudHSM is no longer required just to reach Level 3 — its real differentiators are single-tenancy and full control of the key material.</p>
 
     <table class="compare-table">
       <thead><tr><th>Property</th><th>KMS</th><th>CloudHSM</th></tr></thead>
@@ -582,12 +588,12 @@
         <tr><td><strong>Cost</strong></td><td>$1/month per key</td><td>~$1,100/month per HSM</td></tr>
         <tr><td><strong>Management</strong></td><td>Fully managed by AWS</td><td>You manage the HSM cluster</td></tr>
         <tr><td><strong>Key material</strong></td><td>AWS-managed HSMs (you can import your own)</td><td>You generate and control all key material</td></tr>
-        <tr><td><strong>Compliance</strong></td><td>FIPS 140-2 Level 2</td><td>FIPS 140-2 Level 3</td></tr>
-        <tr><td><strong>Use case</strong></td><td>Most applications</td><td>Government, financial, specific regulatory requirements</td></tr>
+        <tr><td><strong>Compliance</strong></td><td>FIPS 140-3 Level 3</td><td>FIPS 140-3 Level 3</td></tr>
+        <tr><td><strong>Use case</strong></td><td>Most applications (now meets Level 3 on its own)</td><td>Single-tenant hardware + full key-material control (e.g. specific regulatory mandates)</td></tr>
       </tbody>
     </table>
 
-    <p>For the Photo Viewer — and most applications — KMS is the right choice. CloudHSM is for organizations with specific regulatory requirements that mandate dedicated hardware and full key material control.</p>
+    <p>For the Photo Viewer — and most applications — KMS is the right choice, and it now meets FIPS 140-3 Level 3 on its own. CloudHSM is for organizations whose requirements mandate single-tenant, dedicated hardware and full control of the key material.</p>
   </div>
 </div>
 
