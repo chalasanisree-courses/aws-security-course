@@ -152,6 +152,10 @@ def validate_jwt(token):
     if payload.get('aud') != APP_CLIENT_ID:
         raise ValueError('Token audience does not match app client ID')
 
+    # Verify issuer — the token must come from our Cognito user pool
+    if payload.get('iss') != f'https://cognito-idp.{REGION}.amazonaws.com/{USER_POOL_ID}':
+        raise ValueError('Token issuer does not match Cognito user pool')
+
     # Only accept ID tokens
     if payload.get('token_use') != 'id':
         raise ValueError('Token is not an ID token')
