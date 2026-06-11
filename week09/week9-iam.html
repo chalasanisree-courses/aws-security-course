@@ -33,6 +33,17 @@
 
   .flow-diagram { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 10px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
 
+  .concept-card { background: #fff; border: 1px solid #d0dce8; border-radius: 8px; margin: 0.8rem 0; overflow: hidden; }
+  .concept-header { display: flex; align-items: center; gap: 0.8rem; padding: 1rem 1.2rem; cursor: pointer; user-select: none; }
+  .concept-header:hover { background: #f5f8fc; }
+  .concept-icon { font-size: 1.3rem; width: 32px; text-align: center; flex-shrink: 0; }
+  .concept-title { font-weight: 600; font-size: 0.95rem; color: #1a1a1a; flex: 1; }
+  .concept-subtitle { font-size: 0.8rem; color: #888; }
+  .concept-chevron { color: #888; font-size: 0.8rem; flex-shrink: 0; }
+  .concept-body { padding: 0 1.2rem 1.2rem; display: none; border-top: 1px solid #e0eaf4; }
+  .concept-body.open { display: block; }
+  .concept-body p:first-child { margin-top: 1rem; }
+
   .vuln-card { border: 1px solid #e8e8e8; border-left: 4px solid #dc3545; border-radius: 0 8px 8px 0; margin: 0.8rem 0; overflow: hidden; }
   .vuln-header { display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem 1.2rem; cursor: pointer; user-select: none; }
   .vuln-header:hover { background: #fff8f8; }
@@ -73,6 +84,7 @@
     <li>Explain what IAM Identity Center adds on top of IAM and the mechanism underneath</li>
     <li>Set up Identity Center with permission sets scoped to KMS keys</li>
     <li>Demonstrate IAM role assumption via console Switch Role</li>
+    <li>Use the IAM Policy Simulator to map access &mdash; and recognize what it does not evaluate (KMS key policies, service principals)</li>
     <li>Distinguish customer identity (Cognito) from employee identity (IAM / Identity Center)</li>
   </ul>
 </div>
@@ -134,7 +146,7 @@
 
 
 <!-- ═══════════════ SECTION 2 ═══════════════ -->
-<h2>2. The challenge &mdash; and the solution</h2>
+<h2>2. This week's solution</h2>
 
 <h3>Single account &mdash; scoped IAM users</h3>
 
@@ -203,6 +215,10 @@
 </div>
 
 <p>Two services address these problems — one for accounts, one for people.</p>
+
+
+<!-- ═══════════════ SECTION 3 ═══════════════ -->
+<h2>3. Architecture</h2>
 
 <h3>Two layers of management</h3>
 
@@ -417,8 +433,7 @@
 <p>The lab uses Identity Center's built-in directory (no external IdP). The architecture is the same &mdash; centralized identity, permission sets, temporary credentials. Connecting an external IdP is a configuration step, not an architecture change.</p>
 
 
-<!-- ═══════════════ SECTION 3 ═══════════════ -->
-<h2>3. How it works &mdash; Identity Center is IAM underneath</h2>
+<h3>Identity Center is IAM underneath</h3>
 
 <p>Identity Center is not a replacement for IAM &mdash; it is a layer on top. When a permission set is assigned to a user for an account, Identity Center creates an IAM role in that account. When the user logs in via the SSO portal and selects an account, Identity Center calls <code>STS:AssumeRole</code> and returns temporary credentials. Authorization still uses IAM policies and resource policies &mdash; on the assumed role, not a permanent user.</p>
 
@@ -500,7 +515,7 @@
 
 
 <!-- ═══════════════ SECTION 4 ═══════════════ -->
-<h2>4. How IAM evaluates access</h2>
+<h2>4. How a request flows &mdash; access determination</h2>
 
 <p>IAM does two things: <strong>identity verification</strong> (who are you?) and <strong>access management</strong> (are you allowed?). These happen in sequence &mdash; first you authenticate and get credentials, then every subsequent request is signed with those credentials and evaluated by the IAM engine.</p>
 
@@ -712,7 +727,75 @@
 
 
 <!-- ═══════════════ SECTION 5 ═══════════════ -->
-<h2>5. What's still missing</h2>
+<h2>5. Key concepts</h2>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('k1')">
+    <div class="concept-icon">&#x1F465;</div>
+    <div>
+      <div class="concept-title">IAM Identity Center &amp; permission sets</div>
+      <div class="concept-subtitle">Central employee identity &mdash; one user, per-account roles, temporary credentials</div>
+    </div>
+    <div class="concept-chevron" id="chev-k1">&#x25BC;</div>
+  </div>
+  <div class="concept-body" id="k1">
+    <p>Identity Center manages <strong>people</strong> from one central directory. A <strong>permission set</strong> (e.g. <code>InfraAdmin</code>, <code>PhotosAdmin</code>) assigned to a group for an account becomes an IAM role <em>in that account</em>. When a user signs in through the SSO portal and picks an account, Identity Center calls <code>sts:AssumeRole</code> and issues temporary credentials that expire automatically &mdash; the console then shows a role name like <code>AWSReservedSSO_InfraAdmin_...</code>.</p>
+    <p>One user, one directory, one disable to revoke access everywhere. Identity Center requires AWS Organizations as a prerequisite.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('k2')">
+    <div class="concept-icon">&#x1F3E2;</div>
+    <div>
+      <div class="concept-title">AWS Organizations &amp; SCPs</div>
+      <div class="concept-subtitle">Account management &mdash; OUs, guardrails, consolidated billing</div>
+    </div>
+    <div class="concept-chevron" id="chev-k2">&#x25BC;</div>
+  </div>
+  <div class="concept-body" id="k2">
+    <p>Organizations manages <strong>accounts</strong>. Accounts are grouped into <strong>Organizational Units (OUs)</strong> &mdash; Production and Staging in the lab. <strong>Service Control Policies (SCPs)</strong> set the <em>maximum</em> permissions for every account in an OU: even if an IAM policy allows an action, an SCP can block it. Consolidated billing aggregates costs across all accounts into one bill. Organizations is the prerequisite for Identity Center.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('k3')">
+    <div class="concept-icon">&#x1F504;</div>
+    <div>
+      <div class="concept-title">Role assumption &mdash; STS &amp; trust policies</div>
+      <div class="concept-subtitle">Temporary credentials via <code>sts:AssumeRole</code>; the trust policy says who may assume</div>
+    </div>
+    <div class="concept-chevron" id="chev-k3">&#x25BC;</div>
+  </div>
+  <div class="concept-body" id="k3">
+    <p>A role is a <strong>persistent</strong> identity with no long-term credentials. To use it, a principal calls <code>sts:AssumeRole</code> and receives <strong>temporary</strong> credentials (access key, secret key, session token) that auto-expire. The role persists; only the credentials are temporary.</p>
+    <p>The role's <strong>trust policy</strong> &mdash; a resource-based policy &mdash; names who is allowed to assume it. Same-account: if the trust policy names the principal directly, that alone is sufficient; if it names the account root, the caller <em>also</em> needs <code>sts:AssumeRole</code> in their own IAM policy. Identity Center automates this whole path; Part 2 of the lab does it manually with console Switch Role.</p>
+  </div>
+</div>
+
+<div class="concept-card">
+  <div class="concept-header" onclick="toggleConcept('k4')">
+    <div class="concept-icon">&#x1F9EA;</div>
+    <div>
+      <div class="concept-title">IAM Policy Simulator</div>
+      <div class="concept-subtitle">Tests whether access would be allowed or denied without real API calls &mdash; evaluates identity policies; two caveats</div>
+    </div>
+    <div class="concept-chevron" id="chev-k4">&#x25BC;</div>
+  </div>
+  <div class="concept-body" id="k4">
+    <p>The Policy Simulator lets you test whether a principal's access to a resource would be allowed or denied <strong>without making real API calls</strong>. It evaluates <strong>identity-based (IAM) policies</strong>.</p>
+    <p><em>Example:</em> downloading an object from an SSE-KMS&ndash;encrypted bucket needs <strong>both</strong> your IAM policy to allow <code>s3:GetObject</code> <strong>and</strong> the KMS key policy to allow decrypt. Two caveats follow from this.</p>
+    <p><strong>Caveat 1 &mdash; it doesn't evaluate KMS key policies.</strong> It only checks identity (IAM) policies. So it can report <code>s3:GetObject</code> as <strong>Allowed</strong> while the real download still fails because KMS denies the decrypt. You saw exactly this with the auditor in Part 3: Allowed in the simulator (Step 25), Access Denied in practice (Step 20), until the role was added to the data key's policy (Step 21). An IAM "allow" is necessary but not sufficient.</p>
+    <p><strong>Caveat 2 &mdash; it can't evaluate Service principals in a resource policy.</strong> The simulator <em>can</em> evaluate bucket policies (via the "Include Resource Policy" option), but it can't model service principals. Our bucket policy still has the CloudFront OAC statement from Week 3, whose principal is a service (<code>cloudfront.amazonaws.com</code>). If the simulator tries to evaluate that, it halts with a yellow <em>"Principal type 'Service'"</em> banner and the result stays on <strong>"Not simulated."</strong></p>
+    <div class="callout info">
+      <p><strong>Using it in the lab (Step 25):</strong> use the wildcard ARN <code>arn:aws:s3:::YOUR-BUCKET/*</code>. The Lambda execution role has <code>s3:GetObject</code> only on the <code>uploads/*</code> and <code>photos/*</code> prefixes (least privilege, from Week 7), so against the bucket-wide <code>/*</code> it shows <strong>Denied</strong> &mdash; expected, not an error; point the resource at a specific covered object to see Allowed. If you test a specific object and an "Include Resource Policy" box appears, leave it <strong>unchecked</strong> so the simulator doesn't try to evaluate our bucket policy and hit Caveat 2.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ SECTION 6 ═══════════════ -->
+<h2>6. What's still missing</h2>
 
 <div class="vuln-card">
   <div class="vuln-header" onclick="toggleVuln('v1')">
@@ -756,6 +839,14 @@
 </footer>
 
 <script>
+function toggleConcept(id) {
+  var body = document.getElementById(id);
+  var chev = document.getElementById('chev-' + id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chev) chev.textContent = isOpen ? '▼' : '▲';
+}
+
 function toggleVuln(id) {
   var body = document.getElementById(id);
   body.classList.toggle('open');
