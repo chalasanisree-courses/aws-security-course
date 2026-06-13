@@ -402,10 +402,14 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <span class="step-title">Revoke Lambda's access to the data key</span>
   </div>
   <div class="step-body">
-    <p>Go to <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong>. Find the statement that grants the main Lambda execution role access (<code>"Sid": "Allow use of the key"</code>). Remove the Lambda role ARN from that statement. Click <strong>Save changes</strong>.</p>
+    <p>Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong>. Scroll down to the <strong>Key users</strong> section. Select the checkbox next to the main Lambda execution role (<code>photoviewer-lambda-role-*</code>) and click <strong>Remove</strong>.</p>
 
     <div class="callout warning">
-      <p><strong>Only remove the Lambda role &mdash; not your admin user.</strong> If you remove yourself from the key administrators, you will lose the ability to edit the key policy and cannot restore access. Only delete the Lambda execution role ARN from the key users section.</p>
+      <p><strong>Use the visual <em>Key users</em> panel for this &mdash; not <em>Key policy &rarr; Edit</em>.</strong> The <strong>Remove</strong> and <strong>Add</strong> buttons make the same change while keeping the policy in the console's standard shape. If you hand-edit the JSON document instead, the console switches this key into raw policy (JSON) view and the visual <em>Key users</em> panel disappears for the rest of the course. Stick to the buttons.</p>
+    </div>
+
+    <div class="callout warning">
+      <p><strong>Remove from <em>Key users</em>, not <em>Key administrators</em>.</strong> The Lambda role is a key <em>user</em>. Leave the <strong>Key administrators</strong> section (your admin user) untouched &mdash; removing yourself there would lock you out of editing the key.</p>
     </div>
 
     <div class="callout warning">
@@ -435,7 +439,11 @@ bash aws-security-course/photoviewer/week08/week8-preflight.sh</pre>
     <span class="step-title">Restore access</span>
   </div>
   <div class="step-body">
-    <p>Go back to <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Edit</strong>. Re-add the Lambda execution role ARN to the usage statement. Click <strong>Save changes</strong>.</p>
+    <p>Go back to <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy</strong>. Scroll to the <strong>Key users</strong> section and click <strong>Add</strong>. Search for the main Lambda execution role (<code>photoviewer-lambda-role-*</code>), select it, and click <strong>Add</strong>.</p>
+
+    <div class="callout">
+      <p>Again, use the <strong>Add</strong> button &mdash; not <em>Key policy &rarr; Edit</em>. This puts the Lambda role back as a key user while keeping the policy in the standard shape, so the visual editor stays available for Weeks 9&ndash;12.</p>
+    </div>
 
     <div class="verify">
       <div class="verify-label">&#10003; Verify</div>
