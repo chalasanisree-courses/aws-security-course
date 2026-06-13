@@ -166,7 +166,18 @@ ls -lh image-validator.zip</pre>
   <li>Click <strong>Add</strong></li>
 </ul>
 <div class="callout info">
-  <p><strong>Verify the grant landed:</strong> after clicking Add, scroll the key policy and confirm the role now appears under &ldquo;Allow use of the key.&rdquo; The console's <em>Key users</em> panel only works while the key policy keeps its default structure from Week 8 &mdash; if you edited the policy during the Week 8 revocation exercise and didn't fully restore it, the panel may not render; in that case add the role by editing the policy JSON directly. You will repeat this grant for other roles this week &mdash; verify each one the same way.</p>
+  <p><strong>Verify the grant landed:</strong> after adding the role, scroll the key policy and confirm it now appears under <code>"Allow use of the key"</code>. You'll repeat this grant for Macie, GuardDuty, and the quarantine role later this week &mdash; verify each one the same way.</p>
+</div>
+<div class="callout warning">
+  <p><strong>Don't see the visual editor view in KMS?</strong> This can happen if you have ever manually edited the data-key policy (for example, during the Week 8 revocation exercise) &mdash; the console then shows only the raw JSON policy view, with no <em>Key users &rarr; Add</em> button. Your key still works; this is expected. To restore the KMS visual editor, do the following:</p>
+  <ol>
+    <li>Open <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong>. Copy your <strong>main Lambda role</strong> ARN (the one under <code>"Allow use of the key"</code>) into a scratch note &mdash; you'll need it in step 4.</li>
+    <li>Open <strong>photoviewer-infra-key &rarr; Key policy &rarr; Switch to policy view</strong>, select the entire policy document, and copy it.</li>
+    <li>Go back to <strong>photoviewer-data-key &rarr; Key policy &rarr; Edit</strong>, delete everything in the box, and paste the infra-key policy you just copied.</li>
+    <li>The pasted policy names your <strong>authorizer</strong> role in two places &mdash; under <code>"Allow use of the key"</code> and under <code>"Allow attachment of persistent resources"</code>. Replace the authorizer ARN with your <strong>main Lambda role</strong> ARN from step 1 in <strong>both</strong> places.</li>
+    <li>Click <strong>Save changes</strong> and reload the page.</li>
+  </ol>
+  <p>The visual editor (Key administrators / Key users, with the <strong>Add</strong> button) should now be back. Continue the lab normally, adding the validator, Macie, GuardDuty, and quarantine roles with <em>Key users &rarr; Add</em>. A short walkthrough video is also posted in the Week 11 announcement.</p>
 </div>
 <div class="callout info">
   <p><strong>Least privilege + KMS dual authorization.</strong> The validator needs <code>GetObject</code> to download the file, <code>PutObjectTagging</code> to write validation tags, and <code>kms:Decrypt</code> because the bucket uses SSE-KMS with <code>photoviewer-data-key</code> (from the Week 8 encryption lab). Remember: KMS requires authorization from <em>both</em> the IAM policy and the key policy. The IAM policy alone is not enough &mdash; the role must also appear in the key policy.</p>
