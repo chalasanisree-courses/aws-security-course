@@ -651,28 +651,17 @@ bash aws-security-course/photoviewer/week09/week9-preflight.sh</pre>
   <div class="step-body">
     <p>Switch back to admin. Go to <strong>KMS &rarr; Customer managed keys &rarr; photoviewer-data-key &rarr; Key policy</strong> tab.</p>
     <ol>
-      <li>Click <strong>Edit</strong></li>
-      <li>Add the following statement to the <code>Statement</code> array:</li>
+      <li>Scroll to the <strong>Key users</strong> section and click <strong>Add</strong></li>
+      <li>Search for <code>photo-auditor-role</code>, select it, and click <strong>Add</strong></li>
     </ol>
-<pre><code>{
-  "Sid": "AllowAuditorDecrypt",
-  "Effect": "Allow",
-  "Principal": {
-    "AWS": "arn:aws:iam::ACCOUNT-ID:role/photo-auditor-role"
-  },
-  "Action": [
-    "kms:Decrypt",
-    "kms:DescribeKey"
-  ],
-  "Resource": "*"
-}</code></pre>
-    <p>Click <strong>Save changes</strong>.</p>
 
-    <div class="callout">
-      <p><strong>Replace <code>ACCOUNT-ID</code></strong> with your 12-digit AWS account ID.</p>
+    <div class="callout warning">
+      <p><strong>Use the <em>Key users</em> panel &mdash; not <em>Key policy &rarr; Edit</em>.</strong> The <strong>Add</strong> button writes the auditor into the policy while keeping it in the console's standard shape, so the visual editor stays available for the rest of the course. Hand-editing the JSON document switches this key permanently into raw policy (JSON) view and removes the <em>Key users</em> panel.</p>
     </div>
 
-    <p>This is a <strong>resource policy</strong> on the key itself &mdash; the key is explicitly granting the auditor role permission to decrypt. This is the same pattern as the trust policy on the IAM role: the resource names who can use it.</p>
+    <p>This change lives in the key's <strong>resource policy</strong>. To see it, click <strong>Switch to policy view</strong> at the top of the Key policy box: the auditor role now appears as a principal under the <code>"Allow use of the key"</code> statement. Click <strong>Switch to default view</strong> to return to the panel.</p>
+
+    <p>That statement is the key <strong>explicitly granting the auditor role permission to decrypt</strong> &mdash; the same pattern as the trust policy on the IAM role: the resource names who can use it. (The panel grants the standard key-usage actions; <code>kms:Decrypt</code> is the one the auditor actually needs here.)</p>
 
     <p>Because both S3 photos <em>and</em> the DynamoDB table are encrypted with this same data key, this single key-policy edit restores decryption for <strong>both</strong> services at once &mdash; you'll confirm both in the next step.</p>
   </div>
