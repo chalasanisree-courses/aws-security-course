@@ -168,21 +168,24 @@
 <!-- ── IAM ADMIN SECTION ── -->
 <div class="role-banner role-iam">🔵 Do the following steps as IAM ADMIN</div>
 
+<div class="note"><strong>Set your region to US East (N. Virginia) — <code>us-east-1</code></strong> using the Region selector in the top-right corner, and keep it there for the rest of this lab. CloudTrail's S3 bucket (Step 7) is created in whatever region is active at the time, and the billing metric (Step 8) only exists in <code>us-east-1</code>. Doing every step below in this one region keeps your resources together and prevents region-mismatch problems in later weeks.</div>
+
 <div class="part">
   <div class="part-header"><span class="part-num">Step 7</span><span class="part-title">Create a CloudTrail trail</span></div>
+  <p><strong>Confirm the Region selector in the top-right shows US East (N. Virginia) — <code>us-east-1</code></strong> before you start. The new S3 bucket below is created in your current region, so it must be <code>us-east-1</code>.</p>
   <p>Go to <strong>CloudTrail → Trails → Create trail:</strong></p>
   <ul>
     <li>Trail name: <code>photoviewer-trail</code></li>
     <li>Storage location: <strong>Create new S3 bucket</strong> — accept the auto-generated name</li>
     <li>Leave all other settings as default → <strong>Next → Next → Create trail</strong></li>
   </ul>
-  <div class="info">CloudTrail logs every API call in your account — including calls made through the console UI. This is your audit trail for the entire course. It applies to all regions automatically.</div>
+  <div class="info">CloudTrail logs every API call in your account — including calls made through the console UI. This is your audit trail for the entire course. The trail itself applies to all regions automatically, but the <strong>S3 bucket it writes to lives in the region you created it in</strong> — which is why you set <code>us-east-1</code> first.</div>
   <div class="deliverable"><strong>Screenshot:</strong> CloudTrail showing photoviewer-trail with status Logging</div>
 </div>
 
 <div class="part">
   <div class="part-header"><span class="part-num">Step 8</span><span class="part-title">Create a CloudWatch billing alarm</span></div>
-  <div class="note"><strong>Make sure your region is set to US East (N. Virginia) — us-east-1.</strong> Billing metrics only exist in this region. If you are in any other region, you will not see the billing metric.</div>
+  <div class="note"><strong>Confirm your region is still US East (N. Virginia) — <code>us-east-1</code></strong> (you set this at the start of the IAM admin steps). Billing metrics only exist in this region. If you are in any other region, you will not see the billing metric.</div>
   <p>Go to <strong>CloudWatch → Alarms → Create alarm → Select metric → Billing → Total Estimated Charge:</strong></p>
   <ul>
     <li>Select <strong>EstimatedCharges</strong> with Currency: USD → <strong>Select metric</strong></li>
@@ -216,7 +219,7 @@
   --region us-east-1 \
   --query 'trailList[].[Name,S3BucketName,IsLogging]' \
   --output table</pre>
-  <p>You should see <code>photoviewer-trail</code> in the output.</p>
+  <p>You should see <code>photoviewer-trail</code> in the output. Its <code>S3BucketName</code> should be the bucket you just created in <code>us-east-1</code>.</p>
 
   <h3>Confirm billing alarm exists</h3>
   <pre>aws cloudwatch describe-alarms \
