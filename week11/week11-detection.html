@@ -643,6 +643,21 @@ function showThreat(idx) {
 </details>
 
 
+<details>
+  <summary>GuardDuty vs. Macie</summary>
+  <div class="accordion-body">
+    <p>Both read your S3 data, but they answer different questions. Macie asks <em>&ldquo;what kind of data is this?&rdquo;</em> (classification); GuardDuty asks <em>&ldquo;is something bad happening?&rdquo;</em> (threat detection).</p>
+    <table>
+      <tr><th></th><th>Macie</th><th>GuardDuty</th></tr>
+      <tr><td><strong>What it finds</strong></td><td>Sensitive <em>content</em> &mdash; PII and financial/credential patterns inside S3 objects (SSN, credit card, API keys)</td><td>Adversarial <em>behavior</em> and <em>malware</em> &mdash; credential theft, unusual API calls, reconnaissance, malicious files</td></tr>
+      <tr><td><strong>How it detects</strong></td><td>Pattern matching + machine learning against managed and custom data identifiers, run on demand or on a schedule</td><td>Continuous behavioral analysis of CloudTrail, VPC flow, and DNS logs, plus signature matching for S3 malware</td></tr>
+      <tr><td><strong>Customizability of findings</strong></td><td>Tunable &mdash; sensitivity scoring lets you adjust thresholds, identifier weights, and allow lists</td><td>Fixed per finding type (malware is always High). To re-prioritize, route to Security Hub and use automation rules</td></tr>
+    </table>
+    <p><strong>How this plays out in the lab:</strong> GuardDuty assigns severity per finding type, and the S3 malware finding (<code>Object:S3/MaliciousFile</code>) is a binary verdict, so every EICAR upload comes back <strong>High</strong> &mdash; no variant will produce a Low or Medium finding. The Low/Medium/High variety you need for the lab comes from <em>Generate sample findings</em>, not from what you upload. To change a finding&rsquo;s severity for your own environment, route it to Security Hub (via ASFF) and use automation rules.</p>
+  </div>
+</details>
+
+
 <!-- ═══════════════ SECTION 5 ═══════════════ -->
 <h2>5. What&rsquo;s still missing</h2>
 
