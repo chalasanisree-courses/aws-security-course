@@ -280,16 +280,13 @@ Notes: Testing upload for support case #4472</pre>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Wait for Macie and review findings</span></div><div class="step-body">
 <p>Macie processing takes 5&ndash;15 minutes. While waiting, proceed to Part 4 (GuardDuty) and come back.</p>
-<p>When complete, go to <strong>Macie &rarr; Findings</strong>. Macie should flag <code>customer-data.txt</code> with findings for:</p>
-<ul>
-  <li>Social Security number detected</li>
-  <li>Credit card number detected</li>
-</ul>
-<p>Click into a finding. Note the S3 object path, the PII type, and the severity.</p>
+<p>When complete, go to <strong>Macie &rarr; Findings</strong>. Macie should flag <code>customer-data.txt</code> with a finding for the <strong>Social Security number</strong>.</p>
+<p><strong>Note:</strong> Macie will not flag the credit card number &mdash; <code>4111-1111-1111-1111</code> is whitelisted as a card-issuer test value, so Macie does not generate a finding for it (see the &ldquo;Credit card number&rdquo; entry in the <a href="https://docs.aws.amazon.com/macie/latest/user/mdis-reference-financial.html" target="_blank">Macie financial data identifiers reference</a>). An SSN-only finding is the correct result.</p>
+<p>Click into the finding. Note the S3 object path, the PII type, and the severity.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
-<p>Macie detected PII in the uploaded file. The finding shows the S3 object, the type of sensitive data (SSN, credit card), and the severity level.</p>
+<p>Macie detected PII in the uploaded file. The finding shows the S3 object, the type of sensitive data (SSN), and the severity level.</p>
 </div>
-<div class="screenshot">Macie finding showing PII detected in customer-data.txt &mdash; SSN and credit card number</div>
+<div class="screenshot">Macie finding showing PII detected in customer-data.txt &mdash; SSN</div>
 </div></div>
 
 
@@ -333,7 +330,7 @@ Notes: Testing upload for support case #4472</pre>
 <p>After uploading, go to <strong>GuardDuty &rarr; Malware scans</strong> to confirm a scan was triggered. It may take a few minutes for the scan to appear and complete.</p>
 <div class="callout info">
   <p><strong>Note:</strong> The EICAR string is an industry-standard test pattern. It is not malware and cannot harm your system. Every anti-malware product &mdash; including GuardDuty Malware Protection &mdash; is designed to recognize and flag it.</p>
-  <p><strong>Copy the string carefully: 68 characters, straight quotes only (no smart quotes), and the backslash <code>\</code> intact. GuardDuty matches the EICAR signature and tolerates minor whitespace — a trailing newline is fine (the test files in the course repo have one and are detected reliably) — but altered characters or smart quotes will make the scan come back clean, and the rest of the lab will fail with no obvious cause. If your scan does not flag the file, copy the string directly from <strong>eicar.org</strong> rather than from this page, and confirm your editor did not add a trailing newline.</p>
+  <p><strong>Copy the string carefully:</strong> 68 characters, straight quotes only (no smart quotes), and the backslash <code>\</code> intact. GuardDuty matches the EICAR signature and tolerates minor whitespace &mdash; a trailing newline is fine (the test files in the course repo have one and are detected reliably) &mdash; but altered characters or smart quotes will make the scan come back clean, and the rest of the lab will fail with no obvious cause. If your scan does not flag the file, copy the string directly from <strong>eicar.org</strong> rather than from this page, and confirm your editor did not add a trailing newline.</p>
 </div>
 <div class="callout">
   <p><strong>No scan triggered?</strong> Delete the file from S3 and re-upload it. Malware Protection only scans on new <code>PutObject</code> events &mdash; it does not scan existing objects.</p>
@@ -343,7 +340,8 @@ Notes: Testing upload for support case #4472</pre>
 <div class="step"><div class="step-header"><span class="step-num">Step 13</span><span class="step-title">Review GuardDuty findings</span></div><div class="step-body">
 <p>Wait a few minutes. Go to <strong>GuardDuty &rarr; Findings</strong>.</p>
 <p>GuardDuty should generate a finding for the EICAR file. Look for a finding type related to malware detection &mdash; it will include the S3 object path, the threat name, and the severity.</p>
-<p>Also generate sample findings for additional context: <strong>GuardDuty &rarr; Settings &rarr; Generate sample findings</strong>. This produces realistic threat indicators instantly &mdash; credential exfiltration, unusual API activity, reconnaissance. Browse three findings of different severity levels.</p>
+<p><strong>Note:</strong> EICAR (S3 malware) findings from GuardDuty are always <strong>High</strong> severity &mdash; malware is a binary verdict, so no uploaded file will produce a Low or Medium finding. To see Low/Medium severity findings, use the sample findings below.</p>
+<p>Generate sample findings for additional context: <strong>GuardDuty &rarr; Settings &rarr; Generate sample findings</strong>. This produces realistic threat indicators instantly &mdash; credential exfiltration, unusual API activity, reconnaissance. Browse three findings of different severity levels.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>GuardDuty detected the EICAR test file as malware. Sample findings show the breadth of threats GuardDuty monitors &mdash; credential compromise, unusual API calls, network reconnaissance.</p>
 </div>
@@ -373,22 +371,23 @@ Notes: Testing upload for support case #4472</pre>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 15</span><span class="step-title">Wait for findings to aggregate</span></div><div class="step-body">
-<p>Security Hub takes a few minutes to ingest findings from connected services. Wait ~5 minutes, then go to <strong>Security Hub &rarr; Findings</strong>.</p>
+<p>Security Hub takes a few minutes to start showing findings. Wait ~5 minutes, then go to <strong>Security Hub &rarr; Findings</strong>.</p>
 <div class="callout">
-  <p><strong>Don&rsquo;t wait here.</strong> Aggregation can take 10&ndash;15 minutes or longer. Proceed with Parts 6 and 7, then come back to Security Hub at the end to take your screenshot. By then, all findings &mdash; including the GuardDuty malware finding from Step 19 &mdash; should be visible.</p>
+  <p><strong>Don&rsquo;t wait here.</strong> Aggregation can take 10&ndash;15 minutes or longer. Proceed with Parts 6 and 7, then come back to Security Hub at the end to take your screenshot.</p>
 </div>
-<p>You should see findings from multiple sources:</p>
-<ul>
-  <li><strong>Inspector:</strong> Pillow CVE in photoviewer-image-validator</li>
-  <li><strong>Macie:</strong> PII in customer-data.txt</li>
-  <li><strong>GuardDuty:</strong> Malware detection + sample findings</li>
-  <li><strong>Config:</strong> Any non-compliant rules from last week</li>
-</ul>
-<p>All findings are normalized to the AWS Security Finding Format (ASFF) with consistent severity scores, resource identifiers, and remediation recommendations.</p>
+<div class="callout info">
+  <p><strong>Seeing only &ldquo;&hellip;should be enabled&rdquo; checks (IAM, CloudTrail, KMS&hellip;) and not your Inspector / Macie / GuardDuty findings? That is expected, and you have done this step correctly.</strong> Two reasons:</p>
+  <ul>
+    <li>Security Hub only ingests findings created <em>after</em> it is enabled &mdash; it does not backfill older ones. You enable it here in Step 14, after most of your findings were already generated, so those are not pulled in retroactively.</li>
+    <li>Services do not all forward every finding by default. For example, Macie does not publish sensitive-data findings (like the SSN) to Security Hub unless you change its publication settings, and a Malware Protection scan result is its own event type that does not reliably appear as a GuardDuty <em>Finding</em>.</li>
+  </ul>
+  <p>So the goal of this step is simply to confirm that Security Hub is enabled and aggregating findings into one normalized (ASFF) dashboard &mdash; the standards/compliance findings demonstrate that. <strong>For your screenshot, Security Hub enabled and showing its aggregated Findings list is sufficient.</strong> If you also see detection findings from Inspector or GuardDuty, that is a bonus &mdash; it is not required, and you will not lose points if they do not appear. (If Security Hub looks completely empty, you probably checked too soon &mdash; wait 10&ndash;15 minutes after Step 19 and refresh.)</p>
+</div>
+<p>Every finding Security Hub receives is normalized to the AWS Security Finding Format (ASFF) with consistent severity scores, resource identifiers, and remediation recommendations &mdash; which is what makes one-dashboard triage possible.</p>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
-<p>Security Hub shows findings from at least three different sources (Inspector, Macie, GuardDuty) in a single dashboard. One place to see everything.</p>
+<p>Security Hub is enabled and aggregating findings into a single normalized (ASFF) dashboard. The standards/compliance findings satisfy this step.</p>
 </div>
-<div class="screenshot">Security Hub dashboard showing aggregated findings from multiple services</div>
+<div class="screenshot">Security Hub Findings list (aggregated findings &mdash; standards checks are sufficient)</div>
 </div></div>
 
 
