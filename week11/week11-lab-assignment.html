@@ -268,6 +268,7 @@ Notes: Testing upload for support case #4472</pre>
 <p>Go to <strong>Macie &rarr; S3 buckets &rarr; Create job</strong>.</p>
 <div class="callout">
   <p><strong>Bucket not showing up?</strong> Macie needs a minute or two to inventory the S3 buckets in your account after being enabled. Click the refresh button or wait and try again.</p>
+  <p><strong>Job estimate shows &ldquo;0 objects to process&rdquo;?</strong> The bucket may be listed but your just-uploaded <code>customer-data.txt</code> may not be inventoried yet (Macie refreshes its inventory on a daily cycle). Before you submit, confirm the job&rsquo;s estimated object count is greater than 0. If it shows 0, go to <strong>Macie &rarr; S3 buckets</strong>, click <strong>refresh</strong>, and check that the bucket&rsquo;s <strong>Classifiable objects</strong> count includes your file &mdash; then create the job. (This is a scope/inventory issue, not a KMS problem; re-uploading the file will <em>not</em> re-run a completed job, so create a new one.)</p>
 </div>
 <ul>
   <li>Select the Photo Viewer bucket</li>
