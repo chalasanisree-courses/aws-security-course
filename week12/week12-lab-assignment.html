@@ -81,7 +81,7 @@
   <pre>cd ~
 git -C aws-security-course pull
 bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
-  <p>The script verifies your Week 11 environment is intact: Organizations enabled with Production and Staging OUs, CloudTrail trail exists (needed for the management account exemption test), and Identity Center is active. Address any errors before proceeding.</p>
+  <p>The script verifies your Week 11 environment is intact: Organizations enabled with Production and Staging OUs, CloudTrail trail exists (needed for the management account exemption test), Identity Center is active, and your account sits in the Production OU. Address any errors before proceeding.</p>
 </div>
 
 
@@ -93,11 +93,16 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 
 <p>You will write four SCPs that enforce organizational guardrails on member accounts. Three are baselines attached at Root; one is a region lock attached to the Production OU. Writing SCP JSON is the same skill as writing IAM policies &mdash; understanding the syntax, <code>NotAction</code> for global services, and condition keys for region restrictions.</p>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Enable SCPs in Organizations</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 1</span><span class="step-title">Move your account into the Production OU</span></div><div class="step-body">
+<p>Go to <strong>AWS Organizations &rarr; AWS accounts</strong>. Select your account, then click <strong>Actions &rarr; Move</strong> and choose the <strong>Production</strong> OU.</p>
+<div class="callout"><p><strong>It may already be there.</strong> You moved your account into the Production OU back in the Week 9 Identity Center lab, so it is likely already in place &mdash; the pre-flight script confirms this. If you see your account listed under Production, you are done and can skip ahead. Moving it does not change how SCPs affect your account (the management account is always exempt, no matter where it sits), but it keeps the lab's narrative and the region-lock attachment target consistent with what you see in the console.</p></div>
+</div></div>
+
+<div class="step"><div class="step-header"><span class="step-num">Step 2</span><span class="step-title">Enable SCPs in Organizations</span></div><div class="step-body">
 <p>Go to <strong>AWS Organizations &rarr; Policies &rarr; Service control policies</strong>. If SCPs are not enabled, click <strong>Enable service control policies</strong>.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 2</span><span class="step-title">Write SCP 1 &mdash; Deny CloudTrail deletion (baseline)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Write SCP 1 &mdash; Deny CloudTrail deletion (baseline)</span></div><div class="step-body">
 <p>This policy would be attached at the root of the organization, applying to every member account. No member account should ever be able to disable audit logging.</p>
 <ul><li>Policy name: <code>deny-cloudtrail-disable</code></li><li>Description: Baseline &mdash; prevents stopping or deleting CloudTrail trails in any member account</li></ul>
 <pre>{
@@ -117,7 +122,7 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 <div class="screenshot">SCP <code>deny-cloudtrail-disable</code> created in the Organizations console</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Write SCP 2 &mdash; Deny public S3 (baseline)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Write SCP 2 &mdash; Deny public S3 (baseline)</span></div><div class="step-body">
 <p>Another baseline policy for all member accounts. This prevents anyone from disabling the S3 Block Public Access settings.</p>
 <ul><li>Policy name: <code>deny-public-s3</code></li></ul>
 <pre>{
@@ -146,7 +151,7 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 <div class="screenshot">SCP <code>deny-public-s3</code> created</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Write SCP 3 &mdash; Region lock (Production OU)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Write SCP 3 &mdash; Region lock (Production OU)</span></div><div class="step-body">
 <p>This policy locks the Production OU to <code>us-east-1</code> &mdash; the region where the Photo Viewer runs. Every member account under this OU would be restricted to that single region. Data sovereignty is enforced at the organizational level: no principal in any production account can create resources in another region, even accidentally.</p>
 <ul><li>Policy name: <code>restrict-region-us-east-1</code></li></ul>
 <pre>{
@@ -175,7 +180,7 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 <div class="screenshot">SCP <code>restrict-region-us-east-1</code> created</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 5</span><span class="step-title">Write SCP 4 &mdash; Deny Identity Center administration (all member accounts)</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Write SCP 4 &mdash; Deny Identity Center administration (all member accounts)</span></div><div class="step-body">
 <p>Identity Center lives exclusively in the management account. No member account should be able to create its own Identity Center instance, permission sets, or account assignments. All employee access is centralized.</p>
 <ul><li>Policy name: <code>deny-identity-center-admin</code></li></ul>
 <pre>{
@@ -199,8 +204,9 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 <div class="screenshot">SCP <code>deny-identity-center-admin</code> created</div>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 6</span><span class="step-title">Attach SCPs to OUs</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Attach SCPs to OUs</span></div><div class="step-body">
 <p>Go to <strong>AWS Organizations &rarr; Organize accounts</strong>. Attach the policies as follows:</p>
+<div class="callout"><p><strong>How attachment scope works:</strong> An SCP applies to the node you attach it to <em>and every account beneath it</em> &mdash; attachment inherits down the tree. Attaching at <strong>Root</strong> applies a policy to every account in the organization; attaching to an <strong>OU</strong> applies it only to accounts in that OU. That is why the three baselines go on Root (they should hold for every member account, including ones added later) while the region lock goes on the Production OU (only production runs in us-east-1). The one account this never reaches is the <strong>management account</strong> &mdash; it is exempt from all SCPs regardless of where they are attached (Root, OU, or directly), so it is never restricted by them.</p></div>
 <table>
   <tr><th>SCP</th><th>Attach to</th><th>In production, this would govern</th></tr>
   <tr><td><code>deny-cloudtrail-disable</code></td><td>Root</td><td>All member accounts</td></tr>
@@ -222,7 +228,7 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 
 <p>You wrote four policies that would prevent CloudTrail deletion, public S3, off-region resources, and local identity management in any member account. Now test whether they apply to <em>your</em> account.</p>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 7</span><span class="step-title">Try to stop CloudTrail</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Try to stop CloudTrail</span></div><div class="step-body">
 <p>Go to <strong>CloudTrail &rarr; Trails</strong>. You will see your trail listed. Click on the <strong>trail name</strong> (the blue hyperlink) to open the trail detail page. On the detail page, click <strong>Stop logging</strong> in the top-right area, then confirm.</p>
 <div class="callout warn">
   <p><strong>Do not delete the trail.</strong> You need to click <em>into</em> the trail to find the stop logging toggle. Do not click the delete button from the trails list. Stopping logging is reversible with one click; deleting the trail requires recreating it.</p>
@@ -249,11 +255,11 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 
 <p>Over twelve weeks, the Photo Viewer was built with deliberate simplifications &mdash; choices made for pedagogical clarity that would not be acceptable in production. The production hardening guide on the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a> documents each simplification.</p>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 8</span><span class="step-title">Review the production hardening accordion</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Review the production hardening accordion</span></div><div class="step-body">
 <p>Go to the <a href="https://chalasanisree-courses.github.io/aws-security-course/PhotoViewer.html" style="color:#1F4E79;">PhotoViewer page</a>. Open the <strong>Production Hardening Guide</strong> accordion. Read through the items organized by week.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Select your top three priorities</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">Select your top three priorities</span></div><div class="step-body">
 <p>From the production hardening guide, select the <strong>three simplifications you would prioritize first</strong> for production deployment. For each one, write:</p>
 <ul>
   <li>Which simplification you selected (reference it by week and title)</li>
@@ -263,7 +269,7 @@ bash aws-security-course/photoviewer/week12/week12-preflight.sh</pre>
 <p>There is no single correct answer &mdash; reasonable priorities depend on the threat model, user base, and compliance requirements. The quality of your reasoning matters more than which items you choose.</p>
 </div></div>
 
-<div class="step"><div class="step-header"><span class="step-num">Step 10</span><span class="step-title">The capstone question</span></div><div class="step-body">
+<div class="step"><div class="step-header"><span class="step-num">Step 11</span><span class="step-title">The capstone question</span></div><div class="step-body">
 <p>For each of the seven pillars, identify the <strong>single most important AWS service</strong> that provides that pillar for the Photo Viewer. Explain your choice in one sentence each.</p>
 <table>
   <tr><th>Pillar</th><th>Your choice</th><th>Why</th></tr>
