@@ -182,6 +182,7 @@ ls -lh image-validator.zip</pre>
 <div class="callout info">
   <p><strong>Least privilege + KMS dual authorization.</strong> The validator needs <code>GetObject</code> to download the file, <code>PutObjectTagging</code> to write validation tags, and <code>kms:Decrypt</code> because the bucket uses SSE-KMS with <code>photoviewer-data-key</code> (from the Week 8 encryption lab). Remember: KMS requires authorization from <em>both</em> the IAM policy and the key policy. The IAM policy alone is not enough &mdash; the role must also appear in the key policy.</p>
 </div>
+<div class="screenshot">Lambda console showing the deployed <code>photoviewer-image-validator</code> function with the Pillow deployment package</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Configure S3 event trigger</span></div><div class="step-body">
@@ -193,6 +194,7 @@ ls -lh image-validator.zip</pre>
   <li>Destination: <strong>Lambda function &rarr; photoviewer-image-validator</strong></li>
 </ul>
 <p>Every file uploaded to the <code>photos/</code> prefix will now trigger the validator. <em>Note: this lab points the trigger (and the malware scan you configure later) at <code>photos/</code> for simplicity — you will upload the test files there manually. In the app's real flow, user uploads land under <code>uploads/</code>; production would cover that prefix too (or the whole bucket).</em></p>
+<div class="screenshot">S3 event notification showing the <code>photos/</code> prefix configured to trigger the validator Lambda</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 4</span><span class="step-title">Test the validator</span></div><div class="step-body">
@@ -277,6 +279,7 @@ Notes: Testing upload for support case #4472</pre>
   <li>Job name: <code>photoviewer-pii-scan</code></li>
 </ul>
 <p>Click <strong>Submit</strong>. The job will scan all objects in the bucket, including the <code>customer-data.txt</code> file you just uploaded.</p>
+<div class="screenshot">Macie dashboard showing the discovery job (<code>photoviewer-pii-scan</code>)</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 9</span><span class="step-title">Wait for Macie and review findings</span></div><div class="step-body">
@@ -321,6 +324,7 @@ Notes: Testing upload for support case #4472</pre>
 <div class="callout">
   <p><strong>Wait 2&ndash;3 minutes</strong> before uploading the test file in the next step. Malware Protection for S3 needs a moment to fully activate after enabling. If you upload immediately, the scan may not trigger.</p>
 </div>
+<div class="screenshot">GuardDuty Malware Protection for S3 showing the Photo Viewer bucket with <strong>Active</strong> status</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 12</span><span class="step-title">Upload a suspicious file (simulate the incident)</span></div><div class="step-body">
@@ -388,7 +392,8 @@ Notes: Testing upload for support case #4472</pre>
 <div class="verify"><div class="verify-label">&#10003; Verify</div>
 <p>Security Hub is enabled and aggregating findings into a single normalized (ASFF) dashboard. The standards/compliance findings satisfy this step.</p>
 </div>
-<div class="screenshot">Security Hub Findings list (aggregated findings &mdash; standards checks are sufficient)</div>
+<div class="screenshot">Security Hub dashboard active (enabled)</div>
+<div class="screenshot">Security Hub Findings list &mdash; standards checks are sufficient; detection findings from Inspector / Macie / GuardDuty are a bonus if they appear</div>
 </div></div>
 
 
@@ -478,6 +483,8 @@ def lambda_handler(event, context):
   <p><strong>Why <code>s3:*</code>?</strong> In the validator Lambda (Step 2), we scoped permissions to specific actions. Here, <code>CopyObject</code> internally requires a combination of read, write, tagging, and metadata permissions that is difficult to enumerate precisely. Scoping to <code>s3:*</code> on a single bucket is a pragmatic tradeoff &mdash; the bucket-level scope is the meaningful security boundary.</p>
 </div>
 <p>Add the quarantine role to the KMS data key policy (same as Step 2 &mdash; <strong>KMS &rarr; photoviewer-data-key &rarr; Key policy &rarr; Key users &rarr; Add</strong>, search for <code>quarantine</code> and select the execution role).</p>
+<div class="screenshot">Lambda console showing the deployed <code>photoviewer-quarantine</code> function</div>
+<div class="screenshot"><code>photoviewer-data-key</code> key policy showing all key users added during this lab &mdash; validator role, Macie, GuardDuty, and quarantine role</div>
 </div></div>
 
 
@@ -507,6 +514,7 @@ def lambda_handler(event, context):
 <p>This matches any GuardDuty finding with severity 7 or higher (High and Critical).</p>
 <p>Click the <strong>Targets</strong> tab. Drag <strong>SNS topic</strong> into the Targets area (or click to add), then select the SNS topic you created for billing alerts in Week 1. Leave all other settings as defaults.</p>
 <p>Click <strong>Create</strong> (top right).</p>
+<div class="screenshot">EventBridge rule <code>guardduty-high-severity-alert</code> showing the GuardDuty Finding event pattern (severity &ge; 7) with the SNS target</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 18</span><span class="step-title">Create an EventBridge rule for malware quarantine</span></div><div class="step-body">
@@ -533,6 +541,7 @@ def lambda_handler(event, context):
   <li><strong>Target 2:</strong> Lambda function &rarr; <code>photoviewer-quarantine</code></li>
 </ul>
 <p>Click <strong>Create</strong>.</p>
+<div class="screenshot">EventBridge rule <code>guardduty-malware-quarantine</code> showing the Malware Protection scan-result pattern with two targets &mdash; SNS and Lambda</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 19</span><span class="step-title">Test the full loop</span></div><div class="step-body">
@@ -549,6 +558,7 @@ def lambda_handler(event, context):
 </div>
 <div class="screenshot">S3 bucket showing the EICAR file moved from <code>photos/</code> to <code>quarantine/</code></div>
 <div class="screenshot">Email notification AND quarantined file &mdash; both happened automatically</div>
+<div class="screenshot">CloudWatch Logs for <code>photoviewer-quarantine</code> showing the <code>QUARANTINED:</code> log line confirming the Lambda ran</div>
 </div></div>
 
 
