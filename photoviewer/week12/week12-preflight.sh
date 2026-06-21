@@ -60,18 +60,40 @@ fi
 echo ""
 echo "3. CloudTrail (needed for management account exemption test)"
 echo "────────────────────────────────────────────────────────"
-TRAIL_NAME=$(aws cloudtrail describe-trails --region "$REGION" \
-  --query 'trailList[0].Name' --output text 2>/dev/null || echo "NONE")
-if [ "$TRAIL_NAME" != "NONE" ] && [ "$TRAIL_NAME" != "None" ] && [ -n "$TRAIL_NAME" ]; then
-  IS_LOGGING=$(aws cloudtrail get-trail-status --name "$TRAIL_NAME" --region "$REGION" \
-    --query 'IsLogging' --output text 2>/dev/null || echo "false")
-  if [ "$IS_LOGGING" = "True" ]; then
-    pass "CloudTrail trail active: $TRAIL_NAME (logging: on)"
-  else
-    fail "CloudTrail trail exists but logging is stopped — re-enable logging before starting"
-  fi
+# Check EVERY trail (order from describe-trails is not guaranteed, and a
+# student may have more than one trail). Use the trail ARN with
+# get-trail-status — passing the short name can fail for multi-region/shadow
+# trails and would otherwise be misreported as "logging stopped".
+TRAIL_ARNS=$(aws cloudtrail describe-trails --region "$REGION" \
+  --query 'trailList[].TrailARN' --output text 2>/dev/null || echo "")
+
+if [ -z "$TRAIL_ARNS" ]; then
+  fail "No CloudTrail trail found — create one before starting (needed for Step 8)"
 else
-  fail "No CloudTrail trail found — create one before starting (needed for Step 7)"
+  LOGGING_TRAIL=""
+  STOPPED_TRAILS=""
+  UNKNOWN_TRAILS=""
+  for ARN in $TRAIL_ARNS; do
+    SHORT="${ARN##*/}"
+    STATUS=$(aws cloudtrail get-trail-status --name "$ARN" --region "$REGION" \
+      --query 'IsLogging' --output text 2>/dev/null || echo "ERROR")
+    if [ "$STATUS" = "True" ]; then
+      LOGGING_TRAIL="$SHORT"
+    elif [ "$STATUS" = "False" ]; then
+      STOPPED_TRAILS="$STOPPED_TRAILS $SHORT"
+    else
+      UNKNOWN_TRAILS="$UNKNOWN_TRAILS $SHORT"
+    fi
+  done
+
+  if [ -n "$LOGGING_TRAIL" ]; then
+    pass "CloudTrail active: $LOGGING_TRAIL (logging: on)"
+    [ -n "$STOPPED_TRAILS" ] && info "Other trails exist with logging off:$STOPPED_TRAILS (fine — at least one trail is logging)"
+  elif [ -n "$STOPPED_TRAILS" ]; then
+    fail "CloudTrail trail exists but logging is stopped (trail(s):$STOPPED_TRAILS) — re-enable: aws cloudtrail start-logging --name <trail> --region $REGION"
+  else
+    fail "Could not read CloudTrail logging status (trail(s):$UNKNOWN_TRAILS). Check permissions / trail region, then verify with: aws cloudtrail get-trail-status --name <trail-ARN> --region $REGION"
+  fi
 fi
 
 # ── Identity Center ────────────────────────────────────────
