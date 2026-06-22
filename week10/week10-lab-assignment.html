@@ -109,6 +109,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
 </ul>
 <div class="callout warning"><p><strong>Make sure to select Greater/Equal (&ge;), not Greater (&gt;).</strong> With &ldquo;Greater than,&rdquo; a single error won&rsquo;t trigger the alarm &mdash; you&rsquo;d need two errors in the window. &ldquo;Greater/Equal&rdquo; fires on the first error.</p></div>
 <p>This alarm fires if the Lambda function produces one or more errors in any 5-minute window. The SNS topic sends you an email &mdash; the same notification channel you have been using since Week 1.</p>
+<div class="screenshot">CloudWatch alarm <code>photoviewer-lambda-errors</code> showing its configuration &mdash; the Errors metric with the Greater/Equal 1 threshold</div>
 </div></div>
 
 <div class="step"><div class="step-header"><span class="step-num">Step 3</span><span class="step-title">Create a duration alarm</span></div><div class="step-body">
@@ -164,6 +165,7 @@ bash aws-security-course/photoviewer/week10/week10-preflight.sh</pre>
   <li>Delivery method: Create a new S3 bucket (Config stores configuration history snapshots here)</li>
 </ul>
 <p>Click <strong>Confirm</strong>. Config begins recording resource configurations across the account.</p>
+<div class="screenshot">AWS Config Settings page showing the recorder enabled (Recording is on) for the account</div>
 <div class="callout"><p><strong>Cost note:</strong> AWS Config bills per configuration item recorded (~$0.003 each, but the first 7,500 items in 30 days are free), per managed-rule evaluation (a few cents at lab volume; no Lambda charges for managed rules), plus minor S3 storage for history. For a low-activity lab account over the Week 10&ndash;11 window, expect this to be negligible &mdash; likely free on configuration items and only cents on rule evaluations. To minimize it further, you can set the recording strategy to specific resource types (S3, CloudTrail, IAM) instead of all resource types. Keep Config and its rules running through Week 11 &mdash; they are needed for Security Hub.</p></div>
 </div></div>
 
