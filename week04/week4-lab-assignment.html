@@ -49,7 +49,7 @@
   .course-nav a:hover { color: #fff; }
   .course-nav-right {
     font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
-    text-transform: uppercase; color: rgba(255,255,255,0.4);
+    text-transform: uppercase; color: rgba(255,255,255,0.72);
   }
 
 </style>
@@ -432,6 +432,77 @@ bash photoviewer/audit-aws-resources.sh</pre>
   <tr><td>Reflection Q2</td><td>7.5</td><td>Correctly explains SSM agent, VPC endpoints, no port 22 needed</td></tr>
   <tr><td><strong>Total</strong></td><td><strong>100</strong></td><td></td></tr>
 </table>
+
+
+<!-- ===== Accessibility remediation block (added by audit, WCAG 2.1 AA) ===== -->
+<style id="a11y-fixes-style">
+.skip-link{position:absolute;left:-9999px;top:0;z-index:10000;background:#1F4E79;color:#fff;padding:10px 16px;border-radius:0 0 6px 0;font-family:'Barlow',-apple-system,sans-serif;font-weight:600;font-size:14px;text-decoration:none}
+.skip-link:focus{left:0}
+.a11y-sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+[onclick]:focus-visible,[role="button"]:focus-visible{outline:3px solid #85B7EB;outline-offset:2px}
+[role="main"]:focus{outline:none}
+</style>
+<script id="a11y-fixes-script">
+(function(){
+  function ready(fn){if(document.readyState!=='loading')fn();else document.addEventListener('DOMContentLoaded',fn);}
+  ready(function(){
+    var body=document.body;if(!body)return;
+    var main=document.querySelector('main, [role="main"]');
+    if(!main){var best=null,len=0;
+      Array.prototype.forEach.call(body.children,function(el){
+        var t=el.tagName.toLowerCase();
+        if(['script','style','nav','header','footer','link','a'].indexOf(t)>-1)return;
+        if(/(^|[^a-z])(nav|header|footer)([^a-z]|$)/i.test(el.className||''))return;
+        var l=(el.textContent||'').length;if(l>len){len=l;best=el;}
+      });
+      if(best){main=best;main.setAttribute('role','main');}
+    }
+    if(main){if(!main.id)main.id='a11y-main';main.setAttribute('tabindex','-1');}
+    if(main&&!document.querySelector('a.skip-link')){
+      var sk=document.createElement('a');sk.className='skip-link';sk.href='#'+main.id;sk.textContent='Skip to main content';
+      body.insertBefore(sk,body.firstChild);
+    }
+    var h1s=document.querySelectorAll('h1');
+    if(h1s.length===0 && main){
+      var t=(document.title||'Page').split(/[\u2014\u2013|]/)[0].trim();
+      var h1=document.createElement('h1');h1.className='a11y-sr-only';h1.textContent=t;
+      main.insertBefore(h1,main.firstChild);
+    }
+    var heads=[].slice.call(document.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+    var last=0;
+    heads.forEach(function(h){
+      var nat=parseInt(h.tagName.charAt(1),10);var eff=nat;
+      if(last>0 && nat>last+1) eff=last+1;
+      if(eff!==nat){h.setAttribute('role','heading');h.setAttribute('aria-level',String(eff));}
+      last=eff;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[onclick]'),function(el){
+      var t=el.tagName.toLowerCase();
+      if(['a','button','input','select','textarea'].indexOf(t)>-1)return;
+      if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+      if(!el.hasAttribute('role'))el.setAttribute('role','button');
+      el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){e.preventDefault();el.click();}
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('button,[role="button"]'),function(el){
+      if(el.getAttribute('aria-label')||el.getAttribute('aria-labelledby')||el.getAttribute('title'))return;
+      var txt=(el.textContent||'').replace(/\s+/g,'');
+      if(txt.length!==1)return;
+      if(/[\u2715\u2716\u00d7]/.test(txt))el.setAttribute('aria-label','Close');
+      else if(/[\u25b6\u25b8\u25ba\u25b7]/.test(txt))el.setAttribute('aria-label','Expand');
+      else if(/[\u25bc\u25be\u25bd]/.test(txt))el.setAttribute('aria-label','Collapse');
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('a[target="_blank"]'),function(a){
+      if(!a.getAttribute('rel'))a.setAttribute('rel','noopener noreferrer');
+      if(a.getAttribute('aria-label'))return;
+      var t=(a.textContent||'').replace(/\s+/g,' ').trim();
+      if(t)a.setAttribute('aria-label',t+' (opens in new tab)');
+    });
+  });
+})();
+</script>
+<!-- ===== End accessibility remediation block ===== -->
 
 </body>
 </html>
