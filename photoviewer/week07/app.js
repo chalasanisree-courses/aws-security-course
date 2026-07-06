@@ -24,9 +24,9 @@
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-const COGNITO_DOMAIN    = 'YOUR_COGNITO_DOMAIN';
-const APP_CLIENT_ID     = 'YOUR_APP_CLIENT_ID';
-const CLOUDFRONT_DOMAIN = 'YOUR_CLOUDFRONT_DOMAIN';
+const COGNITO_DOMAIN    = 'us-east-1aehi5u3hd';
+const APP_CLIENT_ID     = '6rbu84qn35ic5bi0bivf8kcqju';
+const CLOUDFRONT_DOMAIN = 'db3li7bns36bi.cloudfront.net';
 
 const COGNITO_BASE      = `https://${COGNITO_DOMAIN}.auth.us-east-1.amazoncognito.com`;
 const REDIRECT_URI      = `https://${CLOUDFRONT_DOMAIN}/callback`;
