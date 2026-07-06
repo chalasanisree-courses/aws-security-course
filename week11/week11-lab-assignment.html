@@ -567,6 +567,8 @@ def lambda_handler(event, context):
 
 <p>Week 12 does not depend on any services from this lab &mdash; or on Config or Inspector from Week 10. Disable or delete everything below to avoid charges. Keep <strong>CloudTrail</strong> and your <strong>CloudWatch alarms</strong> &mdash; CloudTrail is required for Week 12, and the alarms cost nothing.</p>
 
+<div class="callout warn"><p><strong>These are regional services &mdash; check every region.</strong> Security Hub, GuardDuty, Macie, and Inspector are enabled <em>per region</em>. If you ever opened their console in another region, disabling them only in us-east-1 leaves the rest billing after the trial ends. The safest teardown is the end-of-course <code>week12-cleanup.sh</code> script, which now sweeps <em>all</em> regions automatically. If you clean up manually here, switch the region selector and confirm each service is off everywhere you used it.</p></div>
+
 <ol>
   <li><strong>Disable Macie</strong> &mdash; Go to <strong>Macie &rarr; Settings &rarr; Disable Macie</strong>. Free trial runs for 30 days, then charges begin.</li>
   <li><strong>Disable GuardDuty Malware Protection for S3</strong> &mdash; Go to <strong>GuardDuty &rarr; Protection plans &rarr; Malware Protection for S3</strong>. Select the bucket plan and click <strong>Disable</strong>.</li>

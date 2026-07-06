@@ -14,6 +14,13 @@ set +e
 REGION="us-east-1"
 DELETED=0; SKIPPED=0; MANUAL=0
 
+# Detection services (Security Hub, GuardDuty, Macie, Inspector, Config) are REGIONAL.
+# Students frequently end up with them enabled in more than one region, and disabling
+# only us-east-1 is the #1 cause of lingering charges after the course. We handle the
+# primary region in full below, then sweep every other region (Section 2b).
+ALL_REGIONS=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null || echo "$REGION")
+ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text 2>/dev/null || echo "")
+
 deleted() { echo "  ✅ Deleted: $1"; ((DELETED++)); }
 skipped() { echo "  ⏭️  Skipped: $1"; ((SKIPPED++)); }
 manual()  { echo "  🔧 Manual action needed: $1"; ((MANUAL++)); }
@@ -101,6 +108,11 @@ if [ "$SH_STATUS" != "NONE" ]; then
     aws securityhub disable-organization-admin-account --admin-account-id "$ACCOUNT_ID" --region "$REGION" 2>/dev/null || true
   fi
   aws organizations disable-aws-service-access --service-principal securityhub.amazonaws.com 2>/dev/null || true
+  # Delete the cross-region finding aggregator if one exists (links regions together)
+  AGG_ARN=$(aws securityhub list-finding-aggregators --region "$REGION" --query 'FindingAggregators[0].FindingAggregatorArn' --output text 2>/dev/null || echo "None")
+  if [ -n "$AGG_ARN" ] && [ "$AGG_ARN" != "None" ]; then
+    aws securityhub delete-finding-aggregator --finding-aggregator-arn "$AGG_ARN" --region "$REGION" 2>/dev/null && info "Deleted Security Hub finding aggregator" || true
+  fi
   aws securityhub disable-security-hub --region "$REGION" 2>/dev/null && deleted "Security Hub" || skipped "Security Hub (could not disable)"
   # Security Hub creates securityhub-* Config rules — it can take 10+ minutes to remove them.
   # Poll until they are gone (or give up after ~10 minutes), then force-delete any leftovers.
@@ -139,6 +151,47 @@ if [ "$MACIE_STATUS" = "ENABLED" ]; then
 else
   skipped "Macie (not enabled or already disabled)"
 fi
+
+
+# ════════════════════════════════════════════════════════════
+echo ""
+echo "2b. MULTI-REGION SWEEP — detection services in OTHER regions"
+echo "────────────────────────────────────────────────────────"
+echo "   Security Hub, GuardDuty, Macie, and Inspector are regional. Disabling only"
+echo "   us-east-1 leaves the rest billing — this sweep catches them everywhere else."
+
+for R in $ALL_REGIONS; do
+  [ "$R" = "$REGION" ] && continue   # primary region handled above / in Section 3
+
+  # ── Security Hub (deregister org admin + finding aggregator, then disable) ──
+  if aws securityhub describe-hub --region "$R" >/dev/null 2>&1; then
+    [ -n "$ACCOUNT_ID" ] && aws securityhub disable-organization-admin-account --admin-account-id "$ACCOUNT_ID" --region "$R" 2>/dev/null || true
+    AGG_R=$(aws securityhub list-finding-aggregators --region "$R" --query 'FindingAggregators[0].FindingAggregatorArn' --output text 2>/dev/null || echo "None")
+    [ -n "$AGG_R" ] && [ "$AGG_R" != "None" ] && aws securityhub delete-finding-aggregator --finding-aggregator-arn "$AGG_R" --region "$R" 2>/dev/null || true
+    aws securityhub disable-security-hub --region "$R" 2>/dev/null && deleted "Security Hub ($R)" || skipped "Security Hub ($R — check delegated admin)"
+  fi
+
+  # ── securityhub-* Config rules left behind in this region ──
+  for SH_RULE in $(aws configservice describe-config-rules --region "$R" --query "ConfigRules[?starts_with(ConfigRuleName,'securityhub-')].ConfigRuleName" --output text 2>/dev/null || echo ""); do
+    [ -n "$SH_RULE" ] && aws configservice delete-config-rule --config-rule-name "$SH_RULE" --region "$R" 2>/dev/null && deleted "securityhub-* Config rule ($R): $SH_RULE"
+  done
+
+  # ── GuardDuty ──
+  GD_R=$(aws guardduty list-detectors --region "$R" --query 'DetectorIds[0]' --output text 2>/dev/null || echo "None")
+  if [ -n "$GD_R" ] && [ "$GD_R" != "None" ] && [ "$GD_R" != "NONE" ]; then
+    aws guardduty delete-detector --detector-id "$GD_R" --region "$R" 2>/dev/null && deleted "GuardDuty ($R)" || skipped "GuardDuty ($R)"
+  fi
+
+  # ── Macie ──
+  if [ "$(aws macie2 get-macie-session --region "$R" --query 'status' --output text 2>/dev/null || echo NONE)" = "ENABLED" ]; then
+    aws macie2 disable-macie --region "$R" 2>/dev/null && deleted "Macie ($R)" || skipped "Macie ($R)"
+  fi
+
+  # ── Inspector ──
+  if [ "$(aws inspector2 batch-get-account-status --region "$R" --query 'accounts[0].state.status' --output text 2>/dev/null || echo NONE)" = "ENABLED" ]; then
+    aws inspector2 disable --resource-types LAMBDA EC2 ECR --region "$R" 2>/dev/null && deleted "Inspector ($R)" || skipped "Inspector ($R)"
+  fi
+done
 
 
 # ════════════════════════════════════════════════════════════
